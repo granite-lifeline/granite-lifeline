@@ -1,0 +1,8 @@
+pydantic
+pandas
+numpy
+streamlit
+replicate
+huggingface_hub
+pytest
+flake8
