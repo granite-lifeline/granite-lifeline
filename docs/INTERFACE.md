@@ -119,7 +119,7 @@ Consumed by: **Report Layer** (and pass-through to Dashboard where noted)
   "component": "cooling_system_stress",
   "prediction_confidence": 0.84,
   "key_signals": [
-    {"feature": "coolant_temp_c", "value": 102, "unit": "°C", "reference_range": [90, 95]}
+  {"feature": "coolant_temp", "value": 102, "unit": "°C", "reference_range": [90, 95]}
   ]
 }
 ```
@@ -156,9 +156,9 @@ Consumed by: **Report Layer** (and pass-through to Dashboard where noted)
 
 | anomaly_type | key_signals (in order of importance) | Rationale |
 |---|---|---|
-| `cooling_system_stress` | `coolant_temp_c` | After warm-up phase (>85°C reached), flag elevated risk when: (1) coolant temp exceeds ~100°C, and/or (2) temp keeps rising at >2–3°C/min instead of plateauing. Normal range is 90–95°C. Matches brief's example: "Coolant temperature rising faster than normal—possible water pump degradation." |
-| `air_intake_maf_anomaly` | `maf_g_s`, `intake_map_kpa` | MAF correlates with intake MAP at ~0.83 average (range 0.6–0.9). Proxy: fit "expected MAF" baseline from intake_map_kpa, then flag when residual (actual − expected MAF) is large/sustained. Suggests MAF sensor drift, dirty air filter, or vacuum leak. |
-| `accelerator_pedal_sensor` | `accel_pedal_d_pct`, `accel_pedal_e_pct` | Dual redundant sensors show high correlation (0.96–0.99) consistently across all 81 trips. Mean absolute difference ~0.8pp, with brief spikes >10pp in ~1% of samples (likely sensor lag during fast movements, not faults). |
+| `cooling_system_stress` | `coolant_temp` | After warm-up phase (>85°C reached), flag elevated risk when: (1) coolant temp exceeds ~100°C, and/or (2) temp keeps rising at >2–3°C/min instead of plateauing. Normal range is 90–95°C. Matches brief's example: "Coolant temperature rising faster than normal—possible water pump degradation." |
+| `air_intake_maf_anomaly` | `maf`, `map` | MAF correlates with intake MAP at ~0.83 average (range 0.6–0.9). Proxy: fit "expected MAF" baseline from map, then flag when residual (actual − expected MAF) is large/sustained. Suggests MAF sensor drift, dirty air filter, or vacuum leak. |
+| `accelerator_pedal_sensor` | `accel_pedal_d`, `accel_pedal_e` | Dual redundant sensors show high correlation (0.96–0.99) consistently across all 81 trips. Mean absolute difference ~0.8pp, with brief spikes >10pp in ~1% of samples (likely sensor lag during fast movements, not faults). |
 
 ---
 
