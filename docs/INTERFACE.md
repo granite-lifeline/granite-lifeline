@@ -30,27 +30,29 @@ All fields in data-flow order. Pass-through fields originate in one layer and ar
 | 5 | map | float | Data Layer | Model Layer | Draft |
 | 6 | maf | float | Data Layer | Model Layer | Draft |
 | 7 | tps | float | Data Layer | Model Layer | Draft |
-| 8 | coolant_rolling_avg | float | Data Layer | Model Layer | Draft |
-| 9 | rpm_rolling_avg | float | Data Layer | Model Layer | Draft |
-| 10 | coolant_slope | float | Data Layer | Model Layer | Draft |
-| 11 | acceleration | float | Data Layer | Model Layer | Draft |
-| 12 | load_stress | float | Data Layer | Model Layer | Draft |
-| 13 | maf_map_cohesion | float | Data Layer | Model Layer | Draft |
-| 14 | rpm_variation | float | Data Layer | Model Layer | Draft |
-| 15 | failure_label | string | Data Layer | Model Layer (internal only) | TBD |
-| 16 | risk_class | string | Data Layer | Model Layer (internal only) | TBD |
-| 17 | condition_ratio | float | Data Layer | Model Layer (internal only) | TBD |
-| 18 | window_id | string | Data Layer | Model Layer (internal only) | TBD |
-| 19 | anomaly_type | string (enum) | Model Layer | Report Layer | Confirmed |
-| 20 | risk_score | float (0–1) | Model Layer | Report Layer → Dashboard | Draft |
-| 21 | risk_level | string | Model Layer | Report Layer → Dashboard | TBD |
-| 22 | component | string | Model Layer | Report Layer → Dashboard | Confirmed (mirrors anomaly_type) |
-| 23 | prediction_confidence | float (0–1) | Model Layer | Report Layer → Dashboard | Draft |
-| 24 | key_signals | array of objects | Model Layer | Report Layer → Dashboard | Confirmed |
-| 25 | risk_history | array of objects | Report Layer | Dashboard | TBD |
-| 26 | anomaly_description | string | Report Layer | Dashboard | Draft |
-| 27 | possible_cause | string | Report Layer | Dashboard | Draft |
-| 28 | recommended_action | array of strings | Report Layer | Dashboard | Draft |
+| 8 | accel_pedal_d | float | Data Layer | Model Layer | Draft |
+| 9 | accel_pedal_e | float | Data Layer | Model Layer | Draft |
+| 10 | coolant_rolling_avg | float | Data Layer | Model Layer | Draft |
+| 11 | rpm_rolling_avg | float | Data Layer | Model Layer | Draft |
+| 12 | coolant_slope | float | Data Layer | Model Layer | Draft |
+| 13 | acceleration | float | Data Layer | Model Layer | Draft |
+| 14 | load_stress | float | Data Layer | Model Layer | Draft |
+| 15 | maf_map_cohesion | float | Data Layer | Model Layer | Draft |
+| 16 | rpm_variation | float | Data Layer | Model Layer | Draft |
+| 17 | failure_label | string | Data Layer | Model Layer (internal only) | TBD |
+| 18 | risk_class | string | Data Layer | Model Layer (internal only) | TBD |
+| 19 | condition_ratio | float | Data Layer | Model Layer (internal only) | TBD |
+| 20 | window_id | string | Data Layer | Model Layer (internal only) | TBD |
+| 21 | anomaly_type | string (enum) | Model Layer | Report Layer | Confirmed |
+| 22 | risk_score | float (0–1) | Model Layer | Report Layer → Dashboard | Draft |
+| 23 | risk_level | string | Model Layer | Report Layer → Dashboard | TBD |
+| 24 | component | string | Model Layer | Report Layer → Dashboard | Confirmed (mirrors anomaly_type) |
+| 25 | prediction_confidence | float (0–1) | Model Layer | Report Layer → Dashboard | Draft |
+| 26 | key_signals | array of objects | Model Layer | Report Layer → Dashboard | Confirmed |
+| 27 | risk_history | array of objects | Report Layer | Dashboard | TBD |
+| 28 | anomaly_description | string | Report Layer | Dashboard | Draft |
+| 29 | possible_cause | string | Report Layer | Dashboard | Draft |
+| 30 | recommended_action | array of strings | Report Layer | Dashboard | Draft |
 
 **Status guide**
 - **Confirmed** — field definition and content fully confirmed by owning layer
@@ -76,6 +78,8 @@ Fields ingested from KIT OBD-II CSV after field mapping and cleaning.
 | map | float | Intake manifold absolute pressure (kPa) after cleaning | `85.0` | Draft |
 | maf | float | Mass airflow rate (g/s) after cleaning | `18.6` | Draft |
 | tps | float | Absolute throttle position (%) after cleaning | `42.0` | Draft |
+| accel_pedal_d | float | Accelerator pedal position D (%) after cleaning | `35.0` | Draft |
+| accel_pedal_e | float | Accelerator pedal position E (%) after cleaning | `37.5` | Draft |
 
 ### 1.2 Engineered features
 
