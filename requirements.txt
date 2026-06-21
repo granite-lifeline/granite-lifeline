@@ -1,8 +1,13 @@
-pydantic
-pandas
-numpy
-streamlit
-replicate
-huggingface_hub
-pytest
-flake8
+# Core dependencies
+pydantic>=2.0.0,<3.0.0
+pandas>=2.0.0
+numpy>=1.24.0,<2.0.0
+streamlit>=1.28.0
+
+# ML/LLM integrations
+replicate>=0.20.0
+huggingface_hub>=0.19.0
+
+# Development and testing
+pytest>=7.4.0
+flake8>=6.1.0
