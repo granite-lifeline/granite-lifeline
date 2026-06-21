@@ -26,7 +26,7 @@ class RiskHistoryEntry(BaseModel):
 
 class DataLayerOutput(BaseModel):
     """Output from Data Layer, consumed by Model Layer."""
-    
+
     # Raw signals
     timestamp: str
     rpm: float
@@ -37,7 +37,7 @@ class DataLayerOutput(BaseModel):
     tps: float
     accel_pedal_d: float
     accel_pedal_e: float
-    
+
     # Engineered features
     coolant_rolling_avg: float
     rpm_rolling_avg: float
@@ -46,7 +46,7 @@ class DataLayerOutput(BaseModel):
     load_stress: float
     maf_map_cohesion: float
     rpm_variation: float
-    
+
     # Proxy labels (internal to Model Layer, marked Optional as TBD)
     failure_label: Optional[str] = None
     risk_class: Optional[str] = None
@@ -56,7 +56,7 @@ class DataLayerOutput(BaseModel):
 
 class ModelLayerOutput(BaseModel):
     """Output from Model Layer, consumed by Report Layer."""
-    
+
     timestamp: str
     anomaly_type: str
     risk_score: float
@@ -68,7 +68,7 @@ class ModelLayerOutput(BaseModel):
 
 class ReportLayerOutput(BaseModel):
     """Output from Report Layer, consumed by Dashboard."""
-    
+
     # Pass-through fields from Model Layer
     timestamp: str
     risk_score: float
@@ -76,13 +76,12 @@ class ReportLayerOutput(BaseModel):
     component: str
     prediction_confidence: float
     key_signals: List[KeySignal]
-    
+
     # Report Layer maintained fields
-    risk_history: Optional[List[RiskHistoryEntry]] = None  # TBD - storage implementation pending
-    
+    # TBD - storage implementation pending
+    risk_history: Optional[List[RiskHistoryEntry]] = None
+
     # Generated fields from Granite LLM
     anomaly_description: str
     possible_cause: str
     recommended_action: List[str]
-
-# Made with Bob
