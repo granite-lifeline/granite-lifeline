@@ -5,6 +5,10 @@ components, using OBD-II time-series data, IBM Granite TTM
 for anomaly detection, and IBM Granite LLM for natural
 language diagnostic report generation.
 
+## Blog
+
+Project updates and sprint reflections are documented on our team blog: https://granite-lifeline.github.io/granite-lifeline-blog/
+
 ## Architecture
 
 ```text
