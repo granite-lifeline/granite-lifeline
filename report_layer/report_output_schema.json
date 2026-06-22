@@ -1,0 +1,99 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "timestamp",
+    "risk_score",
+    "risk_level",
+    "component",
+    "prediction_confidence",
+    "key_signals",
+    "anomaly_description",
+    "possible_cause",
+    "recommended_action"
+  ],
+  "properties": {
+    "timestamp": {
+      "type": "string"
+    },
+    "risk_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": ["Low", "Medium", "High"]
+    },
+    "component": {
+      "type": "string",
+      "enum": [
+        "cooling_system_stress",
+        "air_intake_maf_anomaly",
+        "accelerator_pedal_sensor"
+      ]
+    },
+    "prediction_confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "key_signals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["feature", "value", "unit", "reference_range"],
+        "properties": {
+          "feature": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "reference_range": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        }
+      }
+    },
+    "risk_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["timestamp", "risk_score"],
+        "properties": {
+          "timestamp": {
+            "type": "string"
+          },
+          "risk_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "anomaly_description": {
+      "type": "string"
+    },
+    "possible_cause": {
+      "type": "string"
+    },
+    "recommended_action": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
