@@ -5,6 +5,10 @@ components, using OBD-II time-series data, IBM Granite TTM
 for anomaly detection, and IBM Granite LLM for natural
 language diagnostic report generation.
 
+## Dashboard Demo
+
+[![Open Dashboard](https://img.shields.io/badge/Open%20Dashboard-granite--lifeline.streamlit.app-19c8b9?style=for-the-badge&logo=streamlit&logoColor=white)](https://granite-lifeline.streamlit.app)
+
 ## Blog
 
 Project updates and sprint reflections are documented on our team blog: https://granite-lifeline.github.io/granite-lifeline-blog/
@@ -64,4 +68,8 @@ The repository does not track the dataset itself (see `.gitignore`). Each team m
 
 ## Setup
 
-TODO: dependency installation and environment setup instructions.
+Run the dashboard locally:
+
+```bash
+uv run streamlit run dashboard/app.py
+```
