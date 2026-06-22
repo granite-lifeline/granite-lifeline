@@ -79,6 +79,128 @@ MOCK_DATA = {
 RISK_PRIORITY = {"High": 0, "Medium": 1, "Low": 2}
 
 
+def apply_theme(dark_mode: bool):
+    """Apply Animal Crossing themed CSS based on dark_mode setting."""
+    if dark_mode:
+        # Animal Crossing Dark Theme
+        theme_css = """
+        <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <style>
+            /* Hide sidebar and header */
+            section[data-testid="stSidebar"] {
+                display: none !important;
+            }
+            header[data-testid="stHeader"] {
+                display: none !important;
+            }
+            
+            /* Main app background */
+            [data-testid="stAppViewContainer"] {
+                background-color: #2d2416 !important;
+            }
+            
+            /* Content block background */
+            .main .block-container {
+                background-color: #3d3020 !important;
+                font-family: 'Nunito', sans-serif !important;
+            }
+            
+            /* Headings */
+            h1, h2, h3 {
+                color: #f8f0dc !important;
+                font-family: 'Nunito', sans-serif !important;
+            }
+            
+            /* Body text */
+            p, div, span, label {
+                color: #e8d5b0 !important;
+                font-family: 'Nunito', sans-serif !important;
+            }
+            
+            /* Secondary text */
+            .stCaption {
+                color: #c4a882 !important;
+            }
+            
+            /* Buttons */
+            .stButton > button {
+                background-color: #19c8b9 !important;
+                color: white !important;
+                border-radius: 50px !important;
+                border: none !important;
+                box-shadow: 0 5px 0 #bdaea0 !important;
+                font-family: 'Nunito', sans-serif !important;
+                font-weight: 600 !important;
+            }
+            
+            .stButton > button:active {
+                transform: translateY(3px) !important;
+                box-shadow: 0 2px 0 #bdaea0 !important;
+            }
+            
+            /* Card/container borders */
+            .element-container {
+                border-color: #5c4a2a !important;
+            }
+        </style>
+        """
+    else:
+        # Animal Crossing Light Theme
+        theme_css = """
+        <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <style>
+            /* Hide sidebar and header */
+            section[data-testid="stSidebar"] {
+                display: none !important;
+            }
+            header[data-testid="stHeader"] {
+                display: none !important;
+            }
+            
+            /* Main app background */
+            [data-testid="stAppViewContainer"] {
+                background-color: #f8f8f0 !important;
+            }
+            
+            /* Content block background */
+            .main .block-container {
+                background-color: rgb(247, 243, 223) !important;
+                font-family: 'Nunito', sans-serif !important;
+            }
+            
+            /* Headings */
+            h1, h2, h3 {
+                color: #794f27 !important;
+                font-family: 'Nunito', sans-serif !important;
+            }
+            
+            /* Body text */
+            p, div, span, label {
+                color: #725d42 !important;
+                font-family: 'Nunito', sans-serif !important;
+            }
+            
+            /* Buttons */
+            .stButton > button {
+                background-color: #19c8b9 !important;
+                color: white !important;
+                border-radius: 50px !important;
+                border: none !important;
+                box-shadow: 0 5px 0 #bdaea0 !important;
+                font-family: 'Nunito', sans-serif !important;
+                font-weight: 600 !important;
+            }
+            
+            .stButton > button:active {
+                transform: translateY(3px) !important;
+                box-shadow: 0 2px 0 #bdaea0 !important;
+            }
+        </style>
+        """
+    
+    st.markdown(theme_css, unsafe_allow_html=True)
+
+
 def show_overview_page():
     """Display the Overview Page with component health summary."""
     st.title("Your Vehicle Health Status")
@@ -175,6 +297,16 @@ def main():
     # Initialize session state
     if "page" not in st.session_state:
         st.session_state["page"] = "overview"
+
+    # Day/night toggle at the top
+    col1, col2 = st.columns([6, 1])
+    with col1:
+        pass  # Empty column
+    with col2:
+        dark_mode = st.toggle("🌙", key="dark_mode", value=False)
+
+    # Apply theme based on toggle state
+    apply_theme(dark_mode)
 
     # Route to appropriate page
     if st.session_state["page"] == "detail":
