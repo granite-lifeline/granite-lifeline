@@ -22,6 +22,11 @@ The Report Layer also maintains `risk_history` via local persistent storage for 
 
 ```
 report_layer/
+├── evaluation/        # Mock data for testing Granite LLM report generation
+│   ├── __init__.py
+│   ├── typical_cooling_stress.json
+│   ├── atypical_cooling_stress.json
+│   └── contradictory_cooling_stress.json
 ├── pipeline/          # Core report generation logic
 │   ├── __init__.py
 │   └── context_injection.py    # Format Model Layer output for LLM prompts
@@ -29,6 +34,30 @@ report_layer/
 ```
 
 ### Implemented Components
+
+#### evaluation/
+
+Contains three JSON mock data files representing `ModelLayerOutput` instances for testing Granite LLM diagnostic report generation. All files use `anomaly_type: "cooling_system_stress"` with varying signal patterns:
+
+1. **typical_cooling_stress.json**: Typical fault pattern
+   - coolant_temp: 102°C (clearly ABNORMAL, above 90-95°C reference range)
+   - risk_score: 0.82 (high), risk_level: "High"
+   - prediction_confidence: 0.87 (high)
+   - Signal clearly matches expected cooling_system_stress pattern
+
+2. **atypical_cooling_stress.json**: Atypical/feature-conflict case
+   - coolant_temp: 93°C (NORMAL, within 90-95°C reference range)
+   - risk_score: 0.55 (moderate), risk_level: "Medium"
+   - prediction_confidence: 0.51 (low)
+   - Model flagged anomaly but primary signal doesn't support classification
+
+3. **contradictory_cooling_stress.json**: Contradictory signals case
+   - coolant_temp: 108°C (severely ABNORMAL, well above reference range)
+   - risk_score: 0.38 (unexpectedly low), risk_level: "Low"
+   - prediction_confidence: 0.31 (very low)
+   - Sensor data and model risk assessment contradict each other
+
+These files are used to test how Granite LLM handles different diagnostic scenarios, particularly the distinction between typical and atypical fault patterns (Story 2 AC3 requirement).
 
 #### pipeline/context_injection.py
 
