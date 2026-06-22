@@ -1,0 +1,17 @@
+.env
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.ipynb_checkpoints/
+model_layer/artifacts/*
+report_layer/rag/vector_store/*
+.vscode/
+.idea/
+.DS_Store
