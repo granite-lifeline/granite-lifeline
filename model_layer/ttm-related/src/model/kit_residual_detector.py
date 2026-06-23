@@ -56,11 +56,11 @@ REQUIRED_KIT_COLUMNS = [
 
 REFERENCE_RANGES = {
     "coolant_temp": [90, 95],
-    "map": [20, 100],
-    "maf": [2, 25],
-    "tps": [0, 80],
-    "rpm": [600, 6500],
-    "speed": [0, 120],
+    "map": [36, 237],
+    "maf": [0, 123],
+    "tps": [0, 89],
+    "rpm": [0, 3682],
+    "speed": [0, 218],
     "accel_pedal_d": [0, 100],
     "accel_pedal_e": [0, 100],
     "coolant_slope": [0, 2],
@@ -203,10 +203,21 @@ def select_context_and_truth(
     return df.iloc[:context_length].copy(), df.iloc[context_length:required_length].copy()
 
 
+def load_model(context_length: int, prediction_length: int):
+    model = get_model(
+        MODEL_PATH,
+        context_length=context_length,
+        prediction_length=prediction_length,
+    )
+    model.eval()
+    return model
+
+
 def run_ttm_forecast(
     context: pd.DataFrame,
     context_length: int,
     prediction_length: int,
+    model=None,
 ) -> pd.DataFrame:
     context_values = context[MODEL_SIGNALS].to_numpy(dtype=np.float32)
     mean = context_values.mean(axis=0, keepdims=True)
@@ -216,11 +227,8 @@ def run_ttm_forecast(
     normalized_context = (context_values - mean) / std
     past_values = torch.tensor(normalized_context, dtype=torch.float32).unsqueeze(0)
 
-    model = get_model(
-        MODEL_PATH,
-        context_length=context_length,
-        prediction_length=prediction_length,
-    )
+    if model is None:
+        model = load_model(context_length, prediction_length)
     model.eval()
 
     with torch.no_grad():
@@ -313,6 +321,7 @@ def calculate_risk(
     anomaly_scores = {
         "cooling_system_stress": cooling_score,
         "air_intake_maf_anomaly": intake_score,
+        # accel_pedal_d/e not yet forwarded by Group 1 — detection disabled until Story 5
         "accelerator_pedal_sensor": 0.0,
     }
     anomaly_type = max(anomaly_scores, key=anomaly_scores.get)
@@ -419,7 +428,8 @@ def main() -> None:
         f"for signals={MODEL_SIGNALS}"
     )
 
-    prediction = run_ttm_forecast(context, args.context_length, args.prediction_length)
+    model = load_model(args.context_length, args.prediction_length)
+    prediction = run_ttm_forecast(context, args.context_length, args.prediction_length, model)
     residual = calculate_residuals(prediction, future)
     residual_summary = summarize_residuals(residual)
     print_residual_summary(residual_summary)
