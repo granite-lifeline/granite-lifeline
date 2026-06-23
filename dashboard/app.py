@@ -6,6 +6,7 @@ to detailed diagnostic reports.
 """
 
 import streamlit as st
+import plotly.graph_objects as go
 
 MOCK_DATA = {
     "cooling_system_stress": {
@@ -447,7 +448,71 @@ def show_detail_page():
 
     st.markdown("---")
 
-    st.info("Trend chart coming soon — GL-42")
+    trend = component_data["trend"]
+
+    if len(trend) < 2:
+        st.warning("Not enough data yet to show a trend.")
+    else:
+        st.subheader("Risk Score Trend")
+
+        time_labels = ["T-4", "T-3", "T-2", "T-1", "Now"]
+        time_labels = time_labels[-len(trend):]
+
+        dark_mode = st.session_state.get("dark_mode", False)
+
+        if dark_mode:
+            line_color = "#19c8b9"
+            bg_color = "#3d3020"
+            paper_bg = "#2d2416"
+            text_color = "#e8d5b0"
+            grid_color = "#5c4a2a"
+        else:
+            line_color = "#19c8b9"
+            bg_color = "rgb(247,243,223)"
+            paper_bg = "#f8f8f0"
+            text_color = "#725d42"
+            grid_color = "#c4b89e"
+
+        fill_color = "rgba(25, 200, 185, 0.2)"
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(
+            x=time_labels,
+            y=trend,
+            mode="lines+markers",
+            line=dict(color=line_color, width=3),
+            marker=dict(size=8, color=line_color),
+            fill="tozeroy",
+            fillcolor=fill_color,
+            name="Risk Score",
+            hovertemplate="<b>%{x}</b><br>Risk Score: %{y:.0%}<extra></extra>"
+        ))
+
+        fig.update_layout(
+            plot_bgcolor=bg_color,
+            paper_bgcolor=paper_bg,
+            font=dict(color=text_color),
+            xaxis=dict(
+                gridcolor=grid_color,
+                showgrid=True
+            ),
+            yaxis=dict(
+                gridcolor=grid_color,
+                showgrid=True,
+                range=[0, 1],
+                tickformat=".0%"
+            ),
+            margin=dict(l=40, r=20, t=20, b=40),
+            showlegend=False
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.caption(
+            "Risk score over the last 5 recorded readings. "
+            "Higher values indicate greater risk."
+        )
 
     st.markdown("---")
     show_footer(st.session_state.get("dark_mode", False))
