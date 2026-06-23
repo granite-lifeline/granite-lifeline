@@ -6,6 +6,7 @@ to detailed diagnostic reports.
 """
 
 import streamlit as st
+import plotly.graph_objects as go
 
 MOCK_DATA = {
     "cooling_system_stress": {
@@ -227,6 +228,27 @@ def apply_theme(dark_mode: bool):
     st.markdown(theme_css, unsafe_allow_html=True)
 
 
+def show_footer(dark_mode: bool):
+    """Display team footer at bottom of page."""
+    footer_color = "#c4a882" if dark_mode else "#9f927d"
+
+    footer_html = f"""
+    <div style="
+        text-align: center;
+        color: {footer_color};
+        font-size: 12px;
+        margin-top: 48px;
+        padding: 16px 0;
+    ">
+        Granite Lifeline · University of Bristol MSc Computer Science ·
+        IBM-sponsored project · Team: Charlotte Yu, Jintong He, Lei Pei,
+        Qiuting Fu, Lucca Zhou, Ray Wang
+    </div>
+    """
+
+    st.markdown(footer_html, unsafe_allow_html=True)
+
+
 def show_overview_page():
     """Display the Overview Page with component health summary."""
     dark_mode = st.session_state.get("dark_mode", False)
@@ -359,15 +381,141 @@ def show_overview_page():
                 st.session_state["page"] = "detail"
                 st.rerun()
 
+    st.markdown("---")
+    show_footer(st.session_state.get("dark_mode", False))
+
 
 def show_detail_page():
-    """Placeholder for Detail Page (to be implemented)."""
-    st.title("Component Details")
-    st.info("Detail page coming soon")
+    """Display Component Detail Page with risk metrics and trend chart."""
+    component_key = st.session_state.get("selected_component")
+
+    if not component_key or component_key not in MOCK_DATA:
+        st.error("Component not found.")
+        if st.button("← Back to Overview"):
+            st.session_state["page"] = "overview"
+            st.rerun()
+        return
+
+    component_data = MOCK_DATA[component_key]
 
     if st.button("← Back to Overview"):
         st.session_state["page"] = "overview"
         st.rerun()
+
+    risk_level = component_data["risk_level"]
+    if risk_level == "High":
+        badge_bg = "#d97757"
+        risk_label = "High Risk"
+    elif risk_level == "Medium":
+        badge_bg = "#e8b86d"
+        risk_label = "Medium Risk"
+    else:
+        badge_bg = "#7fb685"
+        risk_label = "Low Risk"
+
+    badge_html = f"""
+    <div style="
+        background-color: {badge_bg};
+        color: white;
+        padding: 6px 14px;
+        border-radius: 20px;
+        display: inline-block;
+        font-weight: 600;
+        font-size: 12px;
+        margin-left: 16px;
+    ">
+        {risk_label}
+    </div>
+    """
+
+    title_html = f"""
+    <div style="display: flex; align-items: center; margin-bottom: 24px;">
+        <h1 style="margin: 0; display: inline;">
+            {component_data["display_name"]}
+        </h1>
+        {badge_html}
+    </div>
+    """
+
+    st.markdown(title_html, unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        risk_pct = int(component_data["risk_score"] * 100)
+        st.metric("Risk Score", f"{risk_pct}%")
+    with col2:
+        st.metric("Last Updated", "2026-06-23 10:00")
+
+    st.markdown("---")
+
+    trend = component_data["trend"]
+
+    if len(trend) < 2:
+        st.warning("Not enough data yet to show a trend.")
+    else:
+        st.subheader("Risk Score Trend")
+
+        time_labels = ["T-4", "T-3", "T-2", "T-1", "Now"]
+        time_labels = time_labels[-len(trend):]
+
+        dark_mode = st.session_state.get("dark_mode", False)
+
+        if dark_mode:
+            line_color = "#19c8b9"
+            bg_color = "#3d3020"
+            paper_bg = "#2d2416"
+            text_color = "#e8d5b0"
+            grid_color = "#5c4a2a"
+        else:
+            line_color = "#19c8b9"
+            bg_color = "rgb(247,243,223)"
+            paper_bg = "#f8f8f0"
+            text_color = "#725d42"
+            grid_color = "#c4b89e"
+
+        fill_color = "rgba(25, 200, 185, 0.2)"
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(
+            x=time_labels,
+            y=trend,
+            mode="lines+markers",
+            line=dict(color=line_color, width=3),
+            marker=dict(size=8, color=line_color),
+            fill="tozeroy",
+            fillcolor=fill_color,
+            name="Risk Score",
+            hovertemplate="<b>%{x}</b><br>Risk Score: %{y:.0%}<extra></extra>"
+        ))
+
+        fig.update_layout(
+            plot_bgcolor=bg_color,
+            paper_bgcolor=paper_bg,
+            font=dict(color=text_color),
+            xaxis=dict(
+                gridcolor=grid_color,
+                showgrid=True
+            ),
+            yaxis=dict(
+                gridcolor=grid_color,
+                showgrid=True,
+                range=[0, 1],
+                tickformat=".0%"
+            ),
+            margin=dict(l=40, r=20, t=20, b=40),
+            showlegend=False
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.caption(
+            "Risk score over the last 5 recorded readings. "
+            "Higher values indicate greater risk."
+        )
+
+    st.markdown("---")
+    show_footer(st.session_state.get("dark_mode", False))
 
 
 def main():
@@ -393,5 +541,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# Made with Bob
