@@ -9,7 +9,7 @@ Run from the repository root:
 
 Optionally pass a specific KIT trip CSV:
     .venv/bin/python ttm-related/src/model/kit_residual_detector.py \
-        dataset/10.35097-1130/data/dataset/OBD-II-Dataset/2018-03-01_Seat_Leon_RT_S_Normal.csv
+        path/to/trip.csv
 """
 
 from __future__ import annotations
@@ -95,10 +95,15 @@ def parse_args() -> argparse.Namespace:
         "csv_path",
         nargs="?",
         type=Path,
-        help="Path to one KIT OBD-II trip CSV. Defaults to the first CSV in the KIT data directory.",
+        help=(
+            "Path to one KIT OBD-II trip CSV. "
+            "Defaults to the first CSV in the KIT data directory."
+        ),
     )
     parser.add_argument("--context-length", type=int, default=DEFAULT_CONTEXT_LENGTH)
-    parser.add_argument("--prediction-length", type=int, default=DEFAULT_PREDICTION_LENGTH)
+    parser.add_argument(
+        "--prediction-length", type=int, default=DEFAULT_PREDICTION_LENGTH
+    )
     parser.add_argument("--resample-rule", default=DEFAULT_RESAMPLE_RULE)
     parser.add_argument(
         "--output",
@@ -134,9 +139,12 @@ def load_and_resample_kit_csv(csv_path: Path, resample_rule: str) -> pd.DataFram
         raise ValueError(f"Missing expected KIT columns in {csv_path}: {missing}")
 
     available_column_map = {
-        source: target for source, target in KIT_COLUMN_MAP.items() if source in raw.columns
+        source: target
+        for source, target in KIT_COLUMN_MAP.items()
+        if source in raw.columns
     }
-    df = raw.rename(columns=available_column_map)[list(available_column_map.values())].copy()
+    df = raw.rename(columns=available_column_map)
+    df = df[list(available_column_map.values())].copy()
     df["timestamp"] = parse_kit_time(df["timestamp"])
 
     numeric_columns = [column for column in df.columns if column != "timestamp"]
@@ -159,7 +167,9 @@ def parse_kit_time(time_series: pd.Series) -> pd.Series:
         errors="coerce",
     )
     if parsed.isna().any():
-        parsed = pd.to_datetime("2026-01-01 " + time_series.astype(str), errors="coerce")
+        parsed = pd.to_datetime(
+            "2026-01-01 " + time_series.astype(str), errors="coerce"
+        )
     if parsed.isna().any():
         bad_count = int(parsed.isna().sum())
         raise ValueError(f"Could not parse {bad_count} KIT Time values")
@@ -200,7 +210,9 @@ def select_context_and_truth(
             f"Need at least {required_length} resampled rows "
             f"({context_length} context + {prediction_length} future), got {len(df)}"
         )
-    return df.iloc[:context_length].copy(), df.iloc[context_length:required_length].copy()
+    context = df.iloc[:context_length].copy()
+    future = df.iloc[context_length:required_length].copy()
+    return context, future
 
 
 def load_model(context_length: int, prediction_length: int):
@@ -240,7 +252,8 @@ def run_ttm_forecast(
         prediction = prediction.reshape(prediction_length, 1)
     if prediction.shape[0] != prediction_length:
         raise ValueError(
-            f"Unexpected TTM prediction length: expected {prediction_length}, got {prediction.shape}"
+            f"Unexpected TTM prediction length: "
+            f"expected {prediction_length}, got {prediction.shape}"
         )
     if prediction.shape[1] != len(MODEL_SIGNALS):
         raise ValueError(
@@ -282,7 +295,9 @@ def summarize_residuals(residual: pd.DataFrame) -> dict[str, dict[str, float]]:
     }
 
 
-def normalized_residual_scores(residual_summary: dict[str, dict[str, float]]) -> dict[str, float]:
+def normalized_residual_scores(
+    residual_summary: dict[str, dict[str, float]],
+) -> dict[str, float]:
     scores = {}
     for signal, stats in residual_summary.items():
         low, high = REFERENCE_RANGES[signal]
@@ -321,7 +336,8 @@ def calculate_risk(
     anomaly_scores = {
         "cooling_system_stress": cooling_score,
         "air_intake_maf_anomaly": intake_score,
-        # accel_pedal_d/e not yet forwarded by Group 1 — detection disabled until Story 5
+        # accel_pedal_d/e not yet forwarded by Group 1 —
+        # detection disabled until Story 5
         "accelerator_pedal_sensor": 0.0,
     }
     anomaly_type = max(anomaly_scores, key=anomaly_scores.get)
@@ -429,7 +445,9 @@ def main() -> None:
     )
 
     model = load_model(args.context_length, args.prediction_length)
-    prediction = run_ttm_forecast(context, args.context_length, args.prediction_length, model)
+    prediction = run_ttm_forecast(
+        context, args.context_length, args.prediction_length, model
+    )
     residual = calculate_residuals(prediction, future)
     residual_summary = summarize_residuals(residual)
     print_residual_summary(residual_summary)
