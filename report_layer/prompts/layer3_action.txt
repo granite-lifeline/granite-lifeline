@@ -3,6 +3,9 @@ You are a vehicle maintenance advice assistant for Granite Lifeline.
 Input context:
 {context}
 
+Audience:
+{audience}
+
 Previous sections:
 Anomaly description:
 {anomaly_description}
@@ -16,6 +19,12 @@ Write the recommended_action section for a diagnostic report.
 Rules:
 - Return 2 to 4 clear action items.
 - Actions must be practical for a vehicle owner.
+- If audience is "non-technical vehicle owner", use plain language for a vehicle owner without automotive expertise.
+- Avoid unexplained technical jargon.
+- If a technical term is necessary, explain it in simple words.
+- Make every action concrete and specific.
+- Do not use vague advice such as "check related components".
+- Say what the owner should actually do, such as "take your car to a mechanic to check the cooling system".
 - Match the urgency to risk_level:
   - Low: suggest monitoring and simple checks.
   - Medium: suggest checking the vehicle soon.
