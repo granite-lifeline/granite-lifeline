@@ -234,6 +234,35 @@ def apply_theme(dark_mode: bool):
             div[data-testid="stHorizontalBlock"] {{
                 gap: 1.5rem !important;
             }}
+            
+            /* Animal Crossing Loading Spinner */
+            @keyframes ac-spin {{
+                0% {{ transform: rotate(0deg); }}
+                100% {{ transform: rotate(360deg); }}
+            }}
+            
+            .ac-spinner {{
+                border: 4px solid rgba(25, 200, 185, 0.2);
+                border-top: 4px solid #19c8b9;
+                border-radius: 50%;
+                width: 48px;
+                height: 48px;
+                animation: ac-spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+                margin: 40px auto;
+            }}
+            
+            .ac-spinner-container {{
+                text-align: center;
+                padding: 60px 20px;
+            }}
+            
+            .ac-spinner-text {{
+                color: #19c8b9;
+                font-size: 14px;
+                font-weight: 600;
+                margin-top: 16px;
+                letter-spacing: 0.5px;
+            }}
         </style>
         """
 
@@ -330,9 +359,23 @@ def show_overview_page():
 
             risk_pct = int(component_data["risk_score"] * 100)
 
+            # Adjust card background to warmer, less harsh color
+            if dark_mode:
+                card_bg_adjusted = card_bg
+                pattern_color = "rgba(248, 240, 220, 0.06)"
+            else:
+                card_bg_adjusted = "#faf8f0"  # Warmer cream instead of pure white
+                pattern_color = "rgba(121, 79, 39, 0.08)"
+            
             card_html = f"""
             <div style="
-                background: {card_bg};
+                background-color: {card_bg_adjusted};
+                background-image: radial-gradient(
+                    circle,
+                    {pattern_color} 1.5px,
+                    transparent 1.5px
+                );
+                background-size: 20px 20px;
                 border: 1px solid {card_border};
                 border-radius: 16px;
                 box-shadow: 0 2px 12px {card_shadow};
@@ -466,26 +509,42 @@ def show_detail_page():
         st.warning("Not enough data yet to show a trend.")
     else:
         st.subheader("Risk Score Trend")
+        
+        # Show loading spinner with Animal Crossing style
+        with st.spinner(""):
+            spinner_html = """
+            <div class="ac-spinner-container">
+                <div class="ac-spinner"></div>
+                <div class="ac-spinner-text">Loading trend data...</div>
+            </div>
+            """
+            spinner_placeholder = st.empty()
+            spinner_placeholder.markdown(spinner_html, unsafe_allow_html=True)
+            
+            import time
+            time.sleep(0.5)  # Brief loading animation
+            spinner_placeholder.empty()
 
         time_labels = ["T-4", "T-3", "T-2", "T-1", "Now"]
         time_labels = time_labels[-len(trend):]
 
         dark_mode = st.session_state.get("dark_mode", False)
 
+        # Optimized Animal Crossing color palette
         if dark_mode:
-            line_color = "#19c8b9"
+            line_color = "#7fb685"  # Softer green for dark mode
             bg_color = "#3d3020"
             paper_bg = "#2d2416"
             text_color = "#e8d5b0"
             grid_color = "#5c4a2a"
         else:
-            line_color = "#19c8b9"
+            line_color = "#19c8b9"  # Mint green for light mode
             bg_color = "rgb(247,243,223)"
             paper_bg = "#f8f8f0"
             text_color = "#725d42"
             grid_color = "#c4b89e"
 
-        fill_color = "rgba(25, 200, 185, 0.2)"
+        fill_color = "rgba(127, 182, 133, 0.15)" if dark_mode else "rgba(25, 200, 185, 0.2)"
 
         fig = go.Figure()
 
@@ -493,8 +552,12 @@ def show_detail_page():
             x=time_labels,
             y=trend,
             mode="lines+markers",
-            line=dict(color=line_color, width=3),
-            marker=dict(size=8, color=line_color),
+            line=dict(color=line_color, width=3, shape="spline"),
+            marker=dict(
+                size=10,
+                color=line_color,
+                line=dict(color="white" if not dark_mode else "#2d2416", width=2)
+            ),
             fill="tozeroy",
             fillcolor=fill_color,
             name="Risk Score",
