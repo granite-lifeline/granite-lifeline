@@ -361,13 +361,69 @@ def show_overview_page():
 
 
 def show_detail_page():
-    """Placeholder for Detail Page (to be implemented)."""
-    st.title("Component Details")
-    st.info("Detail page coming soon")
+    """Display Component Detail Page with risk metrics and trend chart."""
+    component_key = st.session_state.get("selected_component")
+
+    if not component_key or component_key not in MOCK_DATA:
+        st.error("Component not found.")
+        if st.button("← Back to Overview"):
+            st.session_state["page"] = "overview"
+            st.rerun()
+        return
+
+    component_data = MOCK_DATA[component_key]
 
     if st.button("← Back to Overview"):
         st.session_state["page"] = "overview"
         st.rerun()
+
+    risk_level = component_data["risk_level"]
+    if risk_level == "High":
+        badge_bg = "#d97757"
+        risk_label = "High Risk"
+    elif risk_level == "Medium":
+        badge_bg = "#e8b86d"
+        risk_label = "Medium Risk"
+    else:
+        badge_bg = "#7fb685"
+        risk_label = "Low Risk"
+
+    badge_html = f"""
+    <div style="
+        background-color: {badge_bg};
+        color: white;
+        padding: 6px 14px;
+        border-radius: 20px;
+        display: inline-block;
+        font-weight: 600;
+        font-size: 12px;
+        margin-left: 16px;
+    ">
+        {risk_label}
+    </div>
+    """
+
+    title_html = f"""
+    <div style="display: flex; align-items: center; margin-bottom: 24px;">
+        <h1 style="margin: 0; display: inline;">
+            {component_data["display_name"]}
+        </h1>
+        {badge_html}
+    </div>
+    """
+
+    st.markdown(title_html, unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        risk_pct = int(component_data["risk_score"] * 100)
+        st.metric("Risk Score", f"{risk_pct}%")
+    with col2:
+        st.metric("Last Updated", "2026-06-23 10:00")
+
+    st.markdown("---")
+
+    st.info("Trend chart coming soon — GL-42")
 
 
 def main():
