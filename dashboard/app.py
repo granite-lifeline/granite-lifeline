@@ -515,6 +515,82 @@ def show_detail_page():
         )
 
     st.markdown("---")
+
+    st.subheader("Key Signals")
+
+    key_signals = component_data["key_signals"]
+
+    if not key_signals:
+        st.info("No signal data available for this component.")
+    else:
+        dark_mode = st.session_state.get("dark_mode", False)
+        row_bg = (
+            "rgba(247,243,223,0.6)" if not dark_mode
+            else "rgba(61,52,40,0.3)"
+        )
+
+        signals_with_status = []
+        for signal in key_signals:
+            ref_lower = signal["reference_range"][0]
+            ref_upper = signal["reference_range"][1]
+            is_abnormal = (
+                signal["value"] < ref_lower or
+                signal["value"] > ref_upper
+            )
+            status = "ABNORMAL" if is_abnormal else "NORMAL"
+            signals_with_status.append((signal, status))
+
+        signals_with_status.sort(key=lambda x: x[1] == "NORMAL")
+
+        for signal, status in signals_with_status:
+            row_html = f"""
+            <div style="
+                background: {row_bg};
+                border-radius: 8px;
+                padding: 8px;
+                margin-bottom: 4px;
+            ">
+            </div>
+            """
+            st.markdown(row_html, unsafe_allow_html=True)
+
+            col1, col2, col3, col4 = st.columns([3, 2, 2, 1])
+
+            with col1:
+                st.markdown(f"**{signal['display_name']}**")
+
+            with col2:
+                st.text(f"{signal['value']} {signal['unit']}")
+
+            with col3:
+                ref_lower = signal["reference_range"][0]
+                ref_upper = signal["reference_range"][1]
+                st.text(
+                    f"Normal: {ref_lower}–{ref_upper} {signal['unit']}"
+                )
+
+            with col4:
+                if status == "ABNORMAL":
+                    badge_bg = "#e05a5a"
+                else:
+                    badge_bg = "#6fba2c"
+
+                badge_html = f"""
+                <div style="
+                    background-color: {badge_bg};
+                    color: white;
+                    padding: 3px 10px;
+                    border-radius: 12px;
+                    text-align: center;
+                    font-size: 11px;
+                    font-weight: 600;
+                ">
+                    {status}
+                </div>
+                """
+                st.markdown(badge_html, unsafe_allow_html=True)
+
+    st.markdown("---")
     show_footer(st.session_state.get("dark_mode", False))
 
 
