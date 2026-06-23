@@ -6,15 +6,19 @@ model handles typical, atypical, and contradictory fault patterns.
 """
 
 import json
+import sys
 import requests
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+
+# Add project root to Python path
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from shared.interface_models import ModelLayerOutput
 from report_layer.pipeline.context_injection import build_context
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
 TIMEOUT = 120
 AUDIENCE = "non-technical vehicle owner"
