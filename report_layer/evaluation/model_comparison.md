@@ -89,4 +89,52 @@ The elevated coolant temperature reading of **102.0°C**, which exceeds the norm
 
 ## Comparison Notes
 
-To be completed after reviewing outputs above.
+### JSON Parsing
+
+granite3.3:2b returned a multi-line string inside the possible_cause JSON
+value, which caused the parser to fail. The raw response content was
+correct but could not be automatically extracted. The other three models
+returned valid JSON for all three layers.
+
+### Language Quality
+
+All four models produced plain-language output suitable for a non-technical
+vehicle owner. No model used unexplained technical jargon or raw field
+names. All four models referenced the concrete signal value (102.0°C) and
+the normal range (90.0-95.0°C), confirming that context injection
+successfully grounded the report in the actual sensor data.
+
+### Scenario Distinction
+
+All four models used careful wording such as "may indicate" and "could be
+related to", avoiding any claim that a fault is confirmed. This is
+consistent with Story 2 AC requirements for avoiding force-fitting anomalies
+into known fault categories.
+
+### Model Size Comparison
+
+granite4.1:8b produced the most specific and actionable recommended actions,
+including precise guidance such as waiting 30 minutes before checking
+coolant and locating the MIN/MAX marks on the reservoir. granite4.1:3b
+produced natural, readable output with numbered steps. granite3.3:8b
+produced clear output but with less specific guidance. granite3.3:2b
+produced acceptable output but encountered a JSON parsing failure.
+
+### Selected Model for Production
+
+granite4.1:8b is selected for the Granite Lifeline report generation
+pipeline. Rationale: highest output quality and most actionable
+recommendations for non-technical vehicle owners; latest IBM Granite
+version (4.1); successfully parsed all three layers without error.
+
+granite4.1:3b is noted as a viable alternative if inference speed or
+hardware constraints become a factor in later sprints.
+
+### Limitations
+
+The two model series (3.3 and 4.1) differ in both version and parameter
+count, meaning version improvements and size effects cannot be fully
+separated in this comparison. A controlled comparison using the same
+version at different sizes (e.g. granite4.1:3b vs granite4.1:8b only)
+would provide a cleaner evaluation of model size effects. This is
+acknowledged as a limitation of the current evaluation scope.
