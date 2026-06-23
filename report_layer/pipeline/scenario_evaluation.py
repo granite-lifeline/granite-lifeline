@@ -11,12 +11,13 @@ import requests
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
-# Add project root to Python path
+# Add project root to Python path before importing project modules
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from shared.interface_models import ModelLayerOutput
-from report_layer.pipeline.context_injection import build_context
+# noqa comments to suppress E402 for imports after path modification
+from shared.interface_models import ModelLayerOutput  # noqa: E402
+from report_layer.pipeline.context_injection import build_context  # noqa: E402
 
 
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
@@ -115,7 +116,7 @@ def run_three_layer_chain(
     """Run three-layer prompt chain for a scenario."""
     results = {}
 
-    print(f"  Running layer 1...")
+    print("  Running layer 1...")
     prompt1 = (
         templates[1]
         .replace("{context}", context)
@@ -132,7 +133,7 @@ def run_three_layer_chain(
 
     anomaly_desc = results["anomaly_description"]
 
-    print(f"  Running layer 2...")
+    print("  Running layer 2...")
     prompt2 = (
         templates[2]
         .replace("{context}", context)
@@ -150,7 +151,7 @@ def run_three_layer_chain(
 
     possible_cause = results["possible_cause"]
 
-    print(f"  Running layer 3...")
+    print("  Running layer 3...")
     prompt3 = (
         templates[3]
         .replace("{context}", context)
@@ -211,10 +212,10 @@ def write_comparison_report(
 
             input_data = scenario['input']
             f.write("**Input Summary:**\n\n")
-            f.write(f"- Risk Score: ")
+            f.write("- Risk Score: ")
             f.write(f"{int(input_data.risk_score * 100)}%\n")
             f.write(f"- Risk Level: {input_data.risk_level}\n")
-            f.write(f"- Prediction Confidence: ")
+            f.write("- Prediction Confidence: ")
             f.write(f"{int(input_data.prediction_confidence * 100)}%\n")
 
             for signal in input_data.key_signals:
@@ -321,10 +322,10 @@ def main():
     for scenario_info in SCENARIOS:
         print(f"\n=== Processing {scenario_info['name']} ===")
 
-        print(f"Loading scenario...")
+        print("Loading scenario...")
         test_input = load_scenario(scenario_info['file'])
 
-        print(f"Building context...")
+        print("Building context...")
         context = build_context(test_input)
 
         try:
