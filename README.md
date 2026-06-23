@@ -11,7 +11,9 @@ language diagnostic report generation.
 
 ## Blog
 
-Project updates and sprint reflections are documented on our team blog: https://granite-lifeline.github.io/granite-lifeline-blog/
+Project updates and sprint reflections are documented on our team blog:
+[![Team Blog](https://img.shields.io/badge/Team%20Blog-granite--lifeline.github.io-19c8b9?style=for-the-badge&logo=jekyll&logoColor=white)](https://granite-lifeline.github.io/granite-lifeline-blog/)
+
 
 ## Architecture
 
