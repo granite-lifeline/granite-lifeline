@@ -227,6 +227,27 @@ def apply_theme(dark_mode: bool):
     st.markdown(theme_css, unsafe_allow_html=True)
 
 
+def show_footer(dark_mode: bool):
+    """Display team footer at bottom of page."""
+    footer_color = "#c4a882" if dark_mode else "#9f927d"
+
+    footer_html = f"""
+    <div style="
+        text-align: center;
+        color: {footer_color};
+        font-size: 12px;
+        margin-top: 48px;
+        padding: 16px 0;
+    ">
+        Granite Lifeline · University of Bristol MSc Computer Science ·
+        IBM-sponsored project · Team: Charlotte Yu, Jintong He, Lei Pei,
+        Qiuting Fu, Lucca Zhou, Ray Wang
+    </div>
+    """
+
+    st.markdown(footer_html, unsafe_allow_html=True)
+
+
 def show_overview_page():
     """Display the Overview Page with component health summary."""
     dark_mode = st.session_state.get("dark_mode", False)
@@ -359,6 +380,9 @@ def show_overview_page():
                 st.session_state["page"] = "detail"
                 st.rerun()
 
+    st.markdown("---")
+    show_footer(st.session_state.get("dark_mode", False))
+
 
 def show_detail_page():
     """Display Component Detail Page with risk metrics and trend chart."""
@@ -425,6 +449,9 @@ def show_detail_page():
 
     st.info("Trend chart coming soon — GL-42")
 
+    st.markdown("---")
+    show_footer(st.session_state.get("dark_mode", False))
+
 
 def main():
     """Main application entry point."""
@@ -449,5 +476,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# Made with Bob
