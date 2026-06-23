@@ -140,15 +140,21 @@ def apply_theme(dark_mode: bool):
                 font-size: 14px !important;
                 font-family: Nunito, 'Noto Sans SC', -apple-system,
                              sans-serif !important;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
-                transition: all 0.2s ease !important;
+                box-shadow: 0 5px 0 0 #2d7a70 !important;
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1)
+                            !important;
             }}
             .stButton > button:hover {{
-                transform: translateY(-2px) !important;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+                transform: translateY(-1px) !important;
+                box-shadow: 0 6px 0 0 #2d7a70 !important;
             }}
             .stButton > button:active {{
-                transform: translateY(0px) !important;
+                transform: translateY(2px) !important;
+                box-shadow: 0 1px 0 0 #2d7a70 !important;
+            }}
+            .stButton > button:focus-visible {{
+                outline: 2px solid #ffcc00 !important;
+                outline-offset: 2px !important;
             }}
             div[data-testid="stHorizontalBlock"] {{
                 gap: 1.5rem !important;
@@ -209,15 +215,21 @@ def apply_theme(dark_mode: bool):
                 font-size: 14px !important;
                 font-family: Nunito, 'Noto Sans SC', -apple-system,
                              sans-serif !important;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
-                transition: all 0.2s ease !important;
+                box-shadow: 0 5px 0 0 #2d7a70 !important;
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1)
+                            !important;
             }}
             .stButton > button:hover {{
-                transform: translateY(-2px) !important;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+                transform: translateY(-1px) !important;
+                box-shadow: 0 6px 0 0 #2d7a70 !important;
             }}
             .stButton > button:active {{
-                transform: translateY(0px) !important;
+                transform: translateY(2px) !important;
+                box-shadow: 0 1px 0 0 #2d7a70 !important;
+            }}
+            .stButton > button:focus-visible {{
+                outline: 2px solid #ffcc00 !important;
+                outline-offset: 2px !important;
             }}
             div[data-testid="stHorizontalBlock"] {{
                 gap: 1.5rem !important;
@@ -589,6 +601,70 @@ def show_detail_page():
                 </div>
                 """
                 st.markdown(badge_html, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    st.subheader("Diagnostic Report")
+
+    dark_mode = st.session_state.get("dark_mode", False)
+
+    if dark_mode:
+        card_bg = "#3d3020"
+        card_border = "#5c4a2a"
+        title_color = "#f8f0dc"
+        body_color = "#c4a882"
+    else:
+        card_bg = "rgb(247,243,223)"
+        card_border = "#c4b89e"
+        title_color = "#794f27"
+        body_color = "#9f927d"
+
+    cards = [
+        {
+            "icon": "🔍",
+            "title": "What's Happening",
+            "body": "Pending Granite LLM report generation..."
+        },
+        {
+            "icon": "🔎",
+            "title": "Why This Matters",
+            "body": "Pending Granite LLM report generation..."
+        },
+        {
+            "icon": "🔧",
+            "title": "What You Should Do",
+            "body": "Pending Granite LLM report generation..."
+        }
+    ]
+
+    for card in cards:
+        card_html = f"""
+        <div style="
+            background: {card_bg};
+            border: 1px solid {card_border};
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        ">
+            <h3 style="
+                color: {title_color};
+                margin: 0 0 8px 0;
+                font-size: 16px;
+                font-weight: 600;
+            ">
+                {card['icon']} {card['title']}
+            </h3>
+            <p style="
+                color: {body_color};
+                margin: 0;
+                font-size: 14px;
+                font-style: italic;
+            ">
+                {card['body']}
+            </p>
+        </div>
+        """
+        st.markdown(card_html, unsafe_allow_html=True)
 
     st.markdown("---")
     show_footer(st.session_state.get("dark_mode", False))
