@@ -2,7 +2,7 @@
 Zero-shot KIT residual detector using IBM Granite TTM.
 
 This script is an MVP integration check, not a training script. It verifies:
-KIT CSV -> fixed-step sensor frame -> TTM forecast -> residuals -> interface JSON.
+KIT CSV -> sensor frame -> TTM forecast -> residuals -> interface JSON.
 
 Run from the repository root:
     .venv/bin/python ttm-related/src/model/kit_residual_detector.py
@@ -89,7 +89,9 @@ FEATURE_UNITS = {
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run KIT CSV through Granite TTM zero-shot residual detection."
+        description=(
+            "Run KIT CSV through Granite TTM zero-shot residual detection."
+        )
     )
     parser.add_argument(
         "csv_path",
@@ -100,7 +102,9 @@ def parse_args() -> argparse.Namespace:
             "Defaults to the first CSV in the KIT data directory."
         ),
     )
-    parser.add_argument("--context-length", type=int, default=DEFAULT_CONTEXT_LENGTH)
+    parser.add_argument(
+        "--context-length", type=int, default=DEFAULT_CONTEXT_LENGTH
+    )
     parser.add_argument(
         "--prediction-length", type=int, default=DEFAULT_PREDICTION_LENGTH
     )
@@ -120,8 +124,11 @@ def find_default_csv() -> Path:
         if path.stem.strip()
     ]
     if not csv_files:
-        raise FileNotFoundError(f"No KIT CSV files found under {DEFAULT_DATA_DIR}")
-    preferred_files = [path for path in csv_files if "Normal" in path.name] + csv_files
+        raise FileNotFoundError(
+            f"No KIT CSV files found under {DEFAULT_DATA_DIR}"
+        )
+    normal = [path for path in csv_files if "Normal" in path.name]
+    preferred_files = normal + csv_files
     for path in preferred_files:
         header = pd.read_csv(path, nrows=0).columns
         if all(column in header for column in REQUIRED_KIT_COLUMNS):
@@ -132,11 +139,15 @@ def find_default_csv() -> Path:
     )
 
 
-def load_and_resample_kit_csv(csv_path: Path, resample_rule: str) -> pd.DataFrame:
+def load_and_resample_kit_csv(
+    csv_path: Path, resample_rule: str
+) -> pd.DataFrame:
     raw = pd.read_csv(csv_path)
     missing = [col for col in REQUIRED_KIT_COLUMNS if col not in raw.columns]
     if missing:
-        raise ValueError(f"Missing expected KIT columns in {csv_path}: {missing}")
+        raise ValueError(
+            f"Missing expected KIT columns in {csv_path}: {missing}"
+        )
 
     available_column_map = {
         source: target
@@ -147,7 +158,9 @@ def load_and_resample_kit_csv(csv_path: Path, resample_rule: str) -> pd.DataFram
     df = df[list(available_column_map.values())].copy()
     df["timestamp"] = parse_kit_time(df["timestamp"])
 
-    numeric_columns = [column for column in df.columns if column != "timestamp"]
+    numeric_columns = [
+        col for col in df.columns if col != "timestamp"
+    ]
     for column in numeric_columns:
         df[column] = pd.to_numeric(df[column], errors="coerce")
 
@@ -174,7 +187,7 @@ def parse_kit_time(time_series: pd.Series) -> pd.Series:
         bad_count = int(parsed.isna().sum())
         raise ValueError(f"Could not parse {bad_count} KIT Time values")
 
-    # Some trips can cross midnight. Preserve monotonic time if clock time wraps.
+    # Some trips cross midnight; preserve monotonic time when clock wraps.
     parsed = pd.Series(parsed)
     day_offset = pd.Timedelta(days=0)
     adjusted = []
@@ -195,9 +208,15 @@ def add_derived_features(df: pd.DataFrame) -> pd.DataFrame:
     df["acceleration"] = df["speed"].diff().fillna(0) / 3.6
     df["load_stress"] = df["rpm"] * df["tps"]
     df["maf_map_cohesion"] = df["maf"] / df["map"].replace(0, np.nan)
-    df["maf_map_cohesion"] = df["maf_map_cohesion"].replace([np.inf, -np.inf], np.nan)
-    df["maf_map_cohesion"] = df["maf_map_cohesion"].interpolate(limit_direction="both")
-    df["rpm_variation"] = df["rpm"].rolling(window=10, min_periods=2).std().fillna(0)
+    df["maf_map_cohesion"] = df["maf_map_cohesion"].replace(
+        [np.inf, -np.inf], np.nan
+    )
+    df["maf_map_cohesion"] = df["maf_map_cohesion"].interpolate(
+        limit_direction="both"
+    )
+    df["rpm_variation"] = (
+        df["rpm"].rolling(window=10, min_periods=2).std().fillna(0)
+    )
     return df
 
 
@@ -208,7 +227,8 @@ def select_context_and_truth(
     if len(df) < required_length:
         raise ValueError(
             f"Need at least {required_length} resampled rows "
-            f"({context_length} context + {prediction_length} future), got {len(df)}"
+            f"({context_length} context + {prediction_length} "
+            f"future), got {len(df)}"
         )
     context = df.iloc[:context_length].copy()
     future = df.iloc[context_length:required_length].copy()
@@ -237,7 +257,9 @@ def run_ttm_forecast(
     std = np.where(std < 1e-6, 1.0, std)
 
     normalized_context = (context_values - mean) / std
-    past_values = torch.tensor(normalized_context, dtype=torch.float32).unsqueeze(0)
+    past_values = torch.tensor(
+        normalized_context, dtype=torch.float32
+    ).unsqueeze(0)
 
     if model is None:
         model = load_model(context_length, prediction_length)
@@ -258,7 +280,8 @@ def run_ttm_forecast(
     if prediction.shape[1] != len(MODEL_SIGNALS):
         raise ValueError(
             "Unexpected TTM signal count: "
-            f"expected {len(MODEL_SIGNALS)}, got prediction shape {prediction.shape}"
+            f"expected {len(MODEL_SIGNALS)}, "
+            f"got prediction shape {prediction.shape}"
         )
 
     prediction = prediction * std + mean
@@ -276,10 +299,14 @@ def extract_prediction_tensor(output: Any) -> torch.Tensor:
                 return output[key]
     if isinstance(output, (tuple, list)) and output:
         return output[0]
-    raise TypeError(f"Could not find prediction tensor in model output: {type(output)}")
+    raise TypeError(
+        f"Could not find prediction tensor in model output: {type(output)}"
+    )
 
 
-def calculate_residuals(prediction: pd.DataFrame, truth: pd.DataFrame) -> pd.DataFrame:
+def calculate_residuals(
+    prediction: pd.DataFrame, truth: pd.DataFrame
+) -> pd.DataFrame:
     truth_values = truth[MODEL_SIGNALS].reset_index(drop=True)
     residual = (prediction[MODEL_SIGNALS] - truth_values).abs()
     return residual
@@ -320,14 +347,18 @@ def calculate_risk(
     cooling_score = max(
         scores["coolant_temp"],
         clipped_scale(coolant_temp, low=95.0, high=110.0),
-        clipped_scale(coolant_slope, low=2.0, high=8.0) if coolant_temp > 85.0 else 0.0,
+        (
+            clipped_scale(coolant_slope, low=2.0, high=8.0)
+            if coolant_temp > 85.0
+            else 0.0
+        ),
     )
     intake_score = max(
         scores["maf"],
         scores["map"],
         clipped_scale(abs(maf_map_cohesion - 0.2), low=0.15, high=0.45),
     )
-    load_score = max(
+    _ = max(
         scores["rpm"],
         scores["tps"],
         clipped_scale(load_stress, low=120000.0, high=250000.0),
@@ -344,7 +375,8 @@ def calculate_risk(
     risk_score = float(anomaly_scores[anomaly_type])
 
     top_residual_signals = sorted(scores, key=scores.get, reverse=True)[:3]
-    confidence = float(max(0.35, min(0.95, 1.0 - np.std(list(scores.values())))))
+    std = float(np.std(list(scores.values())))
+    confidence = float(max(0.35, min(0.95, 1.0 - std)))
     return anomaly_type, risk_score, confidence, top_residual_signals
 
 
@@ -400,8 +432,9 @@ def build_interface_json(
         if len(features) >= 5:
             break
 
+    ts = pd.Timestamp(last_future_row["timestamp"]).isoformat() + "Z"
     return {
-        "timestamp": pd.Timestamp(last_future_row["timestamp"]).isoformat() + "Z",
+        "timestamp": ts,
         "anomaly_type": anomaly_type,
         "risk_score": round(risk_score, 4),
         "risk_level": risk_level(risk_score),
@@ -419,13 +452,19 @@ def build_interface_json(
     }
 
 
-def print_residual_summary(residual_summary: dict[str, dict[str, float]]) -> None:
+def print_residual_summary(
+    residual_summary: dict[str, dict[str, float]],
+) -> None:
     print("\nResidual summary by signal")
     print("-" * 44)
     for signal, stats in sorted(
-        residual_summary.items(), key=lambda item: item[1]["mean"], reverse=True
+        residual_summary.items(),
+        key=lambda item: item[1]["mean"],
+        reverse=True,
     ):
-        print(f"{signal:14s} mean={stats['mean']:10.4f} max={stats['max']:10.4f}")
+        mean_val = stats["mean"]
+        max_val = stats["max"]
+        print(f"{signal:14s} mean={mean_val:10.4f} max={max_val:10.4f}")
 
 
 def main() -> None:
@@ -440,8 +479,9 @@ def main() -> None:
         df, args.context_length, args.prediction_length
     )
     print(
-        f"Using context={len(context)} steps and forecast target={len(future)} steps "
-        f"for signals={MODEL_SIGNALS}"
+        f"Context={len(context)} steps, "
+        f"target={len(future)} steps, "
+        f"signals={MODEL_SIGNALS}"
     )
 
     model = load_model(args.context_length, args.prediction_length)
@@ -470,7 +510,8 @@ def main() -> None:
 
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n")
+        text = json.dumps(result, indent=2, ensure_ascii=False) + "\n"
+        args.output.write_text(text)
         print(f"\nSaved JSON to {args.output}")
 
 
