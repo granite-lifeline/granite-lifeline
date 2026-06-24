@@ -1,0 +1,818 @@
+metadata:
+  schema_version: "1.0"
+  source_document: "reference.md"
+  source_path: "shared/ground_knowledge/reference.md"
+  purpose: "Structured, machine-readable domain knowledge for raw OBD-II signals, derived features, and proxy failure signatures."
+  dataset: "KIT Automotive OBD-II Dataset"
+  resampling_frequency: "1 Hz"
+  notes:
+    - "Values are grounded in the data-layer reference document."
+    - "Proxy failure thresholds are proxy signatures and should be calibrated with vehicle-specific healthy baselines before production use."
+
+signals:
+  timestamp:
+    raw_field: "Time"
+    unit: "ISO 8601"
+    physical_meaning: "Reference time axis for time-series analysis after resampling."
+    relationships: {}
+    expected_behavior:
+      - "Monotonic timestamp sequence after cleaning and resampling."
+    failure_interpretation:
+      - "Missing, duplicated, or non-monotonic timestamps can invalidate time-window features."
+    reference_range: null
+
+  coolant_temp:
+    raw_field: "Engine Coolant Temperature"
+    unit: "°C"
+    physical_meaning: "Overall thermal state of the engine."
+    relationships:
+      tps:
+        relation: "positive_contextual"
+        description: "Increased throttle opening increases air intake, combustion load, heat generation, and can raise coolant temperature."
+      speed:
+        relation: "negative_or_stabilizing_contextual"
+        description: "Higher vehicle speed improves air-cooling efficiency, causing coolant temperature to decrease or stabilize."
+      ambient_temp:
+        relation: "cooling_baseline_context"
+        description: "Ambient temperature affects baseline cooling efficiency and is used for thermal normalization."
+    expected_behavior:
+      - "Cold start: gradual temperature increase."
+      - "Steady-state cruising: relatively stable temperature."
+      - "High load: slight temperature increase."
+    failure_interpretation:
+      - "Abnormal increase may indicate radiator blockage, water pump inefficiency, or insufficient coolant."
+      - "Abnormal decrease may indicate thermostat failure or unstable cooling circulation."
+      - "Abnormal fluctuations may indicate thermostat stuck open or temperature sensor malfunction."
+    reference_range:
+      warmup_threshold: ">=70°C"
+
+  map:
+    raw_field: "Intake Manifold Absolute Pressure"
+    unit: "kPa"
+    physical_meaning: "Absolute pressure inside the intake manifold, reflecting air intake capacity and engine load state."
+    relationships:
+      tps:
+        relation: "positive"
+        description: "Increased throttle opening expands the manifold opening and increases MAP."
+      maf:
+        relation: "synchronous_normal_operation"
+        description: "Under normal operating conditions, MAF and MAP change synchronously."
+      rpm:
+        relation: "positive_contextual"
+        description: "Higher MAP delivers more air to the cylinder and can increase engine RPM."
+    expected_behavior:
+      - "High pressure indicates more air entering the cylinder."
+      - "Low pressure indicates stronger vacuum when throttle is closed."
+    failure_interpretation:
+      - "Persistently high MAP may indicate vacuum leakage or throttle abnormality."
+      - "Low MAP may indicate intake blockage such as a contaminated air filter."
+      - "Desynchronization between MAP and MAF may indicate sensor drift or air-intake abnormality."
+    reference_range: null
+
+  rpm:
+    raw_field: "Engine RPM"
+    unit: "rpm"
+    physical_meaning: "Rotational speed of the engine crankshaft and a critical indicator of engine power output."
+    relationships:
+      accel_pedal_d:
+        relation: "positive_contextual"
+        description: "Pressing the accelerator pedal increases TPS and MAF, enhancing combustion and increasing RPM."
+      accel_pedal_e:
+        relation: "positive_contextual"
+        description: "Pressing the accelerator pedal increases TPS and MAF, enhancing combustion and increasing RPM."
+      tps:
+        relation: "positive_contextual"
+        description: "Increased TPS can increase MAF and combustion, resulting in higher RPM."
+      maf:
+        relation: "positive_contextual"
+        description: "Increased MAF enhances combustion and can increase RPM."
+      speed:
+        relation: "positive_powertrain_context"
+        description: "Engine RPM drives the transmission, which increases vehicle speed."
+    expected_behavior:
+      - "RPM rises with increased driver torque demand when load and drivetrain conditions allow."
+      - "RPM can decrease if accelerator pedal remains constant while engine load increases."
+    failure_interpretation:
+      - "RPM fluctuations may indicate unstable combustion."
+      - "High RPM with low vehicle speed may indicate transmission slipping or other powertrain issues."
+      - "Abnormal RPM drop may indicate insufficient intake air and increased stalling risk."
+    reference_range: null
+
+  speed:
+    raw_field: "Vehicle Speed Sensor"
+    unit: "km/h"
+    physical_meaning: "Actual traveling speed of the vehicle and final output effect of engine performance."
+    relationships:
+      rpm:
+        relation: "positive_powertrain_context"
+        description: "Increased engine RPM drives the transmission and increases vehicle speed."
+      coolant_temp:
+        relation: "negative_or_stabilizing_contextual"
+        description: "Higher driving speed improves air-cooling efficiency and can decrease or stabilize engine coolant temperature."
+    expected_behavior:
+      - "Vehicle speed generally responds to engine output through the transmission."
+    failure_interpretation:
+      - "Low vehicle speed with high RPM may indicate power loss or transmission abnormality."
+      - "Abnormal jumps in speed readings may indicate Vehicle Speed Sensor malfunction."
+    reference_range: null
+
+  intake_temp:
+    raw_field: "Intake Air Temperature"
+    unit: "°C"
+    physical_meaning: "Temperature of the air entering the engine, directly affecting air density."
+    relationships:
+      ambient_temp:
+        relation: "positive"
+        description: "Increased ambient temperature increases intake air temperature."
+      maf:
+        relation: "density_context"
+        description: "Higher intake temperature decreases air density and effective oxygen content, reducing combustion efficiency."
+    expected_behavior:
+      - "Colder intake air has higher density."
+      - "Higher intake air temperature reduces effective oxygen content and combustion efficiency."
+    failure_interpretation:
+      - "Abnormally high intake temperature may indicate heat soak or insufficient intake air cooling."
+      - "Abnormally low intake temperature may indicate sensor failure."
+      - "Mismatch with MAF data may indicate air intake path abnormality."
+    reference_range: null
+
+  maf:
+    raw_field: "Air Flow Rate from Mass Flow Sensor"
+    unit: "g/s"
+    physical_meaning: "Mass of air entering the engine per unit time, directly reflecting current engine load."
+    relationships:
+      tps:
+        relation: "positive"
+        description: "Increased throttle opening increases MAP and MAF."
+      map:
+        relation: "synchronous_normal_operation"
+        description: "MAF and MAP should change synchronously under normal operating conditions."
+      rpm:
+        relation: "positive_contextual"
+        description: "Increased MAF supports more fuel injection and can increase RPM."
+    expected_behavior:
+      - "MAF increases with throttle opening and load demand."
+    failure_interpretation:
+      - "Same interpretation family as MAP: sensor drift, air-intake abnormality, or intake restriction when inconsistent with MAP and throttle."
+    reference_range: null
+
+  tps:
+    raw_field: "Absolute Throttle Position"
+    unit: "%"
+    physical_meaning: "Opening degree of the throttle valve, representing driver or ECU intake-air request."
+    relationships:
+      accel_pedal_d:
+        relation: "positive"
+        description: "Pressing the accelerator pedal increases TPS signal."
+      accel_pedal_e:
+        relation: "positive"
+        description: "Pressing the accelerator pedal increases TPS signal."
+      map:
+        relation: "positive"
+        description: "Increased TPS raises MAP."
+      maf:
+        relation: "positive"
+        description: "Increased TPS raises MAF."
+      rpm:
+        relation: "positive_contextual"
+        description: "Increased TPS can drive up engine RPM."
+      coolant_temp:
+        relation: "positive_contextual"
+        description: "Increased throttle can raise engine load and subsequently raise coolant temperature."
+    expected_behavior:
+      - "TPS increases with driver or ECU intake-air request."
+    failure_interpretation:
+      - "TPS stuck or jammed may cause abnormal powertrain response."
+      - "Severe TPS fluctuations may indicate control system malfunction."
+      - "High TPS with low MAF may indicate intake system restriction or blockage."
+    reference_range:
+      nominal_percent_range: "0-100%"
+
+  ambient_temp:
+    raw_field: "Ambient Air Temperature"
+    unit: "°C"
+    physical_meaning: "External environmental temperature around the vehicle, used as an environmental baseline."
+    relationships:
+      intake_temp:
+        relation: "positive"
+        description: "Increased ambient temperature raises intake air temperature."
+      coolant_temp:
+        relation: "cooling_baseline_context"
+        description: "Increased ambient temperature reduces baseline cooling efficiency."
+    expected_behavior:
+      - "Used for temperature normalization and environmental compensation."
+    failure_interpretation:
+      - "Deviations usually do not directly represent a mechanical fault."
+      - "Used as a reference baseline for temperature normalization and environmental compensation variables."
+    reference_range: null
+
+  accel_pedal_d:
+    raw_field: "Accelerator Pedal Position D"
+    unit: "%"
+    physical_meaning: "Driver throttle input via accelerator pedal Channel D."
+    relationships:
+      accel_pedal_e:
+        relation: "synchronous_redundant_channel"
+        description: "Channel D and Channel E should change synchronously under normal operation."
+      tps:
+        relation: "positive"
+        description: "Pressing the accelerator pedal raises ECU torque request and increases TPS."
+      maf:
+        relation: "positive_contextual"
+        description: "Increased pedal demand increases TPS and MAF."
+      rpm:
+        relation: "positive_contextual"
+        description: "Increased pedal demand can drive up RPM through increased combustion."
+    expected_behavior:
+      - "Channel D increases with driver pedal input."
+    failure_interpretation:
+      - "Large deviation between Channel D and Channel E may indicate pedal redundancy failure."
+      - "Delayed response may indicate ECU control system abnormality."
+    reference_range:
+      nominal_percent_range: "0-100%"
+
+  accel_pedal_e:
+    raw_field: "Accelerator Pedal Position E"
+    unit: "%"
+    physical_meaning: "Secondary accelerator pedal sensor channel used for cross-validation and fault detection."
+    relationships:
+      accel_pedal_d:
+        relation: "synchronous_redundant_channel"
+        description: "Channel E must change synchronously with Channel D."
+      tps:
+        relation: "positive"
+        description: "Pressing the accelerator pedal raises ECU torque request and increases TPS."
+    expected_behavior:
+      - "Channel E increases synchronously with Channel D when the accelerator pedal is pressed."
+    failure_interpretation:
+      - "Single-channel signal drift may indicate hardware degradation caused by sensor aging."
+      - "Sudden signal dropouts or cliffs may indicate electrical fault due to poor contact."
+    reference_range:
+      nominal_percent_range: "0-100%"
+
+features:
+  coolant_slope:
+    inputs:
+      - "coolant_temp"
+      - "timestamp"
+    formula: "delta(coolant_temp) / delta(time)"
+    unit: "°C/s"
+    physical_meaning: "Rate at which coolant temperature accumulates or decreases."
+    intended_signal: "coolant_temperature_accumulation_or_decrease_rate"
+    reference_range:
+      type: "calibrated_baseline"
+      normal_range: "vehicle-specific healthy baseline by operating phase"
+    supporting_source: "Bosch Automotive Handbook"
+
+  coolant_ambient_delta:
+    inputs:
+      - "coolant_temp"
+      - "ambient_temp"
+    formula: "coolant_temp - ambient_temp"
+    unit: "°C"
+    physical_meaning: "Available temperature difference for the cooling system and engine thermal state relative to ambient conditions."
+    intended_signal: "cooling_temperature_margin"
+    reference_range:
+      type: "calibrated_baseline"
+      normal_range: "vehicle-specific healthy baseline under comparable ambient and operating conditions"
+    supporting_source: "Bosch Automotive Handbook"
+
+  coolant_stability:
+    inputs:
+      - "coolant_temp"
+    formula: "rolling_std(coolant_temp, W_stability)"
+    unit: "°C"
+    physical_meaning: "Regulation stability of coolant temperature after engine warm-up is complete."
+    intended_signal: "post_warmup_coolant_temperature_regulation_stability"
+    reference_range:
+      type: "calibrated_baseline | validity_condition"
+      normal_range: "vehicle-specific healthy baseline after warm-up completion"
+    parameters:
+      W_stability:
+        value: 60
+        unit: "s"
+      sampling_rate:
+        value: 1
+        unit: "Hz"
+      window_samples:
+        value: 60
+        formula: "W_stability * sampling_rate"
+    validity_condition:
+      warmup_complete:
+        coolant_temp: ">=70°C"
+        parameter:
+          T_warmup:
+            value: 70
+            unit: "°C"
+    supporting_source: "Bosch Automotive Handbook"
+
+  intake_ambient_delta:
+    inputs:
+      - "intake_temp"
+      - "ambient_temp"
+    formula: "intake_temp - ambient_temp"
+    unit: "°C"
+    physical_meaning: "Degree of intake-air heating or heat soak before air enters the engine."
+    intended_signal: "intake_air_heat_soak"
+    reference_range:
+      type: "calibrated_baseline"
+      normal_range: "vehicle-specific healthy baseline under comparable ambient, speed, and load conditions"
+    supporting_source: "Bosch Automotive Handbook"
+
+  intake_temp_slope:
+    inputs:
+      - "intake_temp"
+      - "timestamp"
+    formula: "delta(intake_temp) / delta(time)"
+    unit: "°C/s"
+    physical_meaning: "Dynamic rate of intake-air heat soak or cooling."
+    intended_signal: "intake_air_temperature_change_rate"
+    reference_range:
+      type: "calibrated_baseline"
+      normal_range: "vehicle-specific healthy baseline by operating phase"
+    supporting_source: "Bosch Automotive Handbook"
+
+  maf_derived_air_load:
+    inputs:
+      - "maf"
+      - "rpm"
+    formula: "maf / max(rpm / 60, epsilon)"
+    unit: "g/rev"
+    physical_meaning: "Proxy for air mass per revolution directly converted from the MAF sensor."
+    intended_signal: "maf_side_air_load"
+    reference_range:
+      type: "calibrated_baseline"
+      normal_range: "vehicle-specific healthy baseline by rpm and load region"
+    supporting_source: "Bosch Automotive Handbook"
+
+  map_derived_air_load:
+    inputs:
+      - "map"
+      - "intake_temp"
+      - "rpm"
+    formula: "f_vehicle(map, intake_temp, rpm)"
+    simplified_formula: "rpm * map / (intake_temp + 273.15)"
+    unit: "g/rev"
+    physical_meaning: "Air-load proxy derived from MAP, intake temperature, and engine speed."
+    intended_signal: "map_side_air_load"
+    reference_range:
+      type: "calibrated_baseline"
+      normal_range: "vehicle-specific healthy baseline by rpm and load region"
+    baseline_requirement: "f_vehicle is a vehicle/model baseline trained on healthy data."
+    supporting_source: "Bosch Automotive Handbook"
+
+  maf_map_cohesion:
+    inputs:
+      - "maf_derived_air_load"
+      - "map_derived_air_load"
+    formula: "abs(zscore_vehicle(maf_derived_air_load) - zscore_vehicle(map_derived_air_load))"
+    unit: "g/rev"
+    physical_meaning: "Standardized deviation between the MAF-side and MAP-side air-load estimates."
+    intended_signal: "air_load_estimate_consistency"
+    reference_range:
+      type: "calibrated_baseline"
+      normal_range: "vehicle-specific healthy baseline for MAF/MAP load-estimate deviation"
+    supporting_source: "Bosch Automotive Handbook"
+
+  speed_density_maf_residual:
+    inputs:
+      - "maf"
+      - "map"
+      - "intake_temp"
+      - "rpm"
+    formula: "maf - f_vehicle(map, intake_temp, rpm)"
+    unit: "g/s"
+    physical_meaning: "Residual between MAF sensor reading and speed-density baseline built from MAP, intake temperature, and engine speed."
+    intended_signal: "maf_speed_density_residual"
+    reference_range:
+      type: "calibrated_baseline"
+      normal_range: "vehicle-specific healthy residual baseline"
+    baseline_requirement: "f_vehicle is a vehicle/model baseline trained on healthy data."
+    supporting_source: "Bosch Automotive Handbook"
+
+  map_slope:
+    inputs:
+      - "map"
+      - "timestamp"
+    formula: "delta(map) / delta(time)"
+    unit: "kPa/s"
+    physical_meaning: "Dynamic change of intake manifold pressure."
+    intended_signal: "manifold_pressure_change_rate"
+    reference_range:
+      type: "calibrated_baseline | validity_condition"
+      normal_range: "vehicle-specific healthy baseline within comparable throttle-change or steady-state windows"
+    supporting_source: "Bosch Automotive Handbook"
+
+  accel_pedal_mean:
+    inputs:
+      - "accel_pedal_d"
+      - "accel_pedal_e"
+    formula: "(accel_pedal_d + accel_pedal_e) / 2"
+    unit: "%"
+    physical_meaning: "Fused value of the dual-channel accelerator pedal."
+    intended_signal: "driver_torque_demand_proxy"
+    reference_range:
+      type: "bounded_by_inputs"
+      normal_range: "0-100%"
+    supporting_source: "Bosch Automotive Handbook"
+
+  pedal_throttle_gap:
+    inputs:
+      - "accel_pedal_mean"
+      - "tps"
+    formula: "tps_normalized - g_vehicle(accel_pedal_mean, rpm, operating_state)"
+    unit: "%"
+    physical_meaning: "Residual between actual throttle position and expected value based on driver demand and operating state."
+    intended_signal: "throttle_tracking_residual"
+    reference_range:
+      type: "calibrated_baseline"
+      normal_range: "vehicle-specific healthy throttle-tracking residual baseline"
+    baseline_requirement: "g_vehicle is the expected throttle model under healthy conditions."
+    supporting_source: "Bosch Automotive Handbook"
+
+  pedal_to_throttle_delay:
+    inputs:
+      - "pedal_slope"
+      - "tps_slope"
+    formula: "argmax_tau(corr(pedal_slope(t), tps_slope(t + tau))) within an event window"
+    unit: "s"
+    physical_meaning: "Estimated delay between a driver pedal change and throttle response."
+    intended_signal: "pedal_to_throttle_response_delay"
+    reference_range:
+      type: "calibrated_baseline | validity_condition"
+      normal_range: "vehicle-specific healthy delay baseline within valid pedal-change event windows"
+    supporting_source: "Bosch Automotive Handbook"
+
+  tps_slope:
+    inputs:
+      - "tps"
+      - "timestamp"
+    formula: "delta(tps) / delta(time)"
+    unit: "%/s"
+    physical_meaning: "Throttle actuation speed."
+    intended_signal: "throttle_position_change_rate"
+    reference_range:
+      type: "calibrated_baseline | validity_condition"
+      normal_range: "vehicle-specific healthy baseline within comparable throttle-control windows"
+    supporting_source: "Bosch Automotive Handbook"
+
+  accel_pedal_channel_delta:
+    inputs:
+      - "accel_pedal_d"
+      - "accel_pedal_e"
+    formula: "abs(accel_pedal_d - accel_pedal_e)"
+    unit: "%"
+    physical_meaning: "Degree of inconsistency between the dual-channel pedal sensors."
+    intended_signal: "pedal_channel_absolute_inconsistency"
+    reference_range:
+      type: "calibrated_baseline"
+      normal_range: "vehicle-specific healthy dual-channel residual baseline"
+    supporting_source: "Bosch Automotive Handbook"
+
+  accel_pedal_channel_ratio:
+    inputs:
+      - "accel_pedal_d"
+      - "accel_pedal_e"
+    formula: "(accel_pedal_d + epsilon) / (accel_pedal_e + epsilon)"
+    unit: "dimensionless"
+    physical_meaning: "Proportional relationship between the two pedal channels."
+    intended_signal: "pedal_channel_proportional_consistency"
+    reference_range:
+      type: "calibrated_baseline"
+      normal_range: "vehicle-specific healthy dual-channel ratio baseline"
+    supporting_source: "Bosch Automotive Handbook"
+
+  pedal_slope:
+    inputs:
+      - "accel_pedal_mean"
+      - "timestamp"
+    formula: "delta(accel_pedal_mean) / delta(time)"
+    unit: "%/s"
+    physical_meaning: "Rate of change in driver demand."
+    intended_signal: "driver_demand_change_rate"
+    reference_range:
+      type: "calibrated_baseline | validity_condition"
+      normal_range: "vehicle-specific healthy baseline within comparable pedal-change windows"
+    supporting_source: "Bosch Automotive Handbook"
+
+  engine_on_flag:
+    inputs:
+      - "rpm"
+    formula: "1 if rpm > rpm_engine_on_threshold else 0"
+    unit: "dimensionless"
+    physical_meaning: "Distinguishes engine stopped and engine running states."
+    intended_signal: "engine_running_state"
+    reference_range:
+      type: "bounded_by_inputs"
+      normal_range: "0 or 1"
+    supports:
+      - "warm-up detection"
+      - "idle detection"
+      - "trip segmentation"
+      - "temperature feature calculation"
+    supporting_source: "Bosch Automotive Handbook"
+
+  rpm_slope:
+    inputs:
+      - "rpm"
+      - "timestamp"
+    formula: "delta(rpm) / delta(time)"
+    unit: "rpm/s"
+    physical_meaning: "Rate of change in engine speed."
+    intended_signal: "engine_speed_change_rate"
+    reference_range:
+      type: "calibrated_baseline | validity_condition"
+      normal_range: "vehicle-specific healthy baseline by operating phase"
+    supporting_source: "Bosch Automotive Handbook"
+
+  idle_flag:
+    inputs:
+      - "engine_on_flag"
+      - "speed"
+      - "rpm"
+      - "tps"
+      - "accel_pedal_mean"
+    formula: "engine_on_flag == 1 and speed < v_idle and rpm within calibrated_idle_band and accel_pedal_mean < p_idle and tps < t_idle"
+    unit: "dimensionless"
+    physical_meaning: "Identifies engine idle state."
+    intended_signal: "idle_operating_state"
+    reference_range:
+      type: "bounded_by_inputs | validity_condition"
+      normal_range: "0 or 1"
+    supports:
+      - "idle RPM stability baseline"
+      - "idle air flow baseline"
+      - "idle MAP baseline"
+      - "idle temperature baseline"
+    supporting_source: "Bosch Automotive Handbook"
+
+  idle_rpm_stability:
+    inputs:
+      - "rpm"
+      - "idle_flag"
+    formula: "rolling_std(rpm | idle_flag == 1, W)"
+    unit: "rpm"
+    physical_meaning: "Idle-speed stability."
+    intended_signal: "idle_speed_stability"
+    reference_range:
+      type: "calibrated_baseline | validity_condition"
+      normal_range: "vehicle-specific healthy baseline within idle windows"
+    supporting_source: "Bosch Automotive Handbook"
+
+proxy_failures:
+  cooling_degradation:
+    component: "Cooling system (Radiator / Water Pump / Thermostat / Coolant Circulation)"
+    evidence:
+      - "coolant_temp"
+      - "ambient_temp"
+      - "speed"
+      - "rpm"
+      - "coolant_slope"
+      - "coolant_ambient_delta"
+      - "coolant_stability"
+    definition: "Flag abnormal coolant thermal behavior, including sustained overheating after warm-up, coolant temperature rising without plateau, abnormally slow warm-up, and coolant temperature implausible relative to ambient temperature after cold soak."
+    expected_pattern:
+      overheating:
+        signal: "coolant_temp"
+        condition: ">105°C"
+        duration: "3-5 min"
+        phase: "after warm-up"
+      rising_without_plateau:
+        signal: "coolant_slope"
+        condition: ">2°C/min"
+        condition_si: ">0.0333°C/s"
+        duration: "2-3 min"
+      slow_warmup:
+        signal: "coolant_temp"
+        condition: "<70-75°C"
+        duration: "after 10-15 min running"
+      sensor_plausibility:
+        signal: "abs(coolant_temp - ambient_temp)"
+        condition: ">10-15°C"
+        phase: "after cold soak"
+    rationale: "The cooling system prevents thermal overload, lubricating-oil burn-off, and abnormal combustion caused by excessive component temperatures. If coolant temperature stays above the stable post-warm-up range for an extended period, heat input and heat dissipation capacity are out of balance."
+    supporting_source: "Bosch Automotive Handbook"
+    report_layer:
+      description: null
+      causes: []
+      actions:
+        low: []
+        medium: []
+        high: []
+
+  intake_air_temperature_sensor_or_heat_soak_fault:
+    component: "Intake-air temperature sensing / intake-air temperature regulation"
+    evidence:
+      - "intake_temp"
+      - "ambient_temp"
+      - "speed"
+      - "rpm"
+      - "tps"
+      - "intake_ambient_delta"
+      - "intake_temp_slope"
+    definition: "Intake temperature is abnormally high or low relative to ambient temperature, or does not vary with vehicle speed/load. This can proxy intake-air temperature sensor faults, severe heat soak, intake preheating/temperature regulation faults, or poor thermal management in the intake path."
+    expected_pattern:
+      high_heat_soak_after_stable_driving:
+        signal: "intake_temp - ambient_temp"
+        condition: ">25-35°C"
+        context:
+          speed: ">40 km/h"
+          duration: "5 min"
+      low_after_extended_cold_start_running:
+        signal: "intake_temp"
+        condition: "< ambient_temp - 5°C"
+        phase: "after extended running following cold start"
+      high_under_load:
+        signal: "intake_temp"
+        condition: ">60°C"
+        phase: "high load"
+    rationale: "Colder air has higher density, while heated intake air reduces density and output. Intake systems can regulate intake temperature, affecting performance, fuel consumption, and emissions. For diesel engines, higher intake temperature increases combustion temperature and NOx emissions."
+    supporting_source: "Bosch Automotive Handbook"
+    report_layer:
+      description: null
+      causes: []
+      actions:
+        low: []
+        medium: []
+        high: []
+
+  air_intake_maf_anomaly:
+    component: "MAF sensor / intake air measurement path"
+    evidence:
+      - "maf"
+      - "map"
+      - "rpm"
+      - "intake_temp"
+      - "maf_derived_air_load"
+      - "map_derived_air_load"
+      - "maf_map_cohesion"
+    definition: "Triggered when maf_map_cohesion remains high. This proxy identifies inconsistency between the MAF-side air-load estimate and the MAP-side air-load estimate, mainly indicating MAF sensor drift, contamination, response delay, or abnormalities in the intake measurement chain."
+    expected_pattern:
+      high_maf_map_cohesion:
+        signal: "maf_map_cohesion"
+        condition: ">0.25-0.30"
+        duration: "5-10 s"
+      steady_state_standardized_deviation:
+        signal: "standardized_deviation(maf_derived_air_load, map_derived_air_load)"
+        condition: ">25-30%"
+        phase: "steady-state conditions"
+      masks:
+        - "transient acceleration"
+        - "gear shifts"
+        - "rapid throttle-change windows"
+    rationale: "Under the same operating condition, MAF-based load and MAP-based load should remain physically consistent. Persistent deviation between the two indicates a plausibility abnormality in the air-mass measurement chain."
+    supporting_source: "Bosch Automotive Handbook"
+    report_layer:
+      description: null
+      causes: []
+      actions:
+        low: []
+        medium: []
+        high: []
+
+  map_load_signal_plausibility_fault:
+    component: "Intake manifold absolute pressure sensor / load signal"
+    evidence:
+      - "map"
+      - "maf"
+      - "rpm"
+      - "tps"
+      - "intake_temp"
+      - "speed_density_maf_residual"
+      - "map_slope"
+    definition: "MAP cannot reasonably reflect load changes, or its relationship with MAF, throttle position, and engine speed is inconsistent. This proxies MAP sensor drift, blockage, hose issues, signal sticking, or load-measurement abnormalities."
+    expected_pattern:
+      no_map_response_to_tps_step:
+        trigger:
+          signal: "tps"
+          condition: "step change >15 percentage points"
+        observation:
+          signal: "abs(map_slope)"
+          condition: "close to 0"
+          window: "within 1 s"
+      map_maf_air_amount_deviation:
+        signal: "air_amount_derived_from_map_vs_maf"
+        condition: ">25-30%"
+        phase: "steady-state conditions"
+      fixed_unreasonable_map:
+        signal: "map"
+        condition: "near unreasonable fixed value"
+        duration: "extended period"
+        phase: "engine running"
+    rationale: "Intake manifold absolute pressure is a preferred method for monitoring load, and relative charge can be determined from available measurement signals such as MAF or MAP through an intake manifold model. If MAP is distorted, load, ignition, fuel injection, and torque calculations will be biased."
+    supporting_source: "Bosch Automotive Handbook"
+    report_layer:
+      description: null
+      causes: []
+      actions:
+        low: []
+        medium: []
+        high: []
+
+  electronic_throttle_tracking_fault:
+    component: "Electronic throttle control / throttle actuator"
+    evidence:
+      - "accel_pedal_d"
+      - "accel_pedal_e"
+      - "tps"
+      - "rpm"
+      - "map"
+      - "maf"
+      - "pedal_throttle_gap"
+      - "pedal_to_throttle_delay"
+      - "tps_slope"
+    definition: "After pedal demand increases, throttle opening does not change accordingly, or the actual throttle position remains offset from the expected value based on pedal/load for an extended period. This proxies electronic throttle actuator sticking, position-control abnormalities, or ETC entering a restricted-control mode."
+    expected_pattern:
+      weak_tps_response_to_pedal_increase:
+        trigger:
+          signal: "accel_pedal_mean"
+          condition: "increase >20 percentage points"
+        observation:
+          signal: "tps"
+          condition: "change <5 percentage points"
+          window: "0.5-1.0 s"
+      sustained_pedal_throttle_gap:
+        signal: "pedal_throttle_gap"
+        condition: ">15-20 percentage points"
+        duration: "2 s"
+      confidence_boost:
+        - "map shows no response"
+        - "maf shows no response"
+    rationale: "ETC calculates throttle opening through the ECU based on pedal position and current operating conditions, and uses the throttle angle sensor to monitor whether the actual position matches the expected position. OBD diagnostic targets include the ETC throttle-valve actuator."
+    supporting_source: "Bosch Automotive Handbook"
+    report_layer:
+      description: null
+      causes: []
+      actions:
+        low: []
+        medium: []
+        high: []
+
+  accelerator_pedal_sensor:
+    component: "Accelerator pedal position sensors (dual/redundant)"
+    evidence:
+      - "accel_pedal_d"
+      - "accel_pedal_e"
+      - "accel_pedal_channel_delta"
+      - "accel_pedal_channel_ratio"
+      - "pedal_slope"
+    definition: "The proportional relationship, correlation, or dynamic behavior between pedal channels D/E is inconsistent. This proxies pedal sensor channel drift, contact abnormalities, or redundancy-monitoring failure."
+    expected_pattern:
+      healthy_mapping:
+        formula: "accel_pedal_e = a * accel_pedal_d + b"
+        requirement: "learn vehicle-specific healthy mapping first"
+      high_residual:
+        signal: "residual(accel_pedal_e, accel_pedal_d)"
+        condition: ">5-10 percentage points"
+        duration: "sustained"
+      low_correlation:
+        signal: "corr(accel_pedal_d, accel_pedal_e)"
+        condition: "<0.95"
+      channel_freeze:
+        condition: "one channel changes while the other channel freezes"
+        duration: ">1 s"
+    rationale: "The ETC system uses two potentiometers on the pedal and throttle device to provide redundancy, and continuously checks all sensors and calculations that affect throttle opening while the engine is running."
+    supporting_source: "Bosch Automotive Handbook"
+    report_layer:
+      description: null
+      causes: []
+      actions:
+        low: []
+        medium: []
+        high: []
+
+  idle_speed_control_or_surge_degradation:
+    component: "Idle-speed control / engine-speed control"
+    evidence:
+      - "rpm"
+      - "speed"
+      - "tps"
+      - "accel_pedal_d"
+      - "accel_pedal_e"
+      - "maf"
+      - "map"
+      - "idle_flag"
+      - "idle_rpm_stability"
+      - "rpm_slope"
+    definition: "Under idle conditions, RPM fluctuation is excessive, cyclic surging occurs, or the engine cannot stabilize near the target idle speed. This proxies idle-control degradation, intake/fuel-injection/ignition disturbances, excessive EGR, or insufficient load compensation."
+    expected_pattern:
+      idle_window:
+        speed: "<3 km/h"
+        tps: "<5-10%"
+        pedal_position: "near 0"
+      high_rpm_std:
+        signal: "std(rpm)"
+        condition: ">50-100 rpm"
+        duration: "30 s"
+      high_peak_amplitude:
+        signal: "peak_amplitude(rpm)"
+        condition: ">150-200 rpm"
+    rationale: "The goal of idle control is to maintain the desired idle speed under all conditions. Persistent high fluctuation within the idle window directly reflects control or combustion-stability issues."
+    supporting_source: "Bosch Automotive Handbook"
+    report_layer:
+      description: null
+      causes: []
+      actions:
+        low: []
+        medium: []
+        high: []
