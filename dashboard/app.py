@@ -299,10 +299,79 @@ def get_report_for_component(component_key: str) -> dict:
 def get_report_text(report: dict, key: str, fallback: str) -> str:
     """Get text from report output, with fallback for missing values."""
     value = report.get(key)
-    if value is None or value == "":
+    if value is None:
         return fallback
 
-    return str(value)
+    value = str(value).strip()
+    if not value:
+        return fallback
+
+    return value
+
+
+def get_report_actions(report: dict) -> list:
+    """Get recommended actions, with fallback for missing values."""
+    actions = report.get("recommended_action")
+    if not isinstance(actions, list):
+        return ["Recommended actions are not available yet."]
+
+    clean_actions = [
+        str(action).strip()
+        for action in actions
+        if str(action).strip()
+    ]
+
+    if not clean_actions:
+        return ["Recommended actions are not available yet."]
+
+    return clean_actions
+
+
+def get_confidence_text(report: dict) -> str:
+    """Get prediction confidence display text."""
+    value = report.get("prediction_confidence")
+    if value is None or value == "":
+        return "Prediction confidence unavailable"
+
+    try:
+        confidence = float(value)
+    except (TypeError, ValueError):
+        return "Prediction confidence unavailable"
+
+    if confidence < 0 or confidence > 1:
+        return "Prediction confidence unavailable"
+
+    return f"Prediction confidence: {round(confidence * 100)}%"
+
+
+def get_report_risk_badge_html(report: dict, tokens: dict) -> str:
+    """Render report risk level, with fallback when it is missing."""
+    risk_level = report.get("risk_level")
+    clean_level = normalize_risk_level(risk_level)
+
+    if clean_level == "Unknown":
+        badge_bg = tokens["text_secondary"]
+        risk_label = "Risk level unavailable"
+    else:
+        badge_bg = get_risk_color(risk_level, tokens)
+        risk_label = get_risk_label(risk_level)
+
+    return f"""
+    <span style="
+        display: inline-block;
+        background-color: {badge_bg};
+        color: {tokens["accent_contrast"]};
+        padding: 5px 12px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        white-space: nowrap;
+    ">
+        {escape(risk_label)}
+    </span>
+    """
 
 
 def normalize_risk_level(risk_level) -> str:
@@ -1263,6 +1332,8 @@ def render_component_detail(
     show_icon_heading("Diagnostic Report", heading_icon)
 
     report = get_report_for_component(component_key)
+    report_risk_badge = get_report_risk_badge_html(report, tokens)
+    confidence_text = escape(get_confidence_text(report))
     anomaly_description = escape(get_report_text(
         report,
         "anomaly_description",
@@ -1274,13 +1345,49 @@ def render_component_detail(
         "Possible cause is not available yet.",
     ))
 
-    actions = report.get("recommended_action", [])
-    if not isinstance(actions, list) or not actions:
-        actions = ["Recommended actions are not available yet."]
-
+    actions = get_report_actions(report)
     action_items = "".join(
         f"<li>{escape(str(action))}</li>" for action in actions
     )
+
+    report_meta_html = f"""
+    <div style="
+        background: {tokens["surface"]};
+        border: 1px solid {tokens["border"]};
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+    ">
+        <div style="
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        ">
+            <span style="
+                color: {tokens["text_secondary"]};
+                font-size: 13px;
+                font-weight: 600;
+            ">
+                Report urgency
+            </span>
+            {report_risk_badge}
+        </div>
+        <span style="
+            color: {tokens["text_secondary"]};
+            font-size: 13px;
+            font-weight: 500;
+        ">
+            {confidence_text}
+        </span>
+    </div>
+    """
+    st.html(report_meta_html)
 
     cards = [
         {
