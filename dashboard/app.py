@@ -7,6 +7,7 @@ to detailed diagnostic reports.
 
 import base64
 import math
+import time
 import streamlit as st
 import plotly.graph_objects as go
 
@@ -273,14 +274,16 @@ def show_divider(dark_mode: bool, margin: str = "36px auto"):
     st.markdown(divider_html, unsafe_allow_html=True)
 
 
-def show_icon_heading(title: str, icon_svg: str):
+def show_icon_heading(title: str, icon_svg: str, center: bool = False):
     """Display an H2 heading with an inline icon."""
+    justify = "center" if center else "flex-start"
     heading_html = f"""
     <h2 style="
         margin-bottom: 16px;
         display: flex;
         align-items: center;
-        gap: 14px;
+        justify-content: {justify};
+        gap: 20px;
     ">
         {icon_svg}{title}
     </h2>
@@ -331,6 +334,12 @@ def apply_theme(dark_mode: bool):
         h1 {{
             font-size: 32px !important;
             margin-bottom: 8px !important;
+        }}
+        h2 {{
+            font-size: 20px !important;
+        }}
+        h3 {{
+            font-size: 18px !important;
         }}
         p, label, span, .stMarkdown, .stMarkdown p {{
             color: {tokens["text"]} !important;
@@ -411,6 +420,14 @@ def apply_theme(dark_mode: bool):
         .footer-link:hover {{
             text-decoration: underline !important;
         }}
+        .footer-heading {{
+            color: {tokens["text_secondary"]} !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.5px !important;
+            text-transform: uppercase !important;
+            margin-bottom: 12px !important;
+        }}
     </style>
     """
 
@@ -421,23 +438,28 @@ def show_footer(dark_mode: bool):
     """Display team footer at bottom of page."""
     tokens = THEME_TOKENS["dark" if dark_mode else "light"]
 
+    team_members = [
+        "Charlotte Yu", "Jintong He", "Lei Pei",
+        "Qiuting Fu", "Lucca Zhou", "Ray Wang",
+    ]
+    team_html = "<br>".join(team_members)
+
     footer_html = f"""
-    <div style="margin-top: 48px; padding-top: 20px;">
+    <div style="margin-top: 48px; padding-top: 28px;">
         <div style="
             border-top: 1px solid {tokens["border"]};
-            padding-top: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 24px;
-            flex-wrap: wrap;
+            padding-top: 28px;
+            display: grid;
+            grid-template-columns: 1.4fr 1fr 1.4fr;
+            gap: 32px;
         ">
             <div>
+                <div class="footer-heading">Granite Lifeline</div>
                 <div style="
                     color: {tokens["text"]};
                     font-weight: 700;
                     font-size: 15px;
-                    margin-bottom: 4px;
+                    margin-bottom: 6px;
                 ">
                     Granite Lifeline
                 </div>
@@ -448,29 +470,40 @@ def show_footer(dark_mode: bool):
                     Vehicle health monitoring · IBM-sponsored project
                 </div>
             </div>
-            <div style="display: flex; gap: 24px; font-size: 13px;">
-                <a class="footer-link"
-                   href="https://github.com/granite-lifeline/granite-lifeline"
-                   target="_blank" rel="noopener noreferrer">
-                    Repository
-                </a>
-                <a class="footer-link"
-                   href="https://granite-lifeline.github.io/granite-lifeline-blog/"
-                   target="_blank" rel="noopener noreferrer">
-                    Blog
-                </a>
+            <div>
+                <div class="footer-heading">Links</div>
+                <div style="margin-bottom: 8px; font-size: 13px;">
+                    <a class="footer-link"
+                       href="https://github.com/granite-lifeline/granite-lifeline"
+                       target="_blank" rel="noopener noreferrer">
+                        Repository
+                    </a>
+                </div>
+                <div style="font-size: 13px;">
+                    <a class="footer-link"
+                       href="https://granite-lifeline.github.io/granite-lifeline-blog/"
+                       target="_blank" rel="noopener noreferrer">
+                        Blog
+                    </a>
+                </div>
             </div>
-        </div>
-        <div style="
-            border-top: 1px solid {tokens["border"]};
-            margin-top: 16px;
-            padding-top: 16px;
-            padding-bottom: 8px;
-            color: {tokens["text_secondary"]};
-            font-size: 12px;
-        ">
-            University of Bristol MSc Computer Science · Team: Charlotte
-            Yu, Jintong He, Lei Pei, Qiuting Fu, Lucca Zhou, Ray Wang
+            <div>
+                <div class="footer-heading">Team</div>
+                <div style="
+                    color: {tokens["text_secondary"]};
+                    font-size: 12px;
+                    margin-bottom: 10px;
+                ">
+                    University of Bristol MSc Computer Science
+                </div>
+                <div style="
+                    color: {tokens["text"]};
+                    font-size: 13px;
+                    line-height: 1.9;
+                ">
+                    {team_html}
+                </div>
+            </div>
         </div>
     </div>
     """
@@ -606,7 +639,7 @@ def show_overview_page():
             color: {tokens["danger_text"]};
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 14px;
         ">
             {alert_icon}
             <span style="font-weight: 600; color: {tokens["danger_text"]};">
@@ -646,16 +679,17 @@ def show_overview_page():
             risk_pct = int(component_data["risk_score"] * 100)
             component_icon = lucide_icon(
                 COMPONENT_ICONS.get(component_key, "activity"),
-                size=18,
+                size=22,
                 color=badge_bg,
             )
+            ring_size = 132
             ring_svg = progress_ring(
                 risk_pct,
                 color=badge_bg,
                 track_color=tokens["border"],
                 anim_key=component_key,
-                size=64,
-                stroke=7,
+                size=ring_size,
+                stroke=10,
             )
 
             card_html = f"""
@@ -667,13 +701,16 @@ def show_overview_page():
                 box-shadow: 0 1px 3px {tokens["shadow"]};
                 padding: 24px;
                 margin-bottom: 16px;
-                min-height: 180px;
+                min-height: 280px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
             ">
                 <div style="
                     display: flex;
                     align-items: center;
-                    gap: 10px;
-                    margin-bottom: 16px;
+                    gap: 14px;
+                    margin-bottom: 24px;
                 ">
                     {component_icon}
                     <h3 style="
@@ -684,45 +721,51 @@ def show_overview_page():
                     ">
                         {component_data["display_name"]}
                     </h3>
+                    <span style="
+                        background-color: {badge_bg};
+                        color: white;
+                        padding: 6px 14px;
+                        border-radius: 20px;
+                        display: inline-block;
+                        font-weight: 600;
+                        font-size: 12px;
+                    ">
+                        {risk_label}
+                    </span>
                 </div>
                 <div style="
-                    background-color: {badge_bg};
-                    color: white;
-                    padding: 6px 14px;
-                    border-radius: 20px;
-                    display: inline-block;
-                    font-weight: 600;
-                    font-size: 12px;
-                    margin-bottom: 20px;
-                ">
-                    {risk_label}
-                </div>
-                <div style="
-                    margin-top: 16px;
-                    display: flex;
-                    align-items: center;
-                    gap: 16px;
+                    position: relative;
+                    width: {ring_size}px;
+                    height: {ring_size}px;
                 ">
                     {ring_svg}
-                    <div>
-                        <p style="
+                    <div style="
+                        position: absolute;
+                        inset: 0;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                    ">
+                        <span style="
                             font-family: {FONT_MONO};
-                            font-size: 36px;
+                            font-size: 28px;
                             font-weight: 700;
-                            margin: 0;
                             color: {tokens["text"]};
                             line-height: 1;
                         ">
                             {risk_pct}%
-                        </p>
-                        <p style="
-                            font-size: 12px;
+                        </span>
+                        <span style="
+                            font-size: 11px;
                             color: {tokens["text_secondary"]};
-                            margin: 4px 0 0 0;
-                            font-weight: 500;
+                            margin-top: 6px;
+                            font-weight: 600;
+                            letter-spacing: 0.4px;
+                            text-transform: uppercase;
                         ">
                             Risk Score
-                        </p>
+                        </span>
                     </div>
                 </div>
             </div>
@@ -793,9 +836,26 @@ def render_component_detail(
     trend = component_data["trend"]
     risk_pct = int(component_data["risk_score"] * 100)
 
-    gauge_col, trend_col = st.columns([4, 8], gap="large")
+    card_css = f"""
+    <style>
+        .st-key-gauge_card,
+        .st-key-trend_card,
+        .st-key-signals_card {{
+            background-color: {tokens["surface"]} !important;
+            border: 1px solid {tokens["border"]} !important;
+            border-radius: 14px !important;
+            box-shadow: 0 1px 3px {tokens["shadow"]} !important;
+            padding: 20px !important;
+        }}
+        .st-key-gauge_card {{
+            max-width: 380px !important;
+            margin: 0 auto 8px auto !important;
+        }}
+    </style>
+    """
+    st.markdown(card_css, unsafe_allow_html=True)
 
-    with gauge_col:
+    with st.container(key="gauge_card"):
         delta_config = None
         if len(trend) >= 2:
             delta_config = dict(
@@ -826,8 +886,8 @@ def render_component_detail(
         gauge_fig.update_layout(
             paper_bgcolor=tokens["surface"],
             font=dict(color=tokens["text_secondary"]),
-            margin=dict(l=40, r=40, t=30, b=10),
-            height=220,
+            margin=dict(l=40, r=40, t=20, b=10),
+            height=200,
         )
         st.plotly_chart(
             gauge_fig,
@@ -840,7 +900,7 @@ def render_component_detail(
                 text-align: center;
                 color: {tokens["text_secondary"]};
                 font-size: 12px;
-                margin-top: -8px;
+                margin: -8px 0 0 0;
             ">
                 Last updated: 2026-06-23 10:00
             </p>
@@ -848,206 +908,217 @@ def render_component_detail(
             unsafe_allow_html=True,
         )
 
-    with trend_col:
-        if len(trend) < 2:
-            st.warning("Not enough data yet to show a trend.")
-        else:
-            heading_icon = lucide_icon(
-                "trending-up", size=22, color=tokens["accent"]
-            )
-            show_icon_heading("Risk Score Trend", heading_icon)
+    st.markdown(
+        "<div style='height: 28px;'></div>", unsafe_allow_html=True
+    )
 
-            with st.spinner(""):
-                spinner_html = """
-                <div class="loading-spinner-container">
-                    <div class="loading-spinner"></div>
-                    <div class="loading-spinner-text">
-                        Loading trend data...
+    trend_col, signals_col = st.columns([6, 6], gap="large")
+
+    with trend_col:
+        heading_icon = lucide_icon(
+            "trending-up", size=24, color=tokens["accent"]
+        )
+        show_icon_heading("Risk Score Trend", heading_icon)
+
+        with st.container(key="trend_card"):
+            if len(trend) < 2:
+                st.warning("Not enough data yet to show a trend.")
+            else:
+                with st.spinner(""):
+                    spinner_html = """
+                    <div class="loading-spinner-container">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-spinner-text">
+                            Loading trend data...
+                        </div>
+                    </div>
+                    """
+                    spinner_placeholder = st.empty()
+                    spinner_placeholder.markdown(
+                        spinner_html,
+                        unsafe_allow_html=True
+                    )
+
+                    time.sleep(0.5)
+                    spinner_placeholder.empty()
+
+                time_labels = ["T-4", "T-3", "T-2", "T-1", "Now"]
+                time_labels = time_labels[-len(trend):]
+
+                line_color = tokens["accent"]
+                bg_color = tokens["surface"]
+                paper_bg = tokens["surface"]
+                text_color = tokens["text_secondary"]
+                grid_color = tokens["border"]
+                fill_color = (
+                    "rgba(41, 151, 255, 0.15)" if dark_mode
+                    else "rgba(0, 113, 227, 0.12)"
+                )
+
+                fig = go.Figure()
+
+                fig.add_trace(go.Scatter(
+                    x=time_labels,
+                    y=trend,
+                    mode="lines+markers",
+                    line=dict(color=line_color, width=3, shape="spline"),
+                    marker=dict(
+                        size=8,
+                        color=line_color,
+                        line=dict(color=tokens["surface"], width=2)
+                    ),
+                    fill="tozeroy",
+                    fillcolor=fill_color,
+                    name="Risk Score",
+                    hovertemplate=(
+                        "<b>%{x}</b><br>Risk Score: %{y:.0%}<extra>"
+                        "</extra>"
+                    )
+                ))
+
+                fig.update_layout(
+                    plot_bgcolor=bg_color,
+                    paper_bgcolor=paper_bg,
+                    font=dict(color=text_color),
+                    xaxis=dict(
+                        gridcolor=grid_color,
+                        showgrid=True
+                    ),
+                    yaxis=dict(
+                        gridcolor=grid_color,
+                        showgrid=True,
+                        range=[0, 1],
+                        tickformat=".0%"
+                    ),
+                    margin=dict(l=40, r=20, t=20, b=40),
+                    height=260,
+                    showlegend=False
+                )
+
+                st.plotly_chart(
+                    fig,
+                    use_container_width=True,
+                    key="detail_trend_chart",
+                )
+
+                st.caption(
+                    "Risk score over the last 5 recorded readings. "
+                    "Higher values indicate greater risk."
+                )
+
+    with signals_col:
+        heading_icon = lucide_icon(
+            "activity", size=24, color=tokens["accent"]
+        )
+        show_icon_heading("Key Signals", heading_icon)
+
+        with st.container(key="signals_card"):
+            key_signals = component_data["key_signals"]
+
+            if not key_signals:
+                st.info("No signal data available for this component.")
+            else:
+                row_bg = tokens["surface_alt"]
+
+                header_html = f"""
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 0 12px 8px 12px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    letter-spacing: 0.4px;
+                    text-transform: uppercase;
+                    color: {tokens["text_secondary"]};
+                ">
+                    <div style="flex: 2; min-width: 0;">Signal</div>
+                    <div style="flex: 1; min-width: 0;">Reading</div>
+                    <div style="
+                        flex-shrink: 0;
+                        min-width: 76px;
+                        text-align: center;
+                    ">
+                        Status
                     </div>
                 </div>
                 """
-                spinner_placeholder = st.empty()
-                spinner_placeholder.markdown(
-                    spinner_html,
-                    unsafe_allow_html=True
-                )
+                st.markdown(header_html, unsafe_allow_html=True)
 
-                import time
-                time.sleep(0.5)
-                spinner_placeholder.empty()
+                signals_with_status = []
+                for signal in key_signals:
+                    ref_lower = signal["reference_range"][0]
+                    ref_upper = signal["reference_range"][1]
+                    is_abnormal = (
+                        signal["value"] < ref_lower or
+                        signal["value"] > ref_upper
+                    )
+                    status = "ABNORMAL" if is_abnormal else "NORMAL"
+                    signals_with_status.append((signal, status))
 
-            time_labels = ["T-4", "T-3", "T-2", "T-1", "Now"]
-            time_labels = time_labels[-len(trend):]
+                signals_with_status.sort(key=lambda x: x[1] == "NORMAL")
 
-            line_color = tokens["accent"]
-            bg_color = tokens["surface"]
-            paper_bg = tokens["surface"]
-            text_color = tokens["text_secondary"]
-            grid_color = tokens["border"]
-            fill_color = (
-                "rgba(41, 151, 255, 0.15)" if dark_mode
-                else "rgba(0, 113, 227, 0.12)"
-            )
+                for signal, status in signals_with_status:
+                    ref_lower = signal["reference_range"][0]
+                    ref_upper = signal["reference_range"][1]
+                    signal_badge_bg = (
+                        tokens["risk_high"] if status == "ABNORMAL"
+                        else tokens["risk_low"]
+                    )
 
-            fig = go.Figure()
-
-            fig.add_trace(go.Scatter(
-                x=time_labels,
-                y=trend,
-                mode="lines+markers",
-                line=dict(color=line_color, width=3, shape="spline"),
-                marker=dict(
-                    size=8,
-                    color=line_color,
-                    line=dict(color=tokens["surface"], width=2)
-                ),
-                fill="tozeroy",
-                fillcolor=fill_color,
-                name="Risk Score",
-                hovertemplate=(
-                    "<b>%{x}</b><br>Risk Score: %{y:.0%}<extra></extra>"
-                )
-            ))
-
-            fig.update_layout(
-                plot_bgcolor=bg_color,
-                paper_bgcolor=paper_bg,
-                font=dict(color=text_color),
-                xaxis=dict(
-                    gridcolor=grid_color,
-                    showgrid=True
-                ),
-                yaxis=dict(
-                    gridcolor=grid_color,
-                    showgrid=True,
-                    range=[0, 1],
-                    tickformat=".0%"
-                ),
-                margin=dict(l=40, r=20, t=20, b=40),
-                height=220,
-                showlegend=False
-            )
-
-            st.plotly_chart(
-                fig,
-                use_container_width=True,
-                key="detail_trend_chart",
-            )
-
-            st.caption(
-                "Risk score over the last 5 recorded readings. "
-                "Higher values indicate greater risk."
-            )
-
-    show_divider(dark_mode)
-
-    heading_icon = lucide_icon("activity", size=22, color=tokens["accent"])
-    show_icon_heading("Key Signals", heading_icon)
-
-    key_signals = component_data["key_signals"]
-
-    if not key_signals:
-        st.info("No signal data available for this component.")
-    else:
-        row_bg = tokens["surface_alt"]
-
-        header_html = f"""
-        <div style="
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 0 16px 8px 16px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.4px;
-            text-transform: uppercase;
-            color: {tokens["text_secondary"]};
-        ">
-            <div style="flex: 2; min-width: 0;">Signal</div>
-            <div style="flex: 1; min-width: 0;">Reading</div>
-            <div style="flex: 1; min-width: 0;">Normal Range</div>
-            <div style="
-                flex-shrink: 0;
-                min-width: 84px;
-                text-align: center;
-            ">
-                Status
-            </div>
-        </div>
-        """
-        st.markdown(header_html, unsafe_allow_html=True)
-
-        signals_with_status = []
-        for signal in key_signals:
-            ref_lower = signal["reference_range"][0]
-            ref_upper = signal["reference_range"][1]
-            is_abnormal = (
-                signal["value"] < ref_lower or
-                signal["value"] > ref_upper
-            )
-            status = "ABNORMAL" if is_abnormal else "NORMAL"
-            signals_with_status.append((signal, status))
-
-        signals_with_status.sort(key=lambda x: x[1] == "NORMAL")
-
-        for signal, status in signals_with_status:
-            ref_lower = signal["reference_range"][0]
-            ref_upper = signal["reference_range"][1]
-            signal_badge_bg = (
-                tokens["risk_high"] if status == "ABNORMAL"
-                else tokens["risk_low"]
-            )
-
-            row_html = f"""
-            <div style="
-                display: flex;
-                align-items: center;
-                gap: 16px;
-                background: {row_bg};
-                border-radius: 8px;
-                padding: 12px 16px;
-                margin-bottom: 6px;
-            ">
-                <div style="
-                    flex: 2;
-                    min-width: 0;
-                    font-weight: 600;
-                    color: {tokens["text"]};
-                ">
-                    {signal["display_name"]}
-                </div>
-                <div style="
-                    flex: 1;
-                    min-width: 0;
-                    font-family: {FONT_MONO};
-                    color: {tokens["text"]};
-                ">
-                    {signal["value"]} {signal["unit"]}
-                </div>
-                <div style="
-                    flex: 1;
-                    min-width: 0;
-                    color: {tokens["text_secondary"]};
-                    font-size: 13px;
-                ">
-                    Normal: {ref_lower}–{ref_upper} {signal["unit"]}
-                </div>
-                <div style="
-                    flex-shrink: 0;
-                    min-width: 84px;
-                    text-align: center;
-                    background-color: {signal_badge_bg};
-                    color: white;
-                    padding: 4px 12px;
-                    border-radius: 12px;
-                    font-size: 11px;
-                    font-weight: 600;
-                ">
-                    {status}
-                </div>
-            </div>
-            """
-            st.markdown(row_html, unsafe_allow_html=True)
+                    row_html = f"""
+                    <div style="
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        background: {row_bg};
+                        border-radius: 8px;
+                        padding: 10px 12px;
+                        margin-bottom: 6px;
+                    ">
+                        <div style="
+                            flex: 2;
+                            min-width: 0;
+                            font-weight: 600;
+                            color: {tokens["text"]};
+                            font-size: 13px;
+                        ">
+                            {signal["display_name"]}
+                            <div style="
+                                font-weight: 400;
+                                font-size: 11px;
+                                color: {tokens["text_secondary"]};
+                                margin-top: 2px;
+                            ">
+                                Normal: {ref_lower}–{ref_upper}
+                                {signal["unit"]}
+                            </div>
+                        </div>
+                        <div style="
+                            flex: 1;
+                            min-width: 0;
+                            font-family: {FONT_MONO};
+                            color: {tokens["text"]};
+                            font-size: 13px;
+                        ">
+                            {signal["value"]} {signal["unit"]}
+                        </div>
+                        <div style="
+                            flex-shrink: 0;
+                            min-width: 76px;
+                            text-align: center;
+                            background-color: {signal_badge_bg};
+                            color: white;
+                            padding: 4px 10px;
+                            border-radius: 12px;
+                            font-size: 11px;
+                            font-weight: 600;
+                        ">
+                            {status}
+                        </div>
+                    </div>
+                    """
+                    st.markdown(row_html, unsafe_allow_html=True)
 
     show_divider(dark_mode)
 
@@ -1057,21 +1128,21 @@ def render_component_detail(
     cards = [
         {
             "icon": lucide_icon(
-                "info", size=18, color=tokens["text_secondary"]
+                "info", size=20, color=tokens["text_secondary"]
             ),
             "title": "What's Happening",
             "body": "Pending Granite LLM report generation..."
         },
         {
             "icon": lucide_icon(
-                "help-circle", size=18, color=tokens["text_secondary"]
+                "help-circle", size=20, color=tokens["text_secondary"]
             ),
             "title": "Why This Matters",
             "body": "Pending Granite LLM report generation..."
         },
         {
             "icon": lucide_icon(
-                "check-square", size=18, color=tokens["text_secondary"]
+                "check-square", size=20, color=tokens["text_secondary"]
             ),
             "title": "What You Should Do",
             "body": "Pending Granite LLM report generation..."
@@ -1092,12 +1163,12 @@ def render_component_detail(
             ">
                 <h3 style="
                     color: {tokens["text"]};
-                    margin: 0 0 8px 0;
+                    margin: 0 0 12px 0;
                     font-size: 16px;
                     font-weight: 600;
                     display: flex;
                     align-items: center;
-                    gap: 8px;
+                    gap: 12px;
                 ">
                     {card["icon"]}{card["title"]}
                 </h3>
@@ -1136,7 +1207,11 @@ def show_detail_page():
         MOCK_DATA.items(),
         key=lambda x: RISK_PRIORITY[x[1]["risk_level"]]
     )
-    risk_emoji = {"High": "🔴", "Medium": "🟠", "Low": "🟢"}
+    risk_color_map = {
+        "High": tokens["risk_high"],
+        "Medium": tokens["risk_medium"],
+        "Low": tokens["risk_low"],
+    }
 
     tab_cols = st.columns(len(sorted_components), gap="small")
     tab_css_rules = []
@@ -1144,10 +1219,14 @@ def show_detail_page():
     for col, (tab_key, tab_data) in zip(tab_cols, sorted_components):
         with col:
             is_active = tab_key == component_key
-            label = (
-                f"{risk_emoji[tab_data['risk_level']]} "
-                f"{tab_data['display_name']}"
+            icon_color = risk_color_map[tab_data["risk_level"]]
+            icon_svg = lucide_icon(
+                COMPONENT_ICONS.get(tab_key, "activity"),
+                size=16,
+                color=icon_color,
             )
+            icon_src = svg_data_uri(icon_svg)
+            label = tab_data["display_name"]
             if st.button(
                 label,
                 key=f"tab_btn_{tab_key}",
@@ -1156,10 +1235,18 @@ def show_detail_page():
                 st.session_state["selected_component"] = tab_key
                 st.rerun()
 
+            icon_css = f"""
+                background-color: transparent !important;
+                background-image: url("{icon_src}") !important;
+                background-repeat: no-repeat !important;
+                background-position: 18px center !important;
+                background-size: 16px 16px !important;
+                padding-left: 46px !important;
+            """
             if is_active:
                 tab_css_rules.append(f"""
                     .st-key-tab_btn_{tab_key} button {{
-                        background: transparent !important;
+                        {icon_css}
                         color: {tokens["accent"]} !important;
                         border: none !important;
                         border-bottom: 2.5px solid {tokens["accent"]}
@@ -1168,14 +1255,14 @@ def show_detail_page():
                         font-weight: 700 !important;
                     }}
                     .st-key-tab_btn_{tab_key} button:hover {{
-                        background: transparent !important;
+                        {icon_css}
                         color: {tokens["accent"]} !important;
                     }}
                 """)
             else:
                 tab_css_rules.append(f"""
                     .st-key-tab_btn_{tab_key} button {{
-                        background: transparent !important;
+                        {icon_css}
                         color: {tokens["text_secondary"]} !important;
                         border: none !important;
                         border-bottom: 2.5px solid {tokens["border"]}
@@ -1184,8 +1271,8 @@ def show_detail_page():
                         font-weight: 500 !important;
                     }}
                     .st-key-tab_btn_{tab_key} button:hover {{
+                        {icon_css}
                         color: {tokens["text"]} !important;
-                        background: transparent !important;
                     }}
                 """)
 
