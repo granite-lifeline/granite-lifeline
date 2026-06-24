@@ -19,7 +19,7 @@ Data Layer → Model Layer → Report Layer → Dashboard
 - **Health Overview**: At-a-glance view of all monitored components with risk-based prioritization
 - **Component Details**: Drill-down pages with metrics and interactive trend charts
 - **Risk Score Trends**: Plotly-powered visualizations showing risk progression over time
-- **Theme Support**: Light/dark mode toggle with Animal Crossing-inspired design
+- **Theme Support**: Light/dark mode toggle with an IBM Carbon-inspired "Pro" design
 - **Responsive Design**: Optimized for desktop viewing (mobile optimization planned)
 
 ---
@@ -33,7 +33,7 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | Overview Page | GL-40 | Component cards with risk levels and scores |
 | Component Detail Page | GL-41 | Metrics display with back navigation |
 | Risk Score Trend Chart | GL-42 | Interactive Plotly line chart with theme support |
-| Theme Toggle | GL-40 | Light/dark mode with Animal Crossing aesthetics |
+| Theme Toggle | GL-40 | Light/dark mode with Pro (IBM Carbon-inspired) aesthetics |
 | Team Footer | - | Team attribution footer |
 
 ### [PLANNED]
@@ -75,7 +75,7 @@ Renders:
 | Framework | Streamlit | 1.x | Web app framework |
 | Visualization | Plotly | 5.x | Interactive charts |
 | Styling | Custom CSS | - | Theme implementation |
-| Fonts | Google Fonts | - | Nunito, Noto Sans SC |
+| Fonts | Google Fonts | - | IBM Plex Sans, IBM Plex Mono, Noto Sans SC |
 
 ---
 
@@ -150,13 +150,15 @@ streamlit run dashboard/app.py --server.runOnSave true
   - Current risk score percentage
 - **Risk-Based Sorting**: High-risk components appear first
 - **Theme Toggle**: Sun/moon icon in top-right corner
+- **Risk Visualization**: Animated progress ring per card
 - **Navigation**: "View Details" button on each card
-- **Team Footer**: Team attribution at bottom
+- **Footer**: Multi-section footer with repository/blog links and
+  team attribution
 
 **Design Principles:**
 - Non-technical language (no jargon like "cooling_system_stress")
 - Color-coded risk levels (red/orange/green)
-- Large, readable fonts (Nunito family)
+- Large, readable fonts (IBM Plex Sans family)
 - Minimal cognitive load
 
 ### Detail Page
@@ -165,10 +167,11 @@ streamlit run dashboard/app.py --server.runOnSave true
 
 **Features:**
 - **Back Navigation**: Return to overview
-- **Component Header**: Name + risk level badge inline
-- **Key Metrics**: 
-  - Risk Score (percentage)
-  - Last Updated timestamp
+- **Component Tabs**: Switch between all monitored components without
+  leaving the detail view (risk-colored emoji + name per tab)
+- **Component Header**: Name + risk level badge, centered
+- **Risk Gauge**: Plotly gauge showing current risk score with a
+  delta arrow vs. the previous reading
 - **Trend Chart**: Interactive Plotly line chart showing:
   - Last 5 risk score readings (or fewer if less data available)
   - Time labels (T-4, T-3, T-2, T-1, Now)
@@ -176,12 +179,12 @@ streamlit run dashboard/app.py --server.runOnSave true
   - Hover tooltips with exact values
   - Theme-aware colors
 - **Data Validation**: Shows warning if less than 2 data points
-- **Team Footer**: Team attribution at bottom
-
-**Planned Additions:**
-- Diagnostic report text (anomaly description, cause, actions)
-- Key signals table with reference ranges
-- Export functionality
+- **Key Signals Table**: Header row (Signal/Reading/Normal
+  Range/Status) above per-signal rows with ABNORMAL/NORMAL badges
+- **Diagnostic Report**: Three-column card grid (what's happening,
+  why it matters, what to do)
+- **Footer**: Multi-section footer with repository/blog links and
+  team attribution
 
 ---
 
@@ -189,21 +192,36 @@ streamlit run dashboard/app.py --server.runOnSave true
 
 ### Theme System
 
-The dashboard implements a dual-theme system inspired by Animal Crossing aesthetics:
+The dashboard implements a single "Pro" theme (minimalist, IBM Carbon Design
+System-inspired) with light/dark mode variants, defined as a token dict
+(`THEME_TOKENS` in `app.py`) rather than duplicated CSS per mode:
 
 **Light Mode (Default)**
-- Background: Warm beige (`rgb(247, 243, 223)`)
-- Text: Brown (`#725d42`)
-- Accent: Teal (`#19c8b9`)
-- Cards: White with subtle shadows
-- Chart: Beige background with brown grid
+
+- Background: `#f5f5f7`
+- Surface (cards): `#ffffff`
+- Text: `#1d1d1f` / secondary `#6e6e73`
+- Accent: `#0f62fe`
+- Risk colors: High `#da1e28`, Medium `#ff832b`, Low `#24a148`
 
 **Dark Mode**
-- Background: Dark brown (`#3d3020`)
-- Text: Light beige (`#e8d5b0`)
-- Accent: Teal (`#19c8b9`)
-- Cards: Darker brown with stronger shadows
-- Chart: Dark brown background with lighter grid
+
+- Background: `#1c1c1e`
+- Surface (cards): `#2c2c2e`
+- Text: `#f5f5f7` / secondary `#98989d`
+- Accent: `#4589ff`
+- Risk colors: High `#fa4d56`, Medium `#ff832b`, Low `#42be65`
+
+Fonts: IBM Plex Sans (headings/body) and IBM Plex Mono (numeric values —
+risk scores, metrics, signal readings), loaded via Google Fonts, reinforcing
+the IBM-sponsored project's brand identity.
+
+Each overview card carries a `border-left` stripe and a small per-component
+icon (`COMPONENT_ICONS`) colored by risk level, so risk is perceptible before
+reading any text. Decorative icons (heading icons, theme toggle, alert
+banner) are inline Lucide-style SVGs rendered via `lucide_icon()`, colored
+from the active theme token so they recolor automatically between
+light/dark — a placeholder icon set pending a final sourced icon set.
 
 Theme state is stored in `st.session_state["dark_mode"]` and persists across page navigation.
 
