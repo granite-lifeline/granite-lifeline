@@ -6,8 +6,12 @@ to detailed diagnostic reports.
 """
 
 import base64
+import json
 import math
 import time
+from html import escape
+from pathlib import Path
+
 import streamlit as st
 import plotly.graph_objects as go
 
@@ -79,6 +83,12 @@ MOCK_DATA = {
 }
 
 RISK_PRIORITY = {"High": 0, "Medium": 1, "Low": 2}
+REPORT_OUTPUT_PATH = (
+    Path(__file__).resolve().parents[1] /
+    "tests" /
+    "mock_data" /
+    "mock_report_output.json"
+)
 
 THEME_TOKENS = {
     "light": {
@@ -258,6 +268,41 @@ def get_theme() -> dict:
     """Return the active Pro theme's token dict for the current mode."""
     mode = "dark" if st.session_state.get("dark_mode", False) else "light"
     return THEME_TOKENS[mode]
+
+
+@st.cache_data
+def load_mock_report_outputs() -> list:
+    """Load mock Report Layer outputs for dashboard testing."""
+    try:
+        with open(REPORT_OUTPUT_PATH, "r", encoding="utf-8") as report_file:
+            data = json.load(report_file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+    if not isinstance(data, list):
+        return []
+
+    return data
+
+
+def get_report_for_component(component_key: str) -> dict:
+    """Find the mock report output for a component."""
+    reports = load_mock_report_outputs()
+
+    for report in reports:
+        if report.get("component") == component_key:
+            return report
+
+    return {}
+
+
+def get_report_text(report: dict, key: str, fallback: str) -> str:
+    """Get text from report output, with fallback for missing values."""
+    value = report.get(key)
+    if value is None or value == "":
+        return fallback
+
+    return str(value)
 
 
 def normalize_risk_level(risk_level) -> str:
@@ -794,14 +839,7 @@ def show_overview_page():
                 color=badge_bg,
             )
             ring_size = 132
-            ring_svg = progress_ring(
-                risk_pct,
-                color=badge_bg,
-                track_color=tokens["border"],
-                anim_key=component_key,
-                size=ring_size,
-                stroke=10,
-            )
+            ring_angle = int(risk_pct * 3.6)
 
             card_html = f"""
             <div style="
@@ -842,11 +880,20 @@ def show_overview_page():
                     position: relative;
                     width: {ring_size}px;
                     height: {ring_size}px;
+                    border-radius: 50%;
+                    background: conic-gradient(
+                        {badge_bg} 0deg {ring_angle}deg,
+                        {tokens["border"]} {ring_angle}deg 360deg
+                    );
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                 ">
-                    {ring_svg}
                     <div style="
-                        position: absolute;
-                        inset: 0;
+                        width: {ring_size - 22}px;
+                        height: {ring_size - 22}px;
+                        border-radius: 50%;
+                        background: {tokens["surface"]};
                         display: flex;
                         flex-direction: column;
                         align-items: center;
@@ -876,7 +923,7 @@ def show_overview_page():
             </div>
             """
 
-            st.markdown(card_html, unsafe_allow_html=True)
+            st.html(card_html)
 
             if st.button(
                 "View Details  →",
@@ -891,6 +938,7 @@ def show_overview_page():
 
 
 def render_component_detail(
+    component_key: str,
     component_data: dict,
     dark_mode: bool,
     tokens: dict,
@@ -1214,27 +1262,75 @@ def render_component_detail(
     heading_icon = lucide_icon("file-text", size=22, color=tokens["accent"])
     show_icon_heading("Diagnostic Report", heading_icon)
 
+    report = get_report_for_component(component_key)
+    anomaly_description = escape(get_report_text(
+        report,
+        "anomaly_description",
+        "Anomaly description is not available yet.",
+    ))
+    possible_cause = escape(get_report_text(
+        report,
+        "possible_cause",
+        "Possible cause is not available yet.",
+    ))
+
+    actions = report.get("recommended_action", [])
+    if not isinstance(actions, list) or not actions:
+        actions = ["Recommended actions are not available yet."]
+
+    action_items = "".join(
+        f"<li>{escape(str(action))}</li>" for action in actions
+    )
+
     cards = [
         {
             "icon": lucide_icon(
                 "info", size=20, color=tokens["text_secondary"]
             ),
             "title": "What's Happening",
-            "body": "Pending Granite LLM report generation..."
+            "body_html": f"""
+                <p style="
+                    color: {tokens["text_secondary"]};
+                    margin: 0;
+                    font-size: 14px;
+                    line-height: 1.5;
+                ">
+                    {anomaly_description}
+                </p>
+            """
         },
         {
             "icon": lucide_icon(
                 "help-circle", size=20, color=tokens["text_secondary"]
             ),
             "title": "Why This Matters",
-            "body": "Pending Granite LLM report generation..."
+            "body_html": f"""
+                <p style="
+                    color: {tokens["text_secondary"]};
+                    margin: 0;
+                    font-size: 14px;
+                    line-height: 1.5;
+                ">
+                    {possible_cause}
+                </p>
+            """
         },
         {
             "icon": lucide_icon(
                 "check-square", size=20, color=tokens["text_secondary"]
             ),
             "title": "What You Should Do",
-            "body": "Pending Granite LLM report generation..."
+            "body_html": f"""
+                <ul style="
+                    color: {tokens["text_secondary"]};
+                    margin: 0;
+                    padding-left: 18px;
+                    font-size: 14px;
+                    line-height: 1.5;
+                ">
+                    {action_items}
+                </ul>
+            """
         }
     ]
 
@@ -1261,17 +1357,10 @@ def render_component_detail(
                 ">
                     {card["icon"]}{card["title"]}
                 </h3>
-                <p style="
-                    color: {tokens["text_secondary"]};
-                    margin: 0;
-                    font-size: 14px;
-                    font-style: italic;
-                ">
-                    {card["body"]}
-                </p>
+                {card["body_html"]}
             </div>
             """
-            st.markdown(card_html, unsafe_allow_html=True)
+            st.html(card_html)
 
 
 def show_detail_page():
@@ -1367,7 +1456,12 @@ def show_detail_page():
 
     show_divider(dark_mode, margin="8px auto 32px auto")
 
-    render_component_detail(MOCK_DATA[component_key], dark_mode, tokens)
+    render_component_detail(
+        component_key,
+        MOCK_DATA[component_key],
+        dark_mode,
+        tokens,
+    )
 
     show_footer(dark_mode)
 
