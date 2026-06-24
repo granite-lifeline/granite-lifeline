@@ -5,8 +5,10 @@ Displays vehicle health status with component risk levels and navigation
 to detailed diagnostic reports.
 """
 
+import base64
 import streamlit as st
 import plotly.graph_objects as go
+from pathlib import Path
 
 MOCK_DATA = {
     "cooling_system_stress": {
@@ -76,6 +78,93 @@ MOCK_DATA = {
 }
 
 RISK_PRIORITY = {"High": 0, "Medium": 1, "Low": 2}
+
+
+def load_asset_base64(filename: str) -> str:
+    """Load asset file and return as base64-encoded data URI."""
+    assets_dir = Path(__file__).parent / "assets"
+    file_path = assets_dir / filename
+
+    mime_types = {
+        ".svg": "image/svg+xml",
+        ".png": "image/png",
+        ".webp": "image/webp"
+    }
+
+    suffix = file_path.suffix.lower()
+    mime_type = mime_types.get(suffix, "application/octet-stream")
+
+    with open(file_path, "rb") as f:
+        data = f.read()
+
+    encoded = base64.b64encode(data).decode("utf-8")
+    return f"data:{mime_type};base64,{encoded}"
+
+
+def show_divider(dark_mode: bool, margin: str = "24px auto"):
+    """Display repeating divider line clipped to content width."""
+    divider_file = (
+        "divider/divider-line-brown.svg" if dark_mode
+        else "divider/divider-line-teal.svg"
+    )
+    divider_src = load_asset_base64(divider_file)
+    divider_html = f"""
+    <div style="
+        width: 100%;
+        max-width: 1100px;
+        margin: {margin};
+        overflow: hidden;
+    ">
+        <div style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            width: max-content;
+            min-width: 100%;
+        ">
+            <img src="{divider_src}" style="
+                flex: 0 0 auto;
+                height: auto;
+            ">
+            <img src="{divider_src}" style="
+                flex: 0 0 auto;
+                height: auto;
+            ">
+            <img src="{divider_src}" style="
+                flex: 0 0 auto;
+                height: auto;
+            ">
+            <img src="{divider_src}" style="
+                flex: 0 0 auto;
+                height: auto;
+            ">
+            <img src="{divider_src}" style="
+                flex: 0 0 auto;
+                height: auto;
+            ">
+        </div>
+    </div>
+    """
+    st.markdown(divider_html, unsafe_allow_html=True)
+
+
+def show_icon_heading(title: str, icon_src: str, *, transform: str = "none"):
+    """Display an H2 heading with an Animal Crossing icon."""
+    heading_html = f"""
+    <h2 style="margin-bottom: 16px;">
+        <img src="{icon_src}" style="
+            height: 1em;
+            width: auto;
+            vertical-align: middle;
+            margin-right: 8px;
+            position: relative;
+            top: -3px;
+            transform: {transform};
+        ">{title}
+    </h2>
+    """
+    st.markdown(heading_html, unsafe_allow_html=True)
 
 
 def apply_theme(dark_mode: bool):
@@ -234,28 +323,28 @@ def apply_theme(dark_mode: bool):
             div[data-testid="stHorizontalBlock"] {{
                 gap: 1.5rem !important;
             }}
-            
-            /* Animal Crossing Loading Spinner */
+
             @keyframes ac-spin {{
                 0% {{ transform: rotate(0deg); }}
                 100% {{ transform: rotate(360deg); }}
             }}
-            
+
             .ac-spinner {{
                 border: 4px solid rgba(25, 200, 185, 0.2);
                 border-top: 4px solid #19c8b9;
                 border-radius: 50%;
                 width: 48px;
                 height: 48px;
-                animation: ac-spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+                animation: ac-spin 1s cubic-bezier(0.4, 0, 0.2, 1)
+                           infinite;
                 margin: 40px auto;
             }}
-            
+
             .ac-spinner-container {{
                 text-align: center;
                 padding: 60px 20px;
             }}
-            
+
             .ac-spinner-text {{
                 color: #19c8b9;
                 font-size: 14px;
@@ -273,17 +362,26 @@ def show_footer(dark_mode: bool):
     """Display team footer at bottom of page."""
     footer_color = "#c4a882" if dark_mode else "#9f927d"
 
+    footer_tree = load_asset_base64("footer/footer-tree.webp")
+
     footer_html = f"""
-    <div style="
-        text-align: center;
-        color: {footer_color};
-        font-size: 12px;
-        margin-top: 48px;
-        padding: 16px 0;
-    ">
-        Granite Lifeline · University of Bristol MSc Computer Science ·
-        IBM-sponsored project · Team: Charlotte Yu, Jintong He, Lei Pei,
-        Qiuting Fu, Lucca Zhou, Ray Wang
+    <div style="margin-top: 24px;">
+        <img src="{footer_tree}" style="
+            width: 100%;
+            height: auto;
+            display: block;
+            margin-bottom: 32px;
+        ">
+        <div style="
+            text-align: center;
+            color: {footer_color};
+            font-size: 12px;
+            padding: 16px 0;
+        ">
+            Granite Lifeline · University of Bristol MSc Computer Science ·
+            IBM-sponsored project · Team: Charlotte Yu, Jintong He, Lei Pei,
+            Qiuting Fu, Lucca Zhou, Ray Wang
+        </div>
     </div>
     """
 
@@ -293,30 +391,139 @@ def show_footer(dark_mode: bool):
 def show_overview_page():
     """Display the Overview Page with component health summary."""
     dark_mode = st.session_state.get("dark_mode", False)
+    theme_frame_bg = "#4a3d2a" if dark_mode else "#faf8f0"
+    theme_frame_border = "#6b5a3f" if dark_mode else "#d4c4a8"
+    theme_depth = "#2d2416" if dark_mode else "#b89f76"
+    theme_tooltip_text = "#e8d5b0" if dark_mode else "#725d42"
+    theme_tooltip_shadow = (
+        "0 2px 8px rgba(0,0,0,0.35)" if dark_mode
+        else "0 2px 8px rgba(121,79,39,0.18)"
+    )
 
-    col_title, col_theme = st.columns([5, 1])
-    with col_title:
+    title_col, theme_col = st.columns([11, 1])
+    with title_col:
         st.title("Vehicle Health Status")
         st.caption("Last checked: 2026-06-23 10:00")
-    with col_theme:
+    with theme_col:
+        st.markdown(
+            '<div style="height: 8px;"></div>',
+            unsafe_allow_html=True
+        )
         if dark_mode:
-            if st.button("☀", key="theme_btn", use_container_width=True):
+            theme_icon_src = load_asset_base64("icons/item-399.png")
+            if st.button(
+                "Light",
+                key="theme_btn",
+                help="Switch to light mode"
+            ):
                 st.session_state["dark_mode"] = False
                 st.rerun()
         else:
-            if st.button("◐", key="theme_btn", use_container_width=True):
+            theme_icon_src = load_asset_base64("icons/item-400.png")
+            if st.button(
+                "Dark",
+                key="theme_btn",
+                help="Switch to dark mode"
+            ):
                 st.session_state["dark_mode"] = True
                 st.rerun()
+
+        st.markdown(
+            f"""
+            <style>
+                div[data-testid="stColumn"]:has(.st-key-theme_btn)
+                    div[data-testid="stVerticalBlock"] {{
+                    align-items: flex-end !important;
+                }}
+                .st-key-theme_btn button {{
+                    background-color: {theme_frame_bg} !important;
+                    background-image: url("{theme_icon_src}") !important;
+                    background-position: center !important;
+                    background-repeat: no-repeat !important;
+                    background-size: 30px 30px !important;
+                    border: 1px solid {theme_frame_border} !important;
+                    border-radius: 12px !important;
+                    box-shadow: 0 3px 0 0 {theme_depth} !important;
+                    color: transparent !important;
+                    font-size: 0 !important;
+                    height: 44px !important;
+                    line-height: 0 !important;
+                    margin-left: auto !important;
+                    min-height: 44px !important;
+                    min-width: 44px !important;
+                    padding: 0 !important;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1)
+                                !important;
+                    width: 44px !important;
+                }}
+                .st-key-theme_btn button:hover {{
+                    transform: translateY(-1px) !important;
+                    box-shadow: 0 4px 0 0 {theme_depth} !important;
+                }}
+                .st-key-theme_btn button:active {{
+                    transform: translateY(2px) !important;
+                    box-shadow: 0 1px 0 0 {theme_depth} !important;
+                }}
+                .st-key-theme_btn button:focus-visible {{
+                    outline: 2px solid #ffcc00 !important;
+                    outline-offset: 2px !important;
+                }}
+                .st-key-theme_btn button * {{
+                    color: transparent !important;
+                    font-size: 0 !important;
+                    line-height: 0 !important;
+                }}
+                .st-key-theme_btn button p {{
+                    display: none !important;
+                }}
+                [data-baseweb="tooltip"] > div {{
+                    background-color: {theme_frame_bg} !important;
+                    border: 1px solid {theme_frame_border} !important;
+                    border-radius: 10px !important;
+                    box-shadow: {theme_tooltip_shadow} !important;
+                }}
+                [data-testid="stTooltipContent"],
+                [data-testid="stTooltipContent"] p {{
+                    color: {theme_tooltip_text} !important;
+                }}
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
 
     has_high_risk = any(
         comp["risk_level"] == "High" for comp in MOCK_DATA.values()
     )
 
     if has_high_risk:
-        st.error(
-            "⚠️ Attention needed — one or more components require "
-            "urgent action"
-        )
+        icon_474 = load_asset_base64("icons/item-474.png")
+        alert_bg = "#5a2f2b" if dark_mode else "#f8d7da"
+        alert_border = "#d97757" if dark_mode else "#f5c6cb"
+        alert_text = "#fff1df" if dark_mode else "#721c24"
+        alert_html = f"""
+        <div style="
+            background-color: {alert_bg};
+            border: 1px solid {alert_border};
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin: 16px 0;
+            color: {alert_text};
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        ">
+            <img src="{icon_474}" style="
+                width: 20px;
+                height: 20px;
+                flex-shrink: 0;
+            ">
+            <span style="font-weight: 600; color: {alert_text};">
+                Attention needed — one or more components require
+                urgent action
+            </span>
+        </div>
+        """
+        st.markdown(alert_html, unsafe_allow_html=True)
     else:
         st.success("✓ All systems within normal range")
 
@@ -359,14 +566,13 @@ def show_overview_page():
 
             risk_pct = int(component_data["risk_score"] * 100)
 
-            # Adjust card background to warmer, less harsh color
             if dark_mode:
                 card_bg_adjusted = card_bg
                 pattern_color = "rgba(248, 240, 220, 0.06)"
             else:
-                card_bg_adjusted = "#faf8f0"  # Warmer cream instead of pure white
+                card_bg_adjusted = "#faf8f0"
                 pattern_color = "rgba(121, 79, 39, 0.08)"
-            
+
             card_html = f"""
             <div style="
                 background-color: {card_bg_adjusted};
@@ -436,7 +642,6 @@ def show_overview_page():
                 st.session_state["page"] = "detail"
                 st.rerun()
 
-    st.markdown("---")
     show_footer(st.session_state.get("dark_mode", False))
 
 
@@ -501,16 +706,20 @@ def show_detail_page():
     with col2:
         st.metric("Last Updated", "2026-06-23 10:00")
 
-    st.markdown("---")
+    show_divider(st.session_state.get("dark_mode", False))
 
     trend = component_data["trend"]
 
     if len(trend) < 2:
         st.warning("Not enough data yet to show a trend.")
     else:
-        st.subheader("Risk Score Trend")
-        
-        # Show loading spinner with Animal Crossing style
+        icon_019 = load_asset_base64("icons/item-019.png")
+        show_icon_heading(
+            "Risk Score Trend",
+            icon_019,
+            transform="scale(-1, -1)"
+        )
+
         with st.spinner(""):
             spinner_html = """
             <div class="ac-spinner-container">
@@ -519,10 +728,13 @@ def show_detail_page():
             </div>
             """
             spinner_placeholder = st.empty()
-            spinner_placeholder.markdown(spinner_html, unsafe_allow_html=True)
-            
+            spinner_placeholder.markdown(
+                spinner_html,
+                unsafe_allow_html=True
+            )
+
             import time
-            time.sleep(0.5)  # Brief loading animation
+            time.sleep(0.5)
             spinner_placeholder.empty()
 
         time_labels = ["T-4", "T-3", "T-2", "T-1", "Now"]
@@ -530,21 +742,23 @@ def show_detail_page():
 
         dark_mode = st.session_state.get("dark_mode", False)
 
-        # Optimized Animal Crossing color palette
         if dark_mode:
-            line_color = "#7fb685"  # Softer green for dark mode
+            line_color = "#7fb685"
             bg_color = "#3d3020"
             paper_bg = "#2d2416"
             text_color = "#e8d5b0"
             grid_color = "#5c4a2a"
         else:
-            line_color = "#19c8b9"  # Mint green for light mode
+            line_color = "#19c8b9"
             bg_color = "rgb(247,243,223)"
             paper_bg = "#f8f8f0"
             text_color = "#725d42"
             grid_color = "#c4b89e"
 
-        fill_color = "rgba(127, 182, 133, 0.15)" if dark_mode else "rgba(25, 200, 185, 0.2)"
+        fill_color = (
+            "rgba(127, 182, 133, 0.15)" if dark_mode
+            else "rgba(25, 200, 185, 0.2)"
+        )
 
         fig = go.Figure()
 
@@ -556,12 +770,17 @@ def show_detail_page():
             marker=dict(
                 size=10,
                 color=line_color,
-                line=dict(color="white" if not dark_mode else "#2d2416", width=2)
+                line=dict(
+                    color="white" if not dark_mode else "#2d2416",
+                    width=2
+                )
             ),
             fill="tozeroy",
             fillcolor=fill_color,
             name="Risk Score",
-            hovertemplate="<b>%{x}</b><br>Risk Score: %{y:.0%}<extra></extra>"
+            hovertemplate=(
+                "<b>%{x}</b><br>Risk Score: %{y:.0%}<extra></extra>"
+            )
         ))
 
         fig.update_layout(
@@ -589,9 +808,10 @@ def show_detail_page():
             "Higher values indicate greater risk."
         )
 
-    st.markdown("---")
+    show_divider(st.session_state.get("dark_mode", False))
 
-    st.subheader("Key Signals")
+    icon_001 = load_asset_base64("icons/item-001.png")
+    show_icon_heading("Key Signals", icon_001)
 
     key_signals = component_data["key_signals"]
 
@@ -665,9 +885,10 @@ def show_detail_page():
                 """
                 st.markdown(badge_html, unsafe_allow_html=True)
 
-    st.markdown("---")
+    show_divider(st.session_state.get("dark_mode", False))
 
-    st.subheader("Diagnostic Report")
+    icon_460 = load_asset_base64("icons/item-460.png")
+    show_icon_heading("Diagnostic Report", icon_460)
 
     dark_mode = st.session_state.get("dark_mode", False)
 
@@ -682,19 +903,23 @@ def show_detail_page():
         title_color = "#794f27"
         body_color = "#9f927d"
 
+    icon_352 = load_asset_base64("icons/item-352.png")
+    icon_440 = load_asset_base64("icons/item-440.png")
+    icon_007 = load_asset_base64("icons/item-007.png")
+
     cards = [
         {
-            "icon": "🔍",
+            "icon_src": icon_352,
             "title": "What's Happening",
             "body": "Pending Granite LLM report generation..."
         },
         {
-            "icon": "🔎",
+            "icon_src": icon_440,
             "title": "Why This Matters",
             "body": "Pending Granite LLM report generation..."
         },
         {
-            "icon": "🔧",
+            "icon_src": icon_007,
             "title": "What You Should Do",
             "body": "Pending Granite LLM report generation..."
         }
@@ -715,7 +940,14 @@ def show_detail_page():
                 font-size: 16px;
                 font-weight: 600;
             ">
-                {card['icon']} {card['title']}
+                <img src="{card['icon_src']}" style="
+                    width: 24px;
+                    height: 24px;
+                    vertical-align: middle;
+                    margin-right: 8px;
+                    position: relative;
+                    top: -2px;
+                ">{card['title']}
             </h3>
             <p style="
                 color: {body_color};
@@ -729,7 +961,6 @@ def show_detail_page():
         """
         st.markdown(card_html, unsafe_allow_html=True)
 
-    st.markdown("---")
     show_footer(st.session_state.get("dark_mode", False))
 
 
