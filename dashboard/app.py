@@ -86,15 +86,15 @@ THEME_TOKENS = {
         "border": "#d2d2d7",
         "text": "#1d1d1f",
         "text_secondary": "#6e6e73",
-        "accent": "#0071e3",
+        "accent": "#0f62fe",
         "accent_contrast": "#ffffff",
         "shadow": "rgba(0, 0, 0, 0.08)",
-        "risk_high": "#ff3b30",
-        "risk_medium": "#ff9500",
-        "risk_low": "#34c759",
-        "danger_bg": "#fdeceb",
-        "danger_border": "#f8c4c0",
-        "danger_text": "#b42318",
+        "risk_high": "#da1e28",
+        "risk_medium": "#ff832b",
+        "risk_low": "#24a148",
+        "danger_bg": "#fff1f1",
+        "danger_border": "#ffd7d9",
+        "danger_text": "#a2191f",
     },
     "dark": {
         "bg": "#1c1c1e",
@@ -103,17 +103,23 @@ THEME_TOKENS = {
         "border": "#3a3a3c",
         "text": "#f5f5f7",
         "text_secondary": "#98989d",
-        "accent": "#2997ff",
+        "accent": "#4589ff",
         "accent_contrast": "#ffffff",
         "shadow": "rgba(0, 0, 0, 0.4)",
-        "risk_high": "#ff453a",
-        "risk_medium": "#ff9f0a",
-        "risk_low": "#30d158",
-        "danger_bg": "#3a2422",
-        "danger_border": "#5c2e2a",
-        "danger_text": "#ffb4ab",
+        "risk_high": "#fa4d56",
+        "risk_medium": "#ff832b",
+        "risk_low": "#42be65",
+        "danger_bg": "#2c1618",
+        "danger_border": "#5e2125",
+        "danger_text": "#ff8389",
     },
 }
+
+FONT_SANS = (
+    "'IBM Plex Sans', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, "
+    "'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+)
+FONT_MONO = "'IBM Plex Mono', 'SF Mono', Consolas, monospace"
 
 # Hand-coded Lucide-style icon glyphs (placeholder set, swappable via
 # the same lucide_icon() call sites once a final icon set is sourced).
@@ -169,6 +175,25 @@ ICONS = {
         '<path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 '
         '2-2h11"></path>'
     ),
+    "droplet": (
+        '<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>'
+    ),
+    "wind": (
+        '<path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 '
+        '14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"></path>'
+    ),
+    "zap": (
+        '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2">'
+        '</polygon>'
+    ),
+}
+
+# Per-component icon, keyed by MOCK_DATA component key (falls back to a
+# generic icon for components not in this map).
+COMPONENT_ICONS = {
+    "cooling_system_stress": "droplet",
+    "air_intake_maf_anomaly": "wind",
+    "accelerator_pedal_sensor": "zap",
 }
 
 
@@ -200,7 +225,7 @@ def get_theme() -> dict:
     return THEME_TOKENS[mode]
 
 
-def show_divider(dark_mode: bool, margin: str = "24px auto"):
+def show_divider(dark_mode: bool, margin: str = "36px auto"):
     """Display a hairline divider clipped to content width."""
     tokens = THEME_TOKENS["dark" if dark_mode else "light"]
     divider_html = f"""
@@ -234,13 +259,13 @@ def apply_theme(dark_mode: bool):
     tokens = THEME_TOKENS["dark" if dark_mode else "light"]
 
     font_link = (
-        '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:'
-        'wght@400;500;700&display=swap" rel="stylesheet">'
+        '<link href="https://fonts.googleapis.com/css2?'
+        'family=IBM+Plex+Sans:wght@400;500;600;700'
+        '&family=IBM+Plex+Mono:wght@500;600;700'
+        '&family=Noto+Sans+SC:wght@400;500;700'
+        '&display=swap" rel="stylesheet">'
     )
-    font_family = (
-        "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', "
-        "Roboto, 'Noto Sans SC', Helvetica, Arial, sans-serif"
-    )
+    font_family = FONT_SANS
 
     theme_css = f"""
     {font_link}
@@ -260,8 +285,8 @@ def apply_theme(dark_mode: bool):
         .main .block-container {{
             background-color: {tokens["bg"]} !important;
             font-family: {font_family} !important;
-            padding-top: 1rem !important;
-            padding-bottom: 1rem !important;
+            padding-top: 2.5rem !important;
+            padding-bottom: 2rem !important;
             max-width: 1100px !important;
         }}
         h1, h2, h3 {{
@@ -282,19 +307,20 @@ def apply_theme(dark_mode: bool):
             font-size: 13px !important;
         }}
         .stButton > button {{
-            background: {tokens["accent"]} !important;
-            color: {tokens["accent_contrast"]} !important;
-            border: none !important;
+            background: transparent !important;
+            color: {tokens["accent"]} !important;
+            border: 1.5px solid {tokens["accent"]} !important;
             border-radius: 10px !important;
-            padding: 10px 20px !important;
+            padding: 9px 20px !important;
             font-weight: 600 !important;
             font-size: 14px !important;
             font-family: {font_family} !important;
             box-shadow: none !important;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
         }}
         .stButton > button:hover {{
-            filter: brightness(1.1) !important;
+            background: {tokens["accent"]} !important;
+            color: {tokens["accent_contrast"]} !important;
         }}
         .stButton > button:active {{
             transform: scale(0.97) !important;
@@ -302,6 +328,13 @@ def apply_theme(dark_mode: bool):
         .stButton > button:focus-visible {{
             outline: 2px solid {tokens["accent"]} !important;
             outline-offset: 2px !important;
+        }}
+        [data-testid="stMetricValue"] {{
+            font-family: {FONT_MONO} !important;
+            color: {tokens["text"]} !important;
+        }}
+        [data-testid="stMetricLabel"] {{
+            color: {tokens["text_secondary"]} !important;
         }}
         div[data-testid="stHorizontalBlock"] {{
             gap: 1.5rem !important;
@@ -517,25 +550,39 @@ def show_overview_page():
                 risk_label = "Low Risk"
 
             risk_pct = int(component_data["risk_score"] * 100)
+            component_icon = lucide_icon(
+                COMPONENT_ICONS.get(component_key, "activity"),
+                size=18,
+                color=badge_bg,
+            )
 
             card_html = f"""
             <div style="
                 background-color: {tokens["surface"]};
                 border: 1px solid {tokens["border"]};
+                border-left: 4px solid {badge_bg};
                 border-radius: 14px;
                 box-shadow: 0 1px 3px {tokens["shadow"]};
                 padding: 24px;
                 margin-bottom: 16px;
                 min-height: 180px;
             ">
-                <h3 style="
-                    margin: 0 0 16px 0;
-                    color: {tokens["text"]};
-                    font-size: 18px;
-                    font-weight: 700;
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin-bottom: 16px;
                 ">
-                    {component_data["display_name"]}
-                </h3>
+                    {component_icon}
+                    <h3 style="
+                        margin: 0;
+                        color: {tokens["text"]};
+                        font-size: 18px;
+                        font-weight: 700;
+                    ">
+                        {component_data["display_name"]}
+                    </h3>
+                </div>
                 <div style="
                     background-color: {badge_bg};
                     color: white;
@@ -550,8 +597,9 @@ def show_overview_page():
                 </div>
                 <div style="margin-top: 16px;">
                     <p style="
+                        font-family: {FONT_MONO};
                         font-size: 36px;
-                        font-weight: 800;
+                        font-weight: 700;
                         margin: 0;
                         color: {tokens["text"]};
                         line-height: 1;
@@ -573,7 +621,7 @@ def show_overview_page():
             st.markdown(card_html, unsafe_allow_html=True)
 
             if st.button(
-                "View Details",
+                "View Details  →",
                 key=f"btn_{component_key}",
                 use_container_width=True
             ):
@@ -762,52 +810,63 @@ def show_detail_page():
         signals_with_status.sort(key=lambda x: x[1] == "NORMAL")
 
         for signal, status in signals_with_status:
+            ref_lower = signal["reference_range"][0]
+            ref_upper = signal["reference_range"][1]
+            badge_bg = (
+                tokens["risk_high"] if status == "ABNORMAL"
+                else tokens["risk_low"]
+            )
+
             row_html = f"""
             <div style="
+                display: flex;
+                align-items: center;
+                gap: 16px;
                 background: {row_bg};
                 border-radius: 8px;
-                padding: 8px;
-                margin-bottom: 4px;
+                padding: 12px 16px;
+                margin-bottom: 6px;
             ">
-            </div>
-            """
-            st.markdown(row_html, unsafe_allow_html=True)
-
-            col1, col2, col3, col4 = st.columns([3, 2, 2, 1])
-
-            with col1:
-                st.markdown(f"**{signal['display_name']}**")
-
-            with col2:
-                st.text(f"{signal['value']} {signal['unit']}")
-
-            with col3:
-                ref_lower = signal["reference_range"][0]
-                ref_upper = signal["reference_range"][1]
-                st.text(
-                    f"Normal: {ref_lower}–{ref_upper} {signal['unit']}"
-                )
-
-            with col4:
-                badge_bg = (
-                    tokens["risk_high"] if status == "ABNORMAL"
-                    else tokens["risk_low"]
-                )
-
-                badge_html = f"""
                 <div style="
+                    flex: 2;
+                    min-width: 0;
+                    font-weight: 600;
+                    color: {tokens["text"]};
+                ">
+                    {signal["display_name"]}
+                </div>
+                <div style="
+                    flex: 1;
+                    min-width: 0;
+                    font-family: {FONT_MONO};
+                    color: {tokens["text"]};
+                ">
+                    {signal["value"]} {signal["unit"]}
+                </div>
+                <div style="
+                    flex: 1;
+                    min-width: 0;
+                    color: {tokens["text_secondary"]};
+                    font-size: 13px;
+                ">
+                    Normal: {ref_lower}–{ref_upper} {signal["unit"]}
+                </div>
+                <div style="
+                    flex-shrink: 0;
+                    min-width: 84px;
+                    text-align: center;
                     background-color: {badge_bg};
                     color: white;
-                    padding: 3px 10px;
+                    padding: 4px 12px;
                     border-radius: 12px;
-                    text-align: center;
                     font-size: 11px;
                     font-weight: 600;
                 ">
                     {status}
                 </div>
-                """
-                st.markdown(badge_html, unsafe_allow_html=True)
+            </div>
+            """
+            st.markdown(row_html, unsafe_allow_html=True)
 
     show_divider(dark_mode)
 
