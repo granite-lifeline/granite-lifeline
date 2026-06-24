@@ -6,6 +6,7 @@ to detailed diagnostic reports.
 """
 
 import base64
+import math
 import streamlit as st
 import plotly.graph_objects as go
 
@@ -219,6 +220,39 @@ def svg_data_uri(svg_markup: str) -> str:
     return f"data:image/svg+xml;base64,{encoded}"
 
 
+def progress_ring(
+    pct: int,
+    color: str,
+    track_color: str,
+    anim_key: str,
+    size: int = 64,
+    stroke: int = 7,
+) -> str:
+    """Render an animated circular progress ring as inline SVG."""
+    radius = (size - stroke) / 2
+    center = size / 2
+    circumference = 2 * math.pi * radius
+    offset = circumference * (1 - pct / 100)
+    anim_name = f"ring-fill-{anim_key}"
+    return (
+        f'<svg width="{size}" height="{size}" '
+        f'viewBox="0 0 {size} {size}" '
+        f'style="transform: rotate(-90deg); flex-shrink: 0;">'
+        f'<circle cx="{center}" cy="{center}" r="{radius}" fill="none" '
+        f'stroke="{track_color}" stroke-width="{stroke}"></circle>'
+        f'<circle cx="{center}" cy="{center}" r="{radius}" fill="none" '
+        f'stroke="{color}" stroke-width="{stroke}" '
+        f'stroke-linecap="round" '
+        f'stroke-dasharray="{circumference:.2f}" '
+        f'stroke-dashoffset="{circumference:.2f}" '
+        f'style="animation: {anim_name} 1s ease-out forwards;">'
+        f'</circle>'
+        f'<style>@keyframes {anim_name} '
+        f'{{ to {{ stroke-dashoffset: {offset:.2f}; }} }}</style>'
+        f'</svg>'
+    )
+
+
 def get_theme() -> dict:
     """Return the active Pro theme's token dict for the current mode."""
     mode = "dark" if st.session_state.get("dark_mode", False) else "light"
@@ -246,7 +280,7 @@ def show_icon_heading(title: str, icon_svg: str):
         margin-bottom: 16px;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 14px;
     ">
         {icon_svg}{title}
     </h2>
@@ -368,6 +402,15 @@ def apply_theme(dark_mode: bool):
             margin-top: 16px;
             letter-spacing: 0.5px;
         }}
+
+        .footer-link {{
+            color: {tokens["accent"]} !important;
+            text-decoration: none !important;
+            font-weight: 600 !important;
+        }}
+        .footer-link:hover {{
+            text-decoration: underline !important;
+        }}
     </style>
     """
 
@@ -379,18 +422,56 @@ def show_footer(dark_mode: bool):
     tokens = THEME_TOKENS["dark" if dark_mode else "light"]
 
     footer_html = f"""
-    <div style="
-        margin-top: 40px;
-        padding-top: 20px;
-        padding-bottom: 16px;
-        border-top: 1px solid {tokens["border"]};
-        text-align: center;
-        color: {tokens["text_secondary"]};
-        font-size: 12px;
-    ">
-        Granite Lifeline · University of Bristol MSc Computer Science ·
-        IBM-sponsored project · Team: Charlotte Yu, Jintong He, Lei Pei,
-        Qiuting Fu, Lucca Zhou, Ray Wang
+    <div style="margin-top: 48px; padding-top: 20px;">
+        <div style="
+            border-top: 1px solid {tokens["border"]};
+            padding-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 24px;
+            flex-wrap: wrap;
+        ">
+            <div>
+                <div style="
+                    color: {tokens["text"]};
+                    font-weight: 700;
+                    font-size: 15px;
+                    margin-bottom: 4px;
+                ">
+                    Granite Lifeline
+                </div>
+                <div style="
+                    color: {tokens["text_secondary"]};
+                    font-size: 13px;
+                ">
+                    Vehicle health monitoring · IBM-sponsored project
+                </div>
+            </div>
+            <div style="display: flex; gap: 24px; font-size: 13px;">
+                <a class="footer-link"
+                   href="https://github.com/granite-lifeline/granite-lifeline"
+                   target="_blank" rel="noopener noreferrer">
+                    Repository
+                </a>
+                <a class="footer-link"
+                   href="https://granite-lifeline.github.io/granite-lifeline-blog/"
+                   target="_blank" rel="noopener noreferrer">
+                    Blog
+                </a>
+            </div>
+        </div>
+        <div style="
+            border-top: 1px solid {tokens["border"]};
+            margin-top: 16px;
+            padding-top: 16px;
+            padding-bottom: 8px;
+            color: {tokens["text_secondary"]};
+            font-size: 12px;
+        ">
+            University of Bristol MSc Computer Science · Team: Charlotte
+            Yu, Jintong He, Lei Pei, Qiuting Fu, Lucca Zhou, Ray Wang
+        </div>
     </div>
     """
 
@@ -404,8 +485,21 @@ def show_overview_page():
 
     title_col, theme_col = st.columns([11, 1])
     with title_col:
-        st.title("Vehicle Health Status")
-        st.caption("Last checked: 2026-06-23 10:00")
+        with st.container(key="page_title_block"):
+            st.title("Vehicle Health Status")
+            st.caption("Last checked: 2026-06-23 10:00")
+        st.markdown(
+            """
+            <style>
+                .st-key-page_title_block,
+                .st-key-page_title_block h1,
+                .st-key-page_title_block .stCaption {
+                    text-align: center !important;
+                }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
     with theme_col:
         st.markdown(
             '<div style="height: 8px;"></div>',
@@ -555,6 +649,14 @@ def show_overview_page():
                 size=18,
                 color=badge_bg,
             )
+            ring_svg = progress_ring(
+                risk_pct,
+                color=badge_bg,
+                track_color=tokens["border"],
+                anim_key=component_key,
+                size=64,
+                stroke=7,
+            )
 
             card_html = f"""
             <div style="
@@ -570,7 +672,7 @@ def show_overview_page():
                 <div style="
                     display: flex;
                     align-items: center;
-                    gap: 8px;
+                    gap: 10px;
                     margin-bottom: 16px;
                 ">
                     {component_icon}
@@ -595,25 +697,33 @@ def show_overview_page():
                 ">
                     {risk_label}
                 </div>
-                <div style="margin-top: 16px;">
-                    <p style="
-                        font-family: {FONT_MONO};
-                        font-size: 36px;
-                        font-weight: 700;
-                        margin: 0;
-                        color: {tokens["text"]};
-                        line-height: 1;
-                    ">
-                        {risk_pct}%
-                    </p>
-                    <p style="
-                        font-size: 12px;
-                        color: {tokens["text_secondary"]};
-                        margin: 4px 0 0 0;
-                        font-weight: 500;
-                    ">
-                        Risk Score
-                    </p>
+                <div style="
+                    margin-top: 16px;
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                ">
+                    {ring_svg}
+                    <div>
+                        <p style="
+                            font-family: {FONT_MONO};
+                            font-size: 36px;
+                            font-weight: 700;
+                            margin: 0;
+                            color: {tokens["text"]};
+                            line-height: 1;
+                        ">
+                            {risk_pct}%
+                        </p>
+                        <p style="
+                            font-size: 12px;
+                            color: {tokens["text_secondary"]};
+                            margin: 4px 0 0 0;
+                            font-weight: 500;
+                        ">
+                            Risk Score
+                        </p>
+                    </div>
                 </div>
             </div>
             """
@@ -632,25 +742,12 @@ def show_overview_page():
     show_footer(dark_mode)
 
 
-def show_detail_page():
-    """Display Component Detail Page with risk metrics and trend chart."""
-    component_key = st.session_state.get("selected_component")
-
-    if not component_key or component_key not in MOCK_DATA:
-        st.error("Component not found.")
-        if st.button("← Back to Overview"):
-            st.session_state["page"] = "overview"
-            st.rerun()
-        return
-
-    component_data = MOCK_DATA[component_key]
-    dark_mode = st.session_state.get("dark_mode", False)
-    tokens = THEME_TOKENS["dark" if dark_mode else "light"]
-
-    if st.button("← Back to Overview"):
-        st.session_state["page"] = "overview"
-        st.rerun()
-
+def render_component_detail(
+    component_data: dict,
+    dark_mode: bool,
+    tokens: dict,
+):
+    """Render metrics, trend, signals, and report for one component."""
     risk_level = component_data["risk_level"]
     if risk_level == "High":
         badge_bg = tokens["risk_high"]
@@ -678,7 +775,12 @@ def show_detail_page():
     """
 
     title_html = f"""
-    <div style="display: flex; align-items: center; margin-bottom: 24px;">
+    <div style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+    ">
         <h1 style="margin: 0; display: inline;">
             {component_data["display_name"]}
         </h1>
@@ -688,101 +790,154 @@ def show_detail_page():
 
     st.markdown(title_html, unsafe_allow_html=True)
 
-    col1, col2 = st.columns(2)
-    with col1:
-        risk_pct = int(component_data["risk_score"] * 100)
-        st.metric("Risk Score", f"{risk_pct}%")
-    with col2:
-        st.metric("Last Updated", "2026-06-23 10:00")
-
-    show_divider(dark_mode)
-
     trend = component_data["trend"]
+    risk_pct = int(component_data["risk_score"] * 100)
 
-    if len(trend) < 2:
-        st.warning("Not enough data yet to show a trend.")
-    else:
-        heading_icon = lucide_icon(
-            "trending-up", size=22, color=tokens["accent"]
-        )
-        show_icon_heading("Risk Score Trend", heading_icon)
+    gauge_col, trend_col = st.columns([4, 8], gap="large")
 
-        with st.spinner(""):
-            spinner_html = """
-            <div class="loading-spinner-container">
-                <div class="loading-spinner"></div>
-                <div class="loading-spinner-text">
-                    Loading trend data...
-                </div>
-            </div>
-            """
-            spinner_placeholder = st.empty()
-            spinner_placeholder.markdown(
-                spinner_html,
-                unsafe_allow_html=True
+    with gauge_col:
+        delta_config = None
+        if len(trend) >= 2:
+            delta_config = dict(
+                reference=trend[-2] * 100,
+                increasing=dict(color=tokens["risk_high"]),
+                decreasing=dict(color=tokens["risk_low"]),
             )
 
-            import time
-            time.sleep(0.5)
-            spinner_placeholder.empty()
-
-        time_labels = ["T-4", "T-3", "T-2", "T-1", "Now"]
-        time_labels = time_labels[-len(trend):]
-
-        line_color = tokens["accent"]
-        bg_color = tokens["surface"]
-        paper_bg = tokens["surface"]
-        text_color = tokens["text_secondary"]
-        grid_color = tokens["border"]
-        fill_color = (
-            "rgba(41, 151, 255, 0.15)" if dark_mode
-            else "rgba(0, 113, 227, 0.12)"
-        )
-
-        fig = go.Figure()
-
-        fig.add_trace(go.Scatter(
-            x=time_labels,
-            y=trend,
-            mode="lines+markers",
-            line=dict(color=line_color, width=3, shape="spline"),
-            marker=dict(
-                size=8,
-                color=line_color,
-                line=dict(color=tokens["surface"], width=2)
+        gauge_fig = go.Figure(go.Indicator(
+            mode="gauge+number+delta" if delta_config else "gauge+number",
+            value=risk_pct,
+            number=dict(
+                suffix="%",
+                font=dict(family=FONT_MONO, size=40, color=tokens["text"]),
             ),
-            fill="tozeroy",
-            fillcolor=fill_color,
-            name="Risk Score",
-            hovertemplate=(
-                "<b>%{x}</b><br>Risk Score: %{y:.0%}<extra></extra>"
-            )
+            delta=delta_config,
+            gauge=dict(
+                axis=dict(
+                    range=[0, 100],
+                    tickcolor=tokens["text_secondary"],
+                    tickfont=dict(color=tokens["text_secondary"], size=10),
+                ),
+                bar=dict(color=badge_bg, thickness=0.3),
+                bgcolor=tokens["surface_alt"],
+                borderwidth=0,
+            ),
         ))
-
-        fig.update_layout(
-            plot_bgcolor=bg_color,
-            paper_bgcolor=paper_bg,
-            font=dict(color=text_color),
-            xaxis=dict(
-                gridcolor=grid_color,
-                showgrid=True
-            ),
-            yaxis=dict(
-                gridcolor=grid_color,
-                showgrid=True,
-                range=[0, 1],
-                tickformat=".0%"
-            ),
-            margin=dict(l=40, r=20, t=20, b=40),
-            showlegend=False
+        gauge_fig.update_layout(
+            paper_bgcolor=tokens["surface"],
+            font=dict(color=tokens["text_secondary"]),
+            margin=dict(l=40, r=40, t=30, b=10),
+            height=220,
+        )
+        st.plotly_chart(
+            gauge_fig,
+            use_container_width=True,
+            key="detail_risk_gauge",
+        )
+        st.markdown(
+            f"""
+            <p style="
+                text-align: center;
+                color: {tokens["text_secondary"]};
+                font-size: 12px;
+                margin-top: -8px;
+            ">
+                Last updated: 2026-06-23 10:00
+            </p>
+            """,
+            unsafe_allow_html=True,
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+    with trend_col:
+        if len(trend) < 2:
+            st.warning("Not enough data yet to show a trend.")
+        else:
+            heading_icon = lucide_icon(
+                "trending-up", size=22, color=tokens["accent"]
+            )
+            show_icon_heading("Risk Score Trend", heading_icon)
 
-        st.caption(
-            "Risk score over the last 5 recorded readings. "
-            "Higher values indicate greater risk."
-        )
+            with st.spinner(""):
+                spinner_html = """
+                <div class="loading-spinner-container">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-spinner-text">
+                        Loading trend data...
+                    </div>
+                </div>
+                """
+                spinner_placeholder = st.empty()
+                spinner_placeholder.markdown(
+                    spinner_html,
+                    unsafe_allow_html=True
+                )
+
+                import time
+                time.sleep(0.5)
+                spinner_placeholder.empty()
+
+            time_labels = ["T-4", "T-3", "T-2", "T-1", "Now"]
+            time_labels = time_labels[-len(trend):]
+
+            line_color = tokens["accent"]
+            bg_color = tokens["surface"]
+            paper_bg = tokens["surface"]
+            text_color = tokens["text_secondary"]
+            grid_color = tokens["border"]
+            fill_color = (
+                "rgba(41, 151, 255, 0.15)" if dark_mode
+                else "rgba(0, 113, 227, 0.12)"
+            )
+
+            fig = go.Figure()
+
+            fig.add_trace(go.Scatter(
+                x=time_labels,
+                y=trend,
+                mode="lines+markers",
+                line=dict(color=line_color, width=3, shape="spline"),
+                marker=dict(
+                    size=8,
+                    color=line_color,
+                    line=dict(color=tokens["surface"], width=2)
+                ),
+                fill="tozeroy",
+                fillcolor=fill_color,
+                name="Risk Score",
+                hovertemplate=(
+                    "<b>%{x}</b><br>Risk Score: %{y:.0%}<extra></extra>"
+                )
+            ))
+
+            fig.update_layout(
+                plot_bgcolor=bg_color,
+                paper_bgcolor=paper_bg,
+                font=dict(color=text_color),
+                xaxis=dict(
+                    gridcolor=grid_color,
+                    showgrid=True
+                ),
+                yaxis=dict(
+                    gridcolor=grid_color,
+                    showgrid=True,
+                    range=[0, 1],
+                    tickformat=".0%"
+                ),
+                margin=dict(l=40, r=20, t=20, b=40),
+                height=220,
+                showlegend=False
+            )
+
+            st.plotly_chart(
+                fig,
+                use_container_width=True,
+                key="detail_trend_chart",
+            )
+
+            st.caption(
+                "Risk score over the last 5 recorded readings. "
+                "Higher values indicate greater risk."
+            )
 
     show_divider(dark_mode)
 
@@ -795,6 +950,32 @@ def show_detail_page():
         st.info("No signal data available for this component.")
     else:
         row_bg = tokens["surface_alt"]
+
+        header_html = f"""
+        <div style="
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 0 16px 8px 16px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            color: {tokens["text_secondary"]};
+        ">
+            <div style="flex: 2; min-width: 0;">Signal</div>
+            <div style="flex: 1; min-width: 0;">Reading</div>
+            <div style="flex: 1; min-width: 0;">Normal Range</div>
+            <div style="
+                flex-shrink: 0;
+                min-width: 84px;
+                text-align: center;
+            ">
+                Status
+            </div>
+        </div>
+        """
+        st.markdown(header_html, unsafe_allow_html=True)
 
         signals_with_status = []
         for signal in key_signals:
@@ -812,7 +993,7 @@ def show_detail_page():
         for signal, status in signals_with_status:
             ref_lower = signal["reference_range"][0]
             ref_upper = signal["reference_range"][1]
-            badge_bg = (
+            signal_badge_bg = (
                 tokens["risk_high"] if status == "ABNORMAL"
                 else tokens["risk_low"]
             )
@@ -855,7 +1036,7 @@ def show_detail_page():
                     flex-shrink: 0;
                     min-width: 84px;
                     text-align: center;
-                    background-color: {badge_bg};
+                    background-color: {signal_badge_bg};
                     color: white;
                     padding: 4px 12px;
                     border-radius: 12px;
@@ -897,37 +1078,125 @@ def show_detail_page():
         }
     ]
 
-    for card in cards:
-        card_html = f"""
-        <div style="
-            background: {tokens["surface"]};
-            border: 1px solid {tokens["border"]};
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-        ">
-            <h3 style="
-                color: {tokens["text"]};
-                margin: 0 0 8px 0;
-                font-size: 16px;
-                font-weight: 600;
-                display: flex;
-                align-items: center;
-                gap: 8px;
+    report_cols = st.columns(3, gap="medium")
+    for col, card in zip(report_cols, cards):
+        with col:
+            card_html = f"""
+            <div style="
+                background: {tokens["surface"]};
+                border: 1px solid {tokens["border"]};
+                border-radius: 12px;
+                padding: 16px;
+                margin-bottom: 12px;
+                min-height: 160px;
             ">
-                {card["icon"]}{card["title"]}
-            </h3>
-            <p style="
-                color: {tokens["text_secondary"]};
-                margin: 0;
-                font-size: 14px;
-                font-style: italic;
-            ">
-                {card["body"]}
-            </p>
-        </div>
-        """
-        st.markdown(card_html, unsafe_allow_html=True)
+                <h3 style="
+                    color: {tokens["text"]};
+                    margin: 0 0 8px 0;
+                    font-size: 16px;
+                    font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                ">
+                    {card["icon"]}{card["title"]}
+                </h3>
+                <p style="
+                    color: {tokens["text_secondary"]};
+                    margin: 0;
+                    font-size: 14px;
+                    font-style: italic;
+                ">
+                    {card["body"]}
+                </p>
+            </div>
+            """
+            st.markdown(card_html, unsafe_allow_html=True)
+
+
+def show_detail_page():
+    """Display Component Detail Page with tab-based component switch."""
+    component_key = st.session_state.get("selected_component")
+
+    if not component_key or component_key not in MOCK_DATA:
+        st.error("Component not found.")
+        if st.button("← Back to Overview"):
+            st.session_state["page"] = "overview"
+            st.rerun()
+        return
+
+    dark_mode = st.session_state.get("dark_mode", False)
+    tokens = THEME_TOKENS["dark" if dark_mode else "light"]
+
+    if st.button("← Back to Overview"):
+        st.session_state["page"] = "overview"
+        st.rerun()
+
+    sorted_components = sorted(
+        MOCK_DATA.items(),
+        key=lambda x: RISK_PRIORITY[x[1]["risk_level"]]
+    )
+    risk_emoji = {"High": "🔴", "Medium": "🟠", "Low": "🟢"}
+
+    tab_cols = st.columns(len(sorted_components), gap="small")
+    tab_css_rules = []
+
+    for col, (tab_key, tab_data) in zip(tab_cols, sorted_components):
+        with col:
+            is_active = tab_key == component_key
+            label = (
+                f"{risk_emoji[tab_data['risk_level']]} "
+                f"{tab_data['display_name']}"
+            )
+            if st.button(
+                label,
+                key=f"tab_btn_{tab_key}",
+                use_container_width=True,
+            ):
+                st.session_state["selected_component"] = tab_key
+                st.rerun()
+
+            if is_active:
+                tab_css_rules.append(f"""
+                    .st-key-tab_btn_{tab_key} button {{
+                        background: transparent !important;
+                        color: {tokens["accent"]} !important;
+                        border: none !important;
+                        border-bottom: 2.5px solid {tokens["accent"]}
+                            !important;
+                        border-radius: 0 !important;
+                        font-weight: 700 !important;
+                    }}
+                    .st-key-tab_btn_{tab_key} button:hover {{
+                        background: transparent !important;
+                        color: {tokens["accent"]} !important;
+                    }}
+                """)
+            else:
+                tab_css_rules.append(f"""
+                    .st-key-tab_btn_{tab_key} button {{
+                        background: transparent !important;
+                        color: {tokens["text_secondary"]} !important;
+                        border: none !important;
+                        border-bottom: 2.5px solid {tokens["border"]}
+                            !important;
+                        border-radius: 0 !important;
+                        font-weight: 500 !important;
+                    }}
+                    .st-key-tab_btn_{tab_key} button:hover {{
+                        color: {tokens["text"]} !important;
+                        background: transparent !important;
+                    }}
+                """)
+
+    st.markdown(
+        f"<style>{''.join(tab_css_rules)}</style>",
+        unsafe_allow_html=True,
+    )
+
+    show_divider(dark_mode, margin="8px auto 32px auto")
+
+    render_component_detail(MOCK_DATA[component_key], dark_mode, tokens)
 
     show_footer(dark_mode)
 

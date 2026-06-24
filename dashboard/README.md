@@ -150,8 +150,10 @@ streamlit run dashboard/app.py --server.runOnSave true
   - Current risk score percentage
 - **Risk-Based Sorting**: High-risk components appear first
 - **Theme Toggle**: Sun/moon icon in top-right corner
+- **Risk Visualization**: Animated progress ring per card
 - **Navigation**: "View Details" button on each card
-- **Team Footer**: Team attribution at bottom
+- **Footer**: Multi-section footer with repository/blog links and
+  team attribution
 
 **Design Principles:**
 - Non-technical language (no jargon like "cooling_system_stress")
@@ -165,10 +167,11 @@ streamlit run dashboard/app.py --server.runOnSave true
 
 **Features:**
 - **Back Navigation**: Return to overview
-- **Component Header**: Name + risk level badge inline
-- **Key Metrics**: 
-  - Risk Score (percentage)
-  - Last Updated timestamp
+- **Component Tabs**: Switch between all monitored components without
+  leaving the detail view (risk-colored emoji + name per tab)
+- **Component Header**: Name + risk level badge, centered
+- **Risk Gauge**: Plotly gauge showing current risk score with a
+  delta arrow vs. the previous reading
 - **Trend Chart**: Interactive Plotly line chart showing:
   - Last 5 risk score readings (or fewer if less data available)
   - Time labels (T-4, T-3, T-2, T-1, Now)
@@ -176,12 +179,12 @@ streamlit run dashboard/app.py --server.runOnSave true
   - Hover tooltips with exact values
   - Theme-aware colors
 - **Data Validation**: Shows warning if less than 2 data points
-- **Team Footer**: Team attribution at bottom
-
-**Planned Additions:**
-- Diagnostic report text (anomaly description, cause, actions)
-- Key signals table with reference ranges
-- Export functionality
+- **Key Signals Table**: Header row (Signal/Reading/Normal
+  Range/Status) above per-signal rows with ABNORMAL/NORMAL badges
+- **Diagnostic Report**: Three-column card grid (what's happening,
+  why it matters, what to do)
+- **Footer**: Multi-section footer with repository/blog links and
+  team attribution
 
 ---
 
