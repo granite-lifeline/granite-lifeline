@@ -330,6 +330,15 @@ def apply_theme(dark_mode: bool):
             color: {tokens["text"]} !important;
             font-weight: 700 !important;
             font-family: {font_family} !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }}
+        h1 > span:first-child,
+        h2 > span:first-child,
+        h3 > span:first-child {{
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 12px !important;
         }}
         h1 {{
             font-size: 32px !important;
@@ -364,6 +373,9 @@ def apply_theme(dark_mode: bool):
         .stButton > button:hover {{
             background: {tokens["accent"]} !important;
             color: {tokens["accent_contrast"]} !important;
+        }}
+        .stButton > button * {{
+            color: inherit !important;
         }}
         .stButton > button:active {{
             transform: scale(0.97) !important;
@@ -439,10 +451,46 @@ def show_footer(dark_mode: bool):
     tokens = THEME_TOKENS["dark" if dark_mode else "light"]
 
     team_members = [
-        "Charlotte Yu", "Jintong He", "Lei Pei",
-        "Qiuting Fu", "Lucca Zhou", "Ray Wang",
+        {
+            "name": "Charlotte Yu",
+            "role": "System Integration & Report Layer",
+            "url": "https://github.com/charlotteyu-47",
+        },
+        {
+            "name": "Jintong He",
+            "role": "Report Layer",
+            "url": "https://github.com/1613578121-arch",
+        },
+        {
+            "name": "Lei Pei",
+            "role": "Data Layer",
+            "url": "https://github.com/ploading1017",
+        },
+        {
+            "name": "Qiuting Fu",
+            "role": "Data Layer",
+            "url": "https://github.com/Ray1410",
+        },
+        {
+            "name": "Lucca Zhou",
+            "role": "Model Layer",
+            "url": "https://github.com/hikorido",
+        },
+        {
+            "name": "Ray Wang",
+            "role": "Model Layer",
+            "url": "https://github.com/learnerrayyy",
+        },
     ]
-    team_html = "<br>".join(team_members)
+    team_html = "".join(
+        f'<div style="margin-bottom: 8px; font-size: 13px;">'
+        f'<a class="footer-link" href="{member["url"]}" target="_blank" '
+        f'rel="noopener noreferrer">{member["name"]}</a>'
+        f'<span style="color: {tokens["text_secondary"]}; '
+        f'font-size: 12px;"> · {member["role"]}</span>'
+        f'</div>'
+        for member in team_members
+    )
 
     footer_html = f"""
     <div style="margin-top: 48px; padding-top: 28px;">
@@ -455,13 +503,13 @@ def show_footer(dark_mode: bool):
         ">
             <div>
                 <div class="footer-heading">Granite Lifeline</div>
-                <div style="
-                    color: {tokens["text"]};
-                    font-weight: 700;
-                    font-size: 15px;
-                    margin-bottom: 6px;
-                ">
-                    Granite Lifeline
+                <div style="margin-bottom: 6px;">
+                    <a class="footer-link"
+                       href="https://github.com/granite-lifeline"
+                       target="_blank" rel="noopener noreferrer"
+                       style="font-size: 15px;">
+                        Granite Lifeline
+                    </a>
                 </div>
                 <div style="
                     color: {tokens["text_secondary"]};
@@ -496,11 +544,7 @@ def show_footer(dark_mode: bool):
                 ">
                     University of Bristol MSc Computer Science
                 </div>
-                <div style="
-                    color: {tokens["text"]};
-                    font-size: 13px;
-                    line-height: 1.9;
-                ">
+                <div style="color: {tokens["text"]};">
                     {team_html}
                 </div>
             </div>
@@ -516,7 +560,7 @@ def show_overview_page():
     dark_mode = st.session_state.get("dark_mode", False)
     tokens = THEME_TOKENS["dark" if dark_mode else "light"]
 
-    title_col, theme_col = st.columns([11, 1])
+    spacer_col, title_col, theme_col = st.columns([1, 10, 1])
     with title_col:
         with st.container(key="page_title_block"):
             st.title("Vehicle Health Status")
@@ -526,7 +570,7 @@ def show_overview_page():
             <style>
                 .st-key-page_title_block,
                 .st-key-page_title_block h1,
-                .st-key-page_title_block .stCaption {
+                .st-key-page_title_block [data-testid="stCaptionContainer"] {
                     text-align: center !important;
                 }
             </style>
@@ -639,6 +683,7 @@ def show_overview_page():
             color: {tokens["danger_text"]};
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 14px;
         ">
             {alert_icon}
@@ -668,13 +713,10 @@ def show_overview_page():
             risk_level = component_data["risk_level"]
             if risk_level == "High":
                 badge_bg = tokens["risk_high"]
-                risk_label = "High Risk"
             elif risk_level == "Medium":
                 badge_bg = tokens["risk_medium"]
-                risk_label = "Medium Risk"
             else:
                 badge_bg = tokens["risk_low"]
-                risk_label = "Low Risk"
 
             risk_pct = int(component_data["risk_score"] * 100)
             component_icon = lucide_icon(
@@ -695,7 +737,9 @@ def show_overview_page():
             card_html = f"""
             <div style="
                 background-color: {tokens["surface"]};
-                border: 1px solid {tokens["border"]};
+                border-top: 1px solid {tokens["border"]};
+                border-right: 1px solid {tokens["border"]};
+                border-bottom: 1px solid {tokens["border"]};
                 border-left: 4px solid {badge_bg};
                 border-radius: 14px;
                 box-shadow: 0 1px 3px {tokens["shadow"]};
@@ -709,7 +753,7 @@ def show_overview_page():
                 <div style="
                     display: flex;
                     align-items: center;
-                    gap: 14px;
+                    gap: 20px;
                     margin-bottom: 24px;
                 ">
                     {component_icon}
@@ -721,17 +765,6 @@ def show_overview_page():
                     ">
                         {component_data["display_name"]}
                     </h3>
-                    <span style="
-                        background-color: {badge_bg};
-                        color: white;
-                        padding: 6px 14px;
-                        border-radius: 20px;
-                        display: inline-block;
-                        font-weight: 600;
-                        font-size: 12px;
-                    ">
-                        {risk_label}
-                    </span>
                 </div>
                 <div style="
                     position: relative;
@@ -794,28 +827,10 @@ def render_component_detail(
     risk_level = component_data["risk_level"]
     if risk_level == "High":
         badge_bg = tokens["risk_high"]
-        risk_label = "High Risk"
     elif risk_level == "Medium":
         badge_bg = tokens["risk_medium"]
-        risk_label = "Medium Risk"
     else:
         badge_bg = tokens["risk_low"]
-        risk_label = "Low Risk"
-
-    badge_html = f"""
-    <div style="
-        background-color: {badge_bg};
-        color: white;
-        padding: 6px 14px;
-        border-radius: 20px;
-        display: inline-block;
-        font-weight: 600;
-        font-size: 12px;
-        margin-left: 16px;
-    ">
-        {risk_label}
-    </div>
-    """
 
     title_html = f"""
     <div style="
@@ -827,7 +842,6 @@ def render_component_detail(
         <h1 style="margin: 0; display: inline;">
             {component_data["display_name"]}
         </h1>
-        {badge_html}
     </div>
     """
 
@@ -854,6 +868,9 @@ def render_component_detail(
     </style>
     """
     st.markdown(card_css, unsafe_allow_html=True)
+
+    gauge_heading_icon = lucide_icon("zap", size=24, color=tokens["accent"])
+    show_icon_heading("Risk Score", gauge_heading_icon, center=True)
 
     with st.container(key="gauge_card"):
         delta_config = None
@@ -1034,6 +1051,7 @@ def render_component_detail(
                 ">
                     <div style="flex: 2; min-width: 0;">Signal</div>
                     <div style="flex: 1; min-width: 0;">Reading</div>
+                    <div style="flex: 1; min-width: 0;">Normal Range</div>
                     <div style="
                         flex-shrink: 0;
                         min-width: 76px;
@@ -1084,15 +1102,6 @@ def render_component_detail(
                             font-size: 13px;
                         ">
                             {signal["display_name"]}
-                            <div style="
-                                font-weight: 400;
-                                font-size: 11px;
-                                color: {tokens["text_secondary"]};
-                                margin-top: 2px;
-                            ">
-                                Normal: {ref_lower}–{ref_upper}
-                                {signal["unit"]}
-                            </div>
                         </div>
                         <div style="
                             flex: 1;
@@ -1102,6 +1111,15 @@ def render_component_detail(
                             font-size: 13px;
                         ">
                             {signal["value"]} {signal["unit"]}
+                        </div>
+                        <div style="
+                            flex: 1;
+                            min-width: 0;
+                            font-family: {FONT_MONO};
+                            color: {tokens["text_secondary"]};
+                            font-size: 12px;
+                        ">
+                            {ref_lower}–{ref_upper} {signal["unit"]}
                         </div>
                         <div style="
                             flex-shrink: 0;
@@ -1168,7 +1186,7 @@ def render_component_detail(
                     font-weight: 600;
                     display: flex;
                     align-items: center;
-                    gap: 12px;
+                    gap: 18px;
                 ">
                     {card["icon"]}{card["title"]}
                 </h3>
@@ -1241,7 +1259,7 @@ def show_detail_page():
                 background-repeat: no-repeat !important;
                 background-position: 18px center !important;
                 background-size: 16px 16px !important;
-                padding-left: 46px !important;
+                padding-left: 52px !important;
             """
             if is_active:
                 tab_css_rules.append(f"""
