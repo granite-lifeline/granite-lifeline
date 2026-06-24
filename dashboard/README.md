@@ -19,7 +19,7 @@ Data Layer → Model Layer → Report Layer → Dashboard
 - **Health Overview**: At-a-glance view of all monitored components with risk-based prioritization
 - **Component Details**: Drill-down pages with metrics and interactive trend charts
 - **Risk Score Trends**: Plotly-powered visualizations showing risk progression over time
-- **Theme Support**: Light/dark mode toggle with Animal Crossing-inspired design
+- **Theme Support**: Light/dark mode toggle with a minimalist Apple-HIG-inspired "Pro" design
 - **Responsive Design**: Optimized for desktop viewing (mobile optimization planned)
 
 ---
@@ -33,7 +33,7 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | Overview Page | GL-40 | Component cards with risk levels and scores |
 | Component Detail Page | GL-41 | Metrics display with back navigation |
 | Risk Score Trend Chart | GL-42 | Interactive Plotly line chart with theme support |
-| Theme Toggle | GL-40 | Light/dark mode with Animal Crossing aesthetics |
+| Theme Toggle | GL-40 | Light/dark mode with Pro (Apple-HIG-inspired) aesthetics |
 | Team Footer | - | Team attribution footer |
 
 ### [PLANNED]
@@ -75,7 +75,7 @@ Renders:
 | Framework | Streamlit | 1.x | Web app framework |
 | Visualization | Plotly | 5.x | Interactive charts |
 | Styling | Custom CSS | - | Theme implementation |
-| Fonts | Google Fonts | - | Nunito, Noto Sans SC |
+| Fonts | System UI + Google Fonts | - | -apple-system stack, Noto Sans SC |
 
 ---
 
@@ -189,21 +189,30 @@ streamlit run dashboard/app.py --server.runOnSave true
 
 ### Theme System
 
-The dashboard implements a dual-theme system inspired by Animal Crossing aesthetics:
+The dashboard implements a single "Pro" theme (minimalist, Apple-HIG-inspired)
+with light/dark mode variants, defined as a token dict (`THEME_TOKENS` in
+`app.py`) rather than duplicated CSS per mode:
 
 **Light Mode (Default)**
-- Background: Warm beige (`rgb(247, 243, 223)`)
-- Text: Brown (`#725d42`)
-- Accent: Teal (`#19c8b9`)
-- Cards: White with subtle shadows
-- Chart: Beige background with brown grid
+
+- Background: `#f5f5f7`
+- Surface (cards): `#ffffff`
+- Text: `#1d1d1f` / secondary `#6e6e73`
+- Accent: `#0071e3`
+- Risk colors: High `#ff3b30`, Medium `#ff9500`, Low `#34c759`
 
 **Dark Mode**
-- Background: Dark brown (`#3d3020`)
-- Text: Light beige (`#e8d5b0`)
-- Accent: Teal (`#19c8b9`)
-- Cards: Darker brown with stronger shadows
-- Chart: Dark brown background with lighter grid
+
+- Background: `#1c1c1e`
+- Surface (cards): `#2c2c2e`
+- Text: `#f5f5f7` / secondary `#98989d`
+- Accent: `#2997ff`
+- Risk colors: High `#ff453a`, Medium `#ff9f0a`, Low `#30d158`
+
+Decorative icons (heading icons, theme toggle, alert banner) are inline
+Lucide-style SVGs rendered via `lucide_icon()`, colored from the active theme
+token so they recolor automatically between light/dark — a placeholder icon
+set pending a final sourced icon set.
 
 Theme state is stored in `st.session_state["dark_mode"]` and persists across page navigation.
 

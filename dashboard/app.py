@@ -8,7 +8,6 @@ to detailed diagnostic reports.
 import base64
 import streamlit as st
 import plotly.graph_objects as go
-from pathlib import Path
 
 MOCK_DATA = {
     "cooling_system_stress": {
@@ -79,309 +78,286 @@ MOCK_DATA = {
 
 RISK_PRIORITY = {"High": 0, "Medium": 1, "Low": 2}
 
+THEME_TOKENS = {
+    "light": {
+        "bg": "#f5f5f7",
+        "surface": "#ffffff",
+        "surface_alt": "#f5f5f7",
+        "border": "#d2d2d7",
+        "text": "#1d1d1f",
+        "text_secondary": "#6e6e73",
+        "accent": "#0071e3",
+        "accent_contrast": "#ffffff",
+        "shadow": "rgba(0, 0, 0, 0.08)",
+        "risk_high": "#ff3b30",
+        "risk_medium": "#ff9500",
+        "risk_low": "#34c759",
+        "danger_bg": "#fdeceb",
+        "danger_border": "#f8c4c0",
+        "danger_text": "#b42318",
+    },
+    "dark": {
+        "bg": "#1c1c1e",
+        "surface": "#2c2c2e",
+        "surface_alt": "#252527",
+        "border": "#3a3a3c",
+        "text": "#f5f5f7",
+        "text_secondary": "#98989d",
+        "accent": "#2997ff",
+        "accent_contrast": "#ffffff",
+        "shadow": "rgba(0, 0, 0, 0.4)",
+        "risk_high": "#ff453a",
+        "risk_medium": "#ff9f0a",
+        "risk_low": "#30d158",
+        "danger_bg": "#3a2422",
+        "danger_border": "#5c2e2a",
+        "danger_text": "#ffb4ab",
+    },
+}
 
-def load_asset_base64(filename: str) -> str:
-    """Load asset file and return as base64-encoded data URI."""
-    assets_dir = Path(__file__).parent / "assets"
-    file_path = assets_dir / filename
+# Hand-coded Lucide-style icon glyphs (placeholder set, swappable via
+# the same lucide_icon() call sites once a final icon set is sourced).
+ICONS = {
+    "sun": (
+        '<circle cx="12" cy="12" r="5"></circle>'
+        '<line x1="12" y1="1" x2="12" y2="3"></line>'
+        '<line x1="12" y1="21" x2="12" y2="23"></line>'
+        '<line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>'
+        '<line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>'
+        '<line x1="1" y1="12" x2="3" y2="12"></line>'
+        '<line x1="21" y1="12" x2="23" y2="12"></line>'
+        '<line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>'
+        '<line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>'
+    ),
+    "moon": (
+        '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z">'
+        '</path>'
+    ),
+    "trending-up": (
+        '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>'
+        '<polyline points="17 6 23 6 23 12"></polyline>'
+    ),
+    "activity": (
+        '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>'
+    ),
+    "file-text": (
+        '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 '
+        '2-2V8z"></path>'
+        '<polyline points="14 2 14 8 20 8"></polyline>'
+        '<line x1="16" y1="13" x2="8" y2="13"></line>'
+        '<line x1="16" y1="17" x2="8" y2="17"></line>'
+        '<polyline points="10 9 9 9 8 9"></polyline>'
+    ),
+    "alert-triangle": (
+        '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 '
+        '0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>'
+        '<line x1="12" y1="9" x2="12" y2="13"></line>'
+        '<line x1="12" y1="17" x2="12.01" y2="17"></line>'
+    ),
+    "info": (
+        '<circle cx="12" cy="12" r="10"></circle>'
+        '<line x1="12" y1="16" x2="12" y2="12"></line>'
+        '<line x1="12" y1="8" x2="12.01" y2="8"></line>'
+    ),
+    "help-circle": (
+        '<circle cx="12" cy="12" r="10"></circle>'
+        '<path d="M9.09 9a3 3 0 1 1 5.83 1c0 2-3 3-3 3"></path>'
+        '<line x1="12" y1="17" x2="12.01" y2="17"></line>'
+    ),
+    "check-square": (
+        '<polyline points="9 11 12 14 22 4"></polyline>'
+        '<path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 '
+        '2-2h11"></path>'
+    ),
+}
 
-    mime_types = {
-        ".svg": "image/svg+xml",
-        ".png": "image/png",
-        ".webp": "image/webp"
-    }
 
-    suffix = file_path.suffix.lower()
-    mime_type = mime_types.get(suffix, "application/octet-stream")
+def lucide_icon(
+    name: str,
+    size: int = 20,
+    color: str = "currentColor",
+    stroke_width: float = 2,
+) -> str:
+    """Render a Lucide-style icon as an inline SVG string."""
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" '
+        f'height="{size}" viewBox="0 0 24 24" fill="none" '
+        f'stroke="{color}" stroke-width="{stroke_width}" '
+        f'stroke-linecap="round" stroke-linejoin="round">'
+        f'{ICONS[name]}</svg>'
+    )
 
-    with open(file_path, "rb") as f:
-        data = f.read()
 
-    encoded = base64.b64encode(data).decode("utf-8")
-    return f"data:{mime_type};base64,{encoded}"
+def svg_data_uri(svg_markup: str) -> str:
+    """Encode inline SVG markup as a base64 data URI."""
+    encoded = base64.b64encode(svg_markup.encode("utf-8")).decode("utf-8")
+    return f"data:image/svg+xml;base64,{encoded}"
+
+
+def get_theme() -> dict:
+    """Return the active Pro theme's token dict for the current mode."""
+    mode = "dark" if st.session_state.get("dark_mode", False) else "light"
+    return THEME_TOKENS[mode]
 
 
 def show_divider(dark_mode: bool, margin: str = "24px auto"):
-    """Display repeating divider line clipped to content width."""
-    divider_file = (
-        "divider/divider-line-brown.svg" if dark_mode
-        else "divider/divider-line-teal.svg"
-    )
-    divider_src = load_asset_base64(divider_file)
+    """Display a hairline divider clipped to content width."""
+    tokens = THEME_TOKENS["dark" if dark_mode else "light"]
     divider_html = f"""
     <div style="
         width: 100%;
         max-width: 1100px;
         margin: {margin};
-        overflow: hidden;
-    ">
-        <div style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-            width: max-content;
-            min-width: 100%;
-        ">
-            <img src="{divider_src}" style="
-                flex: 0 0 auto;
-                height: auto;
-            ">
-            <img src="{divider_src}" style="
-                flex: 0 0 auto;
-                height: auto;
-            ">
-            <img src="{divider_src}" style="
-                flex: 0 0 auto;
-                height: auto;
-            ">
-            <img src="{divider_src}" style="
-                flex: 0 0 auto;
-                height: auto;
-            ">
-            <img src="{divider_src}" style="
-                flex: 0 0 auto;
-                height: auto;
-            ">
-        </div>
-    </div>
+        border-top: 1px solid {tokens["border"]};
+    "></div>
     """
     st.markdown(divider_html, unsafe_allow_html=True)
 
 
-def show_icon_heading(title: str, icon_src: str, *, transform: str = "none"):
-    """Display an H2 heading with an Animal Crossing icon."""
+def show_icon_heading(title: str, icon_svg: str):
+    """Display an H2 heading with an inline icon."""
     heading_html = f"""
-    <h2 style="margin-bottom: 16px;">
-        <img src="{icon_src}" style="
-            height: 1em;
-            width: auto;
-            vertical-align: middle;
-            margin-right: 8px;
-            position: relative;
-            top: -3px;
-            transform: {transform};
-        ">{title}
+    <h2 style="
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    ">
+        {icon_svg}{title}
     </h2>
     """
     st.markdown(heading_html, unsafe_allow_html=True)
 
 
 def apply_theme(dark_mode: bool):
-    """Apply Animal Crossing themed CSS based on dark_mode setting."""
+    """Apply the Pro theme's CSS for the given light/dark mode."""
+    tokens = THEME_TOKENS["dark" if dark_mode else "light"]
+
     font_link = (
-        '<link href="https://fonts.googleapis.com/css2?family=Nunito:'
-        'wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;'
-        '700&display=swap" rel="stylesheet">'
+        '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:'
+        'wght@400;500;700&display=swap" rel="stylesheet">'
+    )
+    font_family = (
+        "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', "
+        "Roboto, 'Noto Sans SC', Helvetica, Arial, sans-serif"
     )
 
-    if dark_mode:
-        theme_css = f"""
-        {font_link}
-        <style>
-            section[data-testid="stSidebar"] {{
-                display: none !important;
-            }}
-            header[data-testid="stHeader"] {{
-                display: none !important;
-            }}
-            [data-testid="stAppViewContainer"] {{
-                background-color: #2d2416 !important;
-            }}
-            .main {{
-                background-color: #3d3020 !important;
-            }}
-            .main .block-container {{
-                background-color: #3d3020 !important;
-                font-family: Nunito, 'Noto Sans SC', -apple-system,
-                             sans-serif !important;
-                padding-top: 1rem !important;
-                padding-bottom: 1rem !important;
-                max-width: 1100px !important;
-            }}
-            h1, h2, h3 {{
-                color: #f8f0dc !important;
-                font-weight: 700 !important;
-                font-family: Nunito, 'Noto Sans SC', -apple-system,
-                             sans-serif !important;
-            }}
-            h1 {{
-                font-size: 32px !important;
-                margin-bottom: 8px !important;
-            }}
-            p, label, span, .stMarkdown, .stMarkdown p {{
-                color: #e8d5b0 !important;
-                font-family: Nunito, 'Noto Sans SC', -apple-system,
-                             sans-serif !important;
-            }}
-            .stCaption {{
-                color: #c4a882 !important;
-                font-size: 13px !important;
-            }}
-            .stButton > button {{
-                background: linear-gradient(135deg, #4db8a8 0%,
-                            #3a9d8f 100%) !important;
-                color: white !important;
-                border: none !important;
-                border-radius: 12px !important;
-                padding: 10px 20px !important;
-                font-weight: 600 !important;
-                font-size: 14px !important;
-                font-family: Nunito, 'Noto Sans SC', -apple-system,
-                             sans-serif !important;
-                box-shadow: 0 5px 0 0 #2d7a70 !important;
-                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1)
-                            !important;
-            }}
-            .stButton > button:hover {{
-                transform: translateY(-1px) !important;
-                box-shadow: 0 6px 0 0 #2d7a70 !important;
-            }}
-            .stButton > button:active {{
-                transform: translateY(2px) !important;
-                box-shadow: 0 1px 0 0 #2d7a70 !important;
-            }}
-            .stButton > button:focus-visible {{
-                outline: 2px solid #ffcc00 !important;
-                outline-offset: 2px !important;
-            }}
-            div[data-testid="stHorizontalBlock"] {{
-                gap: 1.5rem !important;
-            }}
-        </style>
-        """
-    else:
-        theme_css = f"""
-        {font_link}
-        <style>
-            section[data-testid="stSidebar"] {{
-                display: none !important;
-            }}
-            header[data-testid="stHeader"] {{
-                display: none !important;
-            }}
-            [data-testid="stAppViewContainer"] {{
-                background-color: #f8f8f0 !important;
-            }}
-            .main {{
-                background-color: rgb(247, 243, 223) !important;
-            }}
-            .main .block-container {{
-                background-color: rgb(247, 243, 223) !important;
-                font-family: Nunito, 'Noto Sans SC', -apple-system,
-                             sans-serif !important;
-                padding-top: 1rem !important;
-                padding-bottom: 1rem !important;
-                max-width: 1100px !important;
-            }}
-            h1, h2, h3 {{
-                color: #794f27 !important;
-                font-weight: 700 !important;
-                font-family: Nunito, 'Noto Sans SC', -apple-system,
-                             sans-serif !important;
-            }}
-            h1 {{
-                font-size: 32px !important;
-                margin-bottom: 8px !important;
-            }}
-            p, label, span, .stMarkdown, .stMarkdown p {{
-                color: #725d42 !important;
-                font-family: Nunito, 'Noto Sans SC', -apple-system,
-                             sans-serif !important;
-            }}
-            .stCaption {{
-                color: #9f927d !important;
-                font-size: 13px !important;
-            }}
-            .stButton > button {{
-                background: linear-gradient(135deg, #4db8a8 0%,
-                            #3a9d8f 100%) !important;
-                color: white !important;
-                border: none !important;
-                border-radius: 12px !important;
-                padding: 10px 20px !important;
-                font-weight: 600 !important;
-                font-size: 14px !important;
-                font-family: Nunito, 'Noto Sans SC', -apple-system,
-                             sans-serif !important;
-                box-shadow: 0 5px 0 0 #2d7a70 !important;
-                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1)
-                            !important;
-            }}
-            .stButton > button:hover {{
-                transform: translateY(-1px) !important;
-                box-shadow: 0 6px 0 0 #2d7a70 !important;
-            }}
-            .stButton > button:active {{
-                transform: translateY(2px) !important;
-                box-shadow: 0 1px 0 0 #2d7a70 !important;
-            }}
-            .stButton > button:focus-visible {{
-                outline: 2px solid #ffcc00 !important;
-                outline-offset: 2px !important;
-            }}
-            div[data-testid="stHorizontalBlock"] {{
-                gap: 1.5rem !important;
-            }}
+    theme_css = f"""
+    {font_link}
+    <style>
+        section[data-testid="stSidebar"] {{
+            display: none !important;
+        }}
+        header[data-testid="stHeader"] {{
+            display: none !important;
+        }}
+        [data-testid="stAppViewContainer"] {{
+            background-color: {tokens["bg"]} !important;
+        }}
+        .main {{
+            background-color: {tokens["bg"]} !important;
+        }}
+        .main .block-container {{
+            background-color: {tokens["bg"]} !important;
+            font-family: {font_family} !important;
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+            max-width: 1100px !important;
+        }}
+        h1, h2, h3 {{
+            color: {tokens["text"]} !important;
+            font-weight: 700 !important;
+            font-family: {font_family} !important;
+        }}
+        h1 {{
+            font-size: 32px !important;
+            margin-bottom: 8px !important;
+        }}
+        p, label, span, .stMarkdown, .stMarkdown p {{
+            color: {tokens["text"]} !important;
+            font-family: {font_family} !important;
+        }}
+        .stCaption {{
+            color: {tokens["text_secondary"]} !important;
+            font-size: 13px !important;
+        }}
+        .stButton > button {{
+            background: {tokens["accent"]} !important;
+            color: {tokens["accent_contrast"]} !important;
+            border: none !important;
+            border-radius: 10px !important;
+            padding: 10px 20px !important;
+            font-weight: 600 !important;
+            font-size: 14px !important;
+            font-family: {font_family} !important;
+            box-shadow: none !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }}
+        .stButton > button:hover {{
+            filter: brightness(1.1) !important;
+        }}
+        .stButton > button:active {{
+            transform: scale(0.97) !important;
+        }}
+        .stButton > button:focus-visible {{
+            outline: 2px solid {tokens["accent"]} !important;
+            outline-offset: 2px !important;
+        }}
+        div[data-testid="stHorizontalBlock"] {{
+            gap: 1.5rem !important;
+        }}
 
-            @keyframes ac-spin {{
-                0% {{ transform: rotate(0deg); }}
-                100% {{ transform: rotate(360deg); }}
-            }}
+        @keyframes loading-spin {{
+            0% {{ transform: rotate(0deg); }}
+            100% {{ transform: rotate(360deg); }}
+        }}
 
-            .ac-spinner {{
-                border: 4px solid rgba(25, 200, 185, 0.2);
-                border-top: 4px solid #19c8b9;
-                border-radius: 50%;
-                width: 48px;
-                height: 48px;
-                animation: ac-spin 1s cubic-bezier(0.4, 0, 0.2, 1)
-                           infinite;
-                margin: 40px auto;
-            }}
+        .loading-spinner {{
+            border: 4px solid {tokens["border"]};
+            border-top: 4px solid {tokens["accent"]};
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            animation: loading-spin 1s cubic-bezier(0.4, 0, 0.2, 1)
+                       infinite;
+            margin: 40px auto;
+        }}
 
-            .ac-spinner-container {{
-                text-align: center;
-                padding: 60px 20px;
-            }}
+        .loading-spinner-container {{
+            text-align: center;
+            padding: 60px 20px;
+        }}
 
-            .ac-spinner-text {{
-                color: #19c8b9;
-                font-size: 14px;
-                font-weight: 600;
-                margin-top: 16px;
-                letter-spacing: 0.5px;
-            }}
-        </style>
-        """
+        .loading-spinner-text {{
+            color: {tokens["accent"]};
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 16px;
+            letter-spacing: 0.5px;
+        }}
+    </style>
+    """
 
     st.markdown(theme_css, unsafe_allow_html=True)
 
 
 def show_footer(dark_mode: bool):
     """Display team footer at bottom of page."""
-    footer_color = "#c4a882" if dark_mode else "#9f927d"
-
-    footer_tree = load_asset_base64("footer/footer-tree.webp")
+    tokens = THEME_TOKENS["dark" if dark_mode else "light"]
 
     footer_html = f"""
-    <div style="margin-top: 24px;">
-        <img src="{footer_tree}" style="
-            width: 100%;
-            height: auto;
-            display: block;
-            margin-bottom: 32px;
-        ">
-        <div style="
-            text-align: center;
-            color: {footer_color};
-            font-size: 12px;
-            padding: 16px 0;
-        ">
-            Granite Lifeline · University of Bristol MSc Computer Science ·
-            IBM-sponsored project · Team: Charlotte Yu, Jintong He, Lei Pei,
-            Qiuting Fu, Lucca Zhou, Ray Wang
-        </div>
+    <div style="
+        margin-top: 40px;
+        padding-top: 20px;
+        padding-bottom: 16px;
+        border-top: 1px solid {tokens["border"]};
+        text-align: center;
+        color: {tokens["text_secondary"]};
+        font-size: 12px;
+    ">
+        Granite Lifeline · University of Bristol MSc Computer Science ·
+        IBM-sponsored project · Team: Charlotte Yu, Jintong He, Lei Pei,
+        Qiuting Fu, Lucca Zhou, Ray Wang
     </div>
     """
 
@@ -391,14 +367,7 @@ def show_footer(dark_mode: bool):
 def show_overview_page():
     """Display the Overview Page with component health summary."""
     dark_mode = st.session_state.get("dark_mode", False)
-    theme_frame_bg = "#4a3d2a" if dark_mode else "#faf8f0"
-    theme_frame_border = "#6b5a3f" if dark_mode else "#d4c4a8"
-    theme_depth = "#2d2416" if dark_mode else "#b89f76"
-    theme_tooltip_text = "#e8d5b0" if dark_mode else "#725d42"
-    theme_tooltip_shadow = (
-        "0 2px 8px rgba(0,0,0,0.35)" if dark_mode
-        else "0 2px 8px rgba(121,79,39,0.18)"
-    )
+    tokens = THEME_TOKENS["dark" if dark_mode else "light"]
 
     title_col, theme_col = st.columns([11, 1])
     with title_col:
@@ -410,7 +379,7 @@ def show_overview_page():
             unsafe_allow_html=True
         )
         if dark_mode:
-            theme_icon_src = load_asset_base64("icons/item-399.png")
+            theme_icon_svg = lucide_icon("sun", size=20, color=tokens["text"])
             if st.button(
                 "Light",
                 key="theme_btn",
@@ -419,7 +388,9 @@ def show_overview_page():
                 st.session_state["dark_mode"] = False
                 st.rerun()
         else:
-            theme_icon_src = load_asset_base64("icons/item-400.png")
+            theme_icon_svg = lucide_icon(
+                "moon", size=20, color=tokens["text"]
+            )
             if st.button(
                 "Dark",
                 key="theme_btn",
@@ -427,6 +398,8 @@ def show_overview_page():
             ):
                 st.session_state["dark_mode"] = True
                 st.rerun()
+
+        theme_icon_src = svg_data_uri(theme_icon_svg)
 
         st.markdown(
             f"""
@@ -436,36 +409,33 @@ def show_overview_page():
                     align-items: flex-end !important;
                 }}
                 .st-key-theme_btn button {{
-                    background-color: {theme_frame_bg} !important;
+                    background-color: {tokens["surface"]} !important;
                     background-image: url("{theme_icon_src}") !important;
                     background-position: center !important;
                     background-repeat: no-repeat !important;
-                    background-size: 30px 30px !important;
-                    border: 1px solid {theme_frame_border} !important;
-                    border-radius: 12px !important;
-                    box-shadow: 0 3px 0 0 {theme_depth} !important;
+                    background-size: 20px 20px !important;
+                    border: 1px solid {tokens["border"]} !important;
+                    border-radius: 10px !important;
+                    box-shadow: 0 1px 2px {tokens["shadow"]} !important;
                     color: transparent !important;
                     font-size: 0 !important;
-                    height: 44px !important;
+                    height: 40px !important;
                     line-height: 0 !important;
                     margin-left: auto !important;
-                    min-height: 44px !important;
-                    min-width: 44px !important;
+                    min-height: 40px !important;
+                    min-width: 40px !important;
                     padding: 0 !important;
-                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1)
-                                !important;
-                    width: 44px !important;
+                    transition: background-color 0.2s ease !important;
+                    width: 40px !important;
                 }}
                 .st-key-theme_btn button:hover {{
-                    transform: translateY(-1px) !important;
-                    box-shadow: 0 4px 0 0 {theme_depth} !important;
+                    background-color: {tokens["surface_alt"]} !important;
                 }}
                 .st-key-theme_btn button:active {{
-                    transform: translateY(2px) !important;
-                    box-shadow: 0 1px 0 0 {theme_depth} !important;
+                    transform: scale(0.95) !important;
                 }}
                 .st-key-theme_btn button:focus-visible {{
-                    outline: 2px solid #ffcc00 !important;
+                    outline: 2px solid {tokens["accent"]} !important;
                     outline-offset: 2px !important;
                 }}
                 .st-key-theme_btn button * {{
@@ -477,14 +447,14 @@ def show_overview_page():
                     display: none !important;
                 }}
                 [data-baseweb="tooltip"] > div {{
-                    background-color: {theme_frame_bg} !important;
-                    border: 1px solid {theme_frame_border} !important;
+                    background-color: {tokens["surface"]} !important;
+                    border: 1px solid {tokens["border"]} !important;
                     border-radius: 10px !important;
-                    box-shadow: {theme_tooltip_shadow} !important;
+                    box-shadow: 0 2px 8px {tokens["shadow"]} !important;
                 }}
                 [data-testid="stTooltipContent"],
                 [data-testid="stTooltipContent"] p {{
-                    color: {theme_tooltip_text} !important;
+                    color: {tokens["text"]} !important;
                 }}
             </style>
             """,
@@ -496,28 +466,23 @@ def show_overview_page():
     )
 
     if has_high_risk:
-        icon_474 = load_asset_base64("icons/item-474.png")
-        alert_bg = "#5a2f2b" if dark_mode else "#f8d7da"
-        alert_border = "#d97757" if dark_mode else "#f5c6cb"
-        alert_text = "#fff1df" if dark_mode else "#721c24"
+        alert_icon = lucide_icon(
+            "alert-triangle", size=20, color=tokens["danger_text"]
+        )
         alert_html = f"""
         <div style="
-            background-color: {alert_bg};
-            border: 1px solid {alert_border};
-            border-radius: 8px;
+            background-color: {tokens["danger_bg"]};
+            border: 1px solid {tokens["danger_border"]};
+            border-radius: 10px;
             padding: 12px 16px;
             margin: 16px 0;
-            color: {alert_text};
+            color: {tokens["danger_text"]};
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         ">
-            <img src="{icon_474}" style="
-                width: 20px;
-                height: 20px;
-                flex-shrink: 0;
-            ">
-            <span style="font-weight: 600; color: {alert_text};">
+            {alert_icon}
+            <span style="font-weight: 600; color: {tokens["danger_text"]};">
                 Attention needed — one or more components require
                 urgent action
             </span>
@@ -540,58 +505,32 @@ def show_overview_page():
         sorted_components
     ):
         with cols[idx]:
-            if dark_mode:
-                card_bg = "#4a3d2a"
-                card_border = "#6b5a3f"
-                card_shadow = "rgba(0,0,0,0.3)"
-                text_color = "#f8f0dc"
-                secondary_color = "#c4a882"
-            else:
-                card_bg = "#ffffff"
-                card_border = "#d4c4a8"
-                card_shadow = "rgba(121,79,39,0.08)"
-                text_color = "#794f27"
-                secondary_color = "#9f927d"
-
             risk_level = component_data["risk_level"]
             if risk_level == "High":
-                badge_bg = "#d97757"
+                badge_bg = tokens["risk_high"]
                 risk_label = "High Risk"
             elif risk_level == "Medium":
-                badge_bg = "#e8b86d"
+                badge_bg = tokens["risk_medium"]
                 risk_label = "Medium Risk"
             else:
-                badge_bg = "#7fb685"
+                badge_bg = tokens["risk_low"]
                 risk_label = "Low Risk"
 
             risk_pct = int(component_data["risk_score"] * 100)
 
-            if dark_mode:
-                card_bg_adjusted = card_bg
-                pattern_color = "rgba(248, 240, 220, 0.06)"
-            else:
-                card_bg_adjusted = "#faf8f0"
-                pattern_color = "rgba(121, 79, 39, 0.08)"
-
             card_html = f"""
             <div style="
-                background-color: {card_bg_adjusted};
-                background-image: radial-gradient(
-                    circle,
-                    {pattern_color} 1.5px,
-                    transparent 1.5px
-                );
-                background-size: 20px 20px;
-                border: 1px solid {card_border};
-                border-radius: 16px;
-                box-shadow: 0 2px 12px {card_shadow};
+                background-color: {tokens["surface"]};
+                border: 1px solid {tokens["border"]};
+                border-radius: 14px;
+                box-shadow: 0 1px 3px {tokens["shadow"]};
                 padding: 24px;
                 margin-bottom: 16px;
                 min-height: 180px;
             ">
                 <h3 style="
                     margin: 0 0 16px 0;
-                    color: {text_color};
+                    color: {tokens["text"]};
                     font-size: 18px;
                     font-weight: 700;
                 ">
@@ -614,14 +553,14 @@ def show_overview_page():
                         font-size: 36px;
                         font-weight: 800;
                         margin: 0;
-                        color: {text_color};
+                        color: {tokens["text"]};
                         line-height: 1;
                     ">
                         {risk_pct}%
                     </p>
                     <p style="
                         font-size: 12px;
-                        color: {secondary_color};
+                        color: {tokens["text_secondary"]};
                         margin: 4px 0 0 0;
                         font-weight: 500;
                     ">
@@ -642,7 +581,7 @@ def show_overview_page():
                 st.session_state["page"] = "detail"
                 st.rerun()
 
-    show_footer(st.session_state.get("dark_mode", False))
+    show_footer(dark_mode)
 
 
 def show_detail_page():
@@ -657,6 +596,8 @@ def show_detail_page():
         return
 
     component_data = MOCK_DATA[component_key]
+    dark_mode = st.session_state.get("dark_mode", False)
+    tokens = THEME_TOKENS["dark" if dark_mode else "light"]
 
     if st.button("← Back to Overview"):
         st.session_state["page"] = "overview"
@@ -664,13 +605,13 @@ def show_detail_page():
 
     risk_level = component_data["risk_level"]
     if risk_level == "High":
-        badge_bg = "#d97757"
+        badge_bg = tokens["risk_high"]
         risk_label = "High Risk"
     elif risk_level == "Medium":
-        badge_bg = "#e8b86d"
+        badge_bg = tokens["risk_medium"]
         risk_label = "Medium Risk"
     else:
-        badge_bg = "#7fb685"
+        badge_bg = tokens["risk_low"]
         risk_label = "Low Risk"
 
     badge_html = f"""
@@ -706,25 +647,25 @@ def show_detail_page():
     with col2:
         st.metric("Last Updated", "2026-06-23 10:00")
 
-    show_divider(st.session_state.get("dark_mode", False))
+    show_divider(dark_mode)
 
     trend = component_data["trend"]
 
     if len(trend) < 2:
         st.warning("Not enough data yet to show a trend.")
     else:
-        icon_019 = load_asset_base64("icons/item-019.png")
-        show_icon_heading(
-            "Risk Score Trend",
-            icon_019,
-            transform="scale(-1, -1)"
+        heading_icon = lucide_icon(
+            "trending-up", size=22, color=tokens["accent"]
         )
+        show_icon_heading("Risk Score Trend", heading_icon)
 
         with st.spinner(""):
             spinner_html = """
-            <div class="ac-spinner-container">
-                <div class="ac-spinner"></div>
-                <div class="ac-spinner-text">Loading trend data...</div>
+            <div class="loading-spinner-container">
+                <div class="loading-spinner"></div>
+                <div class="loading-spinner-text">
+                    Loading trend data...
+                </div>
             </div>
             """
             spinner_placeholder = st.empty()
@@ -740,24 +681,14 @@ def show_detail_page():
         time_labels = ["T-4", "T-3", "T-2", "T-1", "Now"]
         time_labels = time_labels[-len(trend):]
 
-        dark_mode = st.session_state.get("dark_mode", False)
-
-        if dark_mode:
-            line_color = "#7fb685"
-            bg_color = "#3d3020"
-            paper_bg = "#2d2416"
-            text_color = "#e8d5b0"
-            grid_color = "#5c4a2a"
-        else:
-            line_color = "#19c8b9"
-            bg_color = "rgb(247,243,223)"
-            paper_bg = "#f8f8f0"
-            text_color = "#725d42"
-            grid_color = "#c4b89e"
-
+        line_color = tokens["accent"]
+        bg_color = tokens["surface"]
+        paper_bg = tokens["surface"]
+        text_color = tokens["text_secondary"]
+        grid_color = tokens["border"]
         fill_color = (
-            "rgba(127, 182, 133, 0.15)" if dark_mode
-            else "rgba(25, 200, 185, 0.2)"
+            "rgba(41, 151, 255, 0.15)" if dark_mode
+            else "rgba(0, 113, 227, 0.12)"
         )
 
         fig = go.Figure()
@@ -768,12 +699,9 @@ def show_detail_page():
             mode="lines+markers",
             line=dict(color=line_color, width=3, shape="spline"),
             marker=dict(
-                size=10,
+                size=8,
                 color=line_color,
-                line=dict(
-                    color="white" if not dark_mode else "#2d2416",
-                    width=2
-                )
+                line=dict(color=tokens["surface"], width=2)
             ),
             fill="tozeroy",
             fillcolor=fill_color,
@@ -808,21 +736,17 @@ def show_detail_page():
             "Higher values indicate greater risk."
         )
 
-    show_divider(st.session_state.get("dark_mode", False))
+    show_divider(dark_mode)
 
-    icon_001 = load_asset_base64("icons/item-001.png")
-    show_icon_heading("Key Signals", icon_001)
+    heading_icon = lucide_icon("activity", size=22, color=tokens["accent"])
+    show_icon_heading("Key Signals", heading_icon)
 
     key_signals = component_data["key_signals"]
 
     if not key_signals:
         st.info("No signal data available for this component.")
     else:
-        dark_mode = st.session_state.get("dark_mode", False)
-        row_bg = (
-            "rgba(247,243,223,0.6)" if not dark_mode
-            else "rgba(61,52,40,0.3)"
-        )
+        row_bg = tokens["surface_alt"]
 
         signals_with_status = []
         for signal in key_signals:
@@ -865,10 +789,10 @@ def show_detail_page():
                 )
 
             with col4:
-                if status == "ABNORMAL":
-                    badge_bg = "#e05a5a"
-                else:
-                    badge_bg = "#6fba2c"
+                badge_bg = (
+                    tokens["risk_high"] if status == "ABNORMAL"
+                    else tokens["risk_low"]
+                )
 
                 badge_html = f"""
                 <div style="
@@ -885,41 +809,30 @@ def show_detail_page():
                 """
                 st.markdown(badge_html, unsafe_allow_html=True)
 
-    show_divider(st.session_state.get("dark_mode", False))
+    show_divider(dark_mode)
 
-    icon_460 = load_asset_base64("icons/item-460.png")
-    show_icon_heading("Diagnostic Report", icon_460)
-
-    dark_mode = st.session_state.get("dark_mode", False)
-
-    if dark_mode:
-        card_bg = "#3d3020"
-        card_border = "#5c4a2a"
-        title_color = "#f8f0dc"
-        body_color = "#c4a882"
-    else:
-        card_bg = "rgb(247,243,223)"
-        card_border = "#c4b89e"
-        title_color = "#794f27"
-        body_color = "#9f927d"
-
-    icon_352 = load_asset_base64("icons/item-352.png")
-    icon_440 = load_asset_base64("icons/item-440.png")
-    icon_007 = load_asset_base64("icons/item-007.png")
+    heading_icon = lucide_icon("file-text", size=22, color=tokens["accent"])
+    show_icon_heading("Diagnostic Report", heading_icon)
 
     cards = [
         {
-            "icon_src": icon_352,
+            "icon": lucide_icon(
+                "info", size=18, color=tokens["text_secondary"]
+            ),
             "title": "What's Happening",
             "body": "Pending Granite LLM report generation..."
         },
         {
-            "icon_src": icon_440,
+            "icon": lucide_icon(
+                "help-circle", size=18, color=tokens["text_secondary"]
+            ),
             "title": "Why This Matters",
             "body": "Pending Granite LLM report generation..."
         },
         {
-            "icon_src": icon_007,
+            "icon": lucide_icon(
+                "check-square", size=18, color=tokens["text_secondary"]
+            ),
             "title": "What You Should Do",
             "body": "Pending Granite LLM report generation..."
         }
@@ -928,40 +841,36 @@ def show_detail_page():
     for card in cards:
         card_html = f"""
         <div style="
-            background: {card_bg};
-            border: 1px solid {card_border};
+            background: {tokens["surface"]};
+            border: 1px solid {tokens["border"]};
             border-radius: 12px;
             padding: 16px;
             margin-bottom: 12px;
         ">
             <h3 style="
-                color: {title_color};
+                color: {tokens["text"]};
                 margin: 0 0 8px 0;
                 font-size: 16px;
                 font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 8px;
             ">
-                <img src="{card['icon_src']}" style="
-                    width: 24px;
-                    height: 24px;
-                    vertical-align: middle;
-                    margin-right: 8px;
-                    position: relative;
-                    top: -2px;
-                ">{card['title']}
+                {card["icon"]}{card["title"]}
             </h3>
             <p style="
-                color: {body_color};
+                color: {tokens["text_secondary"]};
                 margin: 0;
                 font-size: 14px;
                 font-style: italic;
             ">
-                {card['body']}
+                {card["body"]}
             </p>
         </div>
         """
         st.markdown(card_html, unsafe_allow_html=True)
 
-    show_footer(st.session_state.get("dark_mode", False))
+    show_footer(dark_mode)
 
 
 def main():
