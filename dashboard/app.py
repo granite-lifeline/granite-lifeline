@@ -260,6 +260,78 @@ def get_theme() -> dict:
     return THEME_TOKENS[mode]
 
 
+def normalize_risk_level(risk_level) -> str:
+    """Clean risk_level before using it in the dashboard."""
+    if not risk_level:
+        return "Unknown"
+
+    risk_text = str(risk_level).strip().lower()
+    if risk_text == "high":
+        return "High"
+    if risk_text == "medium":
+        return "Medium"
+    if risk_text == "low":
+        return "Low"
+
+    return "Unknown"
+
+
+def get_risk_color(risk_level, tokens: dict) -> str:
+    """Return theme color for the current risk level."""
+    clean_level = normalize_risk_level(risk_level)
+
+    if clean_level == "High":
+        return tokens["risk_high"]
+    if clean_level == "Medium":
+        return tokens["risk_medium"]
+    if clean_level == "Low":
+        return tokens["risk_low"]
+
+    return tokens["text_secondary"]
+
+
+def get_risk_label(risk_level) -> str:
+    """Return user-facing label for the current risk level."""
+    clean_level = normalize_risk_level(risk_level)
+
+    if clean_level == "High":
+        return "High Risk"
+    if clean_level == "Medium":
+        return "Medium Risk"
+    if clean_level == "Low":
+        return "Low Risk"
+
+    return "Risk Unknown"
+
+
+def get_risk_priority(risk_level) -> int:
+    """Return sort priority for risk cards and tabs."""
+    return RISK_PRIORITY.get(normalize_risk_level(risk_level), 3)
+
+
+def get_risk_badge_html(risk_level, tokens: dict) -> str:
+    """Render a small risk level badge."""
+    badge_bg = get_risk_color(risk_level, tokens)
+    risk_label = get_risk_label(risk_level)
+
+    return f"""
+    <span style="
+        display: inline-block;
+        background-color: {badge_bg};
+        color: {tokens["accent_contrast"]};
+        padding: 5px 12px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        white-space: nowrap;
+    ">
+        {risk_label}
+    </span>
+    """
+
+
 def show_divider(dark_mode: bool, margin: str = "36px auto"):
     """Display a hairline divider clipped to content width."""
     tokens = THEME_TOKENS["dark" if dark_mode else "light"]
@@ -666,7 +738,8 @@ def show_overview_page():
         )
 
     has_high_risk = any(
-        comp["risk_level"] == "High" for comp in MOCK_DATA.values()
+        normalize_risk_level(comp.get("risk_level")) == "High"
+        for comp in MOCK_DATA.values()
     )
 
     if has_high_risk:
@@ -701,7 +774,7 @@ def show_overview_page():
 
     sorted_components = sorted(
         MOCK_DATA.items(),
-        key=lambda x: RISK_PRIORITY[x[1]["risk_level"]]
+        key=lambda x: get_risk_priority(x[1].get("risk_level"))
     )
 
     cols = st.columns(3, gap="large")
@@ -710,13 +783,9 @@ def show_overview_page():
         sorted_components
     ):
         with cols[idx]:
-            risk_level = component_data["risk_level"]
-            if risk_level == "High":
-                badge_bg = tokens["risk_high"]
-            elif risk_level == "Medium":
-                badge_bg = tokens["risk_medium"]
-            else:
-                badge_bg = tokens["risk_low"]
+            risk_level = component_data.get("risk_level")
+            badge_bg = get_risk_color(risk_level, tokens)
+            risk_badge = get_risk_badge_html(risk_level, tokens)
 
             risk_pct = int(component_data["risk_score"] * 100)
             component_icon = lucide_icon(
@@ -753,8 +822,10 @@ def show_overview_page():
                 <div style="
                     display: flex;
                     align-items: center;
+                    justify-content: center;
+                    flex-wrap: wrap;
                     gap: 20px;
-                    margin-bottom: 24px;
+                    margin-bottom: 16px;
                 ">
                     {component_icon}
                     <h3 style="
@@ -765,6 +836,7 @@ def show_overview_page():
                     ">
                         {component_data["display_name"]}
                     </h3>
+                    {risk_badge}
                 </div>
                 <div style="
                     position: relative;
@@ -824,24 +896,23 @@ def render_component_detail(
     tokens: dict,
 ):
     """Render metrics, trend, signals, and report for one component."""
-    risk_level = component_data["risk_level"]
-    if risk_level == "High":
-        badge_bg = tokens["risk_high"]
-    elif risk_level == "Medium":
-        badge_bg = tokens["risk_medium"]
-    else:
-        badge_bg = tokens["risk_low"]
+    risk_level = component_data.get("risk_level")
+    badge_bg = get_risk_color(risk_level, tokens)
+    risk_badge = get_risk_badge_html(risk_level, tokens)
 
     title_html = f"""
     <div style="
         display: flex;
         align-items: center;
         justify-content: center;
+        gap: 16px;
+        flex-wrap: wrap;
         margin-bottom: 24px;
     ">
         <h1 style="margin: 0; display: inline;">
             {component_data["display_name"]}
         </h1>
+        {risk_badge}
     </div>
     """
 
@@ -1223,13 +1294,8 @@ def show_detail_page():
 
     sorted_components = sorted(
         MOCK_DATA.items(),
-        key=lambda x: RISK_PRIORITY[x[1]["risk_level"]]
+        key=lambda x: get_risk_priority(x[1].get("risk_level"))
     )
-    risk_color_map = {
-        "High": tokens["risk_high"],
-        "Medium": tokens["risk_medium"],
-        "Low": tokens["risk_low"],
-    }
 
     tab_cols = st.columns(len(sorted_components), gap="small")
     tab_css_rules = []
@@ -1237,7 +1303,7 @@ def show_detail_page():
     for col, (tab_key, tab_data) in zip(tab_cols, sorted_components):
         with col:
             is_active = tab_key == component_key
-            icon_color = risk_color_map[tab_data["risk_level"]]
+            icon_color = get_risk_color(tab_data.get("risk_level"), tokens)
             icon_svg = lucide_icon(
                 COMPONENT_ICONS.get(tab_key, "activity"),
                 size=16,
