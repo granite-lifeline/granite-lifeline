@@ -243,7 +243,21 @@ Source: KIT Automotive OBD-II Dataset (Seat Leon MK3)
 Validation by: Ray — Story 1 baseline analysis (`ttm-related/src/model/clean_obd2_normal_frei.py`,
 `ttm-related/src/model/analyze_obd2_normal_frei.py`)
 
+The dataset contains ten OBD-II signals collected from operating vehicles: engine RPM,
+vehicle speed, coolant temperature, intake manifold absolute pressure (MAP), mass air flow
+(MAF), throttle position, ambient temperature, intake air temperature, and two accelerator
+pedal position signals (D and E). The dataset description does not provide explicit
+diagnostic labels, fault-event annotations, DTC records, or MIL status. Therefore, this
+validation does not attempt to prove that every vehicle record is mechanically healthy.
+Instead, the aim is to confirm that the selected subset is stable and physically plausible
+enough to serve as a healthy baseline for proxy threshold calibration.
+
 ### Dataset selection
+
+Only files labelled `Normal` and `Frei` were retained, representing regular and free-flow
+driving. Traffic jam files, measurement-error files (`Messfehler`), and invalid filenames
+were excluded. The remaining 66 trips are treated as the healthy baseline for all proxy
+threshold definitions.
 
 | Item | Result |
 |---|---:|
@@ -253,10 +267,11 @@ Validation by: Ray — Story 1 baseline analysis (`ttm-related/src/model/clean_o
 | Rows removed because all core signals were missing | 0 |
 | Resampled analysis frequency | 1 second |
 
-`Messfehler` (measurement-error) files and traffic-jam files were excluded. The remaining 66
-Normal/Frei trips are treated as the healthy baseline for all proxy threshold definitions.
-
 ### Missing-value profile (after cleaning)
+
+The missing-value profile is low for all primary model signals. `intake_air_temp` has the
+highest rate because physically invalid values were set to missing during range filtering;
+this signal is not used in the model layer and does not affect the anomaly detection pipeline.
 
 | Signal | Missing after cleaning |
 |---|---:|
@@ -271,9 +286,20 @@ Normal/Frei trips are treated as the healthy baseline for all proxy threshold de
 | `accel_pedal_d` | 0.0256% |
 | `accel_pedal_e` | 0.0282% |
 
-All primary model signals have missing rates below 0.02%. `intake_air_temp` has the highest
-rate (1.17%) because physically invalid values were set to missing during range filtering;
-this signal is not used in the model layer and does not affect the anomaly detection pipeline.
+### Descriptive statistics (signal plausibility)
+
+The major operating signals remain within physically reasonable ranges for normal vehicle
+operation, supporting the plausibility of the cleaned subset.
+
+| Signal | Median | P99 | Min–Max | Interpretation |
+|---|---|---|---|---|
+| `rpm` | 1,560 RPM | 2,664 RPM | 0–3,682 RPM | Plausible for stops, cruising, and normal acceleration |
+| `speed` | 66 km/h | 157 km/h | 0–218 km/h | Plausible for mixed road driving |
+| `coolant_temp` | 90°C | 94°C | −1–103°C | Stable warmed-up engine range |
+| `map` | 115.8 kPa | 225 kPa | 36–236.9 kPa | Plausible intake pressure for turbocharged engine |
+| `maf` | 19.3 g/s | 83.0 g/s | 0–122.7 g/s | Plausible airflow range under changing load |
+| `tps` | 83.5% | 89% | 13.7–89% | Within valid percentage bounds |
+| `accel_pedal_d/e` | 14.1/14.5% | 63.9/64.1% | 14.1–85.1% / 14.1–84.3% | Two pedal channels remain consistent |
 
 ### Correlation summary (Spearman, across all 66 healthy trips)
 
@@ -295,22 +321,45 @@ The near-perfect `accel_pedal_d` / `accel_pedal_e` correlation grounds the
 `accelerator_pedal_sensor` proxy definition — sustained divergence above 10 pp is the
 detection target.
 
+Throttle position shows weak negative correlations with pedal position and MAF and should
+be interpreted cautiously. This likely reflects absolute throttle position calibration or
+ECU control behaviour rather than a dataset issue, and is consistent with the known
+difficulty of using TPS as a standalone anomaly signal [R4].
+
+![Spearman correlation heatmap](image/obd2_spearman_correlation_heatmap.png)
+
 ### Coolant temperature warm-up profile
 
-Across Normal/Frei trips, median coolant temperature rises from a low starting value to
-approximately 90°C within ~14 minutes, then stabilises in the 90–95°C band for the remainder
-of the trip. This confirms:
+The coolant-temperature plots provide the clearest single-signal health evidence. Median
+coolant temperature rises from a low initial value to approximately 90°C within ~14 minutes,
+then stabilises in the 90–95°C band — consistent with normal engine thermal behaviour and
+the Seat Leon owner's manual Zone B [M1].
 
 - **Normal warm-up rate:** ~10–16°C/min during cold start, falling to ~0°C/min once warm.
 - **Normal steady-state:** 90–95°C (consistent with Seat Leon MK3 owner's manual Zone B).
-- **Proxy anomaly boundary:** Sustained coolant_temp above ~100°C and/or coolant_slope
+- **Proxy anomaly boundary:** Sustained `coolant_temp` above ~100°C and/or `coolant_slope`
   persistently above 2–3°C/min after warm-up (i.e., outside the stabilised band).
+
+> **Note:** The warm-up summary pools all 66 trips regardless of starting temperature.
+> Trips where the engine was already warm pull up the minute-0 median and compress the
+> apparent warm-up curve. The "~14 minutes to 90°C" figure is a blended average across all
+> starting conditions, not a pure cold-start warm-up time.
 
 Plots generated by `analyze_obd2_normal_frei.py`:
 
 ![Coolant temperature warm-up profile](image/obd2_coolant_temp_warmup_0_30min.png)
 
 ![Coolant temperature stable period](image/obd2_coolant_temp_stable_15_60min.png)
+
+### Overall validation conclusion
+
+The `Normal` + `Frei` subset shows low missingness, physically plausible signal ranges,
+normal coolant warm-up and stabilisation behaviour, and strong expected relationships among
+RPM, speed, MAP, MAF, and accelerator pedal signals. These results support using this
+cleaned subset as a stable baseline dataset for subsequent time-series modelling and proxy
+threshold calibration. The dataset does not contain diagnostic labels and therefore cannot
+prove complete mechanical health — all failure conditions defined in this document remain
+proxy definitions, not verified faults.
 
 ---
 
