@@ -8,11 +8,10 @@ dataset documentation (RADAR DOI: 10.35097/1130) describes road conditions via f
 suffixes (Normal, Frei, Stau, Messfehler) but does not explicitly state that the vehicle
 was fault-free. We therefore treat this as a proxy healthy baseline, justified by:
 1. No DTC/MIL fault codes are present in the logged signals.
-
 2. Core sensor statistics (see Healthy Baseline Reference Table below) fall within
-   Seat Leon manufacturer-normal ranges and automotive industry standards.
-
-3. Cross-signal correlations (e.g. MAF–MAP ~0.83) are consistent with normal engine behaviour.
+   Seat Leon manufacturer-normal ranges and automotive industry standards [M1][M2].
+3. Cross-signal correlations (e.g. MAF–MAP ~0.83) are consistent with normal engine
+   behaviour [R3][R4].
 
 Per the brief ("Define a proxy 'failure condition' if real labels are missing"), we analysed
 the available sensor signals across all 81 trips to find behaviours that plausibly indicate
@@ -32,8 +31,12 @@ component degradation, even though we cannot validate against an actual labelled
 
 **Findings (across 81 trips):**
 - Steady-state coolant temp is typically **90–95°C** (normal thermostat range); a few trips
-  reach **100–103°C**.
+  reach **100–103°C**. Normal operating temperature is manufacturer-confirmed at 80–120°C
+  (oil temperature equivalent, thermally coupled to coolant) [M1].
 - Warm-up rate is **10–16°C/min** during cold start, dropping to ~0°C/min once warm.
+- Cooling system operates under pressure, which raises the boiling point above 100°C —
+  temperatures at or slightly above 100°C are therefore within normal operating range
+  for a pressurised system with G12++/G13 coolant additive [M2, §4.30].
 
 **Proxy definition**: After the initial warm-up phase (coolant temp has exceeded ~85°C at
 least once), flag elevated risk if:
@@ -41,14 +44,24 @@ least once), flag elevated risk if:
 - `coolant_slope` remains **>2–3°C/min** instead of plateauing
 
 This directly matches the brief's worked example: *"Coolant temperature rising faster than
-normal — possible water pump degradation."*
+normal — possible water pump degradation."* The detection target is the transition from
+normal Zone B toward the warning Zone C as defined in the Seat Leon owner's manual [M1].
+One-class classification approaches have been applied to this exact problem — coolant
+sensor anomaly detection — using engineered features derived from the temperature time
+series [R6].
 
 **Signal deviation patterns:**
 
 | Signal | Normal behaviour | Anomaly direction | Pattern |
 |--------|-----------------|-------------------|---------|
-| `coolant_temp` | 85–105°C steady state | Rising above 100°C | Sustained increase post warm-up, not returning to baseline |
+| `coolant_temp` | 85–105°C steady state [M1][M2] | Rising above 100°C | Sustained increase post warm-up, not returning to baseline |
 | `coolant_slope` | ~0°C/min once warm | >2–3°C/min | Persistent positive slope after warm-up phase ends |
+
+**Simulator implementation (`data_simulator.py`):**
+`generate_normal_sequence()` models warm-up as `20 + 70 × (1 − exp(−t/30))`, clipped to
+[20, 95] °C. `generate_cooling_degradation()` injects a 0.05 °C/s linear rise on all
+post-85°C samples, mimicking water pump degradation. Story 6 uses this sequence as the
+`cooling_system_stress` ground-truth fault scenario.
 
 ---
 
@@ -61,20 +74,39 @@ normal — possible water pump degradation."*
 **Primary signals**: `maf` (Master Table #6), `map` (Master Table #5), `maf_map_cohesion` (Master Table #15)
 
 **Findings:**
-- `maf` correlates with `map` at **~0.83 average** (range 0.6–0.9) — fairly consistent across trips.
+- `maf` correlates with `map` at **~0.83 average** (range 0.6–0.9) — fairly consistent
+  across trips [R3][R4].
 - `maf` correlates with `rpm × tps` load estimate at only **~0.66 average**, and much noisier
-  (range 0.12–0.85).
+  (range 0.12–0.85). MAF is consistently the hardest OBD-II signal to predict: ARIMA
+  achieves only MAPE 37.71% on it, and LSTM achieves R² 60.7%, both the worst in their
+  respective studies [R4][R3].
+- **MAP range (turbocharged vehicle):** The Seat Leon 1.4 TSI is a turbocharged engine.
+  Manifold pressure regularly exceeds atmospheric (~101 kPa) under boost. KIT dataset shows
+  MAP median 115.8 kPa, P99 225 kPa, range 36–237 kPa [KIT baseline]. The commonly cited
+  "20–100 kPa" range applies to naturally aspirated engines only and is **not valid** for
+  this vehicle. The correct normal operating range for MAP is 36–237 kPa (full KIT range),
+  with a maf/map ratio of 0.1–0.3 indicating healthy air flow.
 
 **Proxy definition**: Flag when `maf_map_cohesion` (normalised MAF-vs-MAP deviation) is
-large or sustained — indicates MAF sensor drift, dirty air filter, or vacuum leak.
+large or sustained — indicates MAF sensor drift, dirty air filter, or vacuum leak [R5].
 
 **Signal deviation patterns:**
 
 | Signal | Normal behaviour | Anomaly direction | Pattern |
 |--------|-----------------|-------------------|---------|
-| `maf` | Tracks MAP closely (~0.83 correlation) | Lower than MAP-predicted value | Sustained negative residual from MAP-expected baseline |
-| `map` | 20–100 kPa, tracks engine load | Higher than MAF-consistent value | Elevated relative to actual air flow |
+| `maf` | Tracks MAP closely (~0.83 correlation) [R3] | Lower than MAP-predicted value | Sustained negative residual from MAP-expected baseline |
+| `map` | 36–237 kPa, turbocharged; median ~116 kPa [KIT baseline] | Higher than MAF-consistent value | Elevated relative to actual air flow |
 | `maf_map_cohesion` | 0.1–0.3 ratio (normal operating) | Deviation outside 0.1–0.3 band | Persistent high or low cohesion value |
+
+**Simulator implementation (`data_simulator.py`) — updated 2026-06-25:**
+The original simulator used MAP formula `30 + (rpm − 800) / 100` (peak ~52 kPa at
+RPM 3000), which was incorrect for a turbocharged vehicle and caused `maf_map_cohesion`
+to compute to ~0.5 — outside the normal band — on all simulated normal driving data,
+producing false `air_intake_maf_anomaly` triggers. The formula was corrected to
+`100 + (rpm − 800) / 30` clipped to [36, 237] kPa, and MAF updated to `map × 0.2 +
+noise` clipped to [0, 123] g/s, keeping the cohesion ratio in the 0.1–0.3 normal band.
+`generate_vacuum_leak()` applies `map × 1.3` (elevated MAP) and `tps × 0.7` (reduced
+throttle). `generate_intake_blockage()` applies `maf × 0.7` (reduced air flow).
 
 ---
 
@@ -91,10 +123,13 @@ large or sustained — indicates MAF sensor drift, dirty air filter, or vacuum l
   difference ~0.8 percentage points.
 - Brief spikes >10pp occur in ~1% of samples across all trips (likely sensor response lag
   during fast pedal movements, not faults).
+- Both channels are SAE J1979 PID 0x49 (`accel_pedal_d`) and PID 0x4A (`accel_pedal_e`),
+  reporting 0–100% [S1]. They are redundant by design — dual-channel agreement is a
+  built-in safety feature of the pedal assembly.
 
 **Proxy definition**: Flag **sustained** divergence between `accel_pedal_d` and
 `accel_pedal_e` (>10pp persisting beyond momentary spikes), which indicates dual-sensor
-disagreement inconsistent with normal pedal lag.
+disagreement inconsistent with normal pedal lag [S1][R7].
 
 **Note on this dataset**: Because brief spikes are uniform across every trip, momentary
 divergence is not a useful discriminator here. The detection target is sustained divergence
@@ -106,6 +141,15 @@ only — a pattern that does not appear in normal driving.
 |--------|-----------------|-------------------|---------|
 | `accel_pedal_d` | Closely tracks `accel_pedal_e` (correlation 0.96–0.99) | Sustained divergence from E | Difference >10pp lasting more than a few samples |
 | `accel_pedal_e` | Closely tracks `accel_pedal_d` | Sustained divergence from D | Difference >10pp lasting more than a few samples |
+
+**Simulator implementation (`data_simulator.py`) — updated 2026-06-25:**
+`accel_pedal_d` and `accel_pedal_e` were not present in the original simulator, making
+Story 6 `accelerator_pedal_sensor` testing impossible. Both signals are now generated in
+`generate_normal_sequence()` from a shared base signal `clip(10 + (rpm − 800) / 100,
+14, 85)` plus independent ±1% noise, producing ~0.97 correlation under normal operation
+(consistent with KIT data). `generate_pedal_sensor_fault()` injects a sustained 15 pp
+drop on pedal E from the quarter-way point, simulating the dual-sensor disagreement
+fault target for Story 6.
 
 ---
 
@@ -312,3 +356,85 @@ automotive engineering literature and cross-signal reasoning (see External Stand
 - `coolant_temp` Max of 103°C falls within the pressurised coolant system's normal operating
   ceiling (see External Standards — Seat Leon MK3 Workshop Manual, Section 4.30). The proxy
   anomaly threshold of ~100°C with sustained positive slope remains valid.
+
+---
+
+## References
+
+### Manuals
+
+**[M1]** SEAT, *León Owner's Manual*, 2017.
+File: `documetation/相关论文/manual/Seat-Leon_2017_EN__3f5b99c0a7.pdf`
+Cited for: coolant temperature gauge zones (A/B/C), engine oil operating temperature
+range (80–120°C).
+
+**[M2]** SEAT, *León / León ST Workshop Maintenance Manual*, Edition 07.2018,
+Reference EIGG000421. File: `documetation/相关论文/manual/seat-leon-3-maintenance-eng.pdf`
+Cited for: 1.4 TSI engine codes and RPM ranges (§1.1); cooling system pressure and
+boiling point rationale (§4.30); coolant additive specification G12++/G13 (§4.30).
+
+### Standards
+
+**[S1]** SAE International, *SAE J1979: E/E Diagnostic Test Modes* (OBD-II PID standard).
+Reference via: "OBD-II PIDs," Wikipedia, https://en.wikipedia.org/wiki/OBD-II_PIDs.
+Cited for: signal physical measurement bounds (PID 0x05 coolant_temp, 0x0B MAP, 0x0C RPM,
+0x0D speed, 0x10 MAF, 0x11 TPS, 0x49 accel_pedal_d, 0x4A accel_pedal_e); MAF upper
+bound corrected to 655 g/s from SAE maximum.
+
+### Academic Papers
+
+**[R1]** V. Ekambaram et al., "Tiny Time Mixers (TTMs): Fast Pre-trained Models for
+Enhanced Zero/Few-Shot Forecasting of Multivariate Time Series," IBM Research, *NeurIPS
+2024*. File: `documetation/相关论文/ttm.pdf`
+Cited for: TTM zero-shot forecasting methodology; prediction residual as anomaly score;
+multivariate OBD-II channel modelling; exogenous variable (driver-controlled signals)
+treatment.
+
+**[R2]** Z. Darban et al., "Deep Learning for Time Series Anomaly Detection: A
+Comprehensive Survey," *ACM Computing Surveys*, Vol. 57, No. 1, Article 15, Oct 2024.
+File: `documetation/相关论文/Deep Learning for Time Series Anomaly Detection.pdf`
+Cited for: prediction-based anomaly detection taxonomy; trend anomaly definition
+(persistent slope shift); F1/AU-PR evaluation metrics for imbalanced fault data; NDT/POT
+thresholding methods.
+
+**[R3]** A. Errezgouny et al., "An Integrated Deep Learning Approach for Predictive
+Vehicle Maintenance," *Decision Analytics Journal*, 16, 2025, 100597.
+File: `documetation/相关论文/an_intergrated_deep_learning_approac_predictive_vehicle_maintence.pdf`
+Cited for: MAF R² 60.7% (hardest OBD-II signal to predict); MAF–TPS correlation 92%;
+feature selection confirming RPM, Engine Load, MAF, TPS as core OBD-II signals; LSTM
+baseline R² ~89–90% as comparison target.
+
+**[R4]** (Author not stated in summary), "Data Modeling and Prediction of OBD-II Time
+Series." File: `documetation/相关论文/Data_modeling_and_prediction.pdf`
+Cited for: ARIMA MAPE results — MAF 37.71% (worst), MAP 22.89%, RPM 13.81%;
+MAF–TPS correlation 92.3%; driver-controlled vs engine-response signal predictability
+distinction.
+
+**[R5]** (Multiple authors), "A Review of OBD-II-Based Machine Learning Applications for
+Sustainable, Efficient, Secure, and Safe Vehicle Driving," *Sensors*, 2025.
+File: `documetation/相关论文/A Review of OBD-II-Based Machine Learning Applications for Sustainable, Efficient, Secure, and Safe Vehicle Driving.pdf`
+Cited for: key OBD-II features for health monitoring (coolant temp, RPM, engine load,
+MAF); vehicle health monitoring section (§4.4); evaluation metric conventions.
+
+**[R6]** (Author not stated in summary), "Detecting Anomalies in the Engine Coolant
+Sensor Using One-Class Classifiers."
+File: `documetation/相关论文/Detecting_Anomalies_in_the_Engine_Coolant_Sensor_Using_One-Class_Classifiers.pdf`
+Cited for: coolant sensor anomaly detection using engineered time-series features;
+direct precedent for the `cooling_system_stress` proxy condition.
+
+**[R7]** (Author not stated in summary), "Advancing Vehicle Diagnostics: Exploring the
+Application of Large Language Models in the Automotive Industry."
+File: `documetation/相关论文/Advancing Vehicle Diagnostic Exploring the Application of Large Language Models in the Automotive Industry.pdf`
+Cited for: LLM role as explainability layer (not core detector); capability limits of
+LLMs in complex real-world fault classification.
+
+**[R8]** Hermawan et al., "OBD-II Driving Behavior Survey," 2020.
+File: `documetation/相关论文/Hermawan_2020_OBDII_driving_behavior_survey.pdf`
+Cited for: OBD-II system definition and monitored component scope; sensor data role in
+vehicle and driver state characterisation.
+
+**[R9]** Z. Darban et al., "Unsupervised Anomaly Detection in Time-Series: An Extensive
+Evaluation and Analysis of State-of-the-Art Methods," 2024.
+File: `documetation/相关论文/Unsupervised anomaly detection in time-series- An extensive evaluation and analysis of state-of-the-art methods.pdf`
+Cited for: unsupervised anomaly detection method benchmarks; evaluation on unlabelled
+time-series data consistent with KIT dataset constraints.
