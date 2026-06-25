@@ -8,75 +8,173 @@ to detailed diagnostic reports.
 import base64
 import math
 import time
+from datetime import datetime
 import streamlit as st
 import plotly.graph_objects as go
+from data_loader import load_dashboard_data
 
-MOCK_DATA = {
+COMPONENT_DISPLAY_NAMES = {
+    "cooling_system_stress": "Cooling System",
+    "air_intake_maf_anomaly": "Air Intake System",
+    "accelerator_pedal_sensor": "Accelerator Pedal"
+}
+
+SIGNAL_DISPLAY_NAMES = {
+    "coolant_temp": "Coolant Temperature",
+    "coolant_slope": "Coolant Slope",
+    "maf": "Mass Airflow",
+    "map": "Intake Pressure",
+    "accel_pedal_d": "Pedal Sensor D",
+    "accel_pedal_e": "Pedal Sensor E"
+}
+
+# Load report data from Report Layer
+try:
+    REPORT_DATA = load_dashboard_data("dashboard/tests/ui_required_data.json")
+except Exception as e:
+    st.error(f"Failed to load report data: {e}")
+    REPORT_DATA = {}
+
+# Fallback MOCK_DATA for development (kept for reference)
+MOCK_DATA_FALLBACK = {
     "cooling_system_stress": {
-        "display_name": "Cooling System",
+        "timestamp": "2026-06-16T12:00:00Z",
+        "risk_score": 0.86,
         "risk_level": "High",
-        "risk_score": 0.82,
-        "trend": [0.45, 0.52, 0.61, 0.70, 0.82],
+        "component": "cooling_system_stress",
+        "prediction_confidence": 0.88,
         "key_signals": [
             {
                 "feature": "coolant_temp",
-                "display_name": "Coolant Temperature",
-                "value": 102,
+                "value": 104.0,
                 "unit": "°C",
-                "reference_range": [90, 95],
-                "status": "ABNORMAL"
+                "reference_range": [90.0, 95.0]
+            },
+            {
+                "feature": "coolant_slope",
+                "value": 3.4,
+                "unit": "°C/min",
+                "reference_range": [0.0, 2.0]
             }
+        ],
+        "risk_history": [
+            {"timestamp": "2026-06-15T08:00:00Z", "risk_score": 0.45},
+            {"timestamp": "2026-06-15T12:00:00Z", "risk_score": 0.52},
+            {"timestamp": "2026-06-15T16:00:00Z", "risk_score": 0.61},
+            {"timestamp": "2026-06-16T08:00:00Z", "risk_score": 0.70},
+            {"timestamp": "2026-06-16T12:00:00Z", "risk_score": 0.86}
+        ],
+        "anomaly_description": (
+            "The coolant temperature is above its reference range and is "
+            "rising faster than expected. High risk means the vehicle may "
+            "need prompt attention."
+        ),
+        "possible_cause": (
+            "This could be related to cooling system stress, such as low "
+            "coolant, radiator problems, or water pump degradation."
+        ),
+        "recommended_action": [
+            "Avoid heavy driving if it is safe to do so.",
+            "Check the coolant level when the engine is cool.",
+            "Ask a mechanic to inspect the cooling system as soon as possible."
         ]
     },
     "air_intake_maf_anomaly": {
-        "display_name": "Air Intake System",
+        "timestamp": "2026-06-16T11:00:00Z",
+        "risk_score": 0.61,
         "risk_level": "Medium",
-        "risk_score": 0.55,
-        "trend": [0.30, 0.35, 0.40, 0.48, 0.55],
+        "component": "air_intake_maf_anomaly",
+        "prediction_confidence": 0.76,
         "key_signals": [
             {
                 "feature": "maf",
-                "display_name": "Mass Airflow",
-                "value": 13.0,
+                "value": 28.5,
                 "unit": "g/s",
-                "reference_range": [8, 11],
-                "status": "ABNORMAL"
+                "reference_range": [10.0, 22.0]
             },
             {
                 "feature": "map",
-                "display_name": "Intake Pressure",
-                "value": 45,
+                "value": 82.0,
                 "unit": "kPa",
-                "reference_range": [40, 48],
-                "status": "NORMAL"
+                "reference_range": [60.0, 90.0]
             }
+        ],
+        "risk_history": [
+            {"timestamp": "2026-06-15T07:00:00Z", "risk_score": 0.30},
+            {"timestamp": "2026-06-15T11:00:00Z", "risk_score": 0.35},
+            {"timestamp": "2026-06-15T15:00:00Z", "risk_score": 0.40},
+            {"timestamp": "2026-06-16T07:00:00Z", "risk_score": 0.48},
+            {"timestamp": "2026-06-16T11:00:00Z", "risk_score": 0.61}
+        ],
+        "anomaly_description": (
+            "The airflow reading is higher than its reference range, while "
+            "the intake pressure reading is still inside its reference range. "
+            "Medium risk means the vehicle should be checked soon, but it is "
+            "not an immediate emergency."
+        ),
+        "possible_cause": (
+            "This may indicate an airflow sensor issue, a dirty air filter, "
+            "or an air intake leak. The result is not a confirmed fault."
+        ),
+        "recommended_action": [
+            "Ask a mechanic to inspect the air intake system soon.",
+            "Check whether the air filter needs cleaning or replacement.",
+            (
+                "Keep watching for rough idling, poor acceleration, or "
+                "warning lights."
+            )
         ]
     },
     "accelerator_pedal_sensor": {
-        "display_name": "Accelerator Pedal",
-        "risk_level": "Low",
+        "timestamp": "2026-06-16T10:00:00Z",
         "risk_score": 0.22,
-        "trend": [0.18, 0.20, 0.21, 0.22, 0.22],
+        "risk_level": "Low",
+        "component": "accelerator_pedal_sensor",
+        "prediction_confidence": 0.62,
         "key_signals": [
             {
                 "feature": "accel_pedal_d",
-                "display_name": "Pedal Sensor D",
                 "value": 35.0,
                 "unit": "%",
-                "reference_range": [0, 100],
-                "status": "NORMAL"
+                "reference_range": [0.0, 100.0]
             },
             {
                 "feature": "accel_pedal_e",
-                "display_name": "Pedal Sensor E",
                 "value": 37.5,
                 "unit": "%",
-                "reference_range": [0, 100],
-                "status": "NORMAL"
+                "reference_range": [0.0, 100.0]
             }
+        ],
+        "risk_history": [
+            {"timestamp": "2026-06-15T06:00:00Z", "risk_score": 0.18},
+            {"timestamp": "2026-06-15T10:00:00Z", "risk_score": 0.20},
+            {"timestamp": "2026-06-15T14:00:00Z", "risk_score": 0.21},
+            {"timestamp": "2026-06-16T06:00:00Z", "risk_score": 0.22},
+            {"timestamp": "2026-06-16T10:00:00Z", "risk_score": 0.22}
+        ],
+        "anomaly_description": (
+            "The accelerator pedal sensor reading does not show a strong "
+            "abnormal pattern right now. Low risk means the issue does not "
+            "look urgent."
+        ),
+        "possible_cause": (
+            "This could be related to normal sensor movement or a short "
+            "sensor delay. The current data does not strongly suggest a "
+            "confirmed fault."
+        ),
+        "recommended_action": [
+            "Continue monitoring the dashboard.",
+            (
+                "If the warning appears repeatedly, ask a mechanic to check "
+                "the pedal sensor."
+            )
         ]
     }
 }
+
+# Use REPORT_DATA as primary data source, fallback to MOCK_DATA_FALLBACK
+# if loading fails
+MOCK_DATA = REPORT_DATA if REPORT_DATA else MOCK_DATA_FALLBACK
 
 RISK_PRIORITY = {"High": 0, "Medium": 1, "Low": 2}
 
@@ -564,7 +662,18 @@ def show_overview_page():
     with title_col:
         with st.container(key="page_title_block"):
             st.title("Vehicle Health Status")
-            st.caption("Last checked: 2026-06-23 10:00")
+            latest_timestamp = max(
+                (comp.get("timestamp", "") for comp in MOCK_DATA.values()),
+                default=""
+            )
+            if latest_timestamp:
+                dt = datetime.fromisoformat(
+                    latest_timestamp.replace('Z', '+00:00')
+                )
+                formatted_time = dt.strftime("%Y-%m-%d %H:%M")
+                st.caption(f"Last checked: {formatted_time}")
+            else:
+                st.caption("Last checked: N/A")
         st.markdown(
             """
             <style>
@@ -743,27 +852,30 @@ def show_overview_page():
                 border-left: 4px solid {badge_bg};
                 border-radius: 14px;
                 box-shadow: 0 1px 3px {tokens["shadow"]};
-                padding: 24px;
+                padding: 24px 16px;
                 margin-bottom: 16px;
                 min-height: 280px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
+                justify-content: center;
+                gap: 24px;
             ">
                 <div style="
                     display: flex;
                     align-items: center;
-                    gap: 20px;
-                    margin-bottom: 24px;
+                    gap: 12px;
                 ">
                     {component_icon}
                     <h3 style="
                         margin: 0;
                         color: {tokens["text"]};
-                        font-size: 18px;
+                        font-size: 22px;
                         font-weight: 700;
                     ">
-                        {component_data["display_name"]}
+                        {COMPONENT_DISPLAY_NAMES.get(
+                            component_key, component_key
+                        )}
                     </h3>
                 </div>
                 <div style="
@@ -782,7 +894,7 @@ def show_overview_page():
                     ">
                         <span style="
                             font-family: {FONT_MONO};
-                            font-size: 28px;
+                            font-size: 32px;
                             font-weight: 700;
                             color: {tokens["text"]};
                             line-height: 1;
@@ -790,11 +902,11 @@ def show_overview_page():
                             {risk_pct}%
                         </span>
                         <span style="
-                            font-size: 11px;
+                            font-size: 12px;
                             color: {tokens["text_secondary"]};
-                            margin-top: 6px;
+                            margin-top: 8px;
                             font-weight: 600;
-                            letter-spacing: 0.4px;
+                            letter-spacing: 0.5px;
                             text-transform: uppercase;
                         ">
                             Risk Score
@@ -832,6 +944,10 @@ def render_component_detail(
     else:
         badge_bg = tokens["risk_low"]
 
+    # Get display name from mapping
+    component_id = component_data["component"]
+    display_name = COMPONENT_DISPLAY_NAMES.get(component_id, component_id)
+
     title_html = f"""
     <div style="
         display: flex;
@@ -840,14 +956,16 @@ def render_component_detail(
         margin-bottom: 24px;
     ">
         <h1 style="margin: 0; display: inline;">
-            {component_data["display_name"]}
+            {display_name}
         </h1>
     </div>
     """
 
     st.markdown(title_html, unsafe_allow_html=True)
 
-    trend = component_data["trend"]
+    # Extract trend from risk_history
+    risk_history = component_data.get("risk_history", [])
+    trend = [entry["risk_score"] for entry in risk_history]
     risk_pct = int(component_data["risk_score"] * 100)
 
     card_css = f"""
@@ -911,6 +1029,20 @@ def render_component_detail(
             use_container_width=True,
             key="detail_risk_gauge",
         )
+
+        # Format timestamp
+        timestamp_str = component_data.get("timestamp", "")
+        if timestamp_str:
+            try:
+                dt = datetime.fromisoformat(
+                    timestamp_str.replace('Z', '+00:00')
+                )
+                formatted_time = dt.strftime("%Y-%m-%d %H:%M")
+            except Exception:
+                formatted_time = timestamp_str
+        else:
+            formatted_time = "N/A"
+
         st.markdown(
             f"""
             <p style="
@@ -919,7 +1051,7 @@ def render_component_detail(
                 font-size: 12px;
                 margin: -8px 0 0 0;
             ">
-                Last updated: 2026-06-23 10:00
+                Last updated: {formatted_time}
             </p>
             """,
             unsafe_allow_html=True,
@@ -1041,20 +1173,22 @@ def render_component_detail(
                 <div style="
                     display: flex;
                     align-items: center;
-                    gap: 12px;
-                    padding: 0 12px 8px 12px;
+                    gap: 8px;
+                    padding: 8px 12px;
                     font-size: 11px;
                     font-weight: 700;
                     letter-spacing: 0.4px;
                     text-transform: uppercase;
                     color: {tokens["text_secondary"]};
                 ">
-                    <div style="flex: 2; min-width: 0;">Signal</div>
-                    <div style="flex: 1; min-width: 0;">Reading</div>
-                    <div style="flex: 1; min-width: 0;">Normal Range</div>
+                    <div style="flex: 2.5; min-width: 100px;">Signal</div>
+                    <div style="flex: 1.5; min-width: 70px;">Reading</div>
+                    <div style="flex: 2; min-width: 90px;">Normal Range</div>
+                    <div style="flex: 0.8; min-width: 50px;">Unit</div>
                     <div style="
-                        flex-shrink: 0;
+                        flex: 1.2;
                         min-width: 76px;
+                        max-width: 90px;
                         text-align: center;
                     ">
                         Status
@@ -1084,52 +1218,72 @@ def render_component_detail(
                         else tokens["risk_low"]
                     )
 
+                    # Get display name from mapping
+                    signal_id = signal["feature"]
+                    signal_display_name = SIGNAL_DISPLAY_NAMES.get(
+                        signal_id, signal_id
+                    )
+
                     row_html = f"""
                     <div style="
                         display: flex;
                         align-items: center;
-                        gap: 12px;
+                        gap: 8px;
                         background: {row_bg};
                         border-radius: 8px;
                         padding: 10px 12px;
                         margin-bottom: 6px;
                     ">
                         <div style="
-                            flex: 2;
-                            min-width: 0;
+                            flex: 2.5;
+                            min-width: 100px;
                             font-weight: 600;
                             color: {tokens["text"]};
                             font-size: 13px;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                            white-space: nowrap;
                         ">
-                            {signal["display_name"]}
+                            {signal_display_name}
                         </div>
                         <div style="
-                            flex: 1;
-                            min-width: 0;
+                            flex: 1.5;
+                            min-width: 70px;
                             font-family: {FONT_MONO};
                             color: {tokens["text"]};
                             font-size: 13px;
+                            font-weight: 600;
                         ">
-                            {signal["value"]} {signal["unit"]}
+                            {signal["value"]}
                         </div>
                         <div style="
-                            flex: 1;
-                            min-width: 0;
+                            flex: 2;
+                            min-width: 90px;
                             font-family: {FONT_MONO};
                             color: {tokens["text_secondary"]};
                             font-size: 12px;
                         ">
-                            {ref_lower}–{ref_upper} {signal["unit"]}
+                            {ref_lower}–{ref_upper}
                         </div>
                         <div style="
-                            flex-shrink: 0;
+                            flex: 0.8;
+                            min-width: 50px;
+                            font-family: {FONT_MONO};
+                            color: {tokens["text_secondary"]};
+                            font-size: 12px;
+                        ">
+                            {signal["unit"]}
+                        </div>
+                        <div style="
+                            flex: 1.2;
                             min-width: 76px;
+                            max-width: 90px;
                             text-align: center;
                             background-color: {signal_badge_bg};
                             color: white;
-                            padding: 4px 10px;
+                            padding: 4px 6px;
                             border-radius: 12px;
-                            font-size: 11px;
+                            font-size: 10px;
                             font-weight: 600;
                         ">
                             {status}
@@ -1143,61 +1297,109 @@ def render_component_detail(
     heading_icon = lucide_icon("file-text", size=22, color=tokens["accent"])
     show_icon_heading("Diagnostic Report", heading_icon)
 
+    # Get Granite LLM generated content
+    anomaly_desc = component_data.get(
+        "anomaly_description", "Pending Granite LLM report generation..."
+    )
+    possible_cause = component_data.get(
+        "possible_cause", "Pending Granite LLM report generation..."
+    )
+    recommended_action = component_data.get(
+        "recommended_action", "Pending Granite LLM report generation..."
+    )
+
+    # Format recommended_action as bullet list if it's a list
+    if isinstance(recommended_action, list):
+        action_items = ""
+        for action in recommended_action:
+            action_items += f"""
+            <div style="
+                display: flex;
+                gap: 8px;
+                margin-bottom: 8px;
+                align-items: flex-start;
+            ">
+                <span style="
+                    color: {tokens["accent"]};
+                    font-weight: 700;
+                    flex-shrink: 0;
+                ">•</span>
+                <span style="color: {tokens["text"]};">{action}</span>
+            </div>
+            """
+        action_html = f"<div>{action_items}</div>"
+    else:
+        action_html = (
+            f"<p style='margin: 0; color: {tokens['text']};'>"
+            f"{recommended_action}</p>"
+        )
+
     cards = [
         {
             "icon": lucide_icon(
-                "info", size=20, color=tokens["text_secondary"]
+                "info", size=20, color=tokens["accent"]
             ),
             "title": "What's Happening",
-            "body": "Pending Granite LLM report generation..."
+            "body": anomaly_desc,
+            "is_html": False
         },
         {
             "icon": lucide_icon(
-                "help-circle", size=20, color=tokens["text_secondary"]
+                "help-circle", size=20, color=tokens["accent"]
             ),
             "title": "Why This Matters",
-            "body": "Pending Granite LLM report generation..."
+            "body": possible_cause,
+            "is_html": False
         },
         {
             "icon": lucide_icon(
-                "check-square", size=20, color=tokens["text_secondary"]
+                "check-square", size=20, color=tokens["accent"]
             ),
             "title": "What You Should Do",
-            "body": "Pending Granite LLM report generation..."
+            "body": action_html,
+            "is_html": True
         }
     ]
 
     report_cols = st.columns(3, gap="medium")
     for col, card in zip(report_cols, cards):
         with col:
+            body_content = (
+                card["body"] if card["is_html"]
+                else f"<p style='margin: 0; color: {tokens['text']}; "
+                     f"line-height: 1.6;'>{card['body']}</p>"
+            )
             card_html = f"""
             <div style="
                 background: {tokens["surface"]};
                 border: 1px solid {tokens["border"]};
                 border-radius: 12px;
-                padding: 16px;
+                padding: 18px;
                 margin-bottom: 12px;
-                min-height: 160px;
+                min-height: 200px;
+                display: flex;
+                flex-direction: column;
             ">
                 <h3 style="
                     color: {tokens["text"]};
-                    margin: 0 0 12px 0;
+                    margin: 0 0 14px 0;
                     font-size: 16px;
-                    font-weight: 600;
+                    font-weight: 700;
                     display: flex;
                     align-items: center;
-                    gap: 18px;
+                    gap: 10px;
+                    padding-bottom: 10px;
+                    border-bottom: 2px solid {tokens["border"]};
                 ">
                     {card["icon"]}{card["title"]}
                 </h3>
-                <p style="
-                    color: {tokens["text_secondary"]};
-                    margin: 0;
+                <div style="
                     font-size: 14px;
-                    font-style: italic;
+                    line-height: 1.6;
+                    flex: 1;
                 ">
-                    {card["body"]}
-                </p>
+                    {body_content}
+                </div>
             </div>
             """
             st.markdown(card_html, unsafe_allow_html=True)
@@ -1244,7 +1446,7 @@ def show_detail_page():
                 color=icon_color,
             )
             icon_src = svg_data_uri(icon_svg)
-            label = tab_data["display_name"]
+            label = COMPONENT_DISPLAY_NAMES.get(tab_key, tab_key)
             if st.button(
                 label,
                 key=f"tab_btn_{tab_key}",
