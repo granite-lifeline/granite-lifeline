@@ -1287,7 +1287,7 @@ def render_component_detail(
             """
         action_html = f"<div>{action_items}</div>"
     else:
-        action_html = f"<p style='margin: 0; color: {tokens["text"]};'>{recommended_action}</p>"
+        action_html = f"<p style='margin: 0; color: {tokens['text']};'>{recommended_action}</p>"
     
     cards = [
         {
