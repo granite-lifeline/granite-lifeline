@@ -1319,7 +1319,7 @@ def render_component_detail(
     report_cols = st.columns(3, gap="medium")
     for col, card in zip(report_cols, cards):
         with col:
-            body_content = card["body"] if card["is_html"] else f"<p style='margin: 0; color: {tokens["text"]}; line-height: 1.6;'>{card['body']}</p>"
+            body_content = card["body"] if card["is_html"] else f"<p style='margin: 0; color: {tokens['text']}; line-height: 1.6;'>{card['body']}</p>"
             card_html = f"""
             <div style="
                 background: {tokens["surface"]};
