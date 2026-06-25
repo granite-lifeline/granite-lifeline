@@ -11,26 +11,26 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from dashboard.data_loader import load_dashboard_data
+from dashboard.data_loader import load_dashboard_data  # noqa: E402
 
 
 def test_complete_data_flow():
     """Test complete data flow from JSON to dashboard-ready format."""
     # Load data as dashboard would
     data = load_dashboard_data("dashboard/tests/ui_required_data.json")
-    
+
     # Verify all components loaded
     assert len(data) == 3, "Should load 3 components"
-    
+
     expected_components = [
         "cooling_system_stress",
-        "air_intake_maf_anomaly", 
+        "air_intake_maf_anomaly",
         "accelerator_pedal_sensor"
     ]
-    
+
     for component in expected_components:
         assert component in data, f"Missing component: {component}"
-    
+
     print("PASS: All components loaded successfully")
 
 
@@ -38,13 +38,13 @@ def test_cooling_system_data():
     """Test cooling system component data structure."""
     data = load_dashboard_data("dashboard/tests/ui_required_data.json")
     cooling = data["cooling_system_stress"]
-    
+
     # Verify basic fields
     assert cooling["risk_level"] == "High"
     assert cooling["risk_score"] == 0.86
     assert cooling["component"] == "cooling_system_stress"
     assert cooling["prediction_confidence"] == 0.88
-    
+
     # Verify key_signals
     assert len(cooling["key_signals"]) == 2
     coolant_temp = cooling["key_signals"][0]
@@ -52,17 +52,17 @@ def test_cooling_system_data():
     assert coolant_temp["value"] == 104.0
     assert coolant_temp["unit"] == "°C"
     assert coolant_temp["reference_range"] == [90.0, 95.0]
-    
+
     # Verify risk_history
     assert len(cooling["risk_history"]) == 5
     assert cooling["risk_history"][-1]["risk_score"] == 0.86
-    
+
     # Verify Granite LLM outputs
     assert "coolant temperature" in cooling["anomaly_description"].lower()
     assert "cooling system" in cooling["possible_cause"].lower()
     assert isinstance(cooling["recommended_action"], list)
     assert len(cooling["recommended_action"]) == 3
-    
+
     print("PASS: Cooling system data structure valid")
 
 
@@ -70,21 +70,21 @@ def test_air_intake_data():
     """Test air intake component data structure."""
     data = load_dashboard_data("dashboard/tests/ui_required_data.json")
     air_intake = data["air_intake_maf_anomaly"]
-    
+
     # Verify basic fields
     assert air_intake["risk_level"] == "Medium"
     assert air_intake["risk_score"] == 0.61
-    
+
     # Verify key_signals
     assert len(air_intake["key_signals"]) == 2
     maf_signal = air_intake["key_signals"][0]
     assert maf_signal["feature"] == "maf"
     assert maf_signal["value"] == 28.5
-    
+
     # Verify Granite LLM outputs
     assert isinstance(air_intake["recommended_action"], list)
     assert len(air_intake["recommended_action"]) == 3
-    
+
     print("PASS: Air intake data structure valid")
 
 
@@ -92,40 +92,41 @@ def test_accelerator_pedal_data():
     """Test accelerator pedal component data structure."""
     data = load_dashboard_data("dashboard/tests/ui_required_data.json")
     pedal = data["accelerator_pedal_sensor"]
-    
+
     # Verify basic fields
     assert pedal["risk_level"] == "Low"
     assert pedal["risk_score"] == 0.22
-    
+
     # Verify key_signals
     assert len(pedal["key_signals"]) == 2
-    
+
     # Verify Granite LLM outputs
     assert isinstance(pedal["recommended_action"], list)
     assert len(pedal["recommended_action"]) == 2
-    
+
     print("PASS: Accelerator pedal data structure valid")
 
 
 def test_risk_history_trend_calculation():
     """Test that risk_history can be used for trend visualization."""
     data = load_dashboard_data("dashboard/tests/ui_required_data.json")
-    
+
     for component_name, component_data in data.items():
         risk_history = component_data["risk_history"]
-        
+
         # Extract trend values (as dashboard would)
         trend = [entry["risk_score"] for entry in risk_history]
-        
+
         # Verify trend is valid
-        assert len(trend) == 5, f"{component_name}: Should have 5 trend points"
+        assert len(trend) == 5, \
+            f"{component_name}: Should have 5 trend points"
         assert all(0 <= score <= 1 for score in trend), \
             f"{component_name}: All scores should be between 0 and 1"
-        
+
         # Verify trend matches current risk_score
         assert trend[-1] == component_data["risk_score"], \
             f"{component_name}: Latest trend should match current risk_score"
-    
+
     print("PASS: Risk history trend calculation valid")
 
 
@@ -133,36 +134,36 @@ def test_signal_status_calculation():
     """Test that signal status can be calculated from reference_range."""
     data = load_dashboard_data("dashboard/tests/ui_required_data.json")
     cooling = data["cooling_system_stress"]
-    
+
     for signal in cooling["key_signals"]:
         ref_lower = signal["reference_range"][0]
         ref_upper = signal["reference_range"][1]
         value = signal["value"]
-        
+
         # Calculate status (as dashboard would)
         is_abnormal = value < ref_lower or value > ref_upper
         status = "ABNORMAL" if is_abnormal else "NORMAL"
-        
+
         # Verify calculation works
         if signal["feature"] == "coolant_temp":
             assert status == "ABNORMAL", "Coolant temp should be abnormal"
         elif signal["feature"] == "coolant_slope":
             assert status == "ABNORMAL", "Coolant slope should be abnormal"
-    
+
     print("PASS: Signal status calculation valid")
 
 
 def test_display_name_mapping():
     """Test that component and signal IDs can be mapped to display names."""
     data = load_dashboard_data("dashboard/tests/ui_required_data.json")
-    
+
     # Component display names (from dashboard/app.py)
     component_names = {
         "cooling_system_stress": "Cooling System",
         "air_intake_maf_anomaly": "Air Intake System",
         "accelerator_pedal_sensor": "Accelerator Pedal"
     }
-    
+
     # Signal display names (from dashboard/app.py)
     signal_names = {
         "coolant_temp": "Coolant Temperature",
@@ -172,25 +173,25 @@ def test_display_name_mapping():
         "accel_pedal_d": "Pedal Sensor D",
         "accel_pedal_e": "Pedal Sensor E"
     }
-    
+
     # Verify all components can be mapped
     for component_id in data.keys():
         assert component_id in component_names, \
             f"Missing display name mapping for: {component_id}"
-    
+
     # Verify all signals can be mapped
     for component_data in data.values():
         for signal in component_data["key_signals"]:
             signal_id = signal["feature"]
             assert signal_id in signal_names, \
                 f"Missing display name mapping for signal: {signal_id}"
-    
+
     print("PASS: Display name mapping valid")
 
 
 if __name__ == "__main__":
     print("Running end-to-end tests...\n")
-    
+
     test_complete_data_flow()
     test_cooling_system_data()
     test_air_intake_data()
@@ -198,5 +199,5 @@ if __name__ == "__main__":
     test_risk_history_trend_calculation()
     test_signal_status_calculation()
     test_display_name_mapping()
-    
+
     print("\nAll end-to-end tests passed!")

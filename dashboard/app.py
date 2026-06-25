@@ -64,8 +64,15 @@ MOCK_DATA_FALLBACK = {
             {"timestamp": "2026-06-16T08:00:00Z", "risk_score": 0.70},
             {"timestamp": "2026-06-16T12:00:00Z", "risk_score": 0.86}
         ],
-        "anomaly_description": "The coolant temperature is above its reference range and is rising faster than expected. High risk means the vehicle may need prompt attention.",
-        "possible_cause": "This could be related to cooling system stress, such as low coolant, radiator problems, or water pump degradation.",
+        "anomaly_description": (
+            "The coolant temperature is above its reference range and is "
+            "rising faster than expected. High risk means the vehicle may "
+            "need prompt attention."
+        ),
+        "possible_cause": (
+            "This could be related to cooling system stress, such as low "
+            "coolant, radiator problems, or water pump degradation."
+        ),
         "recommended_action": [
             "Avoid heavy driving if it is safe to do so.",
             "Check the coolant level when the engine is cool.",
@@ -99,12 +106,23 @@ MOCK_DATA_FALLBACK = {
             {"timestamp": "2026-06-16T07:00:00Z", "risk_score": 0.48},
             {"timestamp": "2026-06-16T11:00:00Z", "risk_score": 0.61}
         ],
-        "anomaly_description": "The airflow reading is higher than its reference range, while the intake pressure reading is still inside its reference range. Medium risk means the vehicle should be checked soon, but it is not an immediate emergency.",
-        "possible_cause": "This may indicate an airflow sensor issue, a dirty air filter, or an air intake leak. The result is not a confirmed fault.",
+        "anomaly_description": (
+            "The airflow reading is higher than its reference range, while "
+            "the intake pressure reading is still inside its reference range. "
+            "Medium risk means the vehicle should be checked soon, but it is "
+            "not an immediate emergency."
+        ),
+        "possible_cause": (
+            "This may indicate an airflow sensor issue, a dirty air filter, "
+            "or an air intake leak. The result is not a confirmed fault."
+        ),
         "recommended_action": [
             "Ask a mechanic to inspect the air intake system soon.",
             "Check whether the air filter needs cleaning or replacement.",
-            "Keep watching for rough idling, poor acceleration, or warning lights."
+            (
+                "Keep watching for rough idling, poor acceleration, or "
+                "warning lights."
+            )
         ]
     },
     "accelerator_pedal_sensor": {
@@ -134,16 +152,28 @@ MOCK_DATA_FALLBACK = {
             {"timestamp": "2026-06-16T06:00:00Z", "risk_score": 0.22},
             {"timestamp": "2026-06-16T10:00:00Z", "risk_score": 0.22}
         ],
-        "anomaly_description": "The accelerator pedal sensor reading does not show a strong abnormal pattern right now. Low risk means the issue does not look urgent.",
-        "possible_cause": "This could be related to normal sensor movement or a short sensor delay. The current data does not strongly suggest a confirmed fault.",
+        "anomaly_description": (
+            "The accelerator pedal sensor reading does not show a strong "
+            "abnormal pattern right now. Low risk means the issue does not "
+            "look urgent."
+        ),
+        "possible_cause": (
+            "This could be related to normal sensor movement or a short "
+            "sensor delay. The current data does not strongly suggest a "
+            "confirmed fault."
+        ),
         "recommended_action": [
             "Continue monitoring the dashboard.",
-            "If the warning appears repeatedly, ask a mechanic to check the pedal sensor."
+            (
+                "If the warning appears repeatedly, ask a mechanic to check "
+                "the pedal sensor."
+            )
         ]
     }
 }
 
-# Use REPORT_DATA as primary data source, fallback to MOCK_DATA_FALLBACK if loading fails
+# Use REPORT_DATA as primary data source, fallback to MOCK_DATA_FALLBACK
+# if loading fails
 MOCK_DATA = REPORT_DATA if REPORT_DATA else MOCK_DATA_FALLBACK
 
 RISK_PRIORITY = {"High": 0, "Medium": 1, "Low": 2}
@@ -843,7 +873,9 @@ def show_overview_page():
                         font-size: 22px;
                         font-weight: 700;
                     ">
-                        {COMPONENT_DISPLAY_NAMES.get(component_key, component_key)}
+                        {COMPONENT_DISPLAY_NAMES.get(
+                            component_key, component_key
+                        )}
                     </h3>
                 </div>
                 <div style="
@@ -997,18 +1029,20 @@ def render_component_detail(
             use_container_width=True,
             key="detail_risk_gauge",
         )
-        
+
         # Format timestamp
         timestamp_str = component_data.get("timestamp", "")
         if timestamp_str:
             try:
-                dt = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                dt = datetime.fromisoformat(
+                    timestamp_str.replace('Z', '+00:00')
+                )
                 formatted_time = dt.strftime("%Y-%m-%d %H:%M")
-            except:
+            except Exception:
                 formatted_time = timestamp_str
         else:
             formatted_time = "N/A"
-        
+
         st.markdown(
             f"""
             <p style="
@@ -1183,10 +1217,12 @@ def render_component_detail(
                         tokens["risk_high"] if status == "ABNORMAL"
                         else tokens["risk_low"]
                     )
-                    
+
                     # Get display name from mapping
                     signal_id = signal["feature"]
-                    signal_display_name = SIGNAL_DISPLAY_NAMES.get(signal_id, signal_id)
+                    signal_display_name = SIGNAL_DISPLAY_NAMES.get(
+                        signal_id, signal_id
+                    )
 
                     row_html = f"""
                     <div style="
@@ -1262,10 +1298,16 @@ def render_component_detail(
     show_icon_heading("Diagnostic Report", heading_icon)
 
     # Get Granite LLM generated content
-    anomaly_desc = component_data.get("anomaly_description", "Pending Granite LLM report generation...")
-    possible_cause = component_data.get("possible_cause", "Pending Granite LLM report generation...")
-    recommended_action = component_data.get("recommended_action", "Pending Granite LLM report generation...")
-    
+    anomaly_desc = component_data.get(
+        "anomaly_description", "Pending Granite LLM report generation..."
+    )
+    possible_cause = component_data.get(
+        "possible_cause", "Pending Granite LLM report generation..."
+    )
+    recommended_action = component_data.get(
+        "recommended_action", "Pending Granite LLM report generation..."
+    )
+
     # Format recommended_action as bullet list if it's a list
     if isinstance(recommended_action, list):
         action_items = ""
@@ -1287,8 +1329,11 @@ def render_component_detail(
             """
         action_html = f"<div>{action_items}</div>"
     else:
-        action_html = f"<p style='margin: 0; color: {tokens['text']};'>{recommended_action}</p>"
-    
+        action_html = (
+            f"<p style='margin: 0; color: {tokens['text']};'>"
+            f"{recommended_action}</p>"
+        )
+
     cards = [
         {
             "icon": lucide_icon(
@@ -1319,7 +1364,11 @@ def render_component_detail(
     report_cols = st.columns(3, gap="medium")
     for col, card in zip(report_cols, cards):
         with col:
-            body_content = card["body"] if card["is_html"] else f"<p style='margin: 0; color: {tokens['text']}; line-height: 1.6;'>{card['body']}</p>"
+            body_content = (
+                card["body"] if card["is_html"]
+                else f"<p style='margin: 0; color: {tokens['text']}; "
+                     f"line-height: 1.6;'>{card['body']}</p>"
+            )
             card_html = f"""
             <div style="
                 background: {tokens["surface"]};
