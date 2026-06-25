@@ -11,6 +11,7 @@ import time
 from datetime import datetime
 import streamlit as st
 import plotly.graph_objects as go
+from data_loader import load_dashboard_data
 
 COMPONENT_DISPLAY_NAMES = {
     "cooling_system_stress": "Cooling System",
@@ -27,7 +28,15 @@ SIGNAL_DISPLAY_NAMES = {
     "accel_pedal_e": "Pedal Sensor E"
 }
 
-MOCK_DATA = {
+# Load report data from Report Layer
+try:
+    REPORT_DATA = load_dashboard_data("dashboard/tests/ui_required_data.json")
+except Exception as e:
+    st.error(f"Failed to load report data: {e}")
+    REPORT_DATA = {}
+
+# Fallback MOCK_DATA for development (kept for reference)
+MOCK_DATA_FALLBACK = {
     "cooling_system_stress": {
         "timestamp": "2026-06-16T12:00:00Z",
         "risk_score": 0.86,
@@ -133,6 +142,9 @@ MOCK_DATA = {
         ]
     }
 }
+
+# Use REPORT_DATA as primary data source, fallback to MOCK_DATA_FALLBACK if loading fails
+MOCK_DATA = REPORT_DATA if REPORT_DATA else MOCK_DATA_FALLBACK
 
 RISK_PRIORITY = {"High": 0, "Medium": 1, "Low": 2}
 
