@@ -810,24 +810,25 @@ def show_overview_page():
                 border-left: 4px solid {badge_bg};
                 border-radius: 14px;
                 box-shadow: 0 1px 3px {tokens["shadow"]};
-                padding: 24px;
+                padding: 24px 16px;
                 margin-bottom: 16px;
                 min-height: 280px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
+                justify-content: center;
+                gap: 24px;
             ">
                 <div style="
                     display: flex;
                     align-items: center;
-                    gap: 20px;
-                    margin-bottom: 24px;
+                    gap: 12px;
                 ">
                     {component_icon}
                     <h3 style="
                         margin: 0;
                         color: {tokens["text"]};
-                        font-size: 18px;
+                        font-size: 22px;
                         font-weight: 700;
                     ">
                         {COMPONENT_DISPLAY_NAMES.get(component_key, component_key)}
@@ -849,7 +850,7 @@ def show_overview_page():
                     ">
                         <span style="
                             font-family: {FONT_MONO};
-                            font-size: 28px;
+                            font-size: 32px;
                             font-weight: 700;
                             color: {tokens["text"]};
                             line-height: 1;
@@ -857,11 +858,11 @@ def show_overview_page():
                             {risk_pct}%
                         </span>
                         <span style="
-                            font-size: 11px;
+                            font-size: 12px;
                             color: {tokens["text_secondary"]};
-                            margin-top: 6px;
+                            margin-top: 8px;
                             font-weight: 600;
-                            letter-spacing: 0.4px;
+                            letter-spacing: 0.5px;
                             text-transform: uppercase;
                         ">
                             Risk Score
@@ -1126,20 +1127,22 @@ def render_component_detail(
                 <div style="
                     display: flex;
                     align-items: center;
-                    gap: 12px;
-                    padding: 0 12px 8px 12px;
+                    gap: 8px;
+                    padding: 8px 12px;
                     font-size: 11px;
                     font-weight: 700;
                     letter-spacing: 0.4px;
                     text-transform: uppercase;
                     color: {tokens["text_secondary"]};
                 ">
-                    <div style="flex: 2; min-width: 0;">Signal</div>
-                    <div style="flex: 1; min-width: 0;">Reading</div>
-                    <div style="flex: 1; min-width: 0;">Normal Range</div>
+                    <div style="flex: 2.5; min-width: 100px;">Signal</div>
+                    <div style="flex: 1.5; min-width: 70px;">Reading</div>
+                    <div style="flex: 2; min-width: 90px;">Normal Range</div>
+                    <div style="flex: 0.8; min-width: 50px;">Unit</div>
                     <div style="
-                        flex-shrink: 0;
+                        flex: 1.2;
                         min-width: 76px;
+                        max-width: 90px;
                         text-align: center;
                     ">
                         Status
@@ -1177,48 +1180,62 @@ def render_component_detail(
                     <div style="
                         display: flex;
                         align-items: center;
-                        gap: 12px;
+                        gap: 8px;
                         background: {row_bg};
                         border-radius: 8px;
                         padding: 10px 12px;
                         margin-bottom: 6px;
                     ">
                         <div style="
-                            flex: 2;
-                            min-width: 0;
+                            flex: 2.5;
+                            min-width: 100px;
                             font-weight: 600;
                             color: {tokens["text"]};
                             font-size: 13px;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                            white-space: nowrap;
                         ">
                             {signal_display_name}
                         </div>
                         <div style="
-                            flex: 1;
-                            min-width: 0;
+                            flex: 1.5;
+                            min-width: 70px;
                             font-family: {FONT_MONO};
                             color: {tokens["text"]};
                             font-size: 13px;
+                            font-weight: 600;
                         ">
-                            {signal["value"]} {signal["unit"]}
+                            {signal["value"]}
                         </div>
                         <div style="
-                            flex: 1;
-                            min-width: 0;
+                            flex: 2;
+                            min-width: 90px;
                             font-family: {FONT_MONO};
                             color: {tokens["text_secondary"]};
                             font-size: 12px;
                         ">
-                            {ref_lower}–{ref_upper} {signal["unit"]}
+                            {ref_lower}–{ref_upper}
                         </div>
                         <div style="
-                            flex-shrink: 0;
+                            flex: 0.8;
+                            min-width: 50px;
+                            font-family: {FONT_MONO};
+                            color: {tokens["text_secondary"]};
+                            font-size: 12px;
+                        ">
+                            {signal["unit"]}
+                        </div>
+                        <div style="
+                            flex: 1.2;
                             min-width: 76px;
+                            max-width: 90px;
                             text-align: center;
                             background-color: {signal_badge_bg};
                             color: white;
-                            padding: 4px 10px;
+                            padding: 4px 6px;
                             border-radius: 12px;
-                            font-size: 11px;
+                            font-size: 10px;
                             font-weight: 600;
                         ">
                             {status}
@@ -1239,17 +1256,31 @@ def render_component_detail(
     
     # Format recommended_action as bullet list if it's a list
     if isinstance(recommended_action, list):
-        action_html = "<ul style='margin: 0; padding-left: 20px;'>"
+        action_items = ""
         for action in recommended_action:
-            action_html += f"<li>{action}</li>"
-        action_html += "</ul>"
+            action_items += f"""
+            <div style="
+                display: flex;
+                gap: 8px;
+                margin-bottom: 8px;
+                align-items: flex-start;
+            ">
+                <span style="
+                    color: {tokens["accent"]};
+                    font-weight: 700;
+                    flex-shrink: 0;
+                ">•</span>
+                <span style="color: {tokens["text"]};">{action}</span>
+            </div>
+            """
+        action_html = f"<div>{action_items}</div>"
     else:
-        action_html = f"<p style='margin: 0;'>{recommended_action}</p>"
+        action_html = f"<p style='margin: 0; color: {tokens["text"]};'>{recommended_action}</p>"
     
     cards = [
         {
             "icon": lucide_icon(
-                "info", size=20, color=tokens["text_secondary"]
+                "info", size=20, color=tokens["accent"]
             ),
             "title": "What's Happening",
             "body": anomaly_desc,
@@ -1257,7 +1288,7 @@ def render_component_detail(
         },
         {
             "icon": lucide_icon(
-                "help-circle", size=20, color=tokens["text_secondary"]
+                "help-circle", size=20, color=tokens["accent"]
             ),
             "title": "Why This Matters",
             "body": possible_cause,
@@ -1265,7 +1296,7 @@ def render_component_detail(
         },
         {
             "icon": lucide_icon(
-                "check-square", size=20, color=tokens["text_secondary"]
+                "check-square", size=20, color=tokens["accent"]
             ),
             "title": "What You Should Do",
             "body": action_html,
@@ -1276,30 +1307,35 @@ def render_component_detail(
     report_cols = st.columns(3, gap="medium")
     for col, card in zip(report_cols, cards):
         with col:
-            body_content = card["body"] if card["is_html"] else f"<p style='margin: 0;'>{card['body']}</p>"
+            body_content = card["body"] if card["is_html"] else f"<p style='margin: 0; color: {tokens["text"]}; line-height: 1.6;'>{card['body']}</p>"
             card_html = f"""
             <div style="
                 background: {tokens["surface"]};
                 border: 1px solid {tokens["border"]};
                 border-radius: 12px;
-                padding: 16px;
+                padding: 18px;
                 margin-bottom: 12px;
-                min-height: 160px;
+                min-height: 200px;
+                display: flex;
+                flex-direction: column;
             ">
                 <h3 style="
                     color: {tokens["text"]};
-                    margin: 0 0 12px 0;
+                    margin: 0 0 14px 0;
                     font-size: 16px;
-                    font-weight: 600;
+                    font-weight: 700;
                     display: flex;
                     align-items: center;
-                    gap: 18px;
+                    gap: 10px;
+                    padding-bottom: 10px;
+                    border-bottom: 2px solid {tokens["border"]};
                 ">
                     {card["icon"]}{card["title"]}
                 </h3>
                 <div style="
-                    color: {tokens["text_secondary"]};
                     font-size: 14px;
+                    line-height: 1.6;
+                    flex: 1;
                 ">
                     {body_content}
                 </div>
