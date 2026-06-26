@@ -235,7 +235,8 @@ For each feature include:
   where:
     - `W_stability = 60 s`
     - `window_samples = W_stability × sampling_rate`
-    - At `sampling_rate = 1 Hz`, `window_samples = 60`   
+    - At `sampling_rate = 1 Hz`, `window_samples = 60`
+    - Valid only after `coolant_temp >= 70°C` for at least 60 consecutive seconds within the same segment.   
 
 **Unit:** °C
 
@@ -283,9 +284,9 @@ For each feature include:
 
 **Inputs:** `map`, `intake_temp`, `rpm`  
 
-**Formula:** `f_vehicle(map, intake_temp, rpm)`; a simplified proxy can use `rpm * map / (intake_temp + 273.15)`; `f_vehicle` is a vehicle/model baseline trained on healthy data  
+**Formula:** `f_dataset(map, intake_temp, rpm)`; a simplified raw proxy can use `rpm * map / (intake_temp + 273.15)` and must then be standardized or calibrated; `f_dataset` is a dataset normal-reference baseline model.  
 
-**Unit:** g/rev
+**Unit:** dimensionless or model-scaled
 
 **Physical Meaning:** An air-load proxy derived from MAP, intake temperature, and engine speed.  
 
@@ -295,9 +296,9 @@ For each feature include:
 
 **Inputs:** `maf_derived_air_load`, `map_derived_air_load`  
 
-**Formula:** `abs(zscore_vehicle(maf_derived_air_load) - zscore_vehicle(map_derived_air_load))`
+**Formula:** `abs(zscore_dataset(maf_derived_air_load) - zscore_dataset(map_derived_air_load))`
 
-**Unit:** g/rev
+**Unit:** dimensionless
 
 **Physical Meaning:** The standardized deviation between the MAF-side air-load estimate and the MAP-side air-load estimate.  
 
@@ -307,7 +308,7 @@ For each feature include:
 
 **Inputs:** `maf`, `map`, `intake_temp`, `rpm`  
 
-**Formula:** `maf - f_vehicle(map, intake_temp, rpm)`   
+**Formula:** `maf - f_dataset(map, intake_temp, rpm)`   
 
 **Unit:** g/s  
 
@@ -341,9 +342,9 @@ For each feature include:
 
 ### 2.12 pedal_throttle_gap
 
-**Inputs:** `accel_pedal_mean`, `tps`  
+**Inputs:** `accel_pedal_mean`, `tps`, `rpm`, `operating_state`  
 
-**Formula:** `tps_normalized - g_vehicle(accel_pedal_mean, rpm, operating_state)` (percentage points); `g_vehicle` is the expected throttle model under healthy conditions  
+**Formula:** `tps_normalized - g_dataset(accel_pedal_mean, rpm, operating_state)` (percentage points); `g_dataset` is the expected throttle model fitted from dataset normal-reference conditions.  
 
 **Unit:** %  
 
@@ -437,7 +438,7 @@ For each feature include:
 
 **Inputs:** `engine_on_flag`, `speed`, `rpm`, `tps`, `accel_pedal_mean`  
 
-**Formula:** `engine_on_flag = 1 & speed < v_idle & rpm within calibrated_idle_band & accel_pedal_mean < p_idle & tps < t_idle`  
+**Formula:** `engine_on_flag = 1 & speed < v_idle & rpm within calibrated_idle_band & accel_pedal_mean <= calibrated_idle_pedal_threshold & tps <= calibrated_idle_tps_threshold`  
 
 **Unit:** dimensionless
 
@@ -449,7 +450,7 @@ For each feature include:
 
 **Inputs:** `rpm`, `idle_flag`  
 
-**Formula:** `rolling_std(rpm | idle_flag = 1, W)`   
+**Formula:** `rolling_std(rpm | idle_flag = 1, W_idle_stability)` where `W_idle_stability = 30 s` at 1 Hz.  
 
 **Unit:** rpm  
 
@@ -511,7 +512,7 @@ For each proxy include:
 
 **Proxy Definition:** Triggered when `maf_map_cohesion` remains high. This proxy identifies inconsistency between the MAF-side air-load estimate and the MAP-side air-load estimate, mainly indicating MAF sensor drift, contamination, response delay, or abnormalities in the intake measurement chain.  
 
-**Expected Pattern:** `maf_map_cohesion` > 0.25-0.30 for 5-10 s; or under steady-state conditions, the standardized deviation between `maf_derived_air_load` and `map_derived_air_load` exceeds 25-30%. Transient acceleration, gear shifts, and rapid throttle-change windows should be down-weighted or masked.  
+**Expected Pattern:** `maf_map_cohesion` > 0.25-0.30 for 5-10 s as an initial proxy hint, not a final decision threshold; or under steady-state conditions, the standardized deviation between `maf_derived_air_load` and `map_derived_air_load` exceeds 25-30%. Transient acceleration, gear shifts, and rapid throttle-change windows should be down-weighted or masked.  
 
 **Physical Logic:** Under the same operating condition, MAF-based load and MAP-based load should remain physically consistent. Persistent deviation between the two indicates a plausibility abnormality in the air-mass measurement chain.  
 
@@ -539,7 +540,7 @@ For each proxy include:
 
 **Proxy Definition:** After pedal demand increases, throttle opening does not change accordingly, or the actual throttle position remains offset from the expected value based on pedal/load for an extended period. This proxies electronic throttle actuator sticking, position-control abnormalities, or ETC entering a restricted-control mode.  
 
-**Expected Pattern:** After `accel_pedal_mean` increases by more than 20 percentage points, `tps` changes by less than 5 percentage points within 0.5-1.0 s; or `pedal_throttle_gap > 15-20 percentage points` for 2 s. Confidence is higher if `map`/`maf` also show no response.  
+**Expected Pattern:** After `accel_pedal_mean` increases by more than 20 percentage points, `tps` changes by less than 5 percentage points within 0.5-1.0 s; or `pedal_throttle_gap > 15-20 percentage points` for 2 s as an initial proxy hint, not a final decision threshold. Confidence is higher if `map`/`maf` also show no response.  
 
 **Physical Logic:** ETC calculates throttle opening through the ECU based on pedal position and current operating conditions, and uses the throttle angle sensor to monitor whether the actual position matches the expected position. OBD diagnostic targets include the ETC throttle-valve actuator.  
 
@@ -553,7 +554,7 @@ For each proxy include:
 
 **Proxy Definition:** The proportional relationship, correlation, or dynamic behavior between pedal channels D/E is inconsistent. This proxies pedal sensor channel drift, contact abnormalities, or redundancy-monitoring failure.  
 
-**Expected Pattern:** First learn the healthy vehicle-specific mapping `accel_pedal_e = a * accel_pedal_d + b`; trigger if the residual remains above 5-10 percentage points, the channel correlation coefficient is below 0.95, or one channel changes while the other channel freezes for more than 1 s.  
+**Expected Pattern:** First learn the dataset normal-reference mapping `accel_pedal_e = a * accel_pedal_d + b`; trigger if the residual remains above 5-10 percentage points, the channel correlation coefficient is below 0.95, or one channel changes while the other channel freezes for more than 1 s.  
 
 **Physical Logic:** The ETC system uses two potentiometers on the pedal and throttle device to provide redundancy, and continuously checks all sensors and calculations that affect throttle opening while the engine is running.  
 
@@ -567,7 +568,7 @@ For each proxy include:
 
 **Proxy Definition:** Under idle conditions, RPM fluctuation is excessive, cyclic surging occurs, or the engine cannot stabilize near the target idle speed. This proxies idle-control degradation, intake/fuel-injection/ignition disturbances, excessive EGR, or insufficient load compensation.  
 
-**Expected Pattern:** Within an idle window where `speed < 3 km/h`, `tps < 5-10%`, and pedal position is near 0, `rpm` standard deviation > 50-100 rpm for 30 s, or peak amplitude > 150-200 rpm.  
+**Expected Pattern:** Within an idle window where `speed < 3 km/h`, `tps <= calibrated_idle_tps_threshold`, and pedal position is at or below the calibrated idle pedal threshold, `rpm` standard deviation > 50-100 rpm for 30 s, or peak amplitude > 150-200 rpm.  
 
 **Physical Logic:** The goal of idle control is to maintain the desired idle speed under all conditions. The advantages of EDC electronic control include better speed control, anti-surge, and smooth-running behavior. Persistent high fluctuation within the idle window directly reflects control or combustion-stability issues.  
 
@@ -587,3 +588,4 @@ Bosch Automotive Handbook
 ### Dataset Notes
 
 KIT Automotive OBD-II Dataset
+

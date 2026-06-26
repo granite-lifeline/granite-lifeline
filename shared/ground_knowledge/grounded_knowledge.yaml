@@ -1,4 +1,4 @@
-metadata:
+﻿metadata:
   schema_version: "1.0"
   source_document: "reference.md"
   source_path: "shared/ground_knowledge/reference.md"
@@ -7,7 +7,7 @@ metadata:
   resampling_frequency: "1 Hz"
   notes:
     - "Values are grounded in the data-layer reference document."
-    - "Proxy failure thresholds are proxy signatures and should be calibrated with vehicle-specific healthy baselines before production use."
+    - "Proxy failure thresholds are proxy signatures and should be calibrated with dataset normal-reference baselines before production use."
 
 signals:
   timestamp:
@@ -261,7 +261,7 @@ features:
     intended_signal: "coolant_temperature_accumulation_or_decrease_rate"
     reference_range:
       type: "calibrated_baseline"
-      normal_range: "vehicle-specific healthy baseline by operating phase"
+      normal_range: "dataset normal-reference baseline by operating phase"
     supporting_source: "Bosch Automotive Handbook"
 
   coolant_ambient_delta:
@@ -274,7 +274,7 @@ features:
     intended_signal: "cooling_temperature_margin"
     reference_range:
       type: "calibrated_baseline"
-      normal_range: "vehicle-specific healthy baseline under comparable ambient and operating conditions"
+      normal_range: "dataset normal-reference baseline under comparable ambient and operating conditions"
     supporting_source: "Bosch Automotive Handbook"
 
   coolant_stability:
@@ -286,7 +286,7 @@ features:
     intended_signal: "post_warmup_coolant_temperature_regulation_stability"
     reference_range:
       type: "calibrated_baseline | validity_condition"
-      normal_range: "vehicle-specific healthy baseline after warm-up completion"
+      normal_range: "dataset normal-reference baseline after warm-up completion"
     parameters:
       W_stability:
         value: 60
@@ -300,6 +300,10 @@ features:
     validity_condition:
       warmup_complete:
         coolant_temp: ">=70°C"
+        min_consecutive_seconds:
+          value: 60
+          unit: "s"
+        condition_scope: "same_segment"
         parameter:
           T_warmup:
             value: 70
@@ -316,7 +320,7 @@ features:
     intended_signal: "intake_air_heat_soak"
     reference_range:
       type: "calibrated_baseline"
-      normal_range: "vehicle-specific healthy baseline under comparable ambient, speed, and load conditions"
+      normal_range: "dataset normal-reference baseline under comparable ambient, speed, and load conditions"
     supporting_source: "Bosch Automotive Handbook"
 
   intake_temp_slope:
@@ -329,7 +333,7 @@ features:
     intended_signal: "intake_air_temperature_change_rate"
     reference_range:
       type: "calibrated_baseline"
-      normal_range: "vehicle-specific healthy baseline by operating phase"
+      normal_range: "dataset normal-reference baseline by operating phase"
     supporting_source: "Bosch Automotive Handbook"
 
   maf_derived_air_load:
@@ -342,7 +346,7 @@ features:
     intended_signal: "maf_side_air_load"
     reference_range:
       type: "calibrated_baseline"
-      normal_range: "vehicle-specific healthy baseline by rpm and load region"
+      normal_range: "dataset normal-reference baseline by rpm and load region"
     supporting_source: "Bosch Automotive Handbook"
 
   map_derived_air_load:
@@ -350,28 +354,28 @@ features:
       - "map"
       - "intake_temp"
       - "rpm"
-    formula: "f_vehicle(map, intake_temp, rpm)"
-    simplified_formula: "rpm * map / (intake_temp + 273.15)"
-    unit: "g/rev"
+    formula: "f_dataset(map, intake_temp, rpm)"
+    simplified_formula: "standardize_or_calibrate(rpm * map / (intake_temp + 273.15))"
+    unit: "dimensionless_or_model_scaled"
     physical_meaning: "Air-load proxy derived from MAP, intake temperature, and engine speed."
     intended_signal: "map_side_air_load"
     reference_range:
       type: "calibrated_baseline"
-      normal_range: "vehicle-specific healthy baseline by rpm and load region"
-    baseline_requirement: "f_vehicle is a vehicle/model baseline trained on healthy data."
+      normal_range: "dataset normal-reference baseline by rpm and load region"
+    baseline_requirement: "f_dataset is a dataset normal-reference baseline model; the simplified formula is only a raw MAP-side proxy before calibration."
     supporting_source: "Bosch Automotive Handbook"
 
   maf_map_cohesion:
     inputs:
       - "maf_derived_air_load"
       - "map_derived_air_load"
-    formula: "abs(zscore_vehicle(maf_derived_air_load) - zscore_vehicle(map_derived_air_load))"
-    unit: "g/rev"
+    formula: "abs(zscore_dataset(maf_derived_air_load) - zscore_dataset(map_derived_air_load))"
+    unit: "dimensionless"
     physical_meaning: "Standardized deviation between the MAF-side and MAP-side air-load estimates."
     intended_signal: "air_load_estimate_consistency"
     reference_range:
       type: "calibrated_baseline"
-      normal_range: "vehicle-specific healthy baseline for MAF/MAP load-estimate deviation"
+      normal_range: "dataset normal-reference baseline for MAF/MAP load-estimate deviation"
     supporting_source: "Bosch Automotive Handbook"
 
   speed_density_maf_residual:
@@ -380,14 +384,14 @@ features:
       - "map"
       - "intake_temp"
       - "rpm"
-    formula: "maf - f_vehicle(map, intake_temp, rpm)"
+    formula: "maf - f_dataset(map, intake_temp, rpm)"
     unit: "g/s"
     physical_meaning: "Residual between MAF sensor reading and speed-density baseline built from MAP, intake temperature, and engine speed."
     intended_signal: "maf_speed_density_residual"
     reference_range:
       type: "calibrated_baseline"
-      normal_range: "vehicle-specific healthy residual baseline"
-    baseline_requirement: "f_vehicle is a vehicle/model baseline trained on healthy data."
+      normal_range: "dataset normal-reference residual baseline"
+    baseline_requirement: "f_dataset is a dataset normal-reference baseline model."
     supporting_source: "Bosch Automotive Handbook"
 
   map_slope:
@@ -400,7 +404,7 @@ features:
     intended_signal: "manifold_pressure_change_rate"
     reference_range:
       type: "calibrated_baseline | validity_condition"
-      normal_range: "vehicle-specific healthy baseline within comparable throttle-change or steady-state windows"
+      normal_range: "dataset normal-reference baseline within comparable throttle-change or steady-state windows"
     supporting_source: "Bosch Automotive Handbook"
 
   accel_pedal_mean:
@@ -420,14 +424,16 @@ features:
     inputs:
       - "accel_pedal_mean"
       - "tps"
-    formula: "tps_normalized - g_vehicle(accel_pedal_mean, rpm, operating_state)"
+      - "rpm"
+      - "operating_state"
+    formula: "tps_normalized - g_dataset(accel_pedal_mean, rpm, operating_state)"
     unit: "%"
     physical_meaning: "Residual between actual throttle position and expected value based on driver demand and operating state."
     intended_signal: "throttle_tracking_residual"
     reference_range:
       type: "calibrated_baseline"
-      normal_range: "vehicle-specific healthy throttle-tracking residual baseline"
-    baseline_requirement: "g_vehicle is the expected throttle model under healthy conditions."
+      normal_range: "dataset normal-reference throttle-tracking residual baseline"
+    baseline_requirement: "g_dataset is the expected throttle model fitted from dataset normal-reference conditions."
     supporting_source: "Bosch Automotive Handbook"
 
   pedal_to_throttle_delay:
@@ -440,7 +446,7 @@ features:
     intended_signal: "pedal_to_throttle_response_delay"
     reference_range:
       type: "calibrated_baseline | validity_condition"
-      normal_range: "vehicle-specific healthy delay baseline within valid pedal-change event windows"
+      normal_range: "dataset normal-reference delay baseline within valid pedal-change event windows"
     supporting_source: "Bosch Automotive Handbook"
 
   tps_slope:
@@ -453,7 +459,7 @@ features:
     intended_signal: "throttle_position_change_rate"
     reference_range:
       type: "calibrated_baseline | validity_condition"
-      normal_range: "vehicle-specific healthy baseline within comparable throttle-control windows"
+      normal_range: "dataset normal-reference baseline within comparable throttle-control windows"
     supporting_source: "Bosch Automotive Handbook"
 
   accel_pedal_channel_delta:
@@ -466,7 +472,7 @@ features:
     intended_signal: "pedal_channel_absolute_inconsistency"
     reference_range:
       type: "calibrated_baseline"
-      normal_range: "vehicle-specific healthy dual-channel residual baseline"
+      normal_range: "dataset normal-reference dual-channel residual baseline"
     supporting_source: "Bosch Automotive Handbook"
 
   accel_pedal_channel_ratio:
@@ -479,7 +485,7 @@ features:
     intended_signal: "pedal_channel_proportional_consistency"
     reference_range:
       type: "calibrated_baseline"
-      normal_range: "vehicle-specific healthy dual-channel ratio baseline"
+      normal_range: "dataset normal-reference dual-channel ratio baseline"
     supporting_source: "Bosch Automotive Handbook"
 
   pedal_slope:
@@ -492,7 +498,7 @@ features:
     intended_signal: "driver_demand_change_rate"
     reference_range:
       type: "calibrated_baseline | validity_condition"
-      normal_range: "vehicle-specific healthy baseline within comparable pedal-change windows"
+      normal_range: "dataset normal-reference baseline within comparable pedal-change windows"
     supporting_source: "Bosch Automotive Handbook"
 
   engine_on_flag:
@@ -522,7 +528,7 @@ features:
     intended_signal: "engine_speed_change_rate"
     reference_range:
       type: "calibrated_baseline | validity_condition"
-      normal_range: "vehicle-specific healthy baseline by operating phase"
+      normal_range: "dataset normal-reference baseline by operating phase"
     supporting_source: "Bosch Automotive Handbook"
 
   idle_flag:
@@ -532,7 +538,7 @@ features:
       - "rpm"
       - "tps"
       - "accel_pedal_mean"
-    formula: "engine_on_flag == 1 and speed < v_idle and rpm within calibrated_idle_band and accel_pedal_mean < p_idle and tps < t_idle"
+    formula: "engine_on_flag == 1 and speed < v_idle and rpm within calibrated_idle_band and accel_pedal_mean <= calibrated_idle_pedal_threshold and tps <= calibrated_idle_tps_threshold"
     unit: "dimensionless"
     physical_meaning: "Identifies engine idle state."
     intended_signal: "idle_operating_state"
@@ -550,13 +556,23 @@ features:
     inputs:
       - "rpm"
       - "idle_flag"
-    formula: "rolling_std(rpm | idle_flag == 1, W)"
+    formula: "rolling_std(rpm | idle_flag == 1, W_idle_stability)"
     unit: "rpm"
     physical_meaning: "Idle-speed stability."
     intended_signal: "idle_speed_stability"
     reference_range:
       type: "calibrated_baseline | validity_condition"
-      normal_range: "vehicle-specific healthy baseline within idle windows"
+      normal_range: "dataset normal-reference baseline within idle windows"
+    parameters:
+      W_idle_stability:
+        value: 30
+        unit: "s"
+      sampling_rate:
+        value: 1
+        unit: "Hz"
+      window_samples:
+        value: 30
+        formula: "W_idle_stability * sampling_rate"
     supporting_source: "Bosch Automotive Handbook"
 
 proxy_failures:
@@ -652,6 +668,8 @@ proxy_failures:
         signal: "maf_map_cohesion"
         condition: ">0.25-0.30"
         duration: "5-10 s"
+        threshold_role: "initial_proxy_hint_not_final_decision_threshold"
+        requires_dataset_baseline: true
       steady_state_standardized_deviation:
         signal: "standardized_deviation(maf_derived_air_load, map_derived_air_load)"
         condition: ">25-30%"
@@ -735,6 +753,8 @@ proxy_failures:
         signal: "pedal_throttle_gap"
         condition: ">15-20 percentage points"
         duration: "2 s"
+        threshold_role: "initial_proxy_hint_not_final_decision_threshold"
+        requires_dataset_baseline: true
       confidence_boost:
         - "map shows no response"
         - "maf shows no response"
@@ -760,7 +780,7 @@ proxy_failures:
     expected_pattern:
       healthy_mapping:
         formula: "accel_pedal_e = a * accel_pedal_d + b"
-        requirement: "learn vehicle-specific healthy mapping first"
+        requirement: "learn dataset normal-reference mapping first"
       high_residual:
         signal: "residual(accel_pedal_e, accel_pedal_d)"
         condition: ">5-10 percentage points"
@@ -798,8 +818,8 @@ proxy_failures:
     expected_pattern:
       idle_window:
         speed: "<3 km/h"
-        tps: "<5-10%"
-        pedal_position: "near 0"
+        tps: "<= calibrated_idle_tps_threshold"
+        pedal_position: "<= calibrated_idle_pedal_threshold"
       high_rpm_std:
         signal: "std(rpm)"
         condition: ">50-100 rpm"
@@ -816,3 +836,4 @@ proxy_failures:
         low: []
         medium: []
         high: []
+
