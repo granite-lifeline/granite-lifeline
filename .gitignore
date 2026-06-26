@@ -1,5 +1,5 @@
 .env
-data/raw/*
+data/raw/*.csv
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
