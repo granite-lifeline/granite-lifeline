@@ -372,20 +372,50 @@ def show_divider(dark_mode: bool, margin: str = "36px auto"):
     st.markdown(divider_html, unsafe_allow_html=True)
 
 
-def show_icon_heading(title: str, icon_svg: str, center: bool = False):
-    """Display an H2 heading with an inline icon."""
+def show_icon_heading(
+    title: str,
+    icon_svg: str,
+    center: bool = False,
+    confidence: float | None = None
+):
+    """Display an H2 heading with an inline icon and optional confidence."""
+    tokens = THEME_TOKENS["dark" if st.session_state.dark_mode else "light"]
     justify = "center" if center else "flex-start"
-    heading_html = f"""
-    <h2 style="
-        margin-bottom: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: {justify};
-        gap: 20px;
-    ">
-        {icon_svg}{title}
-    </h2>
-    """
+
+    # Build confidence badge if provided
+    confidence_badge_html = ""
+    if confidence is not None:
+        confidence_pct = int(confidence * 100)
+        # Color coding based on confidence level
+        if confidence >= 0.8:
+            badge_color = tokens["accent"]
+        elif confidence >= 0.6:
+            badge_color = "#F59E0B"  # Warning yellow
+        else:
+            badge_color = tokens["text_secondary"]
+
+        shield_icon = lucide_icon("check-square", size=14, color="white")
+        confidence_badge_html = (
+            f'<div style="display: flex; align-items: center; gap: 6px; '
+            f'background-color: {badge_color}; color: white; '
+            f'padding: 4px 12px; border-radius: 12px; font-size: 12px; '
+            f'font-weight: 600; font-family: {FONT_MONO};">'
+            f'{shield_icon}<span>Confidence: {confidence_pct}%</span></div>'
+        )
+
+    # Determine justify-content based on confidence badge presence
+    justify_content = (
+        'space-between' if confidence_badge_html else justify
+    )
+
+    heading_html = (
+        f'<h2 style="margin-bottom: 16px; display: flex; '
+        f'align-items: center; justify-content: {justify_content}; '
+        f'gap: 20px;">'
+        f'<div style="display: flex; align-items: center; gap: 20px;">'
+        f'{icon_svg}{title}</div>'
+        f'{confidence_badge_html}</h2>'
+    )
     st.markdown(heading_html, unsafe_allow_html=True)
 
 
@@ -1295,7 +1325,13 @@ def render_component_detail(
     show_divider(dark_mode)
 
     heading_icon = lucide_icon("file-text", size=22, color=tokens["accent"])
-    show_icon_heading("Diagnostic Report", heading_icon)
+    # Get prediction confidence for the heading
+    prediction_confidence = component_data.get("prediction_confidence")
+    show_icon_heading(
+        "Diagnostic Report",
+        heading_icon,
+        confidence=prediction_confidence
+    )
 
     # Get Granite LLM generated content
     anomaly_desc = component_data.get(
