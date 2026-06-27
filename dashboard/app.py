@@ -195,6 +195,8 @@ THEME_TOKENS = {
         "danger_bg": "#fff1f1",
         "danger_border": "#ffd7d9",
         "danger_text": "#a2191f",
+        "glass_surface": "rgba(255, 255, 255, 0.68)",
+        "glass_border": "rgba(0, 0, 0, 0.08)",
     },
     "dark": {
         "bg": "#1c1c1e",
@@ -212,6 +214,8 @@ THEME_TOKENS = {
         "danger_bg": "#2c1618",
         "danger_border": "#5e2125",
         "danger_text": "#ff8389",
+        "glass_surface": "rgba(44, 44, 46, 0.55)",
+        "glass_border": "rgba(255, 255, 255, 0.10)",
     },
 }
 
@@ -220,6 +224,14 @@ FONT_SANS = (
     "'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
 )
 FONT_MONO = "'IBM Plex Mono', 'SF Mono', Consolas, monospace"
+
+
+def hex_to_rgba(hex_color: str, alpha: float) -> str:
+    """Convert a #rrggbb hex color to an rgba() CSS string."""
+    hex_color = hex_color.lstrip("#")
+    r, g, b = (int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+    return f"rgba({r}, {g}, {b}, {alpha})"
+
 
 # Hand-coded Lucide-style icon glyphs (placeholder set, swappable via
 # the same lucide_icon() call sites once a final icon set is sourced).
@@ -285,6 +297,11 @@ ICONS = {
     "zap": (
         '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2">'
         '</polygon>'
+    ),
+    "shield": (
+        '<path d="M20 13c0 5-3.5 7.5-7.35 8.97a1 1 0 0 1-.6.03C8.5 20.5 '
+        '4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 '
+        '1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path>'
     ),
 }
 
@@ -382,39 +399,47 @@ def show_icon_heading(
     tokens = THEME_TOKENS["dark" if st.session_state.dark_mode else "light"]
     justify = "center" if center else "flex-start"
 
-    # Build confidence badge if provided
+    # Build confidence badge if provided. Pinned to the right edge via
+    # absolute positioning (rather than flex space-between) so the
+    # heading itself stays centered regardless of the badge's presence.
     confidence_badge_html = ""
     if confidence is not None:
         confidence_pct = int(confidence * 100)
-        # Color coding based on confidence level
+        # Color coding based on confidence level (IBM risk palette,
+        # not an off-brand color, so it stays consistent in both modes)
         if confidence >= 0.8:
             badge_color = tokens["accent"]
         elif confidence >= 0.6:
-            badge_color = "#F59E0B"  # Warning yellow
+            badge_color = tokens["risk_medium"]
         else:
             badge_color = tokens["text_secondary"]
 
-        shield_icon = lucide_icon("check-square", size=14, color="white")
+        badge_icon = lucide_icon("shield", size=13, color=badge_color)
         confidence_badge_html = (
-            f'<div style="display: flex; align-items: center; gap: 6px; '
-            f'background-color: {badge_color}; color: white; '
-            f'padding: 4px 12px; border-radius: 12px; font-size: 12px; '
-            f'font-weight: 600; font-family: {FONT_MONO};">'
-            f'{shield_icon}<span>Confidence: {confidence_pct}%</span></div>'
+            f'<div style="position: absolute; right: 0; top: 50%; '
+            f'transform: translateY(-50%); display: flex; '
+            f'align-items: center; gap: 7px; '
+            f'background: {hex_to_rgba(badge_color, 0.14)}; '
+            f'border: 1px solid {hex_to_rgba(badge_color, 0.45)}; '
+            f'backdrop-filter: blur(12px); '
+            f'-webkit-backdrop-filter: blur(12px); '
+            f'color: {badge_color}; padding: 5px 14px; '
+            f'border-radius: 100px; font-size: 12px; font-weight: 700; '
+            f'font-family: {FONT_MONO}; white-space: nowrap;">'
+            f'{badge_icon}<span>Confidence: {confidence_pct}%</span></div>'
         )
 
-    # Determine justify-content based on confidence badge presence
-    justify_content = (
-        'space-between' if confidence_badge_html else justify
-    )
-
+    # The badge lives in a wrapping <div>, not inside the <h2> itself:
+    # Streamlit auto-wraps a heading's entire content into one internal
+    # span, which would make the h2's own flex/justify-content inert.
+    wrapper_position = "relative" if confidence_badge_html else "static"
     heading_html = (
-        f'<h2 style="margin-bottom: 16px; display: flex; '
-        f'align-items: center; justify-content: {justify_content}; '
-        f'gap: 20px;">'
-        f'<div style="display: flex; align-items: center; gap: 20px;">'
-        f'{icon_svg}{title}</div>'
-        f'{confidence_badge_html}</h2>'
+        f'<div style="position: {wrapper_position}; display: flex; '
+        f'align-items: center; justify-content: {justify}; '
+        f'margin-bottom: 16px;">'
+        f'<h2 style="margin: 0; display: flex; align-items: center; '
+        f'gap: 20px;">{icon_svg}{title}</h2>'
+        f'{confidence_badge_html}</div>'
     )
     st.markdown(heading_html, unsafe_allow_html=True)
 
@@ -432,6 +457,23 @@ def apply_theme(dark_mode: bool):
     )
     font_family = FONT_SANS
 
+    blob_alpha = (
+        (0.28, 0.22, 0.16, 0.20) if dark_mode else (0.10, 0.08, 0.07, 0.08)
+    )
+    blob_css = (
+        f"radial-gradient(circle at 12% 8%, "
+        f"{hex_to_rgba(tokens['accent'], blob_alpha[0])}, "
+        f"transparent 40%), "
+        f"radial-gradient(circle at 88% 12%, "
+        f"{hex_to_rgba(tokens['risk_high'], blob_alpha[1])}, "
+        f"transparent 38%), "
+        f"radial-gradient(circle at 50% 55%, "
+        f"{hex_to_rgba(tokens['risk_medium'], blob_alpha[2])}, "
+        f"transparent 45%), "
+        f"radial-gradient(circle at 85% 90%, "
+        f"{hex_to_rgba(tokens['risk_low'], blob_alpha[3])}, transparent 42%)"
+    )
+
     theme_css = f"""
     {font_link}
     <style>
@@ -443,12 +485,14 @@ def apply_theme(dark_mode: bool):
         }}
         [data-testid="stAppViewContainer"] {{
             background-color: {tokens["bg"]} !important;
+            background-image: {blob_css} !important;
+            background-attachment: fixed !important;
         }}
         .main {{
-            background-color: {tokens["bg"]} !important;
+            background-color: transparent !important;
         }}
         .main .block-container {{
-            background-color: {tokens["bg"]} !important;
+            background-color: transparent !important;
             font-family: {font_family} !important;
             padding-top: 2.5rem !important;
             padding-bottom: 2rem !important;
@@ -467,6 +511,11 @@ def apply_theme(dark_mode: bool):
             display: inline-flex !important;
             align-items: center !important;
             gap: 12px !important;
+        }}
+        h1 [data-testid="stHeaderActionElements"],
+        h2 [data-testid="stHeaderActionElements"],
+        h3 [data-testid="stHeaderActionElements"] {{
+            display: none !important;
         }}
         h1 {{
             font-size: 32px !important;
@@ -487,7 +536,9 @@ def apply_theme(dark_mode: bool):
             font-size: 13px !important;
         }}
         .stButton > button {{
-            background: transparent !important;
+            background: {hex_to_rgba(tokens["accent"], 0.08)} !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
             color: {tokens["accent"]} !important;
             border: 1.5px solid {tokens["accent"]} !important;
             border-radius: 10px !important;
@@ -814,9 +865,11 @@ def show_overview_page():
         )
         alert_html = f"""
         <div style="
-            background-color: {tokens["danger_bg"]};
-            border: 1px solid {tokens["danger_border"]};
-            border-radius: 10px;
+            background: {hex_to_rgba(tokens["risk_high"], 0.12)};
+            border: 1px solid {hex_to_rgba(tokens["risk_high"], 0.35)};
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 12px;
             padding: 12px 16px;
             margin: 16px 0;
             color: {tokens["danger_text"]};
@@ -824,6 +877,9 @@ def show_overview_page():
             align-items: center;
             justify-content: center;
             gap: 14px;
+            box-shadow:
+                0 8px 28px {tokens["shadow"]},
+                inset 0 1px 0 rgba(255, 255, 255, 0.10);
         ">
             {alert_icon}
             <span style="font-weight: 600; color: {tokens["danger_text"]};">
@@ -875,13 +931,15 @@ def show_overview_page():
 
             card_html = f"""
             <div style="
-                background-color: {tokens["surface"]};
-                border-top: 1px solid {tokens["border"]};
-                border-right: 1px solid {tokens["border"]};
-                border-bottom: 1px solid {tokens["border"]};
-                border-left: 4px solid {badge_bg};
-                border-radius: 14px;
-                box-shadow: 0 1px 3px {tokens["shadow"]};
+                position: relative;
+                background: {tokens["glass_surface"]};
+                backdrop-filter: blur(24px) saturate(160%);
+                -webkit-backdrop-filter: blur(24px) saturate(160%);
+                border: 1px solid {tokens["glass_border"]};
+                border-radius: 18px;
+                box-shadow:
+                    0 8px 28px {tokens["shadow"]},
+                    inset 0 1px 0 rgba(255, 255, 255, 0.10);
                 padding: 24px 16px;
                 margin-bottom: 16px;
                 min-height: 280px;
@@ -890,13 +948,24 @@ def show_overview_page():
                 align-items: center;
                 justify-content: center;
                 gap: 24px;
+                overflow: hidden;
             ">
+                <div style="
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    bottom: 0;
+                    width: 4px;
+                    background: {badge_bg};
+                "></div>
                 <div style="
                     display: flex;
                     align-items: center;
                     gap: 12px;
                 ">
-                    {component_icon}
+                    <div style="display: flex;">
+                        {component_icon}
+                    </div>
                     <h3 style="
                         margin: 0;
                         color: {tokens["text"]};
@@ -1003,10 +1072,14 @@ def render_component_detail(
         .st-key-gauge_card,
         .st-key-trend_card,
         .st-key-signals_card {{
-            background-color: {tokens["surface"]} !important;
-            border: 1px solid {tokens["border"]} !important;
-            border-radius: 14px !important;
-            box-shadow: 0 1px 3px {tokens["shadow"]} !important;
+            background: {tokens["glass_surface"]} !important;
+            backdrop-filter: blur(24px) saturate(160%) !important;
+            -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+            border: 1px solid {tokens["glass_border"]} !important;
+            border-radius: 18px !important;
+            box-shadow:
+                0 8px 28px {tokens["shadow"]},
+                inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
             padding: 20px !important;
         }}
         .st-key-gauge_card {{
@@ -1049,7 +1122,7 @@ def render_component_detail(
             ),
         ))
         gauge_fig.update_layout(
-            paper_bgcolor=tokens["surface"],
+            paper_bgcolor="rgba(0, 0, 0, 0)",
             font=dict(color=tokens["text_secondary"]),
             margin=dict(l=40, r=40, t=20, b=10),
             height=200,
@@ -1097,7 +1170,7 @@ def render_component_detail(
         heading_icon = lucide_icon(
             "trending-up", size=24, color=tokens["accent"]
         )
-        show_icon_heading("Risk Score Trend", heading_icon)
+        show_icon_heading("Risk Score Trend", heading_icon, center=True)
 
         with st.container(key="trend_card"):
             if len(trend) < 2:
@@ -1125,8 +1198,8 @@ def render_component_detail(
                 time_labels = time_labels[-len(trend):]
 
                 line_color = tokens["accent"]
-                bg_color = tokens["surface"]
-                paper_bg = tokens["surface"]
+                bg_color = "rgba(0, 0, 0, 0)"
+                paper_bg = "rgba(0, 0, 0, 0)"
                 text_color = tokens["text_secondary"]
                 grid_color = tokens["border"]
                 fill_color = (
@@ -1189,7 +1262,7 @@ def render_component_detail(
         heading_icon = lucide_icon(
             "activity", size=24, color=tokens["accent"]
         )
-        show_icon_heading("Key Signals", heading_icon)
+        show_icon_heading("Key Signals", heading_icon, center=True)
 
         with st.container(key="signals_card"):
             key_signals = component_data["key_signals"]
@@ -1197,7 +1270,7 @@ def render_component_detail(
             if not key_signals:
                 st.info("No signal data available for this component.")
             else:
-                row_bg = tokens["surface_alt"]
+                row_bg = hex_to_rgba(tokens["text"], 0.045)
 
                 header_html = f"""
                 <div style="
@@ -1330,6 +1403,7 @@ def render_component_detail(
     show_icon_heading(
         "Diagnostic Report",
         heading_icon,
+        center=True,
         confidence=prediction_confidence
     )
 
@@ -1346,99 +1420,140 @@ def render_component_detail(
 
     # Format recommended_action as bullet list if it's a list
     if isinstance(recommended_action, list):
-        action_items = ""
-        for action in recommended_action:
-            action_items += f"""
-            <div style="
-                display: flex;
-                gap: 8px;
-                margin-bottom: 8px;
-                align-items: flex-start;
-            ">
-                <span style="
-                    color: {tokens["accent"]};
-                    font-weight: 700;
-                    flex-shrink: 0;
-                ">•</span>
-                <span style="color: {tokens["text"]};">{action}</span>
-            </div>
-            """
-        action_html = f"<div>{action_items}</div>"
+        action_items = "".join(
+            f'<div style="display: flex; gap: 8px; '
+            f'align-items: flex-start; margin-bottom: 10px;">'
+            f'<span style="color: {tokens["accent"]}; font-weight: 700; '
+            f'flex-shrink: 0;">•</span>'
+            f'<span style="color: {tokens["text"]};">{action}</span>'
+            f'</div>'
+            for action in recommended_action
+        )
+        action_html = (
+            f'<div style="text-align: center;">'
+            f'<div style="display: inline-block; text-align: left;">'
+            f'{action_items}</div></div>'
+        )
     else:
         action_html = (
-            f"<p style='margin: 0; color: {tokens['text']};'>"
-            f"{recommended_action}</p>"
+            f"<div style='display: flex; justify-content: center;'>"
+            f"<p style='margin: 0; max-width: 90%; "
+            f"color: {tokens['text']}; text-align: left;'>"
+            f"{recommended_action}</p></div>"
         )
 
-    cards = [
+    info_cards = [
         {
             "icon": lucide_icon(
-                "info", size=20, color=tokens["accent"]
+                "info", size=18, color=tokens["accent"]
             ),
             "title": "What's Happening",
             "body": anomaly_desc,
-            "is_html": False
         },
         {
             "icon": lucide_icon(
-                "help-circle", size=20, color=tokens["accent"]
+                "help-circle", size=18, color=tokens["accent"]
             ),
             "title": "Why This Matters",
             "body": possible_cause,
-            "is_html": False
         },
-        {
-            "icon": lucide_icon(
-                "check-square", size=20, color=tokens["accent"]
-            ),
-            "title": "What You Should Do",
-            "body": action_html,
-            "is_html": True
-        }
     ]
 
-    report_cols = st.columns(3, gap="medium")
-    for col, card in zip(report_cols, cards):
-        with col:
-            body_content = (
-                card["body"] if card["is_html"]
-                else f"<p style='margin: 0; color: {tokens['text']}; "
-                     f"line-height: 1.6;'>{card['body']}</p>"
-            )
+    report_cols = st.columns([5, 7], gap="medium")
+
+    with report_cols[0]:
+        for card in info_cards:
             card_html = f"""
             <div style="
-                background: {tokens["surface"]};
-                border: 1px solid {tokens["border"]};
-                border-radius: 12px;
-                padding: 18px;
-                margin-bottom: 12px;
-                min-height: 200px;
-                display: flex;
-                flex-direction: column;
+                background: {tokens["glass_surface"]};
+                backdrop-filter: blur(24px) saturate(160%);
+                -webkit-backdrop-filter: blur(24px) saturate(160%);
+                border: 1px solid {tokens["glass_border"]};
+                border-radius: 16px;
+                padding: 16px 18px;
+                margin-bottom: 14px;
+                box-shadow:
+                    0 8px 28px {tokens["shadow"]},
+                    inset 0 1px 0 rgba(255, 255, 255, 0.10);
             ">
                 <h3 style="
                     color: {tokens["text"]};
-                    margin: 0 0 14px 0;
-                    font-size: 16px;
+                    margin: 0 0 12px 0;
+                    font-size: 15px;
                     font-weight: 700;
                     display: flex;
                     align-items: center;
-                    gap: 10px;
-                    padding-bottom: 10px;
+                    justify-content: center;
+                    gap: 9px;
+                    padding-bottom: 9px;
                     border-bottom: 2px solid {tokens["border"]};
                 ">
                     {card["icon"]}{card["title"]}
                 </h3>
-                <div style="
-                    font-size: 14px;
-                    line-height: 1.6;
-                    flex: 1;
-                ">
-                    {body_content}
+                <div style="display: flex; justify-content: center;">
+                    <p style="
+                        margin: 0;
+                        max-width: 90%;
+                        font-size: 14px;
+                        line-height: 1.6;
+                        color: {tokens["text"]};
+                        text-align: left;
+                    ">{card["body"]}</p>
                 </div>
             </div>
             """
             st.markdown(card_html, unsafe_allow_html=True)
+
+    with report_cols[1]:
+        action_icon = lucide_icon(
+            "check-square", size=22, color=tokens["accent"]
+        )
+        card_html = f"""
+        <div style="
+            position: relative;
+            background: {hex_to_rgba(tokens["accent"], 0.10)};
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+            border: 1px solid {hex_to_rgba(tokens["accent"], 0.32)};
+            border-radius: 16px;
+            padding: 22px 26px 22px 30px;
+            box-shadow:
+                0 8px 28px {tokens["shadow"]},
+                inset 0 1px 0 rgba(255, 255, 255, 0.10);
+            overflow: hidden;
+        ">
+            <div style="
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 4px;
+                background: {tokens["accent"]};
+            "></div>
+            <h3 style="
+                color: {tokens["text"]};
+                margin: 0 0 16px 0;
+                font-size: 18px;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                padding-bottom: 12px;
+                border-bottom: 2px solid {hex_to_rgba(tokens["accent"], 0.25)};
+            ">
+                {action_icon}What You Should Do
+            </h3>
+            <div style="
+                font-size: 14.5px;
+                line-height: 1.7;
+                text-align: center;
+            ">
+                {action_html}
+            </div>
+        </div>
+        """
+        st.markdown(card_html, unsafe_allow_html=True)
 
 
 def show_detail_page():
