@@ -1,0 +1,53 @@
+[
+  {
+    "timestamp": "2026-06-16T12:00:00Z",
+    "risk_score": 0.72,
+    "risk_level": "Medium",
+    "component": "cooling_system_stress",
+    "prediction_confidence": 0.80,
+    "key_signals": [
+      {
+        "feature": "coolant_temp",
+        "value": 101.0,
+        "unit": "°C",
+        "reference_range": [90.0, 95.0]
+      },
+      {
+        "feature": "coolant_slope",
+        "value": 2.8,
+        "unit": "°C/min",
+        "reference_range": [0.0, 2.0]
+      }
+    ],
+    "risk_history": [],
+    "anomaly_description": "The coolant temperature is above its reference range. This component has no historical trend data available.",
+    "possible_cause": "This could be related to cooling system stress. Historical data is not yet available for trend analysis.",
+    "recommended_action": [
+      "Monitor the coolant level.",
+      "Check for cooling system issues.",
+      "Continue monitoring to build trend history."
+    ]
+  },
+  {
+    "timestamp": "2026-06-16T11:00:00Z",
+    "risk_score": 0.58,
+    "risk_level": "Medium",
+    "component": "air_intake_maf_anomaly",
+    "prediction_confidence": 0.70,
+    "key_signals": [
+      {
+        "feature": "maf",
+        "value": 24.5,
+        "unit": "g/s",
+        "reference_range": [10.0, 22.0]
+      }
+    ],
+    "anomaly_description": "The airflow reading is above its reference range. No trend data is available yet.",
+    "possible_cause": "This may indicate an airflow sensor issue. Trend analysis not yet possible.",
+    "recommended_action": [
+      "Check the air filter.",
+      "Monitor for changes.",
+      "Continue monitoring to establish baseline."
+    ]
+  }
+]

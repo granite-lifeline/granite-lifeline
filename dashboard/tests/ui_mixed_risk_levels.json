@@ -1,0 +1,189 @@
+[
+  {
+    "timestamp": "2026-06-16T12:00:00Z",
+    "risk_score": 0.88,
+    "risk_level": "High",
+    "component": "cooling_system_stress",
+    "prediction_confidence": 0.90,
+    "key_signals": [
+      {
+        "feature": "coolant_temp",
+        "value": 106.0,
+        "unit": "°C",
+        "reference_range": [90.0, 95.0]
+      }
+    ],
+    "risk_history": [
+      {
+        "timestamp": "2026-06-16T08:00:00Z",
+        "risk_score": 0.75
+      },
+      {
+        "timestamp": "2026-06-16T12:00:00Z",
+        "risk_score": 0.88
+      }
+    ],
+    "anomaly_description": "The coolant temperature is significantly above its reference range.",
+    "possible_cause": "This could be related to severe cooling system stress.",
+    "recommended_action": [
+      "Stop driving if safe to do so.",
+      "Check coolant level immediately.",
+      "Seek mechanic attention urgently."
+    ]
+  },
+  {
+    "timestamp": "2026-06-16T11:30:00Z",
+    "risk_score": 0.82,
+    "risk_level": "High",
+    "component": "engine_oil_pressure",
+    "prediction_confidence": 0.85,
+    "key_signals": [
+      {
+        "feature": "oil_pressure",
+        "value": 15.0,
+        "unit": "psi",
+        "reference_range": [25.0, 65.0]
+      }
+    ],
+    "risk_history": [
+      {
+        "timestamp": "2026-06-16T07:30:00Z",
+        "risk_score": 0.68
+      },
+      {
+        "timestamp": "2026-06-16T11:30:00Z",
+        "risk_score": 0.82
+      }
+    ],
+    "anomaly_description": "The oil pressure is critically low.",
+    "possible_cause": "This could indicate low oil level or oil pump failure.",
+    "recommended_action": [
+      "Stop the engine immediately.",
+      "Check oil level.",
+      "Do not drive until inspected by a mechanic."
+    ]
+  },
+  {
+    "timestamp": "2026-06-16T11:00:00Z",
+    "risk_score": 0.58,
+    "risk_level": "Medium",
+    "component": "air_intake_maf_anomaly",
+    "prediction_confidence": 0.72,
+    "key_signals": [
+      {
+        "feature": "maf",
+        "value": 25.0,
+        "unit": "g/s",
+        "reference_range": [10.0, 22.0]
+      }
+    ],
+    "risk_history": [
+      {
+        "timestamp": "2026-06-16T07:00:00Z",
+        "risk_score": 0.50
+      },
+      {
+        "timestamp": "2026-06-16T11:00:00Z",
+        "risk_score": 0.58
+      }
+    ],
+    "anomaly_description": "The airflow reading is moderately above its reference range.",
+    "possible_cause": "This may indicate an airflow sensor issue.",
+    "recommended_action": [
+      "Schedule inspection soon.",
+      "Monitor for performance issues."
+    ]
+  },
+  {
+    "timestamp": "2026-06-16T10:30:00Z",
+    "risk_score": 0.55,
+    "risk_level": "Medium",
+    "component": "fuel_system_pressure",
+    "prediction_confidence": 0.68,
+    "key_signals": [
+      {
+        "feature": "fuel_pressure",
+        "value": 325.0,
+        "unit": "kPa",
+        "reference_range": [280.0, 310.0]
+      }
+    ],
+    "risk_history": [
+      {
+        "timestamp": "2026-06-16T06:30:00Z",
+        "risk_score": 0.48
+      },
+      {
+        "timestamp": "2026-06-16T10:30:00Z",
+        "risk_score": 0.55
+      }
+    ],
+    "anomaly_description": "The fuel pressure is moderately above its reference range.",
+    "possible_cause": "This could be related to fuel system regulation.",
+    "recommended_action": [
+      "Monitor fuel system.",
+      "Schedule inspection if persists."
+    ]
+  },
+  {
+    "timestamp": "2026-06-16T10:00:00Z",
+    "risk_score": 0.52,
+    "risk_level": "Medium",
+    "component": "transmission_temp",
+    "prediction_confidence": 0.70,
+    "key_signals": [
+      {
+        "feature": "trans_temp",
+        "value": 95.0,
+        "unit": "°C",
+        "reference_range": [70.0, 90.0]
+      }
+    ],
+    "risk_history": [
+      {
+        "timestamp": "2026-06-16T06:00:00Z",
+        "risk_score": 0.45
+      },
+      {
+        "timestamp": "2026-06-16T10:00:00Z",
+        "risk_score": 0.52
+      }
+    ],
+    "anomaly_description": "The transmission temperature is slightly elevated.",
+    "possible_cause": "This could indicate transmission fluid issues.",
+    "recommended_action": [
+      "Check transmission fluid level.",
+      "Avoid heavy loads."
+    ]
+  },
+  {
+    "timestamp": "2026-06-16T09:00:00Z",
+    "risk_score": 0.18,
+    "risk_level": "Low",
+    "component": "accelerator_pedal_sensor",
+    "prediction_confidence": 0.60,
+    "key_signals": [
+      {
+        "feature": "accel_pedal_d",
+        "value": 32.0,
+        "unit": "%",
+        "reference_range": [0.0, 100.0]
+      }
+    ],
+    "risk_history": [
+      {
+        "timestamp": "2026-06-16T05:00:00Z",
+        "risk_score": 0.15
+      },
+      {
+        "timestamp": "2026-06-16T09:00:00Z",
+        "risk_score": 0.18
+      }
+    ],
+    "anomaly_description": "The accelerator pedal sensor shows normal operation.",
+    "possible_cause": "No significant issue detected.",
+    "recommended_action": [
+      "Continue normal monitoring."
+    ]
+  }
+]
