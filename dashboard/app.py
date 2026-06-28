@@ -29,10 +29,13 @@ SIGNAL_DISPLAY_NAMES = {
 }
 
 # Load report data from Report Layer
+# Allow specifying test data file via environment variable
+import os
+test_data_file = os.getenv("DASHBOARD_TEST_DATA", "dashboard/tests/ui_required_data.json")
 try:
-    REPORT_DATA = load_dashboard_data("dashboard/tests/ui_required_data.json")
+    REPORT_DATA = load_dashboard_data(test_data_file)
 except Exception as e:
-    st.error(f"Failed to load report data: {e}")
+    st.error(f"Failed to load report data from {test_data_file}: {e}")
     REPORT_DATA = {}
 
 # Fallback MOCK_DATA for development (kept for reference)
@@ -173,10 +176,11 @@ MOCK_DATA_FALLBACK = {
 }
 
 # Use REPORT_DATA as primary data source, fallback to MOCK_DATA_FALLBACK
-# if loading fails
-MOCK_DATA = REPORT_DATA if REPORT_DATA else MOCK_DATA_FALLBACK
+# Use REPORT_DATA if available, otherwise use fallback
+# Note: Empty dict {} or empty list [] from REPORT_DATA should be respected
+MOCK_DATA = REPORT_DATA if REPORT_DATA is not None else MOCK_DATA_FALLBACK
 
-RISK_PRIORITY = {"High": 0, "Medium": 1, "Low": 2}
+RISK_PRIORITY = {"High": 0, "Medium": 1, "Low": 2, "Unknown": 3}
 
 THEME_TOKENS = {
     "light": {
@@ -869,8 +873,40 @@ def show_overview_page():
             unsafe_allow_html=True
         )
 
+    # Check if MOCK_DATA is empty
+    if not MOCK_DATA:
+        info_icon = lucide_icon(
+            "info", size=20, color=tokens["text_secondary"]
+        )
+        info_html = f"""
+        <div style="
+            background: {hex_to_rgba(tokens["text_secondary"], 0.08)};
+            border: 1px solid {hex_to_rgba(tokens["text_secondary"], 0.20)};
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 12px;
+            padding: 24px 16px;
+            margin: 16px 0;
+            color: {tokens["text_secondary"]};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            box-shadow:
+                0 8px 28px {tokens["shadow"]},
+                inset 0 1px 0 rgba(255, 255, 255, 0.10);
+        ">
+            {info_icon}
+            <span style="font-weight: 600; color: {tokens["text_secondary"]};">
+                No components to display
+            </span>
+        </div>
+        """
+        st.markdown(info_html, unsafe_allow_html=True)
+        return
+
     has_high_risk = any(
-        comp["risk_level"] == "High" for comp in MOCK_DATA.values()
+        comp.get("risk_level") == "High" for comp in MOCK_DATA.values()
     )
 
     if has_high_risk:
@@ -885,7 +921,8 @@ def show_overview_page():
             -webkit-backdrop-filter: blur(16px);
             border-radius: 12px;
             padding: 12px 16px;
-            margin: 16px 0;
+            margin: 16px auto;
+            max-width: 700px;
             color: {tokens["danger_text"]};
             display: flex;
             align-items: center;
@@ -904,30 +941,127 @@ def show_overview_page():
         """
         st.markdown(alert_html, unsafe_allow_html=True)
     else:
-        st.success("✓ All systems within normal range")
+        success_icon = lucide_icon(
+            "check-square", size=20, color=tokens["risk_low"]
+        )
+        success_html = f"""
+        <div style="
+            background: {hex_to_rgba(tokens["risk_low"], 0.12)};
+            border: 1px solid {hex_to_rgba(tokens["risk_low"], 0.35)};
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin: 16px auto;
+            max-width: 700px;
+            color: {tokens["risk_low"]};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            box-shadow:
+                0 8px 28px {tokens["shadow"]},
+                inset 0 1px 0 rgba(255, 255, 255, 0.10);
+        ">
+            {success_icon}
+            <span style="font-weight: 600; color: {tokens["risk_low"]};">
+                All systems within normal range
+            </span>
+        </div>
+        """
+        st.markdown(success_html, unsafe_allow_html=True)
 
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Add risk level legend
+    legend_html = f"""
+    <div style="
+        display: flex;
+        justify-content: center;
+        gap: 24px;
+        margin: 16px 0;
+        font-size: 14px;
+        color: {tokens["text_secondary"]};
+    ">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: {tokens["risk_high"]};
+            "></div>
+            <span>High Risk</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: {tokens["risk_medium"]};
+            "></div>
+            <span>Medium Risk</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: {tokens["risk_low"]};
+            "></div>
+            <span>Low Risk</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: {tokens["text_secondary"]};
+            "></div>
+            <span>Unknown</span>
+        </div>
+    </div>
+    """
+    st.markdown(legend_html, unsafe_allow_html=True)
+    
     st.markdown("<br>", unsafe_allow_html=True)
 
     sorted_components = sorted(
         MOCK_DATA.items(),
-        key=lambda x: RISK_PRIORITY[x[1]["risk_level"]]
+        key=lambda x: (
+            RISK_PRIORITY.get(x[1].get("risk_level", "Unknown"), 3),
+            -x[1].get("risk_score", 0)
+        )
     )
 
-    cols = st.columns(3, gap="large")
+    num_components = len(sorted_components)
+    
+    # Create centered layout for fewer than 3 components
+    if num_components < 3:
+        # Add empty columns for centering
+        col_spec = [1] * (3 - num_components) + [2] * num_components + [1] * (3 - num_components)
+        all_cols = st.columns(col_spec, gap="large")
+        # Use only the middle columns for components
+        cols = all_cols[(3 - num_components):(3 - num_components + num_components)]
+    else:
+        cols = st.columns(3, gap="large")
 
     for idx, (component_key, component_data) in enumerate(
         sorted_components
     ):
-        with cols[idx]:
-            risk_level = component_data["risk_level"]
+        col_idx = idx % len(cols) if num_components >= 3 else idx
+        with cols[col_idx]:
+            risk_level = component_data.get("risk_level", "Unknown")
             if risk_level == "High":
                 badge_bg = tokens["risk_high"]
             elif risk_level == "Medium":
                 badge_bg = tokens["risk_medium"]
-            else:
+            elif risk_level == "Low":
                 badge_bg = tokens["risk_low"]
+            else:
+                # Default for Unknown or missing risk_level
+                badge_bg = tokens["text_secondary"]
 
-            risk_pct = int(component_data["risk_score"] * 100)
+            risk_pct = int(component_data.get("risk_score", 0) * 100)
             component_icon = lucide_icon(
                 COMPONENT_ICONS.get(component_key, "activity"),
                 size=22,
@@ -1049,13 +1183,15 @@ def render_component_detail(
     tokens: dict,
 ):
     """Render metrics, trend, signals, and report for one component."""
-    risk_level = component_data["risk_level"]
+    risk_level = component_data.get("risk_level", "Unknown")
     if risk_level == "High":
         badge_bg = tokens["risk_high"]
     elif risk_level == "Medium":
         badge_bg = tokens["risk_medium"]
-    else:
+    elif risk_level == "Low":
         badge_bg = tokens["risk_low"]
+    else:
+        badge_bg = tokens["text_secondary"]
 
     # Get display name from mapping
     component_id = component_data["component"]
@@ -1075,9 +1211,73 @@ def render_component_detail(
     """
 
     st.markdown(title_html, unsafe_allow_html=True)
-
-    # Extract trend from risk_history
+    
+    # Check for missing data and show info panel
+    missing_sections = []
+    missing_fields = []
+    
+    # Check risk_level and related fields
+    if risk_level == "Unknown":
+        if "risk_level" not in component_data:
+            missing_fields.append("risk_level")
+        if "anomaly_description" not in component_data or not component_data.get("anomaly_description"):
+            missing_fields.append("anomaly_description")
+        if "possible_cause" not in component_data or not component_data.get("possible_cause"):
+            missing_fields.append("possible_cause")
+        if "recommended_action" not in component_data or not component_data.get("recommended_action"):
+            missing_fields.append("recommended_action")
+    
+    # Check risk_history
     risk_history = component_data.get("risk_history", [])
+    if not risk_history or len(risk_history) < 2:
+        missing_sections.append("Risk Trend data")
+    
+    # Check key_signals
+    key_signals = component_data.get("key_signals", [])
+    if not key_signals:
+        missing_sections.append("Key Signals data")
+    
+    # Show info panel if any data is missing
+    if missing_fields or missing_sections:
+        info_icon = lucide_icon("info", size=20, color=tokens["text_secondary"])
+        
+        message_parts = []
+        if missing_fields:
+            missing_fields_text = ", ".join(missing_fields)
+            message_parts.append(f"missing critical fields ({missing_fields_text})")
+        if missing_sections:
+            missing_sections_text = ", ".join(missing_sections)
+            message_parts.append(f"missing {missing_sections_text}")
+        
+        message = "This component has " + " and ".join(message_parts) + "."
+        
+        info_panel_html = f"""
+        <div style="
+            background: {hex_to_rgba(tokens["text_secondary"], 0.08)};
+            border: 1px solid {hex_to_rgba(tokens["text_secondary"], 0.20)};
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin: 0 auto 24px auto;
+            max-width: 700px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        ">
+            {info_icon}
+            <div style="flex: 1;">
+                <div style="font-weight: 600; color: {tokens["text"]}; margin-bottom: 4px;">
+                    Incomplete Data
+                </div>
+                <div style="color: {tokens["text_secondary"]}; font-size: 14px; line-height: 1.5;">
+                    {message} Some visualizations and information may not be available.
+                    The risk score shown is based on available data only.
+                </div>
+            </div>
+        </div>
+        """
+        st.markdown(info_panel_html, unsafe_allow_html=True)
+
+    # Extract trend from risk_history (already retrieved above)
     trend = [entry["risk_score"] for entry in risk_history]
     risk_pct = int(component_data["risk_score"] * 100)
 
@@ -1188,7 +1388,37 @@ def render_component_detail(
 
         with st.container(key="trend_card"):
             if len(trend) < 2:
-                st.warning("Not enough data yet to show a trend.")
+                # Custom info message with consistent styling - wrapped for centering
+                info_icon = lucide_icon("info", size=20, color=tokens["text_secondary"])
+                warning_html = f"""
+                <div style="display: flex; justify-content: center; width: 100%;">
+                    <div style="
+                        background: {hex_to_rgba(tokens["text_secondary"], 0.08)};
+                        border: 1px solid {hex_to_rgba(tokens["text_secondary"], 0.20)};
+                        border-radius: 12px;
+                        padding: 16px 20px;
+                        margin: 12px 0;
+                        max-width: 600px;
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                    ">
+                        <div style="
+                            display: flex;
+                            align-items: center;
+                            flex-shrink: 0;
+                        ">{info_icon}</div>
+                        <div style="
+                            color: {tokens["text"]};
+                            font-size: 14px;
+                            line-height: 1.5;
+                        ">
+                            Not enough data yet to show a trend.
+                        </div>
+                    </div>
+                </div>
+                """
+                st.markdown(warning_html, unsafe_allow_html=True)
             else:
                 with st.spinner(""):
                     spinner_html = """
@@ -1279,10 +1509,39 @@ def render_component_detail(
         show_icon_heading("Key Signals", heading_icon, center=True)
 
         with st.container(key="signals_card"):
-            key_signals = component_data["key_signals"]
-
+            # key_signals already retrieved above
             if not key_signals:
-                st.info("No signal data available for this component.")
+                # Custom info message matching Risk Trend style
+                info_icon = lucide_icon("info", size=20, color=tokens["text_secondary"])
+                info_html = f"""
+                <div style="display: flex; justify-content: center; width: 100%;">
+                    <div style="
+                        background: {hex_to_rgba(tokens["text_secondary"], 0.08)};
+                        border: 1px solid {hex_to_rgba(tokens["text_secondary"], 0.20)};
+                        border-radius: 12px;
+                        padding: 16px 20px;
+                        margin: 12px 0;
+                        max-width: 600px;
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                    ">
+                        <div style="
+                            display: flex;
+                            align-items: center;
+                            flex-shrink: 0;
+                        ">{info_icon}</div>
+                        <div style="
+                            color: {tokens["text"]};
+                            font-size: 14px;
+                            line-height: 1.5;
+                        ">
+                            No signal data available for this component.
+                        </div>
+                    </div>
+                </div>
+                """
+                st.markdown(info_html, unsafe_allow_html=True)
             else:
                 row_bg = hex_to_rgba(tokens["text"], 0.045)
 
@@ -1357,10 +1616,9 @@ def render_component_detail(
                             font-weight: 600;
                             color: {tokens["text"]};
                             font-size: 13px;
-                            overflow: hidden;
-                            text-overflow: ellipsis;
-                            white-space: nowrap;
-                        ">
+                            line-height: 1.3;
+                            word-wrap: break-word;
+                        " title="{signal_display_name}">
                             {signal_display_name}
                         </div>
                         <div style="
@@ -1473,101 +1731,102 @@ def render_component_detail(
         },
     ]
 
-    report_cols = st.columns([5, 7], gap="medium")
-
-    with report_cols[0]:
-        for card in info_cards:
-            card_html = f"""
-            <div style="
-                background: {tokens["glass_surface"]};
-                backdrop-filter: blur(24px) saturate(160%);
-                -webkit-backdrop-filter: blur(24px) saturate(160%);
-                border: 1px solid {tokens["glass_border"]};
-                border-radius: 16px;
-                padding: 16px 18px;
-                margin-bottom: 14px;
-                box-shadow:
-                    0 8px 28px {tokens["shadow"]},
-                    inset 0 1px 0 rgba(255, 255, 255, 0.10);
-            ">
-                <h3 style="
-                    color: {tokens["text"]};
-                    margin: 0 0 12px 0;
-                    font-size: 15px;
-                    font-weight: 700;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 9px;
-                    padding-bottom: 9px;
-                    border-bottom: 2px solid {tokens["border"]};
-                ">
-                    {card["icon"]}{card["title"]}
-                </h3>
-                <div style="display: flex; justify-content: center;">
-                    <p style="
-                        margin: 0;
-                        max-width: 90%;
-                        font-size: 14px;
-                        line-height: 1.6;
-                        color: {tokens["text"]};
-                        text-align: left;
-                    ">{card["body"]}</p>
-                </div>
-            </div>
-            """
-            st.markdown(card_html, unsafe_allow_html=True)
-
-    with report_cols[1]:
-        action_icon = lucide_icon(
-            "check-square", size=22, color=tokens["accent"]
-        )
+    # Display first two info cards with centered layout
+    for card in info_cards:
         card_html = f"""
         <div style="
-            position: relative;
-            background: {hex_to_rgba(tokens["accent"], 0.10)};
+            background: {tokens["glass_surface"]};
             backdrop-filter: blur(24px) saturate(160%);
             -webkit-backdrop-filter: blur(24px) saturate(160%);
-            border: 1px solid {hex_to_rgba(tokens["accent"], 0.32)};
+            border: 1px solid {tokens["glass_border"]};
             border-radius: 16px;
-            padding: 22px 26px 22px 30px;
+            padding: 16px 18px;
+            margin: 0 auto 14px auto;
+            max-width: 700px;
             box-shadow:
                 0 8px 28px {tokens["shadow"]},
                 inset 0 1px 0 rgba(255, 255, 255, 0.10);
-            overflow: hidden;
         ">
-            <div style="
-                position: absolute;
-                left: 0;
-                top: 0;
-                bottom: 0;
-                width: 4px;
-                background: {tokens["accent"]};
-            "></div>
             <h3 style="
                 color: {tokens["text"]};
-                margin: 0 0 16px 0;
-                font-size: 18px;
+                margin: 0 0 12px 0;
+                font-size: 15px;
                 font-weight: 700;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                gap: 10px;
-                padding-bottom: 12px;
-                border-bottom: 2px solid {hex_to_rgba(tokens["accent"], 0.25)};
+                gap: 9px;
+                padding-bottom: 9px;
+                border-bottom: 2px solid {tokens["border"]};
             ">
-                {action_icon}What You Should Do
+                {card["icon"]}{card["title"]}
             </h3>
-            <div style="
-                font-size: 14.5px;
-                line-height: 1.7;
-                text-align: center;
-            ">
-                {action_html}
+            <div style="display: flex; justify-content: center;">
+                <p style="
+                    margin: 0;
+                    max-width: 90%;
+                    font-size: 14px;
+                    line-height: 1.6;
+                    color: {tokens["text"]};
+                    text-align: left;
+                ">{card["body"]}</p>
             </div>
         </div>
         """
         st.markdown(card_html, unsafe_allow_html=True)
+
+    # Display action card with accent styling and centered layout
+    action_icon = lucide_icon(
+        "check-square", size=22, color=tokens["accent"]
+    )
+    card_html = f"""
+    <div style="
+        position: relative;
+        background: {hex_to_rgba(tokens["accent"], 0.10)};
+        backdrop-filter: blur(24px) saturate(160%);
+        -webkit-backdrop-filter: blur(24px) saturate(160%);
+        border: 1px solid {hex_to_rgba(tokens["accent"], 0.32)};
+        border-radius: 16px;
+        padding: 22px 26px 22px 30px;
+        margin: 0 auto 14px auto;
+        max-width: 700px;
+        box-shadow:
+            0 8px 28px {tokens["shadow"]},
+            inset 0 1px 0 rgba(255, 255, 255, 0.10);
+        overflow: hidden;
+    ">
+        <div style="
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: {tokens["accent"]};
+        "></div>
+        <h3 style="
+            color: {tokens["text"]};
+            margin: 0 0 16px 0;
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid {hex_to_rgba(tokens["accent"], 0.25)};
+        ">
+            {action_icon}What You Should Do
+        </h3>
+        <div style="
+            font-size: 14.5px;
+            line-height: 1.7;
+            text-align: center;
+        ">
+            {action_html}
+        </div>
+    </div>
+    """
+    st.markdown(card_html, unsafe_allow_html=True)
 
 
 def show_detail_page():
@@ -1590,12 +1849,16 @@ def show_detail_page():
 
     sorted_components = sorted(
         MOCK_DATA.items(),
-        key=lambda x: RISK_PRIORITY[x[1]["risk_level"]]
+        key=lambda x: (
+            RISK_PRIORITY.get(x[1].get("risk_level", "Unknown"), 3),
+            -x[1].get("risk_score", 0)
+        )
     )
     risk_color_map = {
         "High": tokens["risk_high"],
         "Medium": tokens["risk_medium"],
         "Low": tokens["risk_low"],
+        "Unknown": tokens["text_secondary"],
     }
 
     tab_cols = st.columns(len(sorted_components), gap="small")
@@ -1604,7 +1867,10 @@ def show_detail_page():
     for col, (tab_key, tab_data) in zip(tab_cols, sorted_components):
         with col:
             is_active = tab_key == component_key
-            icon_color = risk_color_map[tab_data["risk_level"]]
+            icon_color = risk_color_map.get(
+                tab_data.get("risk_level", "Unknown"),
+                tokens["text_secondary"]
+            )
             icon_svg = lucide_icon(
                 COMPONENT_ICONS.get(tab_key, "activity"),
                 size=16,
