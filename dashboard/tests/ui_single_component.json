@@ -1,0 +1,52 @@
+[
+  {
+    "timestamp": "2026-06-16T12:00:00Z",
+    "risk_score": 0.65,
+    "risk_level": "Medium",
+    "component": "cooling_system_stress",
+    "prediction_confidence": 0.78,
+    "key_signals": [
+      {
+        "feature": "coolant_temp",
+        "value": 99.0,
+        "unit": "°C",
+        "reference_range": [90.0, 95.0]
+      },
+      {
+        "feature": "coolant_slope",
+        "value": 2.5,
+        "unit": "°C/min",
+        "reference_range": [0.0, 2.0]
+      }
+    ],
+    "risk_history": [
+      {
+        "timestamp": "2026-06-15T08:00:00Z",
+        "risk_score": 0.42
+      },
+      {
+        "timestamp": "2026-06-15T12:00:00Z",
+        "risk_score": 0.48
+      },
+      {
+        "timestamp": "2026-06-15T16:00:00Z",
+        "risk_score": 0.55
+      },
+      {
+        "timestamp": "2026-06-16T08:00:00Z",
+        "risk_score": 0.60
+      },
+      {
+        "timestamp": "2026-06-16T12:00:00Z",
+        "risk_score": 0.65
+      }
+    ],
+    "anomaly_description": "The coolant temperature is moderately above its reference range and rising steadily.",
+    "possible_cause": "This could be related to cooling system stress, such as low coolant or radiator issues.",
+    "recommended_action": [
+      "Monitor the coolant level regularly.",
+      "Schedule a cooling system inspection.",
+      "Avoid prolonged heavy driving."
+    ]
+  }
+]
