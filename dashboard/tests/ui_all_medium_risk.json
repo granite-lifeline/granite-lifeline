@@ -1,0 +1,95 @@
+[
+  {
+    "timestamp": "2026-06-16T12:00:00Z",
+    "risk_score": 0.55,
+    "risk_level": "Medium",
+    "component": "cooling_system_stress",
+    "prediction_confidence": 0.72,
+    "key_signals": [
+      {
+        "feature": "coolant_temp",
+        "value": 98.0,
+        "unit": "°C",
+        "reference_range": [90.0, 95.0]
+      }
+    ],
+    "risk_history": [
+      {
+        "timestamp": "2026-06-16T08:00:00Z",
+        "risk_score": 0.50
+      },
+      {
+        "timestamp": "2026-06-16T12:00:00Z",
+        "risk_score": 0.55
+      }
+    ],
+    "anomaly_description": "The coolant temperature is slightly above its reference range.",
+    "possible_cause": "This could be related to minor cooling system stress.",
+    "recommended_action": [
+      "Monitor the coolant level.",
+      "Schedule a routine inspection."
+    ]
+  },
+  {
+    "timestamp": "2026-06-16T11:00:00Z",
+    "risk_score": 0.58,
+    "risk_level": "Medium",
+    "component": "air_intake_maf_anomaly",
+    "prediction_confidence": 0.68,
+    "key_signals": [
+      {
+        "feature": "maf",
+        "value": 24.0,
+        "unit": "g/s",
+        "reference_range": [10.0, 22.0]
+      }
+    ],
+    "risk_history": [
+      {
+        "timestamp": "2026-06-16T07:00:00Z",
+        "risk_score": 0.52
+      },
+      {
+        "timestamp": "2026-06-16T11:00:00Z",
+        "risk_score": 0.58
+      }
+    ],
+    "anomaly_description": "The airflow reading is slightly higher than its reference range.",
+    "possible_cause": "This may indicate a minor airflow sensor issue.",
+    "recommended_action": [
+      "Check the air filter.",
+      "Monitor for changes."
+    ]
+  },
+  {
+    "timestamp": "2026-06-16T10:00:00Z",
+    "risk_score": 0.52,
+    "risk_level": "Medium",
+    "component": "fuel_system_pressure",
+    "prediction_confidence": 0.70,
+    "key_signals": [
+      {
+        "feature": "fuel_pressure",
+        "value": 320.0,
+        "unit": "kPa",
+        "reference_range": [280.0, 310.0]
+      }
+    ],
+    "risk_history": [
+      {
+        "timestamp": "2026-06-16T06:00:00Z",
+        "risk_score": 0.48
+      },
+      {
+        "timestamp": "2026-06-16T10:00:00Z",
+        "risk_score": 0.52
+      }
+    ],
+    "anomaly_description": "The fuel pressure is slightly above its reference range.",
+    "possible_cause": "This could be related to fuel system regulation.",
+    "recommended_action": [
+      "Monitor fuel system performance.",
+      "Schedule inspection if issue persists."
+    ]
+  }
+]
