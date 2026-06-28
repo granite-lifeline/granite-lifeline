@@ -1296,91 +1296,86 @@ def render_component_detail(
                 inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
             padding: 20px !important;
         }}
-        .st-key-gauge_card {{
-            max-width: 380px !important;
-            margin: 0 auto 8px auto !important;
-        }}
     </style>
     """
     st.markdown(card_css, unsafe_allow_html=True)
 
-    gauge_heading_icon = lucide_icon("zap", size=24, color=tokens["accent"])
-    show_icon_heading("Risk Score", gauge_heading_icon, center=True)
+    hero_cols = st.columns([4, 8], gap="large")
 
-    with st.container(key="gauge_card"):
-        delta_config = None
-        if len(trend) >= 2:
-            delta_config = dict(
-                reference=trend[-2] * 100,
-                increasing=dict(color=tokens["risk_high"]),
-                decreasing=dict(color=tokens["risk_low"]),
+    with hero_cols[0]:
+        gauge_heading_icon = lucide_icon(
+            "zap", size=24, color=tokens["accent"]
+        )
+        show_icon_heading("Risk Score", gauge_heading_icon, center=True)
+
+        with st.container(key="gauge_card"):
+            delta_config = None
+            if len(trend) >= 2:
+                delta_config = dict(
+                    reference=trend[-2] * 100,
+                    increasing=dict(color=tokens["risk_high"]),
+                    decreasing=dict(color=tokens["risk_low"]),
+                )
+
+            gauge_fig = go.Figure(go.Indicator(
+                mode="gauge+number+delta" if delta_config else "gauge+number",
+                value=risk_pct,
+                number=dict(
+                    suffix="%",
+                    font=dict(family=FONT_MONO, size=40, color=tokens["text"]),
+                ),
+                delta=delta_config,
+                gauge=dict(
+                    axis=dict(
+                        range=[0, 100],
+                        tickcolor=tokens["text_secondary"],
+                        tickfont=dict(color=tokens["text_secondary"], size=10),
+                    ),
+                    bar=dict(color=badge_bg, thickness=0.3),
+                    bgcolor=tokens["surface_alt"],
+                    borderwidth=0,
+                ),
+            ))
+            gauge_fig.update_layout(
+                paper_bgcolor="rgba(0, 0, 0, 0)",
+                font=dict(color=tokens["text_secondary"]),
+                margin=dict(l=40, r=40, t=30, b=10),
+                height=282,
+            )
+            st.plotly_chart(
+                gauge_fig,
+                use_container_width=True,
+                key="detail_risk_gauge",
             )
 
-        gauge_fig = go.Figure(go.Indicator(
-            mode="gauge+number+delta" if delta_config else "gauge+number",
-            value=risk_pct,
-            number=dict(
-                suffix="%",
-                font=dict(family=FONT_MONO, size=40, color=tokens["text"]),
-            ),
-            delta=delta_config,
-            gauge=dict(
-                axis=dict(
-                    range=[0, 100],
-                    tickcolor=tokens["text_secondary"],
-                    tickfont=dict(color=tokens["text_secondary"], size=10),
-                ),
-                bar=dict(color=badge_bg, thickness=0.3),
-                bgcolor=tokens["surface_alt"],
-                borderwidth=0,
-            ),
-        ))
-        gauge_fig.update_layout(
-            paper_bgcolor="rgba(0, 0, 0, 0)",
-            font=dict(color=tokens["text_secondary"]),
-            margin=dict(l=40, r=40, t=20, b=10),
-            height=200,
-        )
-        st.plotly_chart(
-            gauge_fig,
-            use_container_width=True,
-            key="detail_risk_gauge",
-        )
+            # Format timestamp
+            timestamp_str = component_data.get("timestamp", "")
+            if timestamp_str:
+                try:
+                    dt = datetime.fromisoformat(
+                        timestamp_str.replace('Z', '+00:00')
+                    )
+                    formatted_time = dt.strftime("%Y-%m-%d %H:%M")
+                except Exception:
+                    formatted_time = timestamp_str
+            else:
+                formatted_time = "N/A"
 
-        # Format timestamp
-        timestamp_str = component_data.get("timestamp", "")
-        if timestamp_str:
-            try:
-                dt = datetime.fromisoformat(
-                    timestamp_str.replace('Z', '+00:00')
-                )
-                formatted_time = dt.strftime("%Y-%m-%d %H:%M")
-            except Exception:
-                formatted_time = timestamp_str
-        else:
-            formatted_time = "N/A"
+            st.markdown(
+                f"""
+                <p style="
+                    text-align: center;
+                    color: {tokens["text_secondary"]};
+                    font-size: 12px;
+                    margin: -8px 0 0 0;
+                ">
+                    Last updated: {formatted_time}
+                </p>
+                """,
+                unsafe_allow_html=True,
+            )
 
-        st.markdown(
-            f"""
-            <p style="
-                text-align: center;
-                color: {tokens["text_secondary"]};
-                font-size: 12px;
-                margin: -8px 0 0 0;
-            ">
-                Last updated: {formatted_time}
-            </p>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    st.markdown(
-        "<div style='height: 28px;'></div>", unsafe_allow_html=True
-    )
-
-    trend_col, signals_col = st.columns([6, 6], gap="large")
-
-    with trend_col:
+    with hero_cols[1]:
         heading_icon = lucide_icon(
             "trending-up", size=24, color=tokens["accent"]
         )
@@ -1502,170 +1497,173 @@ def render_component_detail(
                     "Higher values indicate greater risk."
                 )
 
-    with signals_col:
-        heading_icon = lucide_icon(
-            "activity", size=24, color=tokens["accent"]
-        )
-        show_icon_heading("Key Signals", heading_icon, center=True)
+    st.markdown(
+        "<div style='height: 28px;'></div>", unsafe_allow_html=True
+    )
 
-        with st.container(key="signals_card"):
-            # key_signals already retrieved above
-            if not key_signals:
-                # Custom info message matching Risk Trend style
-                info_icon = lucide_icon("info", size=20, color=tokens["text_secondary"])
-                info_html = f"""
-                <div style="display: flex; justify-content: center; width: 100%;">
+    heading_icon = lucide_icon(
+        "activity", size=24, color=tokens["accent"]
+    )
+    show_icon_heading("Key Signals", heading_icon, center=True)
+
+    with st.container(key="signals_card"):
+        # key_signals already retrieved above
+        if not key_signals:
+            # Custom info message matching Risk Trend style
+            info_icon = lucide_icon("info", size=20, color=tokens["text_secondary"])
+            info_html = f"""
+            <div style="display: flex; justify-content: center; width: 100%;">
+                <div style="
+                    background: {hex_to_rgba(tokens["text_secondary"], 0.08)};
+                    border: 1px solid {hex_to_rgba(tokens["text_secondary"], 0.20)};
+                    border-radius: 12px;
+                    padding: 16px 20px;
+                    margin: 12px 0;
+                    max-width: 600px;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                ">
                     <div style="
-                        background: {hex_to_rgba(tokens["text_secondary"], 0.08)};
-                        border: 1px solid {hex_to_rgba(tokens["text_secondary"], 0.20)};
-                        border-radius: 12px;
-                        padding: 16px 20px;
-                        margin: 12px 0;
-                        max-width: 600px;
                         display: flex;
                         align-items: center;
-                        gap: 12px;
+                        flex-shrink: 0;
+                    ">{info_icon}</div>
+                    <div style="
+                        color: {tokens["text"]};
+                        font-size: 14px;
+                        line-height: 1.5;
                     ">
-                        <div style="
-                            display: flex;
-                            align-items: center;
-                            flex-shrink: 0;
-                        ">{info_icon}</div>
-                        <div style="
-                            color: {tokens["text"]};
-                            font-size: 14px;
-                            line-height: 1.5;
-                        ">
-                            No signal data available for this component.
-                        </div>
+                        No signal data available for this component.
                     </div>
                 </div>
-                """
-                st.markdown(info_html, unsafe_allow_html=True)
-            else:
-                row_bg = hex_to_rgba(tokens["text"], 0.045)
+            </div>
+            """
+            st.markdown(info_html, unsafe_allow_html=True)
+        else:
+            row_bg = hex_to_rgba(tokens["text"], 0.045)
 
-                header_html = f"""
+            header_html = f"""
+            <div style="
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 12px;
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.4px;
+                text-transform: uppercase;
+                color: {tokens["text_secondary"]};
+            ">
+                <div style="flex: 2.5; min-width: 100px;">Signal</div>
+                <div style="flex: 1.5; min-width: 70px;">Reading</div>
+                <div style="flex: 2; min-width: 90px;">Normal Range</div>
+                <div style="flex: 0.8; min-width: 50px;">Unit</div>
+                <div style="
+                    flex: 1.2;
+                    min-width: 76px;
+                    max-width: 90px;
+                    text-align: center;
+                ">
+                    Status
+                </div>
+            </div>
+            """
+            st.markdown(header_html, unsafe_allow_html=True)
+
+            signals_with_status = []
+            for signal in key_signals:
+                ref_lower = signal["reference_range"][0]
+                ref_upper = signal["reference_range"][1]
+                is_abnormal = (
+                    signal["value"] < ref_lower or
+                    signal["value"] > ref_upper
+                )
+                status = "ABNORMAL" if is_abnormal else "NORMAL"
+                signals_with_status.append((signal, status))
+
+            signals_with_status.sort(key=lambda x: x[1] == "NORMAL")
+
+            for signal, status in signals_with_status:
+                ref_lower = signal["reference_range"][0]
+                ref_upper = signal["reference_range"][1]
+                signal_badge_bg = (
+                    tokens["risk_high"] if status == "ABNORMAL"
+                    else tokens["risk_low"]
+                )
+
+                # Get display name from mapping
+                signal_id = signal["feature"]
+                signal_display_name = SIGNAL_DISPLAY_NAMES.get(
+                    signal_id, signal_id
+                )
+
+                row_html = f"""
                 <div style="
                     display: flex;
                     align-items: center;
                     gap: 8px;
-                    padding: 8px 12px;
-                    font-size: 11px;
-                    font-weight: 700;
-                    letter-spacing: 0.4px;
-                    text-transform: uppercase;
-                    color: {tokens["text_secondary"]};
+                    background: {row_bg};
+                    border-radius: 8px;
+                    padding: 10px 12px;
+                    margin-bottom: 6px;
                 ">
-                    <div style="flex: 2.5; min-width: 100px;">Signal</div>
-                    <div style="flex: 1.5; min-width: 70px;">Reading</div>
-                    <div style="flex: 2; min-width: 90px;">Normal Range</div>
-                    <div style="flex: 0.8; min-width: 50px;">Unit</div>
+                    <div style="
+                        flex: 2.5;
+                        min-width: 100px;
+                        font-weight: 600;
+                        color: {tokens["text"]};
+                        font-size: 13px;
+                        line-height: 1.3;
+                        word-wrap: break-word;
+                    " title="{signal_display_name}">
+                        {signal_display_name}
+                    </div>
+                    <div style="
+                        flex: 1.5;
+                        min-width: 70px;
+                        font-family: {FONT_MONO};
+                        color: {tokens["text"]};
+                        font-size: 13px;
+                        font-weight: 600;
+                    ">
+                        {signal["value"]}
+                    </div>
+                    <div style="
+                        flex: 2;
+                        min-width: 90px;
+                        font-family: {FONT_MONO};
+                        color: {tokens["text_secondary"]};
+                        font-size: 12px;
+                    ">
+                        {ref_lower}–{ref_upper}
+                    </div>
+                    <div style="
+                        flex: 0.8;
+                        min-width: 50px;
+                        font-family: {FONT_MONO};
+                        color: {tokens["text_secondary"]};
+                        font-size: 12px;
+                    ">
+                        {signal["unit"]}
+                    </div>
                     <div style="
                         flex: 1.2;
                         min-width: 76px;
                         max-width: 90px;
                         text-align: center;
+                        background-color: {signal_badge_bg};
+                        color: white;
+                        padding: 4px 6px;
+                        border-radius: 12px;
+                        font-size: 10px;
+                        font-weight: 600;
                     ">
-                        Status
+                        {status}
                     </div>
                 </div>
                 """
-                st.markdown(header_html, unsafe_allow_html=True)
-
-                signals_with_status = []
-                for signal in key_signals:
-                    ref_lower = signal["reference_range"][0]
-                    ref_upper = signal["reference_range"][1]
-                    is_abnormal = (
-                        signal["value"] < ref_lower or
-                        signal["value"] > ref_upper
-                    )
-                    status = "ABNORMAL" if is_abnormal else "NORMAL"
-                    signals_with_status.append((signal, status))
-
-                signals_with_status.sort(key=lambda x: x[1] == "NORMAL")
-
-                for signal, status in signals_with_status:
-                    ref_lower = signal["reference_range"][0]
-                    ref_upper = signal["reference_range"][1]
-                    signal_badge_bg = (
-                        tokens["risk_high"] if status == "ABNORMAL"
-                        else tokens["risk_low"]
-                    )
-
-                    # Get display name from mapping
-                    signal_id = signal["feature"]
-                    signal_display_name = SIGNAL_DISPLAY_NAMES.get(
-                        signal_id, signal_id
-                    )
-
-                    row_html = f"""
-                    <div style="
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                        background: {row_bg};
-                        border-radius: 8px;
-                        padding: 10px 12px;
-                        margin-bottom: 6px;
-                    ">
-                        <div style="
-                            flex: 2.5;
-                            min-width: 100px;
-                            font-weight: 600;
-                            color: {tokens["text"]};
-                            font-size: 13px;
-                            line-height: 1.3;
-                            word-wrap: break-word;
-                        " title="{signal_display_name}">
-                            {signal_display_name}
-                        </div>
-                        <div style="
-                            flex: 1.5;
-                            min-width: 70px;
-                            font-family: {FONT_MONO};
-                            color: {tokens["text"]};
-                            font-size: 13px;
-                            font-weight: 600;
-                        ">
-                            {signal["value"]}
-                        </div>
-                        <div style="
-                            flex: 2;
-                            min-width: 90px;
-                            font-family: {FONT_MONO};
-                            color: {tokens["text_secondary"]};
-                            font-size: 12px;
-                        ">
-                            {ref_lower}–{ref_upper}
-                        </div>
-                        <div style="
-                            flex: 0.8;
-                            min-width: 50px;
-                            font-family: {FONT_MONO};
-                            color: {tokens["text_secondary"]};
-                            font-size: 12px;
-                        ">
-                            {signal["unit"]}
-                        </div>
-                        <div style="
-                            flex: 1.2;
-                            min-width: 76px;
-                            max-width: 90px;
-                            text-align: center;
-                            background-color: {signal_badge_bg};
-                            color: white;
-                            padding: 4px 6px;
-                            border-radius: 12px;
-                            font-size: 10px;
-                            font-weight: 600;
-                        ">
-                            {status}
-                        </div>
-                    </div>
-                    """
-                    st.markdown(row_html, unsafe_allow_html=True)
+                st.markdown(row_html, unsafe_allow_html=True)
 
     show_divider(dark_mode)
 
@@ -1731,102 +1729,104 @@ def render_component_detail(
         },
     ]
 
-    # Display first two info cards with centered layout
-    for card in info_cards:
+    report_cols = st.columns([5, 7], gap="medium")
+
+    with report_cols[0]:
+        # Display first two info cards
+        for card in info_cards:
+            card_html = f"""
+            <div style="
+                background: {tokens["glass_surface"]};
+                backdrop-filter: blur(24px) saturate(160%);
+                -webkit-backdrop-filter: blur(24px) saturate(160%);
+                border: 1px solid {tokens["glass_border"]};
+                border-radius: 16px;
+                padding: 16px 18px;
+                margin: 0 0 14px 0;
+                box-shadow:
+                    0 8px 28px {tokens["shadow"]},
+                    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+            ">
+                <h3 style="
+                    color: {tokens["text"]};
+                    margin: 0 0 12px 0;
+                    font-size: 15px;
+                    font-weight: 700;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 9px;
+                    padding-bottom: 9px;
+                    border-bottom: 2px solid {tokens["border"]};
+                ">
+                    {card["icon"]}{card["title"]}
+                </h3>
+                <div style="display: flex; justify-content: center;">
+                    <p style="
+                        margin: 0;
+                        max-width: 90%;
+                        font-size: 14px;
+                        line-height: 1.6;
+                        color: {tokens["text"]};
+                        text-align: left;
+                    ">{card["body"]}</p>
+                </div>
+            </div>
+            """
+            st.markdown(card_html, unsafe_allow_html=True)
+
+    with report_cols[1]:
+        # Display action card with accent styling
+        action_icon = lucide_icon(
+            "check-square", size=22, color=tokens["accent"]
+        )
         card_html = f"""
         <div style="
-            background: {tokens["glass_surface"]};
+            position: relative;
+            background: {hex_to_rgba(tokens["accent"], 0.10)};
             backdrop-filter: blur(24px) saturate(160%);
             -webkit-backdrop-filter: blur(24px) saturate(160%);
-            border: 1px solid {tokens["glass_border"]};
+            border: 1px solid {hex_to_rgba(tokens["accent"], 0.32)};
             border-radius: 16px;
-            padding: 16px 18px;
-            margin: 0 auto 14px auto;
-            max-width: 700px;
+            padding: 22px 26px 22px 30px;
+            margin: 0;
             box-shadow:
                 0 8px 28px {tokens["shadow"]},
                 inset 0 1px 0 rgba(255, 255, 255, 0.10);
+            overflow: hidden;
         ">
+            <div style="
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 4px;
+                background: {tokens["accent"]};
+            "></div>
             <h3 style="
                 color: {tokens["text"]};
-                margin: 0 0 12px 0;
-                font-size: 15px;
+                margin: 0 0 16px 0;
+                font-size: 18px;
                 font-weight: 700;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                gap: 9px;
-                padding-bottom: 9px;
-                border-bottom: 2px solid {tokens["border"]};
+                gap: 10px;
+                padding-bottom: 12px;
+                border-bottom: 2px solid {hex_to_rgba(tokens["accent"], 0.25)};
             ">
-                {card["icon"]}{card["title"]}
+                {action_icon}What You Should Do
             </h3>
-            <div style="display: flex; justify-content: center;">
-                <p style="
-                    margin: 0;
-                    max-width: 90%;
-                    font-size: 14px;
-                    line-height: 1.6;
-                    color: {tokens["text"]};
-                    text-align: left;
-                ">{card["body"]}</p>
+            <div style="
+                font-size: 14.5px;
+                line-height: 1.7;
+                text-align: center;
+            ">
+                {action_html}
             </div>
         </div>
         """
         st.markdown(card_html, unsafe_allow_html=True)
-
-    # Display action card with accent styling and centered layout
-    action_icon = lucide_icon(
-        "check-square", size=22, color=tokens["accent"]
-    )
-    card_html = f"""
-    <div style="
-        position: relative;
-        background: {hex_to_rgba(tokens["accent"], 0.10)};
-        backdrop-filter: blur(24px) saturate(160%);
-        -webkit-backdrop-filter: blur(24px) saturate(160%);
-        border: 1px solid {hex_to_rgba(tokens["accent"], 0.32)};
-        border-radius: 16px;
-        padding: 22px 26px 22px 30px;
-        margin: 0 auto 14px auto;
-        max-width: 700px;
-        box-shadow:
-            0 8px 28px {tokens["shadow"]},
-            inset 0 1px 0 rgba(255, 255, 255, 0.10);
-        overflow: hidden;
-    ">
-        <div style="
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 4px;
-            background: {tokens["accent"]};
-        "></div>
-        <h3 style="
-            color: {tokens["text"]};
-            margin: 0 0 16px 0;
-            font-size: 18px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid {hex_to_rgba(tokens["accent"], 0.25)};
-        ">
-            {action_icon}What You Should Do
-        </h3>
-        <div style="
-            font-size: 14.5px;
-            line-height: 1.7;
-            text-align: center;
-        ">
-            {action_html}
-        </div>
-    </div>
-    """
-    st.markdown(card_html, unsafe_allow_html=True)
 
 
 def show_detail_page():
