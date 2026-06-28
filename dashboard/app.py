@@ -415,8 +415,12 @@ def show_icon_heading(
             badge_color = tokens["text_secondary"]
 
         badge_icon = lucide_icon("shield", size=13, color=badge_color)
+        # gl-confidence-badge: on narrow viewports apply_theme()'s media
+        # query drops the absolute positioning so this falls into normal
+        # flow below the title instead of overlapping it (see GL-43).
         confidence_badge_html = (
-            f'<div style="position: absolute; right: 0; top: 50%; '
+            f'<div class="gl-confidence-badge" style="position: absolute; '
+            f'right: 0; top: 50%; '
             f'transform: translateY(-50%); display: flex; '
             f'align-items: center; gap: 7px; '
             f'background: {hex_to_rgba(badge_color, 0.14)}; '
@@ -433,9 +437,10 @@ def show_icon_heading(
     # Streamlit auto-wraps a heading's entire content into one internal
     # span, which would make the h2's own flex/justify-content inert.
     wrapper_position = "relative" if confidence_badge_html else "static"
+    wrapper_class = "gl-heading-wrap" if confidence_badge_html else ""
     heading_html = (
-        f'<div style="position: {wrapper_position}; display: flex; '
-        f'align-items: center; justify-content: {justify}; '
+        f'<div class="{wrapper_class}" style="position: {wrapper_position}; '
+        f'display: flex; align-items: center; justify-content: {justify}; '
         f'margin-bottom: 16px;">'
         f'<h2 style="margin: 0; display: flex; align-items: center; '
         f'gap: 20px;">{icon_svg}{title}</h2>'
@@ -516,6 +521,15 @@ def apply_theme(dark_mode: bool):
         h2 [data-testid="stHeaderActionElements"],
         h3 [data-testid="stHeaderActionElements"] {{
             display: none !important;
+        }}
+        @media (max-width: 680px) {{
+            .gl-heading-wrap {{
+                flex-direction: column !important;
+            }}
+            .gl-confidence-badge {{
+                position: static !important;
+                transform: none !important;
+            }}
         }}
         h1 {{
             font-size: 32px !important;
