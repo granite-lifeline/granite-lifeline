@@ -1040,10 +1040,13 @@ def show_overview_page():
     # Create centered layout for fewer than 3 components
     if num_components < 3:
         # Add empty columns for centering
-        col_spec = [1] * (3 - num_components) + [2] * num_components + [1] * (3 - num_components)
+        empty_cols = 3 - num_components
+        col_spec = [1] * empty_cols + [2] * num_components + [1] * empty_cols
         all_cols = st.columns(col_spec, gap="large")
         # Use only the middle columns for components
-        cols = all_cols[(3 - num_components):(3 - num_components + num_components)]
+        start_idx = empty_cols
+        end_idx = empty_cols + num_components
+        cols = all_cols[start_idx:end_idx]
     else:
         cols = st.columns(3, gap="large")
 
@@ -1244,12 +1247,16 @@ def render_component_detail(
 
     # Show info panel if any data is missing
     if missing_fields or missing_sections:
-        info_icon = lucide_icon("info", size=20, color=tokens["text_secondary"])
+        info_icon = lucide_icon(
+            "info", size=20, color=tokens["text_secondary"]
+        )
 
         message_parts = []
         if missing_fields:
             missing_fields_text = ", ".join(missing_fields)
-            message_parts.append(f"missing critical fields ({missing_fields_text})")
+            message_parts.append(
+                f"missing critical fields ({missing_fields_text})"
+            )
         if missing_sections:
             missing_sections_text = ", ".join(missing_sections)
             message_parts.append(f"missing {missing_sections_text}")
@@ -1270,11 +1277,14 @@ def render_component_detail(
         ">
             {info_icon}
             <div style="flex: 1;">
-                <div style="font-weight: 600; color: {tokens["text"]}; margin-bottom: 4px;">
+                <div style="font-weight: 600; color: {tokens["text"]};
+                    margin-bottom: 4px;">
                     Incomplete Data
                 </div>
-                <div style="color: {tokens["text_secondary"]}; font-size: 14px; line-height: 1.5;">
-                    {message} Some visualizations and information may not be available.
+                <div style="color: {tokens["text_secondary"]};
+                    font-size: 14px; line-height: 1.5;">
+                    {message} Some visualizations and information may not
+                    be available.
                     The risk score shown is based on available data only.
                 </div>
             </div>
@@ -1388,13 +1398,20 @@ def render_component_detail(
 
         with st.container(key="trend_card"):
             if len(trend) < 2:
-                # Custom info message with consistent styling - wrapped for centering
-                info_icon = lucide_icon("info", size=20, color=tokens["text_secondary"])
+                # Custom info message - wrapped for centering
+                info_icon = lucide_icon(
+                    "info", size=20, color=tokens["text_secondary"]
+                )
                 warning_html = f"""
-                <div style="display: flex; justify-content: center; width: 100%;">
+                <div style="display: flex; justify-content: center;
+                    width: 100%;">
                     <div style="
-                        background: {hex_to_rgba(tokens["text_secondary"], 0.08)};
-                        border: 1px solid {hex_to_rgba(tokens["text_secondary"], 0.20)};
+                        background: {hex_to_rgba(
+                            tokens["text_secondary"], 0.08
+                        )};
+                        border: 1px solid {hex_to_rgba(
+                            tokens["text_secondary"], 0.20
+                        )};
                         border-radius: 12px;
                         padding: 16px 20px;
                         margin: 12px 0;
@@ -1515,12 +1532,18 @@ def render_component_detail(
         # key_signals already retrieved above
         if not key_signals:
             # Custom info message matching Risk Trend style
-            info_icon = lucide_icon("info", size=20, color=tokens["text_secondary"])
+            info_icon = lucide_icon(
+                "info", size=20, color=tokens["text_secondary"]
+            )
             info_html = f"""
             <div style="display: flex; justify-content: center; width: 100%;">
                 <div style="
-                    background: {hex_to_rgba(tokens["text_secondary"], 0.08)};
-                    border: 1px solid {hex_to_rgba(tokens["text_secondary"], 0.20)};
+                    background: {hex_to_rgba(
+                        tokens["text_secondary"], 0.08
+                    )};
+                    border: 1px solid {hex_to_rgba(
+                        tokens["text_secondary"], 0.20
+                    )};
                     border-radius: 12px;
                     padding: 16px 20px;
                     margin: 12px 0;
