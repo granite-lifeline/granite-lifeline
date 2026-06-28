@@ -7,6 +7,7 @@ to detailed diagnostic reports.
 
 import base64
 import math
+import os
 import time
 from datetime import datetime
 import streamlit as st
@@ -30,8 +31,9 @@ SIGNAL_DISPLAY_NAMES = {
 
 # Load report data from Report Layer
 # Allow specifying test data file via environment variable
-import os
-test_data_file = os.getenv("DASHBOARD_TEST_DATA", "dashboard/tests/ui_required_data.json")
+test_data_file = os.getenv(
+    "DASHBOARD_TEST_DATA", "dashboard/tests/ui_required_data.json"
+)
 try:
     REPORT_DATA = load_dashboard_data(test_data_file)
 except Exception as e:
@@ -972,7 +974,7 @@ def show_overview_page():
         st.markdown(success_html, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
-    
+
     # Add risk level legend
     legend_html = f"""
     <div style="
@@ -1022,7 +1024,7 @@ def show_overview_page():
     </div>
     """
     st.markdown(legend_html, unsafe_allow_html=True)
-    
+
     st.markdown("<br>", unsafe_allow_html=True)
 
     sorted_components = sorted(
@@ -1034,7 +1036,7 @@ def show_overview_page():
     )
 
     num_components = len(sorted_components)
-    
+
     # Create centered layout for fewer than 3 components
     if num_components < 3:
         # Add empty columns for centering
@@ -1211,36 +1213,39 @@ def render_component_detail(
     """
 
     st.markdown(title_html, unsafe_allow_html=True)
-    
+
     # Check for missing data and show info panel
     missing_sections = []
     missing_fields = []
-    
+
     # Check risk_level and related fields
     if risk_level == "Unknown":
         if "risk_level" not in component_data:
             missing_fields.append("risk_level")
-        if "anomaly_description" not in component_data or not component_data.get("anomaly_description"):
+        if ("anomaly_description" not in component_data or
+                not component_data.get("anomaly_description")):
             missing_fields.append("anomaly_description")
-        if "possible_cause" not in component_data or not component_data.get("possible_cause"):
+        if ("possible_cause" not in component_data or
+                not component_data.get("possible_cause")):
             missing_fields.append("possible_cause")
-        if "recommended_action" not in component_data or not component_data.get("recommended_action"):
+        if ("recommended_action" not in component_data or
+                not component_data.get("recommended_action")):
             missing_fields.append("recommended_action")
-    
+
     # Check risk_history
     risk_history = component_data.get("risk_history", [])
     if not risk_history or len(risk_history) < 2:
         missing_sections.append("Risk Trend data")
-    
+
     # Check key_signals
     key_signals = component_data.get("key_signals", [])
     if not key_signals:
         missing_sections.append("Key Signals data")
-    
+
     # Show info panel if any data is missing
     if missing_fields or missing_sections:
         info_icon = lucide_icon("info", size=20, color=tokens["text_secondary"])
-        
+
         message_parts = []
         if missing_fields:
             missing_fields_text = ", ".join(missing_fields)
@@ -1248,9 +1253,9 @@ def render_component_detail(
         if missing_sections:
             missing_sections_text = ", ".join(missing_sections)
             message_parts.append(f"missing {missing_sections_text}")
-        
+
         message = "This component has " + " and ".join(message_parts) + "."
-        
+
         info_panel_html = f"""
         <div style="
             background: {hex_to_rgba(tokens["text_secondary"], 0.08)};
