@@ -117,10 +117,10 @@ Consumed by: **Report Layer** (and pass-through to Dashboard where noted)
 ```json
 {
   "timestamp": "2026-06-16T10:00:00Z",
-  "anomaly_type": "cooling_system_stress",
+  "anomaly_type": "cooling_degradation",
   "risk_score": 0.82,
   "risk_level": "Medium",
-  "component": "cooling_system_stress",
+  "component": "cooling_degradation",
   "prediction_confidence": 0.84,
   "key_signals": [
   {"feature": "coolant_temp", "value": 102, "unit": "°C", "reference_range": [90, 95]}
@@ -133,36 +133,45 @@ Consumed by: **Report Layer** (and pass-through to Dashboard where noted)
 | Field Name | Type | Description | Example | Status |
 |---|---|---|---|---|
 | timestamp | string (ISO 8601) | Pass-through from Data Layer | `"2026-06-16T10:00:00Z"` | Draft |
-| anomaly_type | string (enum) | Fault/anomaly classification output by TTM. Three confirmed values — see Section 2.3. | `"cooling_system_stress"` | Confirmed |
+| anomaly_type | string (enum) | Fault/anomaly classification output by TTM. Seven values defined — see Section 2.3. First 3 confirmed by Model Layer, remaining 4 from Data Layer. | `"cooling_degradation"` | Updated |
 | risk_score | float (0–1) | Probability / severity of detected anomaly, output by TTM | `0.82` | Draft |
 | risk_level | string | Risk classification derived from risk_score by Model Layer. Values: `Low` \| `Medium` \| `High`. Thresholds pending calibration. | `"Medium"` | TBD — thresholds pending calibration |
-| component | string | Affected component. **Mirrors anomaly_type** — retained as a separate field for downstream compatibility (e.g., Dashboard component-based filtering), though currently redundant with anomaly_type. | `"cooling_system_stress"` | Confirmed |
+| component | string | Affected component. **Mirrors anomaly_type** — retained as a separate field for downstream compatibility (e.g., Dashboard component-based filtering), though currently redundant with anomaly_type. | `"cooling_degradation"` | Updated |
 | prediction_confidence | float (0–1) | Model confidence in risk_score, provided directly by Model Layer. | `0.84` | Draft |
 | key_signals | array of objects | Top signals contributing to risk prediction, in order of importance. Structure: `[{feature, value, unit, reference_range}]`. See Section 2.4. | See JSON above | Confirmed |
 
 ### 2.3 anomaly_type Classification
 
-> Confirmed by Model Layer on 2026-06-20. Replaces the previous interim classification (`cooling_degradation` / `vacuum_leak` / `intake_blockage`).
+> Updated on 2026-06-29 to align with grounded_knowledge.yaml proxy_failures definitions.
+> Expanded from 3 to 7 anomaly types to match Data Layer domain knowledge.
 >
-> Note: `component` mirrors `anomaly_type` for all three values (see 2.2).
+> Note: `component` mirrors `anomaly_type` for all values (see 2.2).
 
-| anomaly_type | component |
-|---|---|
-| `cooling_system_stress` | `cooling_system_stress` |
-| `air_intake_maf_anomaly` | `air_intake_maf_anomaly` |
-| `accelerator_pedal_sensor` | `accelerator_pedal_sensor` |
+| anomaly_type | component | Status |
+|---|---|---|
+| `cooling_degradation` | `cooling_degradation` | Confirmed - Model Layer supported |
+| `air_intake_maf_anomaly` | `air_intake_maf_anomaly` | Confirmed - Model Layer supported |
+| `accelerator_pedal_sensor` | `accelerator_pedal_sensor` | Confirmed - Model Layer supported |
+| `intake_air_temperature_sensor_or_heat_soak_fault` | `intake_air_temperature_sensor_or_heat_soak_fault` | Pending - Data Layer defined, Model Layer TBD |
+| `map_load_signal_plausibility_fault` | `map_load_signal_plausibility_fault` | Pending - Data Layer defined, Model Layer TBD |
+| `electronic_throttle_tracking_fault` | `electronic_throttle_tracking_fault` | Pending - Data Layer defined, Model Layer TBD |
+| `idle_speed_control_or_surge_degradation` | `idle_speed_control_or_surge_degradation` | Pending - Data Layer defined, Model Layer TBD |
 
-### 2.4 anomaly_type → key_signals Mapping (Confirmed)
+### 2.4 anomaly_type → key_signals Mapping
 
-> All three mappings confirmed by Model Layer on 2026-06-20.
+> Updated on 2026-06-29. First 3 mappings confirmed by Model Layer. Remaining 4 mappings defined by Data Layer based on grounded_knowledge.yaml.
 >
 > Report Layer uses this mapping to understand which signals are expected to be anomalous for each fault type. This supports prompt design and test case construction (typical vs atypical scenarios).
 
-| anomaly_type | key_signals (in order of importance) | Rationale |
-|---|---|---|
-| `cooling_system_stress` | `coolant_temp` | After warm-up phase (>85°C reached), flag elevated risk when: (1) coolant temp exceeds ~100°C, and/or (2) temp keeps rising at >2–3°C/min instead of plateauing. Normal range is 90–95°C. Matches brief's example: "Coolant temperature rising faster than normal—possible water pump degradation." |
-| `air_intake_maf_anomaly` | `maf`, `map` | MAF correlates with intake MAP at ~0.83 average (range 0.6–0.9). Proxy: fit "expected MAF" baseline from map, then flag when residual (actual − expected MAF) is large/sustained. Suggests MAF sensor drift, dirty air filter, or vacuum leak. |
-| `accelerator_pedal_sensor` | `accel_pedal_d`, `accel_pedal_e` | Dual redundant sensors show high correlation (0.96–0.99) consistently across all 81 trips. Mean absolute difference ~0.8pp, with brief spikes >10pp in ~1% of samples (likely sensor lag during fast movements, not faults). |
+| anomaly_type | key_signals (in order of importance) | Rationale | Status |
+|---|---|---|---|
+| `cooling_degradation` | `coolant_temp`, `coolant_slope`, `coolant_stability` | After warm-up phase (>85°C reached), flag elevated risk when: (1) coolant temp exceeds ~100°C, and/or (2) temp keeps rising at >2–3°C/min instead of plateauing. Normal range is 90–95°C. | Confirmed |
+| `air_intake_maf_anomaly` | `maf`, `map`, `maf_map_cohesion` | MAF correlates with intake MAP at ~0.83 average (range 0.6–0.9). Proxy: fit "expected MAF" baseline from map, then flag when residual (actual − expected MAF) is large/sustained. Suggests MAF sensor drift, dirty air filter, or vacuum leak. | Confirmed |
+| `accelerator_pedal_sensor` | `accel_pedal_d`, `accel_pedal_e`, `accel_pedal_channel_delta` | Dual redundant sensors show high correlation (0.96–0.99) consistently across all 81 trips. Mean absolute difference ~0.8pp, with brief spikes >10pp in ~1% of samples (likely sensor lag during fast movements, not faults). | Confirmed |
+| `intake_air_temperature_sensor_or_heat_soak_fault` | `intake_temp`, `ambient_temp`, `intake_ambient_delta` | Intake temperature abnormally high or low relative to ambient temperature, or does not vary with vehicle speed/load. Proxies IAT sensor faults, severe heat soak, or poor thermal management. | Data Layer defined |
+| `map_load_signal_plausibility_fault` | `map`, `maf`, `tps`, `map_slope` | MAP cannot reasonably reflect load changes, or its relationship with MAF, throttle position, and engine speed is inconsistent. Proxies MAP sensor drift, blockage, hose issues, or signal sticking. | Data Layer defined |
+| `electronic_throttle_tracking_fault` | `accel_pedal_d`, `accel_pedal_e`, `tps`, `pedal_throttle_gap` | After pedal demand increases, throttle opening does not change accordingly, or actual throttle position remains offset from expected value. Proxies ETC actuator sticking or position-control abnormalities. | Data Layer defined |
+| `idle_speed_control_or_surge_degradation` | `rpm`, `idle_flag`, `idle_rpm_stability`, `rpm_slope` | Under idle conditions, RPM fluctuation is excessive, cyclic surging occurs, or engine cannot stabilize near target idle speed. Proxies idle-control degradation or combustion-stability issues. | Data Layer defined |
 
 ---
 

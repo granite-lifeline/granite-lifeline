@@ -1,13 +1,24 @@
 """
 Pydantic models for Granite Lifeline cross-layer data contracts.
-Based on INTERFACE.md v0.2.
+Based on INTERFACE.md v0.3 (updated 2026-06-29).
 
 This is an early-stage version with basic validation only.
 Stricter validation will be added once all layers confirm field details.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Literal
 from pydantic import BaseModel
+
+# Anomaly type enum based on grounded_knowledge.yaml proxy_failures
+AnomalyType = Literal[
+    "cooling_degradation",
+    "air_intake_maf_anomaly",
+    "accelerator_pedal_sensor",
+    "intake_air_temperature_sensor_or_heat_soak_fault",
+    "map_load_signal_plausibility_fault",
+    "electronic_throttle_tracking_fault",
+    "idle_speed_control_or_surge_degradation"
+]
 
 
 class KeySignal(BaseModel):
@@ -58,10 +69,10 @@ class ModelLayerOutput(BaseModel):
     """Output from Model Layer, consumed by Report Layer."""
 
     timestamp: str
-    anomaly_type: str
+    anomaly_type: AnomalyType
     risk_score: float
     risk_level: Optional[str] = None  # TBD - thresholds pending calibration
-    component: str
+    component: AnomalyType  # Mirrors anomaly_type
     prediction_confidence: float
     key_signals: List[KeySignal]
 
@@ -73,7 +84,7 @@ class ReportLayerOutput(BaseModel):
     timestamp: str
     risk_score: float
     risk_level: Optional[str] = None  # TBD
-    component: str
+    component: AnomalyType  # Mirrors anomaly_type from Model Layer
     prediction_confidence: float
     key_signals: List[KeySignal]
 
