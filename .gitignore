@@ -1,6 +1,5 @@
 .env
 data/raw/*.csv
-data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 __pycache__/
