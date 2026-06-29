@@ -609,12 +609,86 @@ proxy_failures:
     rationale: "The cooling system prevents thermal overload, lubricating-oil burn-off, and abnormal combustion caused by excessive component temperatures. If coolant temperature stays above the stable post-warm-up range for an extended period, heat input and heat dissipation capacity are out of balance."
     supporting_source: "Bosch Automotive Handbook"
     report_layer:
-      description: null
-      causes: []
+      description: "With thermostat-controlled cooling, the coolant temperatures range from 95°C to 110°C in the partial-load range and from 85°C to 95°C in the full-load range. The cooling circuit is under a pressure of 1.0 to 1.5 bar (closed cooling system). Pressurized water starts to boil not at 100°C but at 115°C to 130°C. Thermostat valve opening temperature is 82°C (180°F), with maximum valve lift at 10.0 mm/95°C, and valve closing temperature at 77°C (171°F)."
+      causes:
+        - "Water pump malfunction"
+        - "Worn or loose drive belt"
+        - "Thermostat stuck closed"
+        - "Damaged fins"
+        - "Dust contamination or paper clogging"
+        - "Physical damage"
+        - "Clogged radiator cooling tube"
+        - "Excess foreign material (rust, dirt, sand, etc.)"
+        - "Cooling fan does not operate"
+        - "Damaged fan blades"
+        - "Damaged radiator shroud"
+        - "Improper engine coolant mixture ratio"
+        - "Poor engine coolant quality"
+        - "Insufficient engine coolant"
+        - "Cooling hose — Loose clamp"
+        - "Cracked hose"
+        - "Water pump — Poor sealing"
+        - "Radiator cap — Loose or poor sealing"
+        - "Radiator — O-ring for damage, deterioration or improper fitting"
+        - "Cracked radiator tank or core"
+        - "Cracked reservoir tank"
+        - "Exhaust gas leakage into cooling system"
+        - "Cylinder head or gasket deterioration"
+        - "Overload on engine"
+        - "Abusive driving"
+        - "High engine rpm under no load"
+        - "Driving in low gear for extended time"
+        - "Driving at extremely high speed"
+        - "Installed improper size wheels and tires"
+        - "Dragging brakes"
+        - "Improper ignition timing"
+        - "Blocked bumper, radiator grille, or condenser"
+        - "Radiator contamination or airflow restriction"
+        - "Radiator fan not working"
+        - "Thermostat not opening"
+        - "Radiator clogged"
+        - "Coolant pump not working"
+        - "Faulty pressure-relief or vacuum valve"
+        - "Coolant loss due to radiator damage or corrosion"
+        - "Poor heat exchange due to external or internal contamination"
+        - "Contaminated or stale cooling water"
+        - "Impeller loose/broken"
+        - "Bearing or seal defective"
+        - "Drive wheel damaged"
+        - "Cross section narrowing due to corrosion or sealant"
+        - "Cavitation damage to the impeller"
       actions:
-        low: []
-        medium: []
-        high: []
+        low:
+          - action: "Check if the reservoir tank engine coolant level is within the 'MIN' to 'MAX' when the engine is cool. Never remove reservoir tank cap when engine is hot."
+            source: "Nissan Patrol Y62 Workshop Manual, 'Engine Coolant', 'Inspection' (Classification by Bob based on maintenance urgency)"
+          - action: "Check coolant temperature sensor and display instrument if necessary"
+            source: "MAHLE, p.39–40, 'Engine overheats' troubleshooting (Classification by Bob based on maintenance urgency)"
+          - action: "Measuring the coolant inlet and outlet temperature using an infrared thermometer"
+            source: "MAHLE, p.50, 'Radiator / Troubleshooting' (Classification by Bob based on maintenance urgency)"
+        medium:
+          - action: "The mixing proportion of water to antifreeze should be 60:40 to 50:50."
+            source: "MAHLE, p.36, 'Coolant, antifreeze, and corrosion protection' (Classification by Bob based on maintenance urgency)"
+          - action: "Check radiator for mud or clogging. Apply water by hose to the back side of the radiator core vertically downward. Blow air into the back side of radiator core vertically downward. Use compressed air lower than 490 kPa (5 kg/cm2, 71 psi) and keep distance more than 30 cm (11.8 in)."
+            source: "Nissan Patrol Y62 Workshop Manual, 'Radiator', 'Inspection' (Classification by Bob based on maintenance urgency)"
+          - action: "Clean components if necessary"
+            source: "MAHLE, p.39–40, 'Engine overheats' troubleshooting (Classification by Bob based on maintenance urgency)"
+          - action: "Check switch-on point, fuse, thermal switch, and fan control unit, check for mechanical damage"
+            source: "MAHLE, p.39–40, 'Engine overheats' troubleshooting (Classification by Bob based on maintenance urgency)"
+          - action: "Check radiator for external contamination, clean with reduced compressed air or a water jet if necessary. Check radiator for external damage and leaks (hose connections, flanges, fins, plastic housing)"
+            source: "MAHLE, p.50, 'Radiator / Troubleshooting' (Classification by Bob based on maintenance urgency)"
+          - action: "Check coolant for discoloration/contamination (e.g., oil due to defective head gasket) and antifreeze content"
+            source: "MAHLE, p.50, 'Radiator / Troubleshooting' (Classification by Bob based on maintenance urgency)"
+          - action: "Check temperature at inlet and outlet of the radiator, check flow rate"
+            source: "MAHLE, p.39–40, 'Engine overheats' troubleshooting (Classification by Bob based on maintenance urgency)"
+        high:
+          - action: "Visually check that there is no significant dirt or rusting on water pump body and vane. Check there is no slack in vane shaft, and that it turns smoothly when rotated by hand. If anything is found, replace water pump."
+            source: "Nissan Patrol Y62 Workshop Manual, 'Water Pump', 'Inspection After Removal' (Classification by Bob based on maintenance urgency)"
+          - action: "Check that valve in thermostat is completely closing at normal temperature. The valve opening temperature is the temperature at which the valve opens and falls from the thread. If the malfunctioning condition, when valve seating at ordinary room temperature, or measured values are out of the standard, replace thermostat."
+            source: "Nissan Patrol Y62 Workshop Manual, 'Water Inlet and Thermostat Assembly', 'Inspection After Removal' (Classification by Bob based on maintenance urgency)"
+          - action: "Measure temperature in front of and behind the thermostat; if necessary, remove thermostat and check in water bath"
+            source: "MAHLE, p.39–40, 'Engine overheats' troubleshooting (Classification by Bob based on maintenance urgency)"
+          - action: "Check that the pump wheel is not loose on the drive shaft"
+            source: "MAHLE, p.39–40, 'Engine overheats' troubleshooting (Classification by Bob based on maintenance urgency)"
 
   intake_air_temperature_sensor_or_heat_soak_fault:
     component: "Intake-air temperature sensing / intake-air temperature regulation"
@@ -645,12 +719,48 @@ proxy_failures:
     rationale: "Colder air has higher density, while heated intake air reduces density and output. Intake systems can regulate intake temperature, affecting performance, fuel consumption, and emissions. For diesel engines, higher intake temperature increases combustion temperature and NOx emissions."
     supporting_source: "Bosch Automotive Handbook"
     report_layer:
-      description: null
-      causes: []
+      description: "Air-temperature sensor is installed in the air-intake tract. Together with the signal from the boost-pressure sensor, its signal is applied in calculating the intake-air mass. Setpoint values for various control loops (e.g. EGR, boost-pressure control) can be adapted to the air temperature (measuring range –40 to +120 °C). Its job is simple but crucial: provide accurate air temperature readings to the car's engine control unit (ECU) or powertrain control module (PCM). Cold air is denser and contains more oxygen, so your car needs more fuel for combustion. On the flip side, warm air requires less fuel. It is used by the Powertrain Control Module to assist with the calculation of idle speed, fuel mixture, and spark advance. The sensor operates using a thermistor — a component that measures temperature by changing its resistance. Its resistance decreases as the air temperature rises. Intake air temperature sensor is built into the mass airflow sensor. The intake air temperature sensor converts the intake air temperature into a voltage and inputs the voltage signal to the engine-ECU. In response to the signal, the engine-ECU corrects the fuel injection amount, etc. Heat Soak: Engine heat soak happens when heat from the engine, exhaust, turbo or cooling system builds up under the bonnet and is absorbed by surrounding components. Heat soak means components are absorbing heat faster than they can get rid of it. When the car is moving, airflow helps carry heat out of the engine bay. When you stop in traffic, sit in a queue or shut the engine off, airflow drops. Hot parts keep radiating heat, but that heat has nowhere useful to go. Hot intake air is less dense, more knock-prone and more likely to make the ECU pull timing or reduce boost."
+      causes:
+        - "Faulty IAT sensor: The most common culprit"
+        - "Failed intake air temperature sensor"
+        - "Intake air temperature sensor (built into the mass airflow sensor) failed"
+        - "Wiring issues: Broken, shorted, or corroded wires"
+        - "Connector problems: Damaged, corroded, or moisture-filled connectors"
+        - "Open circuit or harness damage in intake air temperature sensor circuit or loose connector contact"
+        - "Intake Air Temperature Sensor harness is open or shorted"
+        - "Intake Air Temperature Sensor circuit poor electrical connection"
+        - "Dirty air filter: Restricts airflow and disrupts sensor readings"
+        - "Dirty Air Filter"
+        - "ECM failed"
+        - "Failed engine-ECU"
+        - "Faulty Powertrain Control Module (PCM)"
+        - "Heat soak: The main heat sources are usually the exhaust manifold, headers, turbocharger, downpipe, radiator, engine block and charge pipework"
+        - "Heat soak is usually worse on turbocharged cars because the turbocharger adds a concentrated heat source to the engine bay"
+        - "The turbine housing is driven by hot exhaust gas. Under hard use, the turbo, manifold and downpipe radiate a lot of heat into the surrounding area"
       actions:
-        low: []
-        medium: []
-        high: []
+        low:
+          - action: "Use scan tool (M.U.T.-III SE) to check the data list. Item number 50: Air Temperature Sensor"
+            source: "Mitsubishi Eclipse Cross Workshop Manual, DTC P0113-00, 'Diagnosis', Step 1 (Classification by Bob based on maintenance urgency)"
+          - action: "Use an OBD2 scanner to look for any other related trouble codes."
+            source: "OBDeleven, 'P0113', December 17, 2024 (Classification by Bob based on maintenance urgency)"
+          - action: "Use your scan tool to clear the fault codes. After erasing the DTC, carry out test drive with the drive cycle pattern, and recheck the DTC."
+            source: "OBDeleven, 'P0113', December 17, 2024; Mitsubishi Eclipse Cross Workshop Manual, DTC P0113-00, 'Diagnosis', Step 2 (Classification by Bob based on maintenance urgency)"
+          - action: "Normally, the intake air temperature should be similar to or higher than the outside air temperature. If it is significantly lower, it confirms that the issue is still ongoing."
+            source: "OBDeleven, 'P0113', December 17, 2024 (Classification by Bob based on maintenance urgency)"
+          - action: "Check intake air temperatures and intake location. OBD intake air temperature: Does IAT climb quickly and recover slowly? Ignition timing or boost: Does the ECU pull performance when hot?"
+            source: "Exoracing, 'Engine Heat Soak: Symptoms, Causes and Fixes', Matthew Marks, May 19, 2026 (Classification by Bob based on maintenance urgency)"
+        medium:
+          - action: "Look for physical damage, corrosion, or disconnections in the IAT sensor and its wiring. Also, check the air filter for excessive dirt or debris."
+            source: "OBDeleven, 'P0113', December 17, 2024 (Classification by Bob based on maintenance urgency)"
+          - action: "Remove the IAT sensor. Set the multimeter to measure resistance (Ω). Connect the multimeter to the sensor terminals. Use a hair dryer to blow hot air onto the sensor while observing changes in its resistance. Under normal conditions, the sensor's resistance should decrease as it warms up. However, if the resistance remains unchanged as the temperature increases, this indicates that the sensor is faulty and needs replacement."
+            source: "OBDeleven, 'P0113', December 17, 2024 (Classification by Bob based on maintenance urgency)"
+          - action: "Visual inspection: Are parts too close to the heat source? Look for brittle wiring, cooked hoses, melted clips, discoloured sleeving or lines routed close to the turbo or downpipe. After hard driving, especially in a turbo car, avoid switching the engine off immediately. Let it idle gently for a minute or two so oil, coolant and air can keep moving heat away from the turbo, head and block."
+            source: "Exoracing, 'Engine Heat Soak: Symptoms, Causes and Fixes', Matthew Marks, May 19, 2026 (Classification by Bob based on maintenance urgency)"
+        high:
+          - action: "Replace the mass airflow sensor"
+            source: "Mitsubishi Eclipse Cross Workshop Manual, DTC P0113-00, 'Diagnosis', Step 1 (Classification by Bob based on maintenance urgency)"
+          - action: "Replace the ECM"
+            source: "Mitsubishi Eclipse Cross Workshop Manual, DTC P0113-00, 'Diagnosis', Step 2 (Classification by Bob based on maintenance urgency)"
 
   air_intake_maf_anomaly:
     component: "MAF sensor / intake air measurement path"
@@ -681,12 +791,26 @@ proxy_failures:
     rationale: "Under the same operating condition, MAF-based load and MAP-based load should remain physically consistent. Persistent deviation between the two indicates a plausibility abnormality in the air-mass measurement chain."
     supporting_source: "Bosch Automotive Handbook"
     report_layer:
-      description: null
-      causes: []
+      description: "The MAF sensor measures the precise amount of air entering the engine so the ECU can calculate the correct amount of fuel needed for an optimal air-fuel balance. Because air density changes with temperature, pressure, and humidity, the MAF sensor constantly adjusts these readings in real time. The MAF sensor tells the engine how much air is coming in so it can mix the right amount of fuel for smooth, efficient running. With the engine at idle, the MAF's PID value should read anywhere from 2 to 7 grams/second (g/s) at idle and rise to between 15 to 25 g/s at 2500 rpm, depending on engine size. A MAF sensor works dynamically, so the question becomes: Is the MAF accurate throughout the engine's rpm range? If it is not linear, various drivability problems can occur."
+      causes:
+        - "Contamination from oil, dirt, or pollen — often caused by re-oiled aftermarket air filters"
+        - "Wiring damage or corrosion at the connector can interrupt the sensor's signal"
+        - "Age and vibration can lead to internal degradation of the sensing element itself"
+        - "Moisture ingress or condensation can distort readings, resulting in incorrect air–fuel ratio calculations and poor engine performance"
       actions:
-        low: []
-        medium: []
-        high: []
+        low:
+          - action: "Connect a scan tool to see the MAF sensor Parameter Identification Data (PID) information."
+            source: "MAF Sensor Testing, Tech-Assist Team (Classification by Bob based on maintenance urgency)"
+          - action: "The most effective way to verify the MAF's signal to the PCM is to graph the sensor's output while running the engine between 1000 and 2250 rpm. A good MAF sensor should show a steady linear rise from 1000 to 2250."
+            source: "MAF Sensor Testing, Tech-Assist Team (Classification by Bob based on maintenance urgency)"
+        medium:
+          - action: "It is highly recommended to change the air filter before replacing the MAF sensors. Dirty, sub standard or worn out air filters can contaminate the element of the sensor and cause it to fail. The air filter should be changed every 15,000 miles to ensure efficiency and durability of the MAF sensors."
+            source: "ELTA TechASSIST Bulletin 03, 'General Fitting Advice — Before Fitting' (Classification by Bob based on maintenance urgency)"
+          - action: "carefully check the wiring and connectors for any signs of damage or corrosion. Frayed wires, loose connections, or corroded terminals can interrupt the sensor's signal, leading to inaccurate readings or even a complete failure."
+            source: "ELTA TechASSIST Bulletin 03, 'General Fitting Advice — During Fitting' (Classification by Bob based on maintenance urgency)"
+        high:
+          - action: "After replacing engine management components, many vehicles will require a reset of the parameters to tell the ECU that a new part has been fitted."
+            source: "ELTA TechASSIST Bulletin 03, 'General Fitting Advice — After Fitting' (Classification by Bob based on maintenance urgency)"
 
   map_load_signal_plausibility_fault:
     component: "Intake manifold absolute pressure sensor / load signal"
@@ -720,12 +844,46 @@ proxy_failures:
     rationale: "Intake manifold absolute pressure is a preferred method for monitoring load, and relative charge can be determined from available measurement signals such as MAF or MAP through an intake manifold model. If MAP is distorted, load, ignition, fuel injection, and torque calculations will be biased."
     supporting_source: "Bosch Automotive Handbook"
     report_layer:
-      description: null
-      causes: []
+      description: "Intake manifold pressure sensors, also known as MAP sensors (from the English 'Manifold Absolute Pressure'), are used together with the values of the throttle potentiometer to calculate the intake air mass of uncharged gasoline engines. In turbo engines (diesel and petrol) the sensor is mainly used to control the turbocharging system. By monitoring the manifold pressure, the MAP sensor continuously provides real-time data to the ECU. This data is used to adjust the air/fuel ratio, the ignition timing, and other parameters for optimal power output and fuel efficiency. It measures the air pressure inside the intake manifold and sends this data to the Engine Control Unit (ECU), which then adjusts fuel injection and ignition timing accordingly. The MAP sensor operates using a diaphragm and strain gauge, which work together to detect changes in pressure between the intake manifold and the outside air. A pressure sensor has 3 electrical connections. One pin has the supply voltage of 5 volts, the second pin has the signal voltage, which is normally between 0.2 V and 4.8 V. The signal ground is located on the third pin. For sparkignition engines without supercharging, the vacuum at idle should be between 400 and 500 mbar absolute. When the accelerator pedal is fully depressed, the pressure should be 900 to 1000 mbar absolute. Plausibility algorithms ask: 'Does this value make sense compared to other measurements and physical expectations?' The ECU estimates airflow using Engine speed (RPM), Manifold absolute pressure (MAP), Intake air temperature (IAT), and Volumetric efficiency tables. This estimate is compared to the measured MAF signal. If the difference exceeds limits for a calibrated duration, the ECU may conclude that either the MAF or MAP system is unreliable."
+      causes:
+        - "Possible causes are a lack of voltage supply, cable breaks, defective connectors or a failure of the sensor electronics"
+        - "Common error messages are: 'Suction pipe pressure or boost pressure signal implausible', 'too low' or 'too high'"
+        - "Contamination from oil or debris"
+        - "The MAP sensor's sensitive element can be affected by dirt, oil or dust, which disrupts pressure measurement and engine performance"
+        - "Contamination from Dirt, Oil, and Debris: Dirt, oil, and carbon buildup can clog the MAP sensor, affecting its ability to measure pressure accurately"
+        - "Electrical Issues: a faulty wiring connection or a blown fuse"
+        - "Faulty Wiring, Loose Connections, or Improper Installation: Damaged wires, corroded connectors, or improper installation can interfere with signal transmission"
+        - "Physical Damage: excessive heat or vibration"
+        - "Sensor Age and Wear Over Time: the internal components, including the diaphragm and electronic circuits, can degrade, leading to inaccurate pressure readings"
+        - "Vacuum Leaks in the Intake System: If there is a leak in the vacuum hose or intake system, the sensor may detect false pressure levels, causing the ECU to miscalculate fuel delivery and ignition timing"
+        - "Leaks in the intake system, like cracks or loose joints, make the measured pressure different from the actual one"
+        - "If the damping is changed, the control unit calculates incorrect mean values for the suction pipe pressure. Check the function of the throttle and use a hose of the same length and inner diameter when replacing the connecting hose"
       actions:
-        low: []
-        medium: []
-        high: []
+        low:
+          - action: "Use a Scan Tool to check the MAP value at several conditions, such as Key ON Engine OFF (KOEO), idling, or Wide-Open Throttle (WOT)."
+            source: "Innova.com, Joe Ballard, February 16, 2024 (Classification by Bob based on maintenance urgency)"
+          - action: "When the MAP sensor malfunctions, an OBD2 scanner can be used to quickly diagnose the problem. It can read the fault codes and monitor the sensor's data stream."
+            source: "Foxwell, BennettLyle, February 13, 2025 (Classification by Bob based on maintenance urgency)"
+          - action: "Use a Digital Multimeter (DMM) to check the voltage from the MAP sensor connector (between power wiring and ground wiring). The voltage should be around 5V. Turn on the ignition switch (without starting the engine) and measure whether the sensor's reference voltage (usually 5V) is normal."
+            source: "Innova.com, Joe Ballard, February 16, 2024; Foxwell, BennettLyle, February 13, 2025 (Classification by Bob based on maintenance urgency)"
+          - action: "After replacement, you need to use a diagnostic tool to clear the historical fault codes."
+            source: "Foxwell, BennettLyle, February 13, 2025 (Classification by Bob based on maintenance urgency)"
+        medium:
+          - action: "Before replacing the sensor, please check the voltage supply (setpoint 5 V) and the lines to the control unit for continuity and ground fault."
+            source: "NGK Spark Plug Europe, 'MAP Sensor', Technical Bulletin (Classification by Bob based on maintenance urgency)"
+          - action: "Check the electrical power wiring connections to the sensor to ensure they are secure and not damaged. Check if the sensor's appearance is damaged, whether there are cracks or detachments in the vacuum hoses. Also, confirm whether the wiring harness plug is firmly connected."
+            source: "Innova.com, Joe Ballard, February 16, 2024; Foxwell, BennettLyle, February 13, 2025 (Classification by Bob based on maintenance urgency)"
+          - action: "Clean the sensor wire connectors by using an electronic cleaner."
+            source: "Innova.com, Joe Ballard, February 16, 2024 (Classification by Bob based on maintenance urgency)"
+          - action: "wiggle the MAP sensor wiring harness while applying vacuum to ensure it isn't contributing to the issue. Always inspect the MAP Sensor vacuum hose, and if the MAP sensor directly plugs into the intake manifold, check its seal for potential splits."
+            source: "Innova.com, Joe Ballard, February 16, 2024 (Classification by Bob based on maintenance urgency)"
+          - action: "check the entire intake manifold for leaks by spraying the intake manifold with suitable liquid. If the test liquid hits the leak, the motor reacts with unstable running. Common causes are the intake manifold gasket, vacuum lines and the brake booster."
+            source: "NGK Spark Plug Europe, 'MAP Sensor', Technical Bulletin (Classification by Bob based on maintenance urgency)"
+          - action: "Display the suction pipe pressure in the data list and connect a hand pump to the pressure sensor. The display in the data list should correspond over the entire measuring range of the sensor to the pressure or vacuum that you have set on the hand pump."
+            source: "NGK Spark Plug Europe, 'MAP Sensor', Technical Bulletin (Classification by Bob based on maintenance urgency)"
+        high:
+          - action: "In turbo engines, too low boost pressure leads to a loss of power. If the boost pressure sensor is OK, follow the path of the intake air through the engine and check the air filter, the turbocharger, the charge air lines with the charge air cooler and the exhaust gas recirculation and the particle filter, if present."
+            source: "NGK Spark Plug Europe, 'MAP Sensor', Technical Bulletin (Classification by Bob based on maintenance urgency)"
 
   electronic_throttle_tracking_fault:
     component: "Electronic throttle control / throttle actuator"
@@ -761,12 +919,62 @@ proxy_failures:
     rationale: "ETC calculates throttle opening through the ECU based on pedal position and current operating conditions, and uses the throttle angle sensor to monitor whether the actual position matches the expected position. OBD diagnostic targets include the ETC throttle-valve actuator."
     supporting_source: "Bosch Automotive Handbook"
     report_layer:
-      description: null
-      causes: []
+      description: "Electronic throttle control (ETC), also known as drive-by-wire throttle, is an automotive technology that replaces mechanical cables linking the accelerator pedal to the throttle valve with electronic sensors, an engine control unit (ECU), and actuators to precisely regulate engine air intake based on driver input and other vehicle parameters. The system interprets pedal position via potentiometers or Hall effect sensors, processes the signal through the ECU—often integrating data from throttle position sensors, mass airflow sensors, and vehicle dynamics—and drives a DC motor or stepper motor to adjust the throttle plate's angle. A typical ETC system includes the following components: electronic throttle body, accelerator pedal module and electronic control unit. An electric throttle actuator control (TAC) is made of a throttle control motor and two throttle position sensors. When the throttle valve moves, the two throttle position sensors respond with a signal to verify position. These sensors act as potentiometers to convert the throttle valve position into a voltage signal that is sent to the ECM. The TAC turns two reduction gears inside the throttle body that link the drive gear from the motor to the throttle plate shaft. On most systems, idle speed is entirely controlled by throttle plate angle. The ECM calculates the opening angle of the throttle valve from these signals and then commands the throttle control motor to make the proper throttle valve opening angle in response to the driving conditions. The ECM then commands the throttle actuator, usually a DC brushless motor or gear-driven stepper motor integrated into the throttle body, via pulse-width modulation (PWM) or H-bridge circuitry to precisely position the butterfly valve. Throttle position sensors (TPS), often dual-redundant for fault detection, provide closed-loop feedback by monitoring the valve's actual angle and relaying it back to the ECM, enabling proportional-integral-derivative (PID) control algorithms to minimize positioning errors within milliseconds. The system achieves rapid response times—typically under 100 ms for full travel. Calibration maps stored in ECM firmware correlate pedal position to throttle opening nonlinearly; for instance, light pedal inputs yield minimal airflow for idle stability, while full depression commands wide-open throttle under safe conditions. Two redundant sensors control the up to date throttle position. All ETBs have an idle air position. Output signal I: 0 to 5 V for 0 to 90°. Output signal II: 5 to 0 V for 0 to 90°. The accelerator pedal position sensor is also involved in converting the acceleration movement when the pedal is pressed into an electronic signal, which then initiates throttle body control either as opening or closing movements. The APP sensor comprises two individual sensors, with both sensors designed to have individual sensor return wiring. Each sensor has a varying voltage range. If there is a discrepancy between either the output voltage signal by the potentiometers monitoring the pedal position or the sensor itself, the PCM unit will reduce the performance of the vehicle, thereby setting the APP unit into a 'limp-home-mode'."
+      causes:
+        - "Faulty TAC motor: The motor may have internal electrical or mechanical issues"
+        - "Faulty Electronic Throttle Body (Very Common) — The entire throttle body unit fails due to internal electronic failure of the actuator motor or position sensors"
+        - "Dirty or Obstructed Throttle Body (Common) — Carbon and grime buildup around the throttle plate causes it to bind"
+        - "Carbon buildup can accumulate over time around the throttle plate, which the computer responds to by adjusting the home position"
+        - "Damaged wiring or poor electrical connections in the TAC motor circuit"
+        - "Wiring or Connector Issues (Common) — The wiring harness between the throttle body, pedal sensor, and PCM becomes damaged, corroded, or loose"
+        - "Malfunctioning TPS: Incorrect throttle position feedback can cause the ECM to detect an issue"
+        - "TPS malfunctions often result from electrical wear, contamination, or calibration drift"
+        - "Faulty Accelerator Pedal Position (APP) Sensor (Common) — The sensor connected to the gas pedal sends erratic signals that don't match its redundant internal sensors"
+        - "Issues with the power or ground circuit for the TAC motor"
+        - "Low System Voltage (Rare) — A weak battery or failing alternator starves the electronic throttle control system of power"
+        - "Faulty PCM or ECM (rare)"
       actions:
-        low: []
-        medium: []
-        high: []
+        low:
+          - action: "Retrieve freeze frame data to identify the conditions present when the code was set."
+            source: "ZipTuning, 'P2101'; Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
+          - action: "Scan for All Trouble Codes and Analyse Freeze Frame Data."
+            source: "ZipTuning, 'P2101'; Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
+          - action: "OBD II trouble codes for accelerator pedal position (APP) sensor faults include P0120 – P0124, P0220 – P0229."
+            source: "AutoSuccess, Brendan Baker, December 18, 2019 (Classification by Bob based on maintenance urgency)"
+          - action: "Any fault that occur in the motor on the throttle body will be detected by the feedback signals from the throttle position sensors. OBD II codes for this kind of problem include P0638 and P0639."
+            source: "AutoSuccess, Brendan Baker, December 18, 2019 (Classification by Bob based on maintenance urgency)"
+          - action: "Monitor the voltage readings from APP Sensor 1 and APP Sensor 2 using a scan tool with live data."
+            source: "Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
+          - action: "Check Throttle Position: 10-15% at idle, ~100% fully open."
+            source: "Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
+        medium:
+          - action: "Visually inspect the throttle body, wiring harness, and electrical connections for damage or corrosion."
+            source: "ZipTuning, 'P2101'; Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
+          - action: "Visually Inspect the Wiring Harness. Check the wiring harness going to the throttle body and accelerator pedal. Look for signs of damage, corrosion, loose connectors, or cracked insulation."
+            source: "ZipTuning, 'P2101'; Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
+          - action: "Inspect and Clean the Throttle Body."
+            source: "Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
+          - action: "Test the TAC motor circuit for proper voltage and ground signals using a digital multimeter."
+            source: "ZipTuning, 'P2101'; Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
+          - action: "Check Power and Ground at the Throttle Body. verify the power supply wire has battery voltage (~12V). Check the resistance between the ground wire and the battery's negative terminal; it must be less than 0.5 Ohms."
+            source: "ZipTuning, 'P2101'; Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
+          - action: "Command the throttle plate to open and close using a bidirectional scan tool. If the scanner sends the command but the plate doesn't move, the throttle body assembly is faulty."
+            source: "Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
+          - action: "Test the TPS and compare readings to manufacturer specifications."
+            source: "ZipTuning, 'P2101'; AutoSuccess, Brendan Baker, December 18, 2019 (Classification by Bob based on maintenance urgency)"
+          - action: "Diagnosis involves reading the fault codes to determine the circuit that is experiencing the problem. Then you should check the voltage or resistance of the pedal or throttle position sensors with a DVOM."
+            source: "ZipTuning, 'P2101'; AutoSuccess, Brendan Baker, December 18, 2019 (Classification by Bob based on maintenance urgency)"
+        high:
+          - action: "Replacing the TAC motor if it fails pinpoint tests."
+            source: "ZipTuning, 'P2101' (Classification by Bob based on maintenance urgency)"
+          - action: "Repairing damaged wiring or connectors in the TAC motor circuit."
+            source: "ZipTuning, 'P2101' (Classification by Bob based on maintenance urgency)"
+          - action: "Replacing the TPS if it is found to be faulty."
+            source: "ZipTuning, 'P2101' (Classification by Bob based on maintenance urgency)"
+          - action: "If you replace the throttle body, the ECM continues to use the adaptive settings as if the carbon buildup is still there until it is recalibrated. A relearn procedure is necessary to allow the ECM to relearn the baseline idle."
+            source: "AutoSuccess, Brendan Baker, December 18, 2019; Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
+          - action: "Perform the required 'Throttle Relearn' procedure after repair."
+            source: "AutoSuccess, Brendan Baker, December 18, 2019; Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
 
   accelerator_pedal_sensor:
     component: "Accelerator pedal position sensors (dual/redundant)"
@@ -794,12 +1002,37 @@ proxy_failures:
     rationale: "The ETC system uses two potentiometers on the pedal and throttle device to provide redundancy, and continuously checks all sensors and calculations that affect throttle opening while the engine is running."
     supporting_source: "Bosch Automotive Handbook"
     report_layer:
-      description: null
-      causes: []
+      description: "The accelerator pedal position sensor (APPS) sends an electronic signal to the engine or powertrain control module (ECM/PCM) indicating the position of the accelerator pedal. The ECM/PCM uses that signal to determine the throttle position demanded by the driver. This sensor is most commonly used in vehicles with 'drive by wire' throttle systems, which do not have a cable connecting the accelerator pedal to the throttle. Its function is consistent: it provides the Engine Control Module (ECM) with precise information about the driver's throttle input. This information is essential for the ECM to determine how much air and fuel to deliver to the engine, ensuring the vehicle accelerates smoothly and efficiently. The typical accelerator pedal position sensor consists of two or three potentiometers, a type of variable resistor. The APP sensor comprises two individual sensors, with both sensors designed to have individual sensor return wiring. Each sensor has a varying voltage range. Output voltage should be between 0.9 and 1.1 volts when foot is released from accelerator pedal, and should be 4.0 volts or higher when accelerator pedal is fully depressed."
+      causes:
+        - "Accelerator pedal position sensor failed"
+        - "Open accelerator pedal position sensor (main) circuit, harness damage or connector damage"
+        - "ECM failed"
+        - "Failure of the APP sensor will most commonly result from continuous exposure to high heat levels because of its location on the floorboard, which is adjacent to the vehicle firewall"
+        - "If there is a discrepancy between either the output voltage signal by the potentiometers monitoring the pedal position or the sensor itself, the PCM unit will reduce the performance of the vehicle, thereby setting the APP unit into a 'limp-home-mode'"
       actions:
-        low: []
-        medium: []
-        high: []
+        low:
+          - action: "Use a diagnostic tool called an OBD2 Scan Tool to check for DTCs related to the sensor."
+            source: "Innova.com R&D, December 26, 2023 (Classification by Bob based on maintenance urgency)"
+          - action: "Use a multimeter or an oscilloscope to test the sensor's electrical signals."
+            source: "Innova.com R&D, December 26, 2023 (Classification by Bob based on maintenance urgency)"
+        medium:
+          - action: "Check accelerator pedal moves smoothly within the whole operation range when it is fully depressed and released. Check accelerator pedal securely returns to the fully released position."
+            source: "Nissan Patrol Y62 Workshop Manual, 'Accelerator Control System', 'Inspection After Installation' (Classification by Bob based on maintenance urgency)"
+          - action: "Check harness connector at accelerator pedal position sensor for damage."
+            source: "Mitsubishi Eclipse Cross 2018 Workshop Manual, DTC P2123, 'Diagnosis', Step 2 (Classification by Bob based on maintenance urgency)"
+          - action: "Inspect the wires and connectors connected to the sensor to ensure they are not loose or damaged."
+            source: "Innova.com R&D, December 26, 2023 (Classification by Bob based on maintenance urgency)"
+          - action: "Check for open circuit and harness damage between accelerator pedal position sensor connector and ECM connector."
+            source: "Mitsubishi Eclipse Cross 2018 Workshop Manual, DTC P2123, 'Diagnosis', Step 5 (Classification by Bob based on maintenance urgency)"
+        high:
+          - action: "Replace the accelerator pedal position sensor."
+            source: "Mitsubishi Eclipse Cross 2018 Workshop Manual, DTC P2123, 'Diagnosis', Step 7 (Classification by Bob based on maintenance urgency)"
+          - action: "When harness connector of accelerator pedal position sensor is disconnected, perform 'Accelerator Pedal Released Position Learning'."
+            source: "Nissan Patrol Y62 Workshop Manual, 'Accelerator Control System', 'Inspection After Installation' (Classification by Bob based on maintenance urgency)"
+          - action: "a relearn procedure must be performed on Nissan vehicles whenever the APPS is replaced, consisting of turning the ignition key on and off and operating the accelerator pedal in a specific sequence varying with model."
+            source: "Innova.com R&D, 'Accelerator Pedal Position Sensor', March 5, 2024 (Classification by Bob based on maintenance urgency)"
+          - action: "The APPS is part of the accelerator pedal assembly, so replacement requires replacing the entire pedal assembly."
+            source: "Innova.com R&D, 'Accelerator Pedal Position Sensor', March 5, 2024 (Classification by Bob based on maintenance urgency)"
 
   idle_speed_control_or_surge_degradation:
     component: "Idle-speed control / engine-speed control"
@@ -830,10 +1063,56 @@ proxy_failures:
     rationale: "The goal of idle control is to maintain the desired idle speed under all conditions. Persistent high fluctuation within the idle window directly reflects control or combustion-stability issues."
     supporting_source: "Bosch Automotive Handbook"
     report_layer:
-      description: null
-      causes: []
+      description: "The speed of vehicle engine at idle state is called an idle speed. An idle speed is basically a rotational speed of an engine when the engine is uncoupled to the drivetrain and the throttle pedal is up to the combustion engine. The aim of idle speed control is to maintain the desired engine speed or rpm to avoid any sort of disturbances such as torque disturbance which arises due to accessory loads on an engine such as air conditioning, power steering/alternators, automatic transmissions, etc. To optimize vehicle and powertrain operations at idle conditions a control has to be established especially when there are conflicting requirements such as improved fuel economy, reduced emissions, and stable combustions. The desired main input of the idle speed controller is the engine speed. In addition, inputs are described as throttle position, vehicle speed, feedforward indicators from automatic transmission, air conditioning, power steering and battery charging system with some environmental measurements such as engine coolant temperature and barometric pressure. The main control output is achieved by controlling the amount of air supplied to the engine. The amount of air controlled by a throttle bypass valve turns the intake manifold air towards the closed primary throttle plate. During the stages of sudden deacceleration air, the bypass valve supplies some additional amount of air in the start and end of damper work which prevents stalling of the engine and provides a smooth transition from higher speed rpm to idle speed rpm. This code is often triggered in vehicles with an electronic throttle control rather than a throttle cable going from the accelerator pedal to the engine. This code usually presents itself when the Powertrain control module detects a lower engine idle speed than what is pre-programmed for the RPM. The P0506 check engine error code means that the Idle Air Control System RPM is lower than expected. The code is triggered when the engine control module detects that your engine's idle speed is lower than the programmed threshold. That speed is measured by either the idle air control system or by the electronic throttle control on newer vehicles. The latter system adjusts how much air is allowed into the engine when the throttle is closed. When your idle speed is higher than a preset threshold, it triggers error code P0507. Depending on the vehicle, it could be as much as 200 RPMs over the expected rate."
+      causes:
+        - "If extra air sneaks in through a cracked hose, loose intake tube, leaking gasket, or PCV system problem, the computer may struggle to maintain the correct idle speed"
+        - "a vacuum leak could cause an imbalance in the air/fuel ratio, which would affect your RPMs"
+        - "trouble code P0506 could stem from a vacuum leak or a failed Powertrain control module"
+        - "carbon buildup can collect around the throttle plate and affect airflow at idle. The engine may surge, dip, or feel like it is trying to correct itself repeatedly"
+        - "The throttle body could be dirty or damaged"
+        - "If that valve sticks, clogs, or fails, the engine may not receive the correct amount of air when the throttle is closed. That can lead to idle hunting, stalling, or high idle"
+        - "a faulty positive crankcase ventilation valve could be the sole cause or part of the problem"
+        - "Check the positive crankcase ventilation valve and the EGR valve. Any electrical or physical damage to these valves will alter your idle air control"
+        - "If the mass airflow sensor is dirty or reading incorrectly, the engine may receive the wrong fuel mixture, causing the idle to fluctuate"
+        - "If the EVAP purge valve sticks open, the engine may receive extra vapor at the wrong time, creating a rough or surging idle"
+        - "Low fuel pressure, dirty injectors, a weak fuel pump, or poor injector spray patterns can make the engine struggle to maintain a steady idle"
+        - "Worn spark plugs, weak ignition coils, or misfires can cause the RPM to dip, shake, or bounce because one or more cylinders are not contributing evenly"
+        - "Loose connections, frayed wires or damaged sensors could give you a false reading or cause your electronic throttle control to behave erratically"
+        - "the intake exhaust or air path could be restricted"
+        - "a failed Powertrain control module"
+        - "Your entire powertrain control module could also have an issue, which would affect the entire communication system and the sensors related to P0507"
       actions:
-        low: []
-        medium: []
-        high: []
+        low:
+          - action: "Scan for diagnostic trouble codes. Codes for lean conditions, rich conditions, misfires, throttle control, EVAP, airflow, or temperature sensors can point the inspection in the right direction."
+            source: "Marble Falls Auto Center, Tyler Ellis (Classification by Bob based on maintenance urgency)"
+          - action: "You can use an OBD scanner tool to retrieve and confirm the error code."
+            source: "Edmunds, 'P0506', August 13, 2025 (Classification by Bob based on maintenance urgency)"
+          - action: "Check live engine data. Fuel trims, airflow readings, coolant temperature, throttle position, oxygen sensor activity, and idle speed data can show what the computer is seeing."
+            source: "Marble Falls Auto Center, Tyler Ellis (Classification by Bob based on maintenance urgency)"
+          - action: "Verify the repair with a road test and idle test. A proper fix means the idle stays stable with the engine cold, warm, in gear, parked, and with accessories like AC turned on."
+            source: "Marble Falls Auto Center, Tyler Ellis (Classification by Bob based on maintenance urgency)"
+        medium:
+          - action: "Inspect for vacuum leaks. Intake hoses, PCV hoses, brake booster lines, intake gaskets, and vacuum connections should be checked for cracks, looseness, or leaks."
+            source: "Marble Falls Auto Center, Tyler Ellis; Edmunds, 'P0506', August 13, 2025 (Classification by Bob based on maintenance urgency)"
+          - action: "checking intake hoses and gaskets for air leaks."
+            source: "Marble Falls Auto Center, Tyler Ellis; Edmunds, 'P0506', August 13, 2025 (Classification by Bob based on maintenance urgency)"
+          - action: "Inspect and clean the throttle body if needed. Carbon buildup around the throttle plate can affect idle airflow. Some vehicles may require a relearn procedure after cleaning."
+            source: "Marble Falls Auto Center, Tyler Ellis; Edmunds, 'P0506', August 13, 2025 (Classification by Bob based on maintenance urgency)"
+          - action: "You may be able to clean the throttle body and idle air control valve to get them back in working order."
+            source: "Marble Falls Auto Center, Tyler Ellis; Edmunds, 'P0506', August 13, 2025 (Classification by Bob based on maintenance urgency)"
+          - action: "Test the idle air control system if equipped. If the vehicle uses an idle air control valve, it should be checked for sticking, clogging, or electrical failure."
+            source: "Marble Falls Auto Center, Tyler Ellis (Classification by Bob based on maintenance urgency)"
+          - action: "Inspect the mass airflow sensor. A dirty or failing airflow sensor can cause incorrect fuel calculations and unstable idle."
+            source: "Marble Falls Auto Center, Tyler Ellis (Classification by Bob based on maintenance urgency)"
+          - action: "Check the EVAP purge valve. A stuck-open purge valve can create rough idle, hard starts after fueling, or RPM fluctuation."
+            source: "Marble Falls Auto Center, Tyler Ellis (Classification by Bob based on maintenance urgency)"
+          - action: "Inspect ignition components. Spark plugs, ignition coils, and misfire data should be checked if the engine shakes or runs rough."
+            source: "Marble Falls Auto Center, Tyler Ellis (Classification by Bob based on maintenance urgency)"
+          - action: "Check fuel pressure and injector performance. Fuel delivery problems can cause idle instability, hesitation, and stalling."
+            source: "Marble Falls Auto Center, Tyler Ellis (Classification by Bob based on maintenance urgency)"
+          - action: "testing your vehicle's electrical system, and checking wires and connectors to ensure they aren't damaged."
+            source: "Edmunds, 'P0506', August 13, 2025 (Classification by Bob based on maintenance urgency)"
+        high:
+          - action: "If that doesn't work, you may need to repair or replace the idle air control valve."
+            source: "Edmunds, 'P0506', August 13, 2025 (Classification by Bob based on maintenance urgency)"
 
