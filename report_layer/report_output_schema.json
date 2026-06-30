@@ -28,9 +28,13 @@
     "component": {
       "type": "string",
       "enum": [
-        "cooling_system_stress",
+        "cooling_degradation",
         "air_intake_maf_anomaly",
-        "accelerator_pedal_sensor"
+        "accelerator_pedal_sensor",
+        "intake_air_temperature_sensor_or_heat_soak_fault",
+        "map_load_signal_plausibility_fault",
+        "electronic_throttle_tracking_fault",
+        "idle_speed_control_or_surge_degradation"
       ]
     },
     "prediction_confidence": {

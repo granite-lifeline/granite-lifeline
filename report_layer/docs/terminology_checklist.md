@@ -34,9 +34,13 @@ with a simple phrase or explain it immediately.
 
 | Interface value | Plain-language wording to use |
 |---|---|
-| cooling_system_stress | cooling system issue |
+| cooling_degradation | cooling system degradation |
 | air_intake_maf_anomaly | air intake or airflow issue |
 | accelerator_pedal_sensor | accelerator pedal sensor issue |
+| intake_air_temperature_sensor_or_heat_soak_fault | intake air temperature or heat soak issue |
+| map_load_signal_plausibility_fault | intake pressure or engine load signal issue |
+| electronic_throttle_tracking_fault | electronic throttle tracking issue |
+| idle_speed_control_or_surge_degradation | idle speed control or engine surge issue |
 
 ## Report Section Checks
 
