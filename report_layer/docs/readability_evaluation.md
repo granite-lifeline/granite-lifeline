@@ -59,7 +59,7 @@ understand raw interface fields.
 
 Original issue:
 
-Technical terms such as "cooling system stress" and "sensor reading" could be
+Technical terms such as "cooling system degradation" and "sensor reading" could be
 unclear if used without context.
 
 Why this is a problem:
@@ -71,7 +71,7 @@ Improvement:
 
 The terminology checklist was used to guide replacements. For example:
 
-- "cooling_system_stress" became "cooling system issue".
+- "cooling_degradation" became "cooling system degradation".
 - "sensor reading" was written as "temperature reading" where possible.
 - "reference range" was explained as "normal range".
 
@@ -161,7 +161,7 @@ step.
 |---|---|
 | `coolant_temp is 102 C` | The engine coolant temperature is 102 C. |
 | `risk_score is high` | High risk means the vehicle may need prompt attention. |
-| `possible cooling_system_stress` | This could be related to a cooling system issue. |
+| `possible cooling_degradation` | This could be related to cooling system degradation. |
 | `check related components` | Ask a mechanic to inspect the cooling system. |
 | `prediction_confidence is low` | The system confidence is low, so the result should be treated carefully. |
 

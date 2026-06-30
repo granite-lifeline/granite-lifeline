@@ -22,6 +22,16 @@ with a simple phrase or explain it immediately.
 | RPM | engine speed | "The engine speed stayed high for a long time." |
 | coolant_temp | engine coolant temperature | "The engine coolant temperature is above its reference range." |
 | coolant_slope | how fast the engine temperature is rising | "The engine temperature is rising faster than expected." |
+| coolant_stability | how stable the engine temperature is | "The engine temperature is not staying stable after warm-up." |
+| intake_temp | intake air temperature | "The intake air temperature is higher than expected." |
+| ambient_temp | outside air temperature | "The outside air temperature is used for comparison." |
+| intake_ambient_delta | difference between intake air and outside air temperature | "The intake air is much hotter than the outside air." |
+| map_slope | how quickly intake pressure changes | "The intake pressure is changing too sharply." |
+| accel_pedal_channel_delta | difference between the two accelerator pedal sensor readings | "The two accelerator pedal readings do not match closely." |
+| pedal_throttle_gap | difference between pedal demand and throttle opening | "The throttle opening is not following the pedal demand closely." |
+| idle_flag | whether the vehicle is idling | "The vehicle is idling, so engine speed should stay steady." |
+| idle_rpm_stability | how stable engine speed is while idling | "The engine speed is not stable while the vehicle is idling." |
+| rpm_slope | how quickly engine speed changes | "The engine speed is changing faster than expected." |
 | reference_range | normal range | "This value is outside the normal range." |
 | risk_score | risk estimate | "The system risk estimate is 72%." |
 | risk_level | risk level | "Medium risk means the vehicle should be checked soon." |
@@ -49,6 +59,7 @@ with a simple phrase or explain it immediately.
 - Does it describe the observed data instead of claiming a confirmed fault?
 - Does it explain the risk level in practical words?
 - Does it avoid raw field names such as `coolant_temp` or `risk_score`?
+- Does it translate newer raw signal names such as `pedal_throttle_gap` or `idle_rpm_stability` into plain language?
 - If a technical term appears, is it explained in the same sentence?
 
 ### Possible Cause
