@@ -1,0 +1,14 @@
+﻿threshold_name,value,unit,method
+engine_on_rpm_min,400.0,rpm,fixed_rule
+warmup_complete_coolant_temp,70.0,degC,reference_rule
+idle_speed_max,3.0,km/h,fixed_rule
+tps_idle_threshold,83.1,%,engine_on_p10
+pedal_d_idle_threshold,14.1,%,engine_on_p10
+pedal_e_idle_threshold,14.5,%,engine_on_p10
+driving_speed_min,10.0,km/h,fixed_rule
+steady_delta_abs_kmh_per_sec,0.5,km/h/s,fixed_rule
+acceleration_delta_kmh_per_sec,1.0,km/h/s,fixed_rule
+deceleration_delta_kmh_per_sec,-1.0,km/h/s,fixed_rule
+maf_high_load_threshold,45.27,g/s,post_warmup_p90
+map_high_load_threshold,184.0,kPa,post_warmup_p90
+pedal_d_high_load_threshold,42.4,%,post_warmup_p90

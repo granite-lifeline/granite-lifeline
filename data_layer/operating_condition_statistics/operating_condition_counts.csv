@@ -1,0 +1,17 @@
+﻿condition_type,condition,row_count,row_rate
+nonexclusive_flag,engine_off,9142,0.03661281408443935
+nonexclusive_flag,warmup,41809,0.16744094772000928
+nonexclusive_flag,post_warmup,198743,0.7959462381955513
+nonexclusive_flag,idle,4032,0.016147764864193774
+nonexclusive_flag,steady_driving,82272,0.3294912973479539
+nonexclusive_flag,acceleration,20730,0.08302161846099626
+nonexclusive_flag,deceleration,20704,0.08291749100899501
+nonexclusive_flag,high_load,33376,0.133667609153604
+exclusive_operating_state,steady_driving,70610,0.28278613022339344
+exclusive_operating_state,post_warmup,63501,0.25431528190505176
+exclusive_operating_state,warmup,40267,0.1612653888359352
+exclusive_operating_state,high_load,33376,0.133667609153604
+exclusive_operating_state,deceleration,19411,0.07773915272293287
+exclusive_operating_state,acceleration,9355,0.03746585821044959
+exclusive_operating_state,engine_off,9142,0.03661281408443935
+exclusive_operating_state,idle,4032,0.016147764864193774
