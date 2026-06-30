@@ -43,7 +43,7 @@ Anomaly description:
 The coolant temperature is above its reference range and is rising faster than expected. High risk means the vehicle may need prompt attention.
 
 Possible cause:
-This could be related to cooling system stress, such as low coolant, radiator problems, or water pump degradation.
+This could be related to cooling system degradation, such as low coolant, radiator problems, or water pump degradation.
 
 Recommended action:
 - Avoid heavy driving if it is safe to do so.
