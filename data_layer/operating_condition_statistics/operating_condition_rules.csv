@@ -1,0 +1,14 @@
+﻿rule_name,value,unit,description
+engine_off_rpm_max,50.0,rpm,Classify the engine as Engine_Off when engine speed is below this threshold.
+post_warmup_ect_min,75.0,degC,Minimum coolant temperature baseline for Post-warmup classification.
+post_warmup_cumulative_air_min,1500.0,g,Cumulative intake air mass proxy used to infer catalyst warm-up when catalyst temperature is unavailable.
+post_warmup_iat_aat_delta_min,8.0,degC,Minimum intake-air-to-ambient temperature delta used as an auxiliary heat-soak indicator.
+hot_idle_rpm_max,850.0,rpm,Maximum hot-idle RPM used to support Post-warmup confirmation during idle.
+idle_speed_max,1.0,km/h,Maximum smoothed vehicle speed for Idle classification.
+moving_speed_min,1.0,km/h,Minimum smoothed vehicle speed for moving child-state classification.
+accel_abs_deadband,0.15,m/s2,Acceleration deadband used to separate steady driving from acceleration and deceleration.
+high_load_vsp_min,20.0,kW/t,Vehicle Specific Power threshold for High_Load classification.
+high_load_accel_min,1.2,m/s2,Acceleration threshold that directly classifies a moving sample as High_Load.
+speed_smoothing_window,3,s,Centered moving-average window applied to vehicle speed before acceleration calculation.
+min_state_duration,3,s,Minimum child-state duration used to remove isolated short state fragments.
+vsp_formula,v*(1.1*a+0.132)+0.000302*v^3,kW/t,Vehicle Specific Power formula; v is in m/s and a is in m/s2.

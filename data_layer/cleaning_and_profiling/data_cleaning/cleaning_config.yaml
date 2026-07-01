@@ -1,0 +1,165 @@
+{
+  "version": "3.0",
+  "input": {
+    "directory": "./data/raw/OBD-II-Dataset",
+    "glob": "**/*.csv",
+    "encoding": "utf-8-sig",
+    "delimiter": ","
+  },
+  "output": {
+    "float_format": "%.6g"
+  },
+  "time": {
+    "source_field": "Time",
+    "timezone": "Europe/Berlin",
+    "source_format": "%H:%M:%S.%f",
+    "resample_frequency": "1s",
+    "segment_gap_seconds": 3,
+    "imputation_max_seconds": 2,
+    "duplicate_keep": "last"
+  },
+  "quality": {
+    "quality_flag_separator": "|",
+    "keep_field_imputation_flags": true,
+    "keep_field_suspicious_flags": true,
+    "keep_field_hard_invalid_flags": true
+  },
+  "fields": {
+    "coolant_temp": {
+      "source_names": [
+        "Engine Coolant Temperature [°C]",
+        "Engine Coolant Temperature [Â°C]"
+      ],
+      "unit": "°C",
+      "missing_strategy": "interpolation",
+      "resample_aggregation": "last",
+      "physical_min": -40.0,
+      "physical_max": 215.0,
+      "suspicious_min": -20.0,
+      "suspicious_max": 125.0,
+      "suspicious_exact_values": []
+    },
+    "map": {
+      "source_names": [
+        "Intake Manifold Absolute Pressure [kPa]"
+      ],
+      "unit": "kPa",
+      "missing_strategy": "forward_fill",
+      "resample_aggregation": "last",
+      "physical_min": 0.0,
+      "physical_max": 255.0,
+      "suspicious_min": 20.0,
+      "suspicious_max": 250.0,
+      "suspicious_exact_values": []
+    },
+    "rpm": {
+      "source_names": [
+        "Engine RPM [RPM]"
+      ],
+      "unit": "rpm",
+      "missing_strategy": "forward_fill",
+      "resample_aggregation": "last",
+      "physical_min": 0.0,
+      "physical_max": 16383.75,
+      "suspicious_min": 0.0,
+      "suspicious_max": 7000.0,
+      "suspicious_exact_values": []
+    },
+    "speed": {
+      "source_names": [
+        "Vehicle Speed Sensor [km/h]"
+      ],
+      "unit": "km/h",
+      "missing_strategy": "interpolation",
+      "resample_aggregation": "last",
+      "physical_min": 0.0,
+      "physical_max": 255.0,
+      "suspicious_min": 0.0,
+      "suspicious_max": 220.0,
+      "suspicious_exact_values": []
+    },
+    "intake_temp": {
+      "source_names": [
+        "Intake Air Temperature [°C]",
+        "Intake Air Temperature [Â°C]"
+      ],
+      "unit": "°C",
+      "missing_strategy": "interpolation",
+      "resample_aggregation": "last",
+      "physical_min": -40.0,
+      "physical_max": 215.0,
+      "suspicious_min": -30.0,
+      "suspicious_max": 100.0,
+      "suspicious_exact_values": [
+        -40.0,
+        150.0
+      ]
+    },
+    "maf": {
+      "source_names": [
+        "Air Flow Rate from Mass Flow Sensor [g/s]"
+      ],
+      "unit": "g/s",
+      "missing_strategy": "interpolation",
+      "resample_aggregation": "last",
+      "physical_min": 0.0,
+      "physical_max": 655.35,
+      "suspicious_min": 0.0,
+      "suspicious_max": 200.0,
+      "suspicious_exact_values": []
+    },
+    "tps": {
+      "source_names": [
+        "Absolute Throttle Position [%]"
+      ],
+      "unit": "%",
+      "missing_strategy": "interpolation",
+      "resample_aggregation": "last",
+      "physical_min": 0.0,
+      "physical_max": 100.0,
+      "suspicious_min": 0.0,
+      "suspicious_max": 100.0,
+      "suspicious_exact_values": []
+    },
+    "ambient_temp": {
+      "source_names": [
+        "Ambient Air Temperature [°C]",
+        "Ambient Air Temperature [Â°C]"
+      ],
+      "unit": "°C",
+      "missing_strategy": "retain",
+      "resample_aggregation": "last",
+      "physical_min": -40.0,
+      "physical_max": 215.0,
+      "suspicious_min": -35.0,
+      "suspicious_max": 55.0,
+      "suspicious_exact_values": []
+    },
+    "accel_pedal_d": {
+      "source_names": [
+        "Accelerator Pedal Position D [%]"
+      ],
+      "unit": "%",
+      "missing_strategy": "interpolation",
+      "resample_aggregation": "last",
+      "physical_min": 0.0,
+      "physical_max": 100.0,
+      "suspicious_min": 0.0,
+      "suspicious_max": 100.0,
+      "suspicious_exact_values": []
+    },
+    "accel_pedal_e": {
+      "source_names": [
+        "Accelerator Pedal Position E [%]"
+      ],
+      "unit": "%",
+      "missing_strategy": "interpolation",
+      "resample_aggregation": "last",
+      "physical_min": 0.0,
+      "physical_max": 100.0,
+      "suspicious_min": 0.0,
+      "suspicious_max": 100.0,
+      "suspicious_exact_values": []
+    }
+  }
+}
