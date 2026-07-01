@@ -1,6 +1,6 @@
 """Command-line entry point for producing the cleaned model-input CSV.
 
-The cleaning core returns an enriched DataFrame with both model columns and quality columns.
+The cleaning core returns an enriched DataFrame.
 This wrapper writes the model-facing cleaned CSV
 and keeps theenriched intermediate CSV for the quality-audit step.
 """
@@ -27,8 +27,8 @@ from project_paths import CLEANED_DATASET, ENRICHED_DATASET
 
 def _resolve_optional_path(
         path: str | Path | None, default_path: Path
-    ) -> Path:
-    """Resolve a CLI override or fall back to the centralized project path."""
+) -> Path:
+    """Resolve a CLI override or fall back to the project path."""
     return Path(path).expanduser().resolve() if path else default_path
 
 

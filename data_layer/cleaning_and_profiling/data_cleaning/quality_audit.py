@@ -30,7 +30,7 @@ from project_paths import (
 
 def _resolve_optional_path(
         path: str | Path | None, default_path: Path
-    ) -> Path:
+) -> Path:
     """Resolve a CLI override or fall back to the centralized project path."""
     return Path(path).expanduser().resolve() if path else default_path
 
@@ -143,7 +143,7 @@ def run_quality_audit(
             "Run data_cleaning.py first."
         )
 
-    # Read the enriched intermediate 
+    # Read the enriched intermediate
     # with low_memory disabled to preserve mixed text fields.
     enriched = pd.read_csv(enriched_target, low_memory=False)
     quality_output = enriched[build_quality_output_columns(config)].copy()

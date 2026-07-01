@@ -1,6 +1,6 @@
 """Centralized project paths for the data cleaning pipeline.
 
-Keep filesystem layout decisions here 
+Keep filesystem layout decisions here
 so scripts, notebooks, and CI do not need to duplicate path calculations.
 """
 
