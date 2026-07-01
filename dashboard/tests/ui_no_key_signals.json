@@ -1,0 +1,63 @@
+[
+  {
+    "timestamp": "2026-06-16T12:00:00Z",
+    "risk_score": 0.68,
+    "risk_level": "Medium",
+    "component": "cooling_system_stress",
+    "prediction_confidence": 0.75,
+    "key_signals": [],
+    "risk_history": [
+      {
+        "timestamp": "2026-06-15T08:00:00Z",
+        "risk_score": 0.50
+      },
+      {
+        "timestamp": "2026-06-15T12:00:00Z",
+        "risk_score": 0.55
+      },
+      {
+        "timestamp": "2026-06-15T16:00:00Z",
+        "risk_score": 0.60
+      },
+      {
+        "timestamp": "2026-06-16T08:00:00Z",
+        "risk_score": 0.64
+      },
+      {
+        "timestamp": "2026-06-16T12:00:00Z",
+        "risk_score": 0.68
+      }
+    ],
+    "anomaly_description": "An anomaly has been detected in the cooling system, but detailed signal data is not available.",
+    "possible_cause": "This could be related to cooling system stress. Specific signal measurements are not currently available.",
+    "recommended_action": [
+      "Monitor the vehicle dashboard for warning lights.",
+      "Schedule a diagnostic inspection.",
+      "Avoid heavy driving until inspected."
+    ]
+  },
+  {
+    "timestamp": "2026-06-16T11:00:00Z",
+    "risk_score": 0.55,
+    "risk_level": "Medium",
+    "component": "air_intake_maf_anomaly",
+    "prediction_confidence": 0.68,
+    "key_signals": [],
+    "risk_history": [
+      {
+        "timestamp": "2026-06-16T07:00:00Z",
+        "risk_score": 0.48
+      },
+      {
+        "timestamp": "2026-06-16T11:00:00Z",
+        "risk_score": 0.55
+      }
+    ],
+    "anomaly_description": "An anomaly has been detected in the air intake system, but signal details are unavailable.",
+    "possible_cause": "This may indicate an air intake issue. Detailed measurements are not currently available.",
+    "recommended_action": [
+      "Monitor for performance issues.",
+      "Schedule inspection if problems persist."
+    ]
+  }
+]

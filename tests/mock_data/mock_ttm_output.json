@@ -1,0 +1,62 @@
+[
+  {
+    "timestamp": "2026-06-16T10:00:00Z",
+    "anomaly_type": "accelerator_pedal_sensor",
+    "risk_score": 0.22,
+    "risk_level": "Low",
+    "component": "accelerator_pedal_sensor",
+    "prediction_confidence": 0.62,
+    "key_signals": [
+      {
+        "feature": "accel_pedal_d",
+        "value": 35.0,
+        "unit": "%",
+        "reference_range": [0.0, 100.0]
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-06-16T11:00:00Z",
+    "anomaly_type": "air_intake_maf_anomaly",
+    "risk_score": 0.61,
+    "risk_level": "Medium",
+    "component": "air_intake_maf_anomaly",
+    "prediction_confidence": 0.76,
+    "key_signals": [
+      {
+        "feature": "maf",
+        "value": 28.5,
+        "unit": "g/s",
+        "reference_range": [10.0, 22.0]
+      },
+      {
+        "feature": "map",
+        "value": 82.0,
+        "unit": "kPa",
+        "reference_range": [60.0, 90.0]
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-06-16T12:00:00Z",
+    "anomaly_type": "cooling_system_stress",
+    "risk_score": 0.86,
+    "risk_level": "High",
+    "component": "cooling_system_stress",
+    "prediction_confidence": 0.88,
+    "key_signals": [
+      {
+        "feature": "coolant_temp",
+        "value": 104.0,
+        "unit": "C",
+        "reference_range": [90.0, 95.0]
+      },
+      {
+        "feature": "coolant_slope",
+        "value": 3.4,
+        "unit": "C/min",
+        "reference_range": [0.0, 2.0]
+      }
+    ]
+  }
+]

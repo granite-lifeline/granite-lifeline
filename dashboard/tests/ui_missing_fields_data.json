@@ -1,0 +1,63 @@
+[
+  {
+    "timestamp": "2026-06-16T12:00:00Z",
+    "risk_score": 0.86,
+    "component": "cooling_system_stress",
+    "prediction_confidence": 0.88,
+    "key_signals": [
+      {
+        "feature": "coolant_temp",
+        "value": 104.0,
+        "unit": "°C",
+        "reference_range": [90.0, 95.0]
+      }
+    ],
+    "risk_history": [
+      {
+        "timestamp": "2026-06-15T12:00:00Z",
+        "risk_score": 0.64
+      },
+      {
+        "timestamp": "2026-06-16T12:00:00Z",
+        "risk_score": 0.86
+      }
+    ],
+    "possible_cause": "This test item is missing risk_level and anomaly_description so the UI can show placeholder text.",
+    "recommended_action": [
+      "Check that the UI still renders the report card."
+    ]
+  },
+  {
+    "timestamp": "2026-06-16T11:00:00Z",
+    "risk_score": 0.61,
+    "risk_level": "Medium",
+    "component": "air_intake_maf_anomaly",
+    "key_signals": [],
+    "risk_history": [],
+    "anomaly_description": "",
+    "possible_cause": "",
+    "recommended_action": []
+  },
+  {
+    "risk_score": 0.22,
+    "risk_level": "Low",
+    "component": "accelerator_pedal_sensor",
+    "prediction_confidence": null,
+    "key_signals": [
+      {
+        "feature": "accel_pedal_d",
+        "value": 35.0,
+        "unit": "%",
+        "reference_range": [0.0, 100.0]
+      }
+    ],
+    "risk_history": [
+      {
+        "timestamp": "2026-06-16T10:00:00Z",
+        "risk_score": 0.22
+      }
+    ],
+    "anomaly_description": "This test item is missing timestamp, possible_cause, and recommended_action.",
+    "recommended_action": ""
+  }
+]

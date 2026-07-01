@@ -156,10 +156,10 @@ class TestModelLayerOutput:
         """Test ModelLayerOutput accepts complete valid payload."""
         data = {
             "timestamp": "2026-06-16T10:00:00Z",
-            "anomaly_type": "cooling_system_stress",
+            "anomaly_type": "cooling_degradation",
             "risk_score": 0.82,
             "risk_level": "Medium",
-            "component": "cooling_system_stress",
+            "component": "cooling_degradation",
             "prediction_confidence": 0.84,
             "key_signals": [
                 {
@@ -177,7 +177,7 @@ class TestModelLayerOutput:
             ],
         }
         output = ModelLayerOutput(**data)
-        assert output.anomaly_type == "cooling_system_stress"
+        assert output.anomaly_type == "cooling_degradation"
         assert output.risk_score == 0.82
         assert len(output.key_signals) == 2
         assert output.key_signals[0].feature == "coolant_temp"
@@ -207,9 +207,9 @@ class TestModelLayerOutput:
         """Test ModelLayerOutput raises error when required field missing."""
         data = {
             "timestamp": "2026-06-16T10:00:00Z",
-            "anomaly_type": "cooling_system_stress",
+            "anomaly_type": "cooling_degradation",
             # Missing 'risk_score' - required field
-            "component": "cooling_system_stress",
+            "component": "cooling_degradation",
             "prediction_confidence": 0.84,
             "key_signals": [],
         }
@@ -220,9 +220,9 @@ class TestModelLayerOutput:
         """Test ModelLayerOutput raises error for wrong field type."""
         data = {
             "timestamp": "2026-06-16T10:00:00Z",
-            "anomaly_type": "cooling_system_stress",
+            "anomaly_type": "cooling_degradation",
             "risk_score": "not_a_float",  # Wrong type
-            "component": "cooling_system_stress",
+            "component": "cooling_degradation",
             "prediction_confidence": 0.84,
             "key_signals": [],
         }
@@ -258,7 +258,7 @@ class TestReportLayerOutput:
             "timestamp": "2026-06-16T10:00:00Z",
             "risk_score": 0.72,
             "risk_level": "Medium",
-            "component": "cooling_system_stress",
+            "component": "cooling_degradation",
             "prediction_confidence": 0.84,
             "key_signals": [
                 {
@@ -277,7 +277,7 @@ class TestReportLayerOutput:
             "recommended_action": ["Check coolant level", "Inspect radiator"],
         }
         output = ReportLayerOutput(**data)
-        assert output.component == "cooling_system_stress"
+        assert output.component == "cooling_degradation"
         assert output.risk_history is not None
         assert len(output.risk_history) == 2
         assert output.risk_history[0].risk_score == 0.65
@@ -313,7 +313,7 @@ class TestReportLayerOutput:
         data = {
             "timestamp": "2026-06-16T10:00:00Z",
             "risk_score": 0.72,
-            "component": "cooling_system_stress",
+            "component": "cooling_degradation",
             "prediction_confidence": 0.84,
             "key_signals": [],
             # Missing 'anomaly_description' - required field
@@ -328,7 +328,7 @@ class TestReportLayerOutput:
         data = {
             "timestamp": "2026-06-16T10:00:00Z",
             "risk_score": 0.72,
-            "component": "cooling_system_stress",
+            "component": "cooling_degradation",
             "prediction_confidence": 0.84,
             "key_signals": [],
             "anomaly_description": "Coolant temperature rising faster.",
