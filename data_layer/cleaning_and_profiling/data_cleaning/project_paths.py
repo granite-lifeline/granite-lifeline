@@ -1,6 +1,7 @@
 """Centralized project paths for the data cleaning pipeline.
 
-Keep filesystem layout decisions here so scripts, notebooks, and CI do not need to duplicate path calculations.
+Keep filesystem layout decisions here 
+so scripts, notebooks, and CI do not need to duplicate path calculations.
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ REPORT_JSON = CLEANING_DIR / "cleaning_report.json"
 
 
 def resolve_from_repo(path: str | Path) -> Path:
-    """Resolve an absolute path or a path relative to the repository root."""
+    """Resolve an absolute path or a path relative to the repo root."""
     target = Path(path).expanduser()
     if not target.is_absolute():
         target = REPO_ROOT / target
@@ -32,7 +33,7 @@ def resolve_from_repo(path: str | Path) -> Path:
 
 
 def display_path(path: str | Path) -> str:
-    """Return a repository-relative path when possible for portable reports."""
+    """Return a repo-relative path when possible for portable reports."""
     target = Path(path).resolve()
     try:
         return target.relative_to(REPO_ROOT).as_posix()

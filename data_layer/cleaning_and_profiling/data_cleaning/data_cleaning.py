@@ -1,7 +1,8 @@
 """Command-line entry point for producing the cleaned model-input CSV.
 
-The cleaning core returns an enriched DataFrame with both model columns and quality columns. 
-This wrapper writes the model-facing cleaned CSV and keeps theenriched intermediate CSV for the quality-audit step.
+The cleaning core returns an enriched DataFrame with both model columns and quality columns.
+This wrapper writes the model-facing cleaned CSV
+and keeps theenriched intermediate CSV for the quality-audit step.
 """
 
 from __future__ import annotations
@@ -20,10 +21,13 @@ from cleaning_core import (
     clean_dataset_enriched,
     load_config,
 )
-from project_paths import CONFIG_PATH, CLEANED_DATASET, ENRICHED_DATASET, REPO_ROOT
+from project_paths import CONFIG_PATH, REPO_ROOT
+from project_paths import CLEANED_DATASET, ENRICHED_DATASET
 
 
-def _resolve_optional_path(path: str | Path | None, default_path: Path) -> Path:
+def _resolve_optional_path(
+        path: str | Path | None, default_path: Path
+    ) -> Path:
     """Resolve a CLI override or fall back to the centralized project path."""
     return Path(path).expanduser().resolve() if path else default_path
 
@@ -33,12 +37,12 @@ def run_cleaning(
     output_csv: str | Path | None = None,
     enriched_csv: str | Path | None = None,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
-    """Run cleaning, write cleaned/enriched CSV files, and return the model table."""
+    """Run cleaning, write enriched CSV, and return the model table."""
     output_config = config["output"]
     output_target = _resolve_optional_path(output_csv, CLEANED_DATASET)
     enriched_target = _resolve_optional_path(enriched_csv, ENRICHED_DATASET)
 
-    # Run the deterministic core cleaning flow once so both outputs stay aligned.
+    # Run the deterministic core cleaning flow once so outputs stay aligned.
     enriched, summary = clean_dataset_enriched(
         config,
         repo_root=REPO_ROOT,
@@ -110,7 +114,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    """Load configuration, run cleaning, and log an English processing summary."""
+    """Load config, run cleaning, and log processing summary."""
     args = build_argument_parser().parse_args()
     logging.basicConfig(
         level=getattr(logging, args.log_level),
@@ -130,7 +134,7 @@ def main() -> int:
         return 1
 
     LOGGER.info(
-        "Done: %d files, %d input rows -> %d output rows, %d trips, %d segments",
+        "Done: %d files, %d input -> %d output rows, %d trips, %d segments",
         report["files_processed"],
         report["input_rows"],
         report["output_rows"],

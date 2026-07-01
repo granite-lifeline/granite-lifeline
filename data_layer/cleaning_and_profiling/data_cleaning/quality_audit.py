@@ -1,4 +1,4 @@
-"""Generate quality-audit CSV and JSON report from the enriched cleaning output."""
+"""Generate quality-audit CSV and JSON from the enriched cleaning CSV."""
 
 from __future__ import annotations
 
@@ -28,7 +28,9 @@ from project_paths import (
 )
 
 
-def _resolve_optional_path(path: str | Path | None, default_path: Path) -> Path:
+def _resolve_optional_path(
+        path: str | Path | None, default_path: Path
+    ) -> Path:
     """Resolve a CLI override or fall back to the centralized project path."""
     return Path(path).expanduser().resolve() if path else default_path
 
@@ -42,7 +44,9 @@ def build_quality_report(
     """Build an English audit report from the enriched intermediate table."""
     fields = list(config["fields"])
     key_columns = ["trip_id", "segment_id", TIMESTAMP_FIELD]
-    duplicate_key_rows = int(enriched.duplicated(key_columns, keep=False).sum())
+    duplicate_key_rows = int(
+        enriched.duplicated(key_columns, keep=False).sum()
+    )
 
     # Verify the one-second cadence inside each continuous segment.
     parsed_timestamps = pd.to_datetime(
@@ -59,16 +63,21 @@ def build_quality_report(
 
     # Count per-field audit signals when the corresponding columns are present.
     imputed_values = {
-        field: int(enriched.get(f"{field}_is_imputed", pd.Series(False)).sum())
+        field: int(
+            enriched.get(f"{field}_is_imputed", pd.Series(False)).sum()
+        )
         for field in fields
     }
     suspicious_values = {
-        field: int(enriched.get(f"{field}_is_suspicious", pd.Series(False)).sum())
+        field: int(
+            enriched.get(f"{field}_is_suspicious", pd.Series(False)).sum()
+        )
         for field in fields
     }
     hard_invalid_source_bins = {
         field: int(
-            enriched.get(f"{field}_had_hard_invalid_source", pd.Series(False)).sum()
+            enriched.get(
+                f"{field}_had_hard_invalid_source", pd.Series(False)).sum()
         )
         for field in fields
     }
@@ -104,7 +113,8 @@ def build_quality_report(
         "hard_invalid_source_bins": hard_invalid_source_bins,
         "remaining_missing": remaining_missing,
         "rows_with_any_imputation": int(enriched["is_imputed_any"].sum()),
-        "rows_with_any_suspicious_value": int(enriched["is_suspicious_any"].sum()),
+        "rows_with_any_suspicious_value": int(
+            enriched["is_suspicious_any"].sum()),
         "rows_with_hard_invalid_source": int(
             enriched["had_hard_invalid_source_any"].sum()
         ),
@@ -121,7 +131,7 @@ def run_quality_audit(
     quality_csv: str | Path | None = None,
     report_path: str | Path | None = None,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
-    """Read enriched data, write quality CSV/report, and return the quality table."""
+    """Read enriched data, write quality report, and return quality table."""
     output_config = config["output"]
     enriched_target = _resolve_optional_path(enriched_csv, ENRICHED_DATASET)
     quality_target = _resolve_optional_path(quality_csv, QUALITY_CSV)
@@ -133,7 +143,8 @@ def run_quality_audit(
             "Run data_cleaning.py first."
         )
 
-    # Read the enriched intermediate with low_memory disabled to preserve mixed text fields.
+    # Read the enriched intermediate 
+    # with low_memory disabled to preserve mixed text fields.
     enriched = pd.read_csv(enriched_target, low_memory=False)
     quality_output = enriched[build_quality_output_columns(config)].copy()
 
@@ -147,7 +158,8 @@ def run_quality_audit(
         float_format=output_config.get("float_format"),
     )
 
-    report = build_quality_report(enriched, config, enriched_target, quality_target)
+    report = build_quality_report
+    (enriched, config, enriched_target, quality_target)
     report["report_json"] = display_path(report_target)
     report_target.write_text(
         json.dumps(report, ensure_ascii=True, indent=2),
@@ -159,7 +171,7 @@ def run_quality_audit(
 def build_argument_parser() -> argparse.ArgumentParser:
     """Build the CLI parser for the quality-audit entry point."""
     parser = argparse.ArgumentParser(
-        description="Generate quality-audit outputs from the enriched cleaning CSV.",
+        description="Generate quality-audit outputs from enriched CSV.",
     )
     parser.add_argument(
         "--config",
@@ -187,7 +199,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    """Load configuration, generate audit outputs, and log an English summary."""
+    """Load config, generate audit outputs, and log summary."""
     args = build_argument_parser().parse_args()
     logging.basicConfig(
         level=getattr(logging, args.log_level),

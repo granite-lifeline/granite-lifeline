@@ -1,7 +1,8 @@
 """Core cleaning logic for the KIT Automotive OBD-II dataset.
 
-This module performs deterministic cleaning only. 
-It returns an enriched DataFrame that contains both model-ready signal columns and quality columns, 
+This module performs deterministic cleaning only.
+It returns an enriched DataFrame
+that contains both model-ready signal columns and quality columns,
 but it does not write any output files.
 """
 
@@ -43,12 +44,13 @@ class TripMetadata:
     route_sequence: str | None
 
     @property
-    # Build a route label from origin and destination for filtering and QA.
+    # A route label from origin and destination for filtering and QA.
     def route(self) -> str:
         return f"{self.origin}_{self.destination}"
 
 
-# Load the cleaning configuration; fall back to JSON when PyYAML is unavailable.
+# Load the cleaning configuration
+# fall back to JSON when PyYAML is unavailable.
 def load_config(path: str | Path) -> dict[str, Any]:
     config_path = Path(path)
     text = config_path.read_text(encoding="utf-8")
@@ -61,7 +63,8 @@ def load_config(path: str | Path) -> dict[str, Any]:
             config = json.loads(text)
         except json.JSONDecodeError as exc:
             raise CleaningError(
-                "PyYAML is not installed and cleaning_config.yaml is not JSON-compatible."
+                "PyYAML is not installed and cleaning_config.yaml "
+                "is not JSON-compatible."
             ) from exc
 
     if not isinstance(config, dict):
@@ -70,12 +73,15 @@ def load_config(path: str | Path) -> dict[str, Any]:
     return config
 
 
-# Validate the configuration shape, timing rules, field aggregation, and thresholds.
+# Validate the configuration shape, timing rules, aggregation, and thresholds.
 def _validate_config(config: dict[str, Any]) -> None:
     required_sections = {"input", "output", "time", "quality", "fields"}
     missing_sections = required_sections.difference(config)
     if missing_sections:
-        raise CleaningError(f"Configuration is missing sections: {sorted(missing_sections)}")
+        raise CleaningError(
+            "Configuration is missing sections: "
+            f"{sorted(missing_sections)}"
+        )
 
     fields = config["fields"]
     if not isinstance(fields, dict) or not fields:
@@ -99,28 +105,36 @@ def _validate_config(config: dict[str, Any]) -> None:
         missing_keys = required_field_keys.difference(spec)
         if missing_keys:
             raise CleaningError(
-                f"Field '{output_name}' is missing configuration keys: {sorted(missing_keys)}"
+                f"Field '{output_name}' is missing configuration "
+                f"keys: {sorted(missing_keys)}"
             )
         if spec["missing_strategy"] not in allowed_strategies:
             raise CleaningError(
-                f"Field '{output_name}' has an unsupported missing-value strategy: "
+                f"Field '{output_name}' has an unsupported "
+                "missing-value strategy: "
                 f"{spec['missing_strategy']}"
             )
         if spec["resample_aggregation"] not in allowed_aggregations:
             raise CleaningError(
-                f"Only 'last' aggregation is allowed to keep timestamps aligned; "
-                f"field '{output_name}' is configured as {spec['resample_aggregation']}."
+                "Only 'last' aggregation is allowed to keep "
+                f"timestamps aligned; field '{output_name}' is "
+                f"configured as {spec['resample_aggregation']}."
             )
         if spec["physical_min"] > spec["physical_max"]:
-            raise CleaningError(f"Field '{output_name}' has invalid physical bounds.")
+            raise CleaningError(
+                f"Field '{output_name}' has invalid physical bounds."
+            )
         if spec["suspicious_min"] > spec["suspicious_max"]:
-            raise CleaningError(f"Field '{output_name}' has invalid suspicious bounds.")
+            raise CleaningError(
+                f"Field '{output_name}' has invalid suspicious bounds."
+            )
         if (
             spec["suspicious_min"] < spec["physical_min"]
             or spec["suspicious_max"] > spec["physical_max"]
         ):
             raise CleaningError(
-                f"Field '{output_name}' suspicious bounds must stay within physical bounds."
+                f"Field '{output_name}' suspicious bounds must stay "
+                "within physical bounds."
             )
 
     segment_gap = config["time"].get("segment_gap_seconds")
@@ -128,17 +142,24 @@ def _validate_config(config: dict[str, Any]) -> None:
     if not isinstance(segment_gap, (int, float)) or segment_gap <= 0:
         raise CleaningError("'segment_gap_seconds' must be positive.")
     if not isinstance(imputation_limit, int) or imputation_limit < 0:
-        raise CleaningError("'imputation_max_seconds' must be a non-negative integer.")
+        raise CleaningError(
+            "'imputation_max_seconds' must be a non-negative integer."
+        )
     if imputation_limit >= segment_gap:
         raise CleaningError(
-            "The imputation limit must be smaller than the segment gap threshold."
+            "The imputation limit must be smaller than the segment "
+            "gap threshold."
         )
 
 
 # Normalize source column names so field matching is stable across encodings.
 def normalize_column_name(value: str) -> str:
     normalized = unicodedata.normalize("NFKC", str(value)).strip()
-    normalized = normalized.replace("Â°", "°").replace("脗掳", "°").replace("掳", "°")
+    normalized = (
+        normalized.replace("Â°", "°")
+        .replace("脗掳", "°")
+        .replace("掳", "°")
+    )
     return re.sub(r"\s+", " ", normalized)
 
 
@@ -171,7 +192,8 @@ def build_column_mapping(
         )
         if matched_source is None:
             raise CleaningError(
-                f"Could not find a source column for output field '{output_name}'; "
+                "Could not find a source column for output field "
+                f"'{output_name}'; "
                 f"accepted names: {spec['source_names']}"
             )
         mapping[matched_source] = output_name
@@ -183,16 +205,23 @@ def build_column_mapping(
     return mapping, audit
 
 
-# Parse the KIT file name into date, vehicle, route, condition, and extension metadata.
+# Parse KIT file names into date, vehicle, route, condition, and metadata.
 def parse_filename(path: str | Path) -> TripMetadata:
     tokens = Path(path).stem.split("_")
     if len(tokens) < 6:
-        raise CleaningError(f"File name does not match the KIT naming rule: {Path(path).name}")
+        raise CleaningError(
+            "File name does not match the KIT naming rule: "
+            f"{Path(path).name}"
+        )
 
     date, brand, model, origin, destination = tokens[:5]
     tail = tokens[5:]
     condition_index = next(
-        (index for index, token in enumerate(tail) if token in CONDITION_LABELS),
+        (
+            index
+            for index, token in enumerate(tail)
+            if token in CONDITION_LABELS
+        ),
         None,
     )
 
@@ -203,7 +232,7 @@ def parse_filename(path: str | Path) -> TripMetadata:
     else:
         condition = tail[condition_index]
         route_sequence = "_".join(tail[:condition_index]) or None
-        extension_tokens = tail[condition_index + 1 :]
+        extension_tokens = tail[condition_index + 1:]
 
     return TripMetadata(
         date=date,
@@ -232,7 +261,9 @@ def _parse_timestamps(
             errors="raise",
         )
     except (ValueError, TypeError) as exc:
-        raise CleaningError(f"Could not parse timestamps for date {trip_date}.") from exc
+        raise CleaningError(
+            f"Could not parse timestamps for date {trip_date}."
+        ) from exc
 
     try:
         return pd.DatetimeIndex(naive).tz_localize(
@@ -241,7 +272,9 @@ def _parse_timestamps(
             nonexistent="raise",
         )
     except (ValueError, TypeError) as exc:
-        raise CleaningError(f"Could not localize timestamps to timezone '{timezone}'.") from exc
+        raise CleaningError(
+            f"Could not localize timestamps to timezone '{timezone}'."
+        ) from exc
 
 
 def _format_utc_timestamp(value: Any) -> str:
@@ -265,7 +298,7 @@ def _count_true_runs(mask: pd.Series) -> dict[str, int]:
     }
 
 
-# Fill only complete missing runs that are short enough to satisfy the configured limit.
+# Fill complete missing runs that are short enough for the configured limit.
 def _fill_only_short_missing_runs(
     series: pd.Series,
     strategy: str,
@@ -296,7 +329,7 @@ def _fill_only_short_missing_runs(
     return result, imputed
 
 
-# Identify values outside physical bounds; they are nulled and kept as source flags.
+# Identify values outside physical bounds and keep source flags.
 def _build_hard_invalid_masks(
     frame: pd.DataFrame,
     config: dict[str, Any],
@@ -377,7 +410,7 @@ def _apply_cross_field_quality_rules(
     return quality_flags, counts
 
 
-# Resample one continuous segment to 1 Hz and generate imputation/quality flags.
+# Resample one continuous segment to 1 Hz and create quality flags.
 def _resample_segment(
     segment: pd.DataFrame,
     config: dict[str, Any],
@@ -393,9 +426,9 @@ def _resample_segment(
     separator = config["quality"].get("quality_flag_separator", "|")
     indexed = segment.set_index(TIMESTAMP_FIELD)
 
-    aggregations: dict[str, str] = {
-        field: config["fields"][field]["resample_aggregation"] for field in fields
-    }
+    aggregations: dict[str, str] = {}
+    for field in fields:
+        aggregations[field] = config["fields"][field]["resample_aggregation"]
     sampled = indexed[fields].resample(
         frequency,
         origin="start_day",
@@ -410,9 +443,8 @@ def _resample_segment(
         closed="left",
     ).size()
     sampled["source_sample_count"] = source_sample_count.astype("int32")
-    sampled["observed_sensor_count"] = sampled[fields].notna().sum(axis=1).astype(
-        "int8"
-    )
+    observed_sensor_count = sampled[fields].notna().sum(axis=1)
+    sampled["observed_sensor_count"] = observed_sensor_count.astype("int8")
 
     hard_invalid_columns: dict[str, pd.Series] = {}
     for field in fields:
@@ -475,10 +507,14 @@ def _resample_segment(
         if config["quality"].get("keep_field_suspicious_flags", True):
             sampled[f"{field}_is_suspicious"] = suspicious_columns[field]
         if config["quality"].get("keep_field_hard_invalid_flags", True):
-            sampled[f"{field}_had_hard_invalid_source"] = hard_invalid_columns[field]
+            hard_invalid_name = f"{field}_had_hard_invalid_source"
+            sampled[hard_invalid_name] = hard_invalid_columns[field]
 
     sampled["is_imputed_any"] = pd.concat(imputed_columns, axis=1).any(axis=1)
-    sampled["is_suspicious_any"] = pd.concat(suspicious_columns, axis=1).any(axis=1)
+    sampled["is_suspicious_any"] = pd.concat(
+        suspicious_columns,
+        axis=1,
+    ).any(axis=1)
     sampled["had_hard_invalid_source_any"] = pd.concat(
         hard_invalid_columns,
         axis=1,
@@ -507,7 +543,7 @@ def _resample_segment(
     return sampled, segment_report
 
 
-# Clean one raw CSV, assign a stable trip_id, segment gaps, and resample each segment.
+# Clean one raw CSV, assign trip_id, segment gaps, and resample segments.
 def clean_file(
     csv_path: str | Path,
     config: dict[str, Any],
@@ -546,7 +582,9 @@ def clean_file(
         )
 
     original_rows = len(frame)
-    timestamp_was_monotonic = bool(frame[TIMESTAMP_FIELD].is_monotonic_increasing)
+    timestamp_was_monotonic = bool(
+        frame[TIMESTAMP_FIELD].is_monotonic_increasing
+    )
     frame = frame.sort_values(TIMESTAMP_FIELD, kind="stable")
     duplicate_mask = frame.duplicated(TIMESTAMP_FIELD, keep=False)
     duplicate_rows = int(duplicate_mask.sum())
@@ -563,7 +601,9 @@ def clean_file(
         frame.loc[hard_invalid_masks[field], field] = np.nan
 
     gap_seconds = frame[TIMESTAMP_FIELD].diff().dt.total_seconds()
-    max_raw_gap = float(gap_seconds.max()) if gap_seconds.notna().any() else 0.0
+    max_raw_gap = (
+        float(gap_seconds.max()) if gap_seconds.notna().any() else 0.0
+    )
     segment_gap = config["time"]["segment_gap_seconds"]
     frame["_segment_number"] = gap_seconds.gt(segment_gap).cumsum() + 1
 
@@ -616,7 +656,10 @@ def clean_file(
 
 
 # Discover raw CSV files recursively and exclude generated cleaning outputs.
-def discover_input_files(config: dict[str, Any], repo_root: str | Path) -> list[Path]:
+def discover_input_files(
+    config: dict[str, Any],
+    repo_root: str | Path,
+) -> list[Path]:
     repo_root = Path(repo_root).resolve()
     directory = Path(config["input"]["directory"]).expanduser()
     if not directory.is_absolute():
@@ -639,7 +682,9 @@ def discover_input_files(config: dict[str, Any], repo_root: str | Path) -> list[
         if path.is_file() and not path.name.startswith(generated_prefixes)
     )
     if not paths:
-        raise CleaningError(f"No raw CSV files were found in: {directory.resolve()}")
+        raise CleaningError(
+            f"No raw CSV files were found in: {directory.resolve()}"
+        )
     return paths
 
 
@@ -706,7 +751,9 @@ def build_global_report(
 ) -> dict[str, Any]:
     fields = list(config["fields"])
     key_columns = ["trip_id", "segment_id", TIMESTAMP_FIELD]
-    duplicate_key_rows = int(combined.duplicated(key_columns, keep=False).sum())
+    duplicate_key_rows = int(
+        combined.duplicated(key_columns, keep=False).sum()
+    )
     segment_diffs = (
         combined.assign(
             _parsed_timestamp=pd.to_datetime(
@@ -750,16 +797,20 @@ def build_global_report(
             for field in fields
         },
         "imputed_values": {
-            field: int(combined[f"{field}_is_imputed"].sum()) for field in fields
+            field: int(combined[f"{field}_is_imputed"].sum())
+            for field in fields
         },
         "suspicious_values": {
-            field: int(combined[f"{field}_is_suspicious"].sum()) for field in fields
+            field: int(combined[f"{field}_is_suspicious"].sum())
+            for field in fields
         },
         "remaining_missing": {
             field: int(combined[field].isna().sum()) for field in fields
         },
         "rows_with_any_imputation": int(combined["is_imputed_any"].sum()),
-        "rows_with_any_suspicious_value": int(combined["is_suspicious_any"].sum()),
+        "rows_with_any_suspicious_value": int(
+            combined["is_suspicious_any"].sum()
+        ),
         "rows_with_hard_invalid_source": int(
             combined["had_hard_invalid_source_any"].sum()
         ),
@@ -774,7 +825,9 @@ def clean_dataset_enriched(
     output_target: str | Path,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     paths = discover_input_files(config, repo_root)
-    input_directory = paths[0].parent if paths else Path(config["input"]["directory"])
+    input_directory = (
+        paths[0].parent if paths else Path(config["input"]["directory"])
+    )
     cleaned_trips: list[pd.DataFrame] = []
     file_reports: list[dict[str, Any]] = []
 
