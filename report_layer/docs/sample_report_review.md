@@ -15,7 +15,7 @@ The review uses the terminology checklist in
 - The recommended actions are concrete and specific.
 - The report does not claim that a real mechanical fault is confirmed.
 
-## Sample 1: Typical Cooling System Stress
+## Sample 1: Typical Cooling Degradation
 
 Source input:
 `report_layer/evaluation/typical_cooling_stress.json`
@@ -32,10 +32,10 @@ while the expected range is 90 C to 95 C. High risk means the vehicle may need
 prompt attention.
 
 Possible cause:
-This could be related to cooling system stress. For example, the vehicle may
-have low coolant, a radiator problem, or another cooling system issue. The data
-does not confirm the exact fault, but the temperature reading is clearly higher
-than expected.
+This could be related to cooling system degradation. For example, the vehicle
+may have low coolant, a radiator problem, or another cooling system issue. The
+data does not confirm the exact fault, but the temperature reading is clearly
+higher than expected.
 
 Recommended action:
 - Avoid heavy driving if it is safe to do so.
@@ -56,7 +56,7 @@ Review note:
 This sample is suitable for a non-technical vehicle owner. The report uses
 "engine coolant temperature" and "cooling system" instead of raw field names.
 
-## Sample 2: Atypical Cooling System Stress
+## Sample 2: Atypical Cooling Degradation
 
 Source input:
 `report_layer/evaluation/atypical_cooling_stress.json`
@@ -97,7 +97,7 @@ Review note:
 This sample is suitable for a non-technical vehicle owner because it clearly
 explains that the evidence is limited. The wording avoids sounding too certain.
 
-## Sample 3: Contradictory Cooling System Stress
+## Sample 3: Contradictory Cooling Degradation
 
 Source input:
 `report_layer/evaluation/contradictory_cooling_stress.json`
