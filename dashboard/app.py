@@ -261,6 +261,26 @@ ICONS = {
     "activity": (
         '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>'
     ),
+    "thermometer": (
+        '<path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 '
+        '5 0z"></path>'
+        '<line x1="12" y1="7" x2="12" y2="14"></line>'
+    ),
+    "gauge": (
+        '<path d="M12 14l4-4"></path>'
+        '<path d="M3.34 19a10 10 0 1 1 17.32 0"></path>'
+    ),
+    "sliders": (
+        '<line x1="4" y1="21" x2="4" y2="14"></line>'
+        '<line x1="4" y1="10" x2="4" y2="3"></line>'
+        '<line x1="12" y1="21" x2="12" y2="12"></line>'
+        '<line x1="12" y1="8" x2="12" y2="3"></line>'
+        '<line x1="20" y1="21" x2="20" y2="16"></line>'
+        '<line x1="20" y1="12" x2="20" y2="3"></line>'
+        '<line x1="2" y1="14" x2="6" y2="14"></line>'
+        '<line x1="10" y1="8" x2="14" y2="8"></line>'
+        '<line x1="18" y1="16" x2="22" y2="16"></line>'
+    ),
     "file-text": (
         '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 '
         '2-2V8z"></path>'
@@ -311,9 +331,14 @@ ICONS = {
 # Per-component icon, keyed by MOCK_DATA component key (falls back to a
 # generic icon for components not in this map).
 COMPONENT_ICONS = {
+    "cooling_degradation": "droplet",
     "cooling_system_stress": "droplet",
+    "intake_air_temperature_sensor_or_heat_soak_fault": "thermometer",
     "air_intake_maf_anomaly": "wind",
+    "map_load_signal_plausibility_fault": "gauge",
+    "electronic_throttle_tracking_fault": "sliders",
     "accelerator_pedal_sensor": "zap",
+    "idle_speed_control_or_surge_degradation": "trending-up",
 }
 
 
