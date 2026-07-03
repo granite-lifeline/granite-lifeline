@@ -5,6 +5,8 @@ Displays vehicle health status with component risk levels and navigation
 to detailed diagnostic reports.
 """
 
+from __future__ import annotations
+
 import base64
 import math
 import os
@@ -12,13 +14,8 @@ import time
 from datetime import datetime
 import streamlit as st
 import plotly.graph_objects as go
+from anomaly_display import COMPONENT_DISPLAY_NAMES
 from data_loader import load_dashboard_data
-
-COMPONENT_DISPLAY_NAMES = {
-    "cooling_system_stress": "Cooling System",
-    "air_intake_maf_anomaly": "Air Intake System",
-    "accelerator_pedal_sensor": "Accelerator Pedal"
-}
 
 SIGNAL_DISPLAY_NAMES = {
     "coolant_temp": "Coolant Temperature",
