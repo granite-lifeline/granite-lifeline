@@ -41,9 +41,11 @@ This decision is supported by Huang et al. (2025), which identifies faithfulness
 
 ## Implementation
 
-The knowledge base is stored in `shared/ground_knowledge/fault_knowledge_all.md` and indexed into ChromaDB at pipeline initialisation. Each document is stored with metadata: `{"anomaly_type": "<anomaly_type_string>"}`. At inference time, the retrieval query is: `collection.get(where={"anomaly_type": anomaly_type})`. Retrieved content is injected into the Granite LLM prompt as a context block before the three-layer prompt chain defined in GL-55.
+The knowledge base is stored in `shared/ground_knowledge/grounded_knowledge.yaml` and indexed into ChromaDB at pipeline initialisation. Each document is stored with metadata: `{"anomaly_type": "<anomaly_type_string>", "risk_level": "<risk_level>"}`. At inference time, the retrieval query is: `collection.get(where={"anomaly_type": anomaly_type, "risk_level": risk_level})`. Retrieved content is injected into the Granite LLM prompt as a context block before the three-layer prompt chain defined in GL-55.
 
-Development environment: ChromaDB local instance, LangChain document loaders, Ollama granite4.1:8b. The ChromaDB index is rebuilt from `fault_knowledge_all.md` on pipeline startup to ensure consistency with the knowledge base.
+The context builder was extended with two enhancements: (1) confidence-based certainty guidance — the LLM receives explicit language strength instructions based on prediction_confidence thresholds; (2) multi-signal correlation analysis — when multiple signals are abnormal simultaneously, the context explicitly flags this pattern to support systemic root cause analysis.
+
+Development environment: ChromaDB local instance, Ollama granite4.1:8b. The ChromaDB index is rebuilt from `grounded_knowledge.yaml` on pipeline startup to ensure consistency with the knowledge base.
 
 ## Consequences
 
