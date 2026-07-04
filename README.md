@@ -32,7 +32,7 @@ Model Layer
         component, prediction_confidence, key_signals]
 Report Layer
   (IBM Granite LLM — 3-layer prompt chain
-   + RAG knowledge retrieval)
+   + RAG knowledge base with ChromaDB)
     │
     ▼  [anomaly_description, possible_cause,
         recommended_action, risk_history]
