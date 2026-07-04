@@ -11,6 +11,7 @@ build/
 .ipynb_checkpoints/
 model_layer/artifacts/*
 report_layer/rag/vector_store/*
+report_layer/rag/chroma_db/
 .vscode/
 .idea/
 .DS_Store
