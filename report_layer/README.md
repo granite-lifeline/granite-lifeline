@@ -46,6 +46,8 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | RAG Retriever | GL-112 | Metadata-filtered retrieval functions |
 | RAG Unit Tests | GL-113 | 33 test cases for RAG retriever |
 | RAG Integration | GL-114 | RAG knowledge injection into context |
+| RAG Prompt Integration | GL-115 | Inject RAG knowledge into LLM prompts |
+| RAG Sample Reports | GL-116 | Sample RAG reports for 3 required scenarios |
 | Confidence Guidance | GL-135 | Certainty language based on prediction_confidence |
 | Signal Correlation | GL-136 | Multi-signal correlation analysis |
 | ADR 303 | GL-110 | Document RAG knowledge base design |
@@ -55,7 +57,6 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | Component | Ticket | Status |
 |-----------|--------|--------|
 | Dashboard Integration | GL-41, GL-42 | Dashboard UI complete, API integration pending |
-| RAG Prompt Integration | GL-115 | Inject RAG knowledge into LLM prompts |
 
 ### [PLANNED] Sprint 2+
 
