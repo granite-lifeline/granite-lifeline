@@ -48,6 +48,7 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | RAG Integration | GL-114 | RAG knowledge injection into context |
 | RAG Prompt Integration | GL-115 | Inject RAG knowledge into LLM prompts |
 | RAG Sample Reports | GL-116 | Sample RAG reports for 3 required scenarios |
+| RAG Language Review | GL-117 | Verify plain language and no confirmed fault claims |
 | Confidence Guidance | GL-135 | Certainty language based on prediction_confidence |
 | Signal Correlation | GL-136 | Multi-signal correlation analysis |
 | ADR 303 | GL-110 | Document RAG knowledge base design |

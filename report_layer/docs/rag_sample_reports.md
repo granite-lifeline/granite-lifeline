@@ -77,7 +77,7 @@ cooling-system inspection.
 - Possible causes include sensor contamination, dirty air filter, connector
   corrosion, wiring damage, moisture, or sensor aging.
 - Medium-risk action guidance includes checking the air filter and inspecting
-  wiring/connectors before replacing the MAF sensor.
+  wiring/connectors before replacing the airflow sensor.
 
 ### RAG-enhanced report
 
@@ -91,18 +91,19 @@ soon, but the current data does not suggest an immediate emergency.
 **Possible cause**
 
 This could suggest an issue in the air-intake measurement path. Based on the
-retrieved MAF sensor knowledge, possible causes include a dirty or contaminated
-MAF sensor, a dirty air filter, wiring or connector damage, or moisture affecting
-the sensor reading. Since the intake pressure is normal, the evidence points more
-toward the airflow measurement path than a confirmed mechanical blockage.
+retrieved airflow-sensor knowledge, possible causes include a dirty or
+contaminated airflow sensor, a dirty air filter, wiring or connector damage, or
+moisture affecting the sensor reading. Since the intake pressure is normal, the
+evidence points more toward the airflow measurement path than a confirmed
+mechanical blockage.
 
 **Recommended action**
 
 - Check whether the air filter is dirty or due for replacement.
-- Ask a mechanic to inspect the MAF sensor wiring and connector for loose,
+- Ask a mechanic to inspect the airflow sensor wiring and connector for loose,
   damaged, or corroded connections.
-- If the warning repeats, use a scan tool to review MAF sensor live data before
-  replacing parts.
+- If the warning repeats, use a diagnostic scan tool to review airflow sensor
+  readings before replacing parts.
 
 ## Sample 3: Accelerator Pedal Low Risk
 
@@ -144,8 +145,8 @@ sensor fault.
 **Recommended action**
 
 - Continue monitoring the dashboard for repeated warnings.
-- If the warning appears again, use an OBD2 scan tool to check for related
-  diagnostic trouble codes.
+- If the warning appears again, use a diagnostic scan tool to check whether the
+  vehicle has stored related warning codes.
 - If the pedal response feels unusual, ask a mechanic to inspect the pedal sensor
   signals and wiring.
 
