@@ -19,15 +19,16 @@ component degradation, even though we cannot validate against an actual labelled
 
 ---
 
-## Confirmed anomaly types (interface_table v3)
+## Confirmed anomaly types (notes/INTERFACE.md v0.3)
 
-### 1. `cooling_system_stress`
+### 1. `cooling_degradation`
 
 > *Proxy condition. The KIT dataset contains no real fault labels — this definition is based
 > on expected sensor behaviour from automotive engineering literature, not labelled failures.*
 
-**Component**: Cooling system / thermostat / water pump
-**Primary signals**: `coolant_temp` (Master Table #4), `coolant_slope` (Master Table #12)
+**Component**: Cooling system — radiator / water pump / thermostat / coolant circulation
+**Supporting features**: `coolant_temp`, `ambient_temp`, `speed`, `rpm`, `coolant_slope`,
+`coolant_ambient_delta`, `coolant_stability` [B1]
 
 **Findings (across 81 trips):**
 - Steady-state coolant temp is typically **90–95°C** (normal thermostat range); a few trips
@@ -38,10 +39,16 @@ component degradation, even though we cannot validate against an actual labelled
   temperatures at or slightly above 100°C are therefore within normal operating range
   for a pressurised system with G12++/G13 coolant additive [M2, §4.30].
 
-**Proxy definition**: After the initial warm-up phase (coolant temp has exceeded ~85°C at
-least once), flag elevated risk if:
-- `coolant_temp` exceeds **~100°C**, and/or
-- `coolant_slope` remains **>2–3°C/min** instead of plateauing
+**Proxy definition**: Flag abnormal coolant thermal behaviour, including sustained
+overheating after warm-up, coolant temperature rising without plateau, abnormally slow
+warm-up, and coolant temperature implausible relative to ambient after cold soak [B1].
+
+**Expected patterns:**
+- **Overheating:** `coolant_temp` > 105°C sustained for 3–5 min after warm-up
+- **Rising without plateau:** `coolant_slope` > 2°C/min for 2–3 min after warm-up phase
+- **Slow warm-up:** `coolant_temp` < 70–75°C after 10–15 min running (possible thermostat
+  stuck open)
+- **Implausibility check:** `abs(coolant_temp − ambient_temp)` > 10–15°C after cold soak
 
 This directly matches the brief's worked example: *"Coolant temperature rising faster than
 normal — possible water pump degradation."* The detection target is the transition from
@@ -54,14 +61,20 @@ series [R6].
 
 | Signal | Normal behaviour | Anomaly direction | Pattern |
 |--------|-----------------|-------------------|---------|
-| `coolant_temp` | 85–105°C steady state [M1][M2] | Rising above 100°C | Sustained increase post warm-up, not returning to baseline |
-| `coolant_slope` | ~0°C/min once warm | >2–3°C/min | Persistent positive slope after warm-up phase ends |
+| `coolant_temp` | 90–95°C steady state; up to 103°C in KIT data [M1][M2] | Sustained rise above 105°C | >105°C for 3–5 min post warm-up |
+| `coolant_slope` | ~0°C/min once warm | >2°C/min | Persistent positive slope 2–3 min after warm-up ends |
+| `coolant_stability` | Low rolling std dev (stable plateau) | High std dev | Irregular temperature fluctuations in steady state |
+| `coolant_ambient_delta` | Large positive gap (engine hot vs ambient) | Abnormally small gap after cold soak | `abs(coolant_temp − ambient_temp)` < 10–15°C |
+
+**Physical logic**: The cooling system prevents thermal overload, lubricating-oil burn-off,
+and abnormal combustion. If temperature stays above the stable post-warm-up range for an
+extended period, heat input and heat dissipation are out of balance [B1].
 
 **Simulator implementation (`data_simulator.py`):**
 `generate_normal_sequence()` models warm-up as `20 + 70 × (1 − exp(−t/30))`, clipped to
 [20, 95] °C. `generate_cooling_degradation()` injects a 0.05 °C/s linear rise on all
 post-85°C samples, mimicking water pump degradation. Story 6 uses this sequence as the
-`cooling_system_stress` ground-truth fault scenario.
+`cooling_degradation` ground-truth fault scenario.
 
 ---
 
@@ -70,43 +83,75 @@ post-85°C samples, mimicking water pump degradation. Story 6 uses this sequence
 > *Proxy condition. The KIT dataset contains no real fault labels — this definition is based
 > on expected sensor behaviour from automotive engineering literature, not labelled failures.*
 
-**Component**: MAF sensor / air intake (air filter, vacuum leak)
-**Primary signals**: `maf` (Master Table #6), `map` (Master Table #5), `maf_map_cohesion` (Master Table #15)
+**Component**: MAF sensor / intake air measurement path
+**Supporting features**: `maf`, `map`, `rpm`, `intake_temp`, `maf_derived_air_load`,
+`map_derived_air_load`, `maf_map_cohesion` [B1]
 
 **Findings:**
 - `maf` correlates with `map` at **~0.83 average** (range 0.6–0.9) — fairly consistent
   across trips [R3][R4].
-- `maf` correlates with `rpm × tps` load estimate at only **~0.66 average**, and much noisier
-  (range 0.12–0.85). MAF is consistently the hardest OBD-II signal to predict: ARIMA
-  achieves only MAPE 37.71% on it, and LSTM achieves R² 60.7%, both the worst in their
-  respective studies [R4][R3].
-- **MAP range (turbocharged vehicle):** The Seat Leon 1.4 TSI is a turbocharged engine.
-  Manifold pressure regularly exceeds atmospheric (~101 kPa) under boost. KIT dataset shows
-  MAP median 115.8 kPa, P99 225 kPa, range 36–237 kPa [KIT baseline]. The commonly cited
-  "20–100 kPa" range applies to naturally aspirated engines only and is **not valid** for
-  this vehicle. The correct normal operating range for MAP is 36–237 kPa (full KIT range),
-  with a maf/map ratio of 0.1–0.3 indicating healthy air flow.
+- MAF is consistently the hardest OBD-II signal to predict: ARIMA achieves only MAPE
+  37.71%, and LSTM R² 60.7% — the worst in both studies [R4][R3].
+- **MAP range (turbocharged vehicle):** The Seat Leon 1.4 TSI regularly exceeds
+  atmospheric pressure (~101 kPa) under boost. KIT dataset: MAP median 115.8 kPa, P99
+  225 kPa, range 36–237 kPa. The "20–100 kPa" range applies to naturally aspirated
+  engines only and is not valid for this vehicle.
 
-**Proxy definition**: Flag when `maf_map_cohesion` (normalised MAF-vs-MAP deviation) is
-large or sustained — indicates MAF sensor drift, dirty air filter, or vacuum leak [R5].
+**`maf_map_cohesion` formula (adopted from Data Layer Reference [B1]):**
+```
+maf_derived_air_load  = maf / max(rpm / 60, ε)          # g/rev
+map_derived_air_load  = f_vehicle(map, intake_temp, rpm) # g/rev
+maf_map_cohesion      = abs(zscore_vehicle(maf_derived_air_load)
+                            − zscore_vehicle(map_derived_air_load))
+```
+Both air-load estimates are z-score standardised against a vehicle-specific healthy
+baseline before differencing. This is more robust than a raw maf/map ratio because it
+normalises for operating-point variation. Our earlier approximation (maf/map ratio,
+band 0.1–0.3) was a placeholder; the z-score form is the agreed definition.
+
+**Interim implementation (`kit_residual_detector.py`, 2026-07-04):** the z-score form
+is now implemented with two simplifications until Story 5 fits the vehicle-specific
+healthy baseline: (1) z-scores use current-trip statistics instead of a fitted healthy
+baseline; (2) `map_derived_air_load` uses raw `map` as a speed-density proxy, since
+`intake_temp` is not yet forwarded by the Data Layer (z-scoring absorbs the constant
+factors). With trip statistics, healthy future-window means measured across 36
+Normal/Frei trips ranged 0.10–1.56, so the interim trigger is calibrated at
+**> 1.8** (full score at 3.0) rather than the 0.25–0.30 band expected under the
+fitted-baseline form. Known limitation: a whole-trip uniform fault (e.g. `maf × 0.7`
+over the entire trip) is invariant under in-window z-scoring — the TTM residual
+scores still catch that case.
+
+**Proxy definition**: Triggered when `maf_map_cohesion` remains high — indicates
+inconsistency between the MAF-side and MAP-side air-load estimates, mainly from MAF
+sensor drift, contamination, response delay, or intake measurement chain abnormalities.
+Transient acceleration and gear-shift windows should be masked [B1].
+
+**Expected pattern**: `maf_map_cohesion` > 0.25–0.30 sustained for 5–10 s; or under
+steady-state conditions, the standardised deviation between `maf_derived_air_load` and
+`map_derived_air_load` exceeds 25–30%.
 
 **Signal deviation patterns:**
 
 | Signal | Normal behaviour | Anomaly direction | Pattern |
 |--------|-----------------|-------------------|---------|
 | `maf` | Tracks MAP closely (~0.83 correlation) [R3] | Lower than MAP-predicted value | Sustained negative residual from MAP-expected baseline |
-| `map` | 36–237 kPa, turbocharged; median ~116 kPa [KIT baseline] | Higher than MAF-consistent value | Elevated relative to actual air flow |
-| `maf_map_cohesion` | 0.1–0.3 ratio (normal operating) | Deviation outside 0.1–0.3 band | Persistent high or low cohesion value |
+| `map` | 36–237 kPa, turbocharged; median ~116 kPa | Higher than MAF-consistent value | Elevated relative to actual air flow |
+| `maf_map_cohesion` | Near 0 (z-scores aligned) | > 0.25–0.30 | Sustained standardised deviation between MAF-side and MAP-side load estimates |
 
-**Simulator implementation (`data_simulator.py`) — updated 2026-06-25:**
-The original simulator used MAP formula `30 + (rpm − 800) / 100` (peak ~52 kPa at
-RPM 3000), which was incorrect for a turbocharged vehicle and caused `maf_map_cohesion`
-to compute to ~0.5 — outside the normal band — on all simulated normal driving data,
-producing false `air_intake_maf_anomaly` triggers. The formula was corrected to
-`100 + (rpm − 800) / 30` clipped to [36, 237] kPa, and MAF updated to `map × 0.2 +
-noise` clipped to [0, 123] g/s, keeping the cohesion ratio in the 0.1–0.3 normal band.
-`generate_vacuum_leak()` applies `map × 1.3` (elevated MAP) and `tps × 0.7` (reduced
-throttle). `generate_intake_blockage()` applies `maf × 0.7` (reduced air flow).
+**Physical logic**: Under the same operating condition, MAF-based load and MAP-based load
+must remain physically consistent. Persistent deviation indicates a plausibility
+abnormality in the air-mass measurement chain [B1].
+
+**Simulator implementation (`data_simulator.py`) — updated 2026-07-04:**
+MAP formula corrected from `30 + (rpm − 800) / 100` (peak ~52 kPa, wrong for turbo) to
+`100 + (rpm − 800) / 30` clipped to [36, 237] kPa. MAF updated to `map × 0.2 + noise`
+so the MAF/MAP relationship stays physically consistent for normal data. The full
+z-score formula requires a healthy baseline which will be fitted in Story 5.
+The two fault scenarios were renamed from the pre-v3 vocabulary
+(`generate_vacuum_leak` / `generate_intake_blockage`) to a single method aligned
+with the enum value: `generate_air_intake_maf_anomaly(variant=...)` —
+`variant="map_bias"` applies `map × 1.3` / `tps × 0.7`;
+`variant="low_maf"` applies `maf × 0.7` (the Story 6 scenario).
 
 ---
 
@@ -116,7 +161,8 @@ throttle). `generate_intake_blockage()` applies `maf × 0.7` (reduced air flow).
 > on expected sensor behaviour from automotive engineering literature, not labelled failures.*
 
 **Component**: Accelerator pedal position sensors (dual/redundant)
-**Primary signals**: `accel_pedal_d` (Master Table #8), `accel_pedal_e` (Master Table #9)
+**Supporting features**: `accel_pedal_d`, `accel_pedal_e`, `accel_pedal_channel_delta`,
+`accel_pedal_channel_ratio`, `pedal_slope` [B1]
 
 **Findings:**
 - Correlation is high (0.96–0.99) and consistent across all 81 trips — mean absolute
@@ -125,36 +171,147 @@ throttle). `generate_intake_blockage()` applies `maf × 0.7` (reduced air flow).
   during fast pedal movements, not faults).
 - Both channels are SAE J1979 PID 0x49 (`accel_pedal_d`) and PID 0x4A (`accel_pedal_e`),
   reporting 0–100% [S1]. They are redundant by design — dual-channel agreement is a
-  built-in safety feature of the pedal assembly.
+  built-in safety feature of the pedal assembly [B1].
 
-**Proxy definition**: Flag **sustained** divergence between `accel_pedal_d` and
-`accel_pedal_e` (>10pp persisting beyond momentary spikes), which indicates dual-sensor
-disagreement inconsistent with normal pedal lag [S1][R7].
+**Proxy definition**: The proportional relationship, correlation, or dynamic behaviour
+between channels D and E is inconsistent. This proxies pedal sensor channel drift, contact
+abnormalities, or redundancy-monitoring failure [B1].
 
-**Note on this dataset**: Because brief spikes are uniform across every trip, momentary
-divergence is not a useful discriminator here. The detection target is sustained divergence
-only — a pattern that does not appear in normal driving.
+**Expected pattern (adopted from Data Layer Reference):**
+First learn the healthy vehicle-specific linear mapping `accel_pedal_e = a × accel_pedal_d + b`.
+Then trigger if **any** of:
+- Residual from the learned mapping remains > 5–10 pp
+- Channel correlation coefficient falls below 0.95
+- One channel changes while the other freezes for more than 1 s
+
+Note: momentary divergence is not a useful discriminator (uniform across all normal trips).
+The detection target is sustained divergence only.
 
 **Signal deviation patterns:**
 
 | Signal | Normal behaviour | Anomaly direction | Pattern |
 |--------|-----------------|-------------------|---------|
-| `accel_pedal_d` | Closely tracks `accel_pedal_e` (correlation 0.96–0.99) | Sustained divergence from E | Difference >10pp lasting more than a few samples |
-| `accel_pedal_e` | Closely tracks `accel_pedal_d` | Sustained divergence from D | Difference >10pp lasting more than a few samples |
+| `accel_pedal_d` | Closely tracks `accel_pedal_e` (correlation 0.96–0.99) | Sustained divergence from E | Residual from learned `e = a·d + b` > 5–10 pp |
+| `accel_pedal_e` | Closely tracks `accel_pedal_d` | Sustained divergence from D | Residual from learned `e = a·d + b` > 5–10 pp |
+| `accel_pedal_channel_delta` | < 2 pp in normal driving | > 5–10 pp sustained | `abs(accel_pedal_d − accel_pedal_e)` exceeds threshold |
+| `accel_pedal_channel_ratio` | ~1.0 (near-unity) | Sustained deviation from 1.0 | Proportional relationship between channels breaks |
+
+**Physical logic**: The ETC system uses two potentiometers on the pedal for redundancy
+and continuously checks all sensor readings that affect throttle opening while the engine
+is running. Sustained divergence beyond normal pedal-response lag indicates a hardware
+or electrical fault [B1].
 
 **Simulator implementation (`data_simulator.py`) — updated 2026-06-25:**
-`accel_pedal_d` and `accel_pedal_e` were not present in the original simulator, making
-Story 6 `accelerator_pedal_sensor` testing impossible. Both signals are now generated in
-`generate_normal_sequence()` from a shared base signal `clip(10 + (rpm − 800) / 100,
-14, 85)` plus independent ±1% noise, producing ~0.97 correlation under normal operation
-(consistent with KIT data). `generate_pedal_sensor_fault()` injects a sustained 15 pp
-drop on pedal E from the quarter-way point, simulating the dual-sensor disagreement
-fault target for Story 6.
+Both signals now generated in `generate_normal_sequence()` from a shared base signal
+`clip(10 + (rpm − 800) / 100, 14, 85)` plus independent ±1% noise, producing ~0.97
+correlation under normal operation. `generate_pedal_sensor_fault()` injects a sustained
+15 pp drop on pedal E from the quarter-way point, simulating the redundancy failure
+target for Story 6.
+
+---
+
+---
+
+## Pending anomaly types (in enum since INTERFACE.md v0.3 — Model Layer TBD)
+
+The following four proxy failure types are defined in the Data Layer Reference [B1]
+and were added to the `anomaly_type` enum on 2026-06-29 (`notes/INTERFACE.md`
+Section 2.3, status "Pending — Data Layer defined, Model Layer TBD"). The detector
+(`kit_residual_detector.py`) registers all four with a fixed 0.0 score and their
+INTERFACE.md §2.4 `key_signals` priority, so interface JSON stays enum-complete;
+detection logic starts once the Data Layer forwards the required signals
+(`intake_temp`, `ambient_temp`, `intake_ambient_delta`, `map_slope`,
+`pedal_throttle_gap`, `idle_flag`, `idle_rpm_stability`, `rpm_slope`). They remain
+**outside** Story 6 evaluation scope, and the simulator deliberately has no
+generators for them yet (their key signals are not simulator columns).
+
+### 4. `intake_air_temperature_sensor_or_heat_soak_fault`
+
+**Component**: Intake-air temperature sensing / intake-air temperature regulation
+**Supporting features**: `intake_temp`, `ambient_temp`, `speed`, `rpm`, `tps`,
+`intake_ambient_delta`, `intake_temp_slope`
+
+**Proxy definition**: Intake temperature is abnormally high or low relative to ambient,
+or does not vary with vehicle speed and load. Proxies IAT sensor faults, severe heat
+soak, or poor thermal management in the intake path.
+
+**Expected pattern**: After stable driving at `speed > 40 km/h` for 5 min,
+`intake_temp − ambient_temp > 25–35°C`; or after extended running from cold start,
+`intake_temp < ambient_temp − 5°C`; or under high load, `intake_temp > 60°C`.
+
+**Physical logic**: Colder, denser intake air improves combustion efficiency. If intake
+air is abnormally hot, effective oxygen content drops, reducing output and increasing
+emissions [B1].
+
+---
+
+### 5. `map_load_signal_plausibility_fault`
+
+**Component**: Intake manifold absolute pressure sensor / load signal
+**Supporting features**: `map`, `maf`, `rpm`, `tps`, `intake_temp`,
+`speed_density_maf_residual`, `map_slope`
+
+**Proxy definition**: MAP cannot reasonably reflect load changes, or its relationship
+with MAF, TPS, and RPM is inconsistent. Proxies MAP sensor drift, blockage, hose issues,
+signal sticking, or load-measurement abnormalities.
+
+**Expected pattern**: After a `tps` step change > 15 pp, `abs(map_slope)` remains near 0
+within 1 s; or under steady state, air amount derived from MAP differs from MAF by > 25–30%;
+or MAP remains near an unreasonable fixed value while the engine is running.
+
+**Physical logic**: MAP is a preferred method for monitoring engine load. If MAP is
+distorted, load, ignition, fuel injection, and torque calculations will all be biased [B1].
+
+---
+
+### 6. `electronic_throttle_tracking_fault`
+
+**Component**: Electronic throttle control / throttle actuator
+**Supporting features**: `accel_pedal_d`, `accel_pedal_e`, `tps`, `rpm`, `map`, `maf`,
+`pedal_throttle_gap`, `pedal_to_throttle_delay`, `tps_slope`
+
+**Proxy definition**: After pedal demand increases, throttle opening does not change
+accordingly, or the actual throttle remains offset from the expected value for an extended
+period. Proxies ETC actuator sticking, position-control abnormalities, or ETC entering
+restricted-control mode.
+
+**Expected pattern**: After `accel_pedal_mean` increases by > 20 pp, `tps` changes by
+< 5 pp within 0.5–1.0 s; or `pedal_throttle_gap > 15–20 pp` for 2 s. Confidence is
+higher if `map` and `maf` also show no response.
+
+**Physical logic**: ETC calculates throttle opening from pedal position and operating
+conditions, and uses a throttle angle sensor to confirm actual vs expected position.
+Persistent mismatch indicates actuator or control-loop failure [B1].
+
+---
+
+### 7. `idle_speed_control_or_surge_degradation`
+
+**Component**: Idle-speed control / engine-speed control
+**Supporting features**: `rpm`, `speed`, `tps`, `accel_pedal_d`, `accel_pedal_e`, `maf`,
+`map`, `idle_flag`, `idle_rpm_stability`, `rpm_slope`
+
+**Proxy definition**: Under idle conditions, RPM fluctuation is excessive, cyclic surging
+occurs, or the engine cannot stabilise near the target idle speed. Proxies idle-control
+degradation, intake/ignition/fuel-injection disturbances, or insufficient load compensation.
+
+**Expected pattern**: Within an idle window (`speed < 3 km/h`, `tps < 5–10%`, pedal near
+0), RPM standard deviation > 50–100 rpm over 30 s, or peak amplitude > 150–200 rpm.
+
+**Physical logic**: The goal of idle control is to maintain the desired idle speed under
+all conditions. Persistent high fluctuation within the idle window directly reflects
+control or combustion-stability issues [B1].
+
+**Data Layer alignment**: the Data Layer's operating-condition state machine
+(`data_layer/operating_condition_statistics/operating_condition_analysis.md`) already
+classifies a kinematic `idle` state (`speed_smooth_kmh < 1 km/h` and
+`|accel_ms2_smooth| < 0.15 m/s²`), which is the natural source for the `idle_flag` /
+idle-window detection this type requires.
 
 ---
 
 ## Master Table Field Reference
-All field names align with the Master Table (Data Layer / interface_table v3):
+All field names align with the Master Field Table in `notes/INTERFACE.md`:
 - `coolant_temp` (Master Table #4)
 - `coolant_slope` (Master Table #12)
 - `maf` (Master Table #6)
@@ -229,7 +386,7 @@ observed in the KIT dataset.
 - Torque band: **1400–4000 RPM** (lower variants) / **1500–3500 RPM** (higher variants).
 - Normal driving RPM range: ~700 RPM idle to ~6000 RPM at full power.
 
-This directly supports our proxy definition for `cooling_system_stress`: predictive
+This directly supports our proxy definition for `cooling_degradation`: predictive
 detection aims to flag the transition from Zone B toward Zone C — sustained elevated
 coolant temp and rising slope — before the warning lamp triggers. The manufacturer
 confirms the engine is designed to operate in the 80–120°C thermal range; readings
@@ -410,6 +567,16 @@ automotive engineering literature and cross-signal reasoning (see External Stand
 
 ## References
 
+### Automotive Engineering
+
+**[B1]** Robert Bosch GmbH, *Bosch Automotive Handbook*, 10th edition.
+Cited for: proxy failure definitions and expected patterns for `cooling_degradation`,
+`air_intake_maf_anomaly`, `accelerator_pedal_sensor`, and the four additional proxy
+types (§3.1–3.7 of the Data Layer Reference); derived feature physical rationale
+(`coolant_slope`, `coolant_stability`, `coolant_ambient_delta`, `maf_derived_air_load`,
+`map_derived_air_load`, `maf_map_cohesion`, `accel_pedal_channel_delta`,
+`accel_pedal_channel_ratio`).
+
 ### Manuals
 
 **[M1]** SEAT, *León Owner's Manual*, 2017.
@@ -469,7 +636,7 @@ MAF); vehicle health monitoring section (§4.4); evaluation metric conventions.
 Sensor Using One-Class Classifiers."
 File: `documetation/相关论文/Detecting_Anomalies_in_the_Engine_Coolant_Sensor_Using_One-Class_Classifiers.pdf`
 Cited for: coolant sensor anomaly detection using engineered time-series features;
-direct precedent for the `cooling_system_stress` proxy condition.
+direct precedent for the `cooling_degradation` proxy condition.
 
 **[R7]** (Author not stated in summary), "Advancing Vehicle Diagnostics: Exploring the
 Application of Large Language Models in the Automotive Industry."
