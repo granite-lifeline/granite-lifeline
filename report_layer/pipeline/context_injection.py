@@ -4,6 +4,9 @@ Context injection utilities for Report Layer.
 Formats Model Layer output into structured text for Granite LLM prompts.
 """
 
+from typing import Dict
+
+from report_layer.rag.rag_retriever import retrieve_all
 from shared.interface_models import ModelLayerOutput
 
 
@@ -56,3 +59,45 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
         context_lines.append(signal_line)
 
     return "\n".join(context_lines)
+
+
+def build_context_with_rag(ttm_output: ModelLayerOutput) -> Dict[str, str]:
+    """
+    Build context with RAG-retrieved fault knowledge from ChromaDB.
+
+    Extends build_context() by retrieving grounded fault knowledge and
+    risk-level-appropriate recommended actions from the ChromaDB
+    knowledge base.
+
+    Args:
+        ttm_output: Model Layer output containing predictions and signals
+
+    Returns:
+        Dictionary with three keys:
+        - "context": Structured vehicle status and key signals
+        - "fault_knowledge": Description and causes grounded in
+          automotive references
+        - "actions_knowledge": Risk-level-appropriate recommended
+          actions
+    """
+    # Get existing context
+    context = build_context(ttm_output)
+
+    # Normalize risk level to lowercase, default to "low" if None
+    risk_level = ttm_output.risk_level
+    if risk_level is None:
+        risk_level_normalized = "low"
+    else:
+        risk_level_normalized = risk_level.lower()
+
+    # Retrieve fault knowledge from ChromaDB
+    rag_knowledge = retrieve_all(
+        anomaly_type=ttm_output.anomaly_type,
+        risk_level=risk_level_normalized
+    )
+
+    return {
+        "context": context,
+        "fault_knowledge": rag_knowledge["description_causes"],
+        "actions_knowledge": rag_knowledge["actions"],
+    }
