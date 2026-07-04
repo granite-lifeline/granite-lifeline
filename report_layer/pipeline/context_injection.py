@@ -73,12 +73,14 @@ def build_context_with_rag(ttm_output: ModelLayerOutput) -> Dict[str, str]:
         ttm_output: Model Layer output containing predictions and signals
 
     Returns:
-        Dictionary with three keys:
+        Dictionary with four keys:
         - "context": Structured vehicle status and key signals
         - "fault_knowledge": Description and causes grounded in
           automotive references
         - "actions_knowledge": Risk-level-appropriate recommended
           actions
+        - "certainty_guidance": Language strength guideline based on
+          prediction_confidence for controlling LLM output certainty
     """
     # Get existing context
     context = build_context(ttm_output)
@@ -96,8 +98,27 @@ def build_context_with_rag(ttm_output: ModelLayerOutput) -> Dict[str, str]:
         risk_level=risk_level_normalized
     )
 
+    # Determine certainty guidance based on prediction confidence
+    prediction_confidence = ttm_output.prediction_confidence
+    if prediction_confidence > 0.8:
+        certainty_guidance = (
+            "Use definitive language: 'indicates', 'shows', "
+            "'demonstrates'"
+        )
+    elif prediction_confidence > 0.5:
+        certainty_guidance = (
+            "Use moderate language: 'suggests', 'may indicate', "
+            "'could be'"
+        )
+    else:
+        certainty_guidance = (
+            "Use cautious language: 'might suggest', 'could possibly', "
+            "'requires further monitoring'"
+        )
+
     return {
         "context": context,
         "fault_knowledge": rag_knowledge["description_causes"],
         "actions_knowledge": rag_knowledge["actions"],
+        "certainty_guidance": certainty_guidance,
     }
