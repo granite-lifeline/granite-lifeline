@@ -43,6 +43,30 @@ SCENARIOS = [
     }
 ]
 
+DEFAULT_PROMPT_VALUES = {
+    "fault_knowledge": (
+        "No retrieved fault knowledge was available for this run."
+    ),
+    "actions_knowledge": (
+        "No retrieved action guidance was available for this run."
+    ),
+    "certainty_guidance": (
+        "Use careful wording and do not present predictions as "
+        "confirmed faults."
+    ),
+}
+
+
+def render_prompt(template: str, values: Dict[str, str]) -> str:
+    """Replace prompt placeholders with available values."""
+    prompt_values = DEFAULT_PROMPT_VALUES.copy()
+    prompt_values.update(values)
+
+    prompt = template
+    for key, value in prompt_values.items():
+        prompt = prompt.replace("{" + key + "}", str(value))
+    return prompt
+
 
 def load_scenario(filename: str) -> ModelLayerOutput:
     """Load test scenario from evaluation directory."""
@@ -117,10 +141,12 @@ def run_three_layer_chain(
     results = {}
 
     print("  Running layer 1...")
-    prompt1 = (
-        templates[1]
-        .replace("{context}", context)
-        .replace("{audience}", AUDIENCE)
+    prompt1 = render_prompt(
+        templates[1],
+        {
+            "context": context,
+            "audience": AUDIENCE,
+        }
     )
     response1 = call_ollama(prompt1)
     parsed1 = extract_json(response1)
@@ -134,11 +160,13 @@ def run_three_layer_chain(
     anomaly_desc = results["anomaly_description"]
 
     print("  Running layer 2...")
-    prompt2 = (
-        templates[2]
-        .replace("{context}", context)
-        .replace("{audience}", AUDIENCE)
-        .replace("{anomaly_description}", anomaly_desc)
+    prompt2 = render_prompt(
+        templates[2],
+        {
+            "context": context,
+            "audience": AUDIENCE,
+            "anomaly_description": anomaly_desc,
+        }
     )
     response2 = call_ollama(prompt2)
     parsed2 = extract_json(response2)
@@ -152,12 +180,14 @@ def run_three_layer_chain(
     possible_cause = results["possible_cause"]
 
     print("  Running layer 3...")
-    prompt3 = (
-        templates[3]
-        .replace("{context}", context)
-        .replace("{audience}", AUDIENCE)
-        .replace("{anomaly_description}", anomaly_desc)
-        .replace("{possible_cause}", possible_cause)
+    prompt3 = render_prompt(
+        templates[3],
+        {
+            "context": context,
+            "audience": AUDIENCE,
+            "anomaly_description": anomaly_desc,
+            "possible_cause": possible_cause,
+        }
     )
     response3 = call_ollama(prompt3)
     parsed3 = extract_json(response3)
