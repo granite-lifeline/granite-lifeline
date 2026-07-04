@@ -18,7 +18,8 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
         ttm_output: Model Layer output containing predictions and signals
 
     Returns:
-        Formatted context string with vehicle status and key signals
+        Formatted context string with vehicle status, key signals, and
+        Signal Correlation section when abnormal signals are detected
     """
     # Format risk_level with fallback for None
     risk_level = ttm_output.risk_level if ttm_output.risk_level else "Unknown"
@@ -39,6 +40,7 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
     ]
 
     # Add each key signal with abnormality check
+    abnormal_signals = []
     for signal in ttm_output.key_signals:
         # Determine if signal is abnormal
         ref_lower = signal.reference_range[0]
@@ -47,6 +49,10 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
             signal.value < ref_lower or signal.value > ref_upper
         )
         status = "ABNORMAL" if is_abnormal else "NORMAL"
+
+        # Collect abnormal signals for correlation analysis
+        if is_abnormal:
+            abnormal_signals.append(signal)
 
         # Format unit (omit if empty or None)
         unit_str = signal.unit if signal.unit else ""
@@ -57,6 +63,26 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
             f"(reference: {ref_lower}-{ref_upper}{unit_str}) [{status}]"
         )
         context_lines.append(signal_line)
+
+    # Add signal correlation analysis
+    if len(abnormal_signals) > 1:
+        context_lines.append("")
+        context_lines.append("Signal Correlation:")
+        feature_names = ", ".join(s.feature for s in abnormal_signals)
+        context_lines.append(
+            f"- Multiple abnormal signals detected: {feature_names}"
+        )
+        context_lines.append(
+            "- This pattern may indicate a systemic issue affecting "
+            "multiple components simultaneously."
+        )
+    elif len(abnormal_signals) == 1:
+        context_lines.append("")
+        context_lines.append("Signal Correlation:")
+        context_lines.append(
+            f"- Single abnormal signal detected: "
+            f"{abnormal_signals[0].feature}"
+        )
 
     return "\n".join(context_lines)
 
