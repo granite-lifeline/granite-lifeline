@@ -1,10 +1,15 @@
 """Display labels for dashboard anomaly types."""
 
 from shared.anomaly_mapping import (
-    ANOMALY_TYPE_MAPPING_TABLE,
     GROUND_KNOWLEDGE_ANOMALY_TYPES,
     LEGACY_COMPONENT_ALIASES,
 )
+
+__all__ = [
+    "COMPONENT_DISPLAY_NAMES",
+    "GROUND_KNOWLEDGE_ANOMALY_TYPES",
+    "LEGACY_COMPONENT_ALIASES",
+]
 
 COMPONENT_DISPLAY_NAMES = {
     "cooling_degradation": "Cooling System",

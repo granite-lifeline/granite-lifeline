@@ -426,4 +426,3 @@ if __name__ == "__main__":
         layer1_bad, layer2_bad, layer3_bad, "High"
     )
     print(format_validation_summary(results_bad))
-
