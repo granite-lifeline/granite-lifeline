@@ -17,7 +17,9 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 # noqa comments to suppress E402 for imports after path modification
 from shared.interface_models import ModelLayerOutput  # noqa: E402
-from report_layer.pipeline.context_injection import build_context  # noqa: E402
+from report_layer.pipeline.context_injection import (  # noqa: E402
+    build_context_with_rag
+)
 
 
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
@@ -134,7 +136,7 @@ def call_ollama(prompt: str) -> str:
 
 
 def run_three_layer_chain(
-    context: str,
+    rag_context: dict,
     templates: Dict[int, str]
 ) -> Dict[str, Any]:
     """Run three-layer prompt chain for a scenario."""
@@ -144,8 +146,10 @@ def run_three_layer_chain(
     prompt1 = render_prompt(
         templates[1],
         {
-            "context": context,
+            "context": rag_context["context"],
             "audience": AUDIENCE,
+            "fault_knowledge": rag_context["fault_knowledge"],
+            "certainty_guidance": rag_context["certainty_guidance"],
         }
     )
     response1 = call_ollama(prompt1)
@@ -163,9 +167,11 @@ def run_three_layer_chain(
     prompt2 = render_prompt(
         templates[2],
         {
-            "context": context,
+            "context": rag_context["context"],
             "audience": AUDIENCE,
             "anomaly_description": anomaly_desc,
+            "fault_knowledge": rag_context["fault_knowledge"],
+            "certainty_guidance": rag_context["certainty_guidance"],
         }
     )
     response2 = call_ollama(prompt2)
@@ -183,10 +189,13 @@ def run_three_layer_chain(
     prompt3 = render_prompt(
         templates[3],
         {
-            "context": context,
+            "context": rag_context["context"],
             "audience": AUDIENCE,
             "anomaly_description": anomaly_desc,
             "possible_cause": possible_cause,
+            "fault_knowledge": rag_context["fault_knowledge"],
+            "actions_knowledge": rag_context["actions_knowledge"],
+            "certainty_guidance": rag_context["certainty_guidance"],
         }
     )
     response3 = call_ollama(prompt3)
@@ -356,10 +365,10 @@ def main():
         test_input = load_scenario(scenario_info['file'])
 
         print("Building context...")
-        context = build_context(test_input)
+        rag_context = build_context_with_rag(test_input)
 
         try:
-            results = run_three_layer_chain(context, templates)
+            results = run_three_layer_chain(rag_context, templates)
             scenario_results.append({
                 "name": scenario_info['name'],
                 "description": scenario_info['description'],
