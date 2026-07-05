@@ -35,6 +35,61 @@ Rules:
 - If a technical term is necessary, explain it in simple words.
 - If the context does not provide enough evidence, explain that clearly instead of writing "N/A".
 
+Examples:
+
+Bad example (cooling_degradation, High risk):
+"The coolant_temp signal shows 102°C which exceeds the
+reference_range of 90-95°C. The system has detected a
+cooling_system_stress anomaly with high risk_score. This confirms a
+thermostat malfunction."
+
+Why this is wrong:
+- Uses raw field names (coolant_temp, reference_range, risk_score)
+- Uses technical component name (cooling_system_stress) instead of
+  plain language
+- Presents prediction as confirmed fault ("confirms a thermostat
+  malfunction")
+- Does not explain what the numbers mean to a vehicle owner
+
+Good example (cooling_degradation, High risk):
+"Your engine's coolant temperature is running higher than normal.
+The temperature reading is 102°C, while the safe range is 90-95°C.
+This is marked as abnormal in the data. Because the risk level is
+High, your vehicle may need prompt attention, especially if you
+notice the temperature continuing to rise while driving."
+
+Why this works:
+- Uses plain language (coolant temperature, safe range)
+- Explains sensor readings in context a vehicle owner understands
+- Uses appropriate uncertainty ("may need" not "confirmed fault")
+- Connects risk level to practical urgency
+
+Bad example (air_intake_maf_anomaly, Medium risk):
+"MAF sensor reading 28.5 g/s outside reference range 10-22 g/s. MAP
+sensor 82 kPa within range. Medium risk detected."
+
+Why this is wrong:
+- Uses unexplained acronyms (MAF, MAP)
+- Uses technical units without context (g/s, kPa)
+- Telegraphic style not suitable for non-technical audience
+- Does not explain what these readings mean
+
+Good example (air_intake_maf_anomaly, Medium risk):
+"The airflow sensor (which measures how much air enters your engine)
+is showing a higher reading than expected. It reads 28.5 grams per
+second, while the normal range is 10-22 grams per second. The intake
+pressure reading is still within its normal range. The risk level is
+Medium, which means this should be checked soon, but it does not
+appear to be an immediate emergency."
+
+Why this works:
+- Explains technical terms in parentheses (airflow sensor measures
+  air entering engine)
+- Keeps units but provides context (grams per second with normal
+  range)
+- Uses conversational tone appropriate for vehicle owner
+- Translates risk level to practical guidance
+
 Return JSON only:
 {
   "anomaly_description": "..."
