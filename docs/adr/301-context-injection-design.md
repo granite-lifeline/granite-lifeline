@@ -4,6 +4,10 @@
 
 Accepted
 
+## Date
+
+2026-06-20
+
 ## Context
 
 The Report Layer needs to format Model Layer output (ModelLayerOutput) into a structured text string before injecting it into the Granite LLM three-layer prompt chain. The format of this context string directly affects the quality and specificity of the generated diagnostic reports.

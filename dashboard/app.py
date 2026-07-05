@@ -2022,7 +2022,7 @@ def show_detail_page():
                 color=icon_color,
             )
             icon_src = svg_data_uri(icon_svg)
-            label = COMPONENT_DISPLAY_NAMES.get(tab_key, tab_key)
+            label = COMPONENT_DISPLAY_NAMES.get(tab_key, tab_key) or tab_key
             if st.button(
                 label,
                 key=f"tab_btn_{tab_key}",

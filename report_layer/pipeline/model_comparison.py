@@ -25,6 +25,30 @@ MODELS = [
     "granite4.1:8b"
 ]
 
+DEFAULT_PROMPT_VALUES = {
+    "fault_knowledge": (
+        "No retrieved fault knowledge was available for this run."
+    ),
+    "actions_knowledge": (
+        "No retrieved action guidance was available for this run."
+    ),
+    "certainty_guidance": (
+        "Use careful wording and do not present predictions as "
+        "confirmed faults."
+    ),
+}
+
+
+def render_prompt(template: str, values: Dict[str, str]) -> str:
+    """Replace prompt placeholders with available values."""
+    prompt_values = DEFAULT_PROMPT_VALUES.copy()
+    prompt_values.update(values)
+
+    prompt = template
+    for key, value in prompt_values.items():
+        prompt = prompt.replace("{" + key + "}", str(value))
+    return prompt
+
 
 def load_test_input() -> ModelLayerOutput:
     """Load test input from typical_cooling_stress.json."""
@@ -104,10 +128,12 @@ def run_layer1(
     """Run layer 1: anomaly description."""
     print(f"Running {model} layer 1...")
 
-    prompt = (
-        template
-        .replace("{context}", context)
-        .replace("{audience}", AUDIENCE)
+    prompt = render_prompt(
+        template,
+        {
+            "context": context,
+            "audience": AUDIENCE,
+        }
     )
     response_text = call_ollama(model, prompt)
 
@@ -133,11 +159,13 @@ def run_layer2(
     """Run layer 2: possible cause."""
     print(f"Running {model} layer 2...")
 
-    prompt = (
-        template
-        .replace("{context}", context)
-        .replace("{audience}", AUDIENCE)
-        .replace("{anomaly_description}", anomaly_description)
+    prompt = render_prompt(
+        template,
+        {
+            "context": context,
+            "audience": AUDIENCE,
+            "anomaly_description": anomaly_description,
+        }
     )
     response_text = call_ollama(model, prompt)
 
@@ -164,12 +192,14 @@ def run_layer3(
     """Run layer 3: recommended action."""
     print(f"Running {model} layer 3...")
 
-    prompt = (
-        template
-        .replace("{context}", context)
-        .replace("{audience}", AUDIENCE)
-        .replace("{anomaly_description}", anomaly_description)
-        .replace("{possible_cause}", possible_cause)
+    prompt = render_prompt(
+        template,
+        {
+            "context": context,
+            "audience": AUDIENCE,
+            "anomaly_description": anomaly_description,
+            "possible_cause": possible_cause,
+        }
     )
     response_text = call_ollama(model, prompt)
 

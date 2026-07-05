@@ -1,8 +1,8 @@
 # Report Layer
 
-**Owner:** Report Team  
-**Status:** Active Development  
-**Last Updated:** 2026-06-23
+**Owner:** Report Team
+**Status:** Active Development
+**Last Updated:** 2026-07-04
 
 ---
 
@@ -42,6 +42,16 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | ADR 301 | GL-27 | Document context injection design |
 | ADR 302 | GL-76 | Document model selection rationale |
 | Test Cases | GL-27, GL-30 | 3 JSON scenarios for evaluation |
+| RAG Knowledge Indexer | GL-111 | ChromaDB indexer for fault knowledge base |
+| RAG Retriever | GL-112 | Metadata-filtered retrieval functions |
+| RAG Unit Tests | GL-113 | 33 test cases for RAG retriever |
+| RAG Integration | GL-114 | RAG knowledge injection into context |
+| RAG Prompt Integration | GL-115 | Inject RAG knowledge into LLM prompts |
+| RAG Sample Reports | GL-116 | Sample RAG reports for 3 required scenarios |
+| RAG Language Review | GL-117 | Verify plain language and no confirmed fault claims |
+| Confidence Guidance | GL-135 | Certainty language based on prediction_confidence |
+| Signal Correlation | GL-136 | Multi-signal correlation analysis |
+| ADR 303 | GL-110 | Document RAG knowledge base design |
 
 ### [IN PROGRESS]
 
@@ -55,7 +65,6 @@ Data Layer → Model Layer → Report Layer → Dashboard
 |-----------|----------|-------------|
 | Report Generation Pipeline | P0 | Orchestrate three-layer Granite LLM chain |
 | Risk History Storage | P0 | Persist risk_history for trend charts |
-| RAG Knowledge Base | P1 | Enhance prompts with fault diagnosis knowledge |
 | Unit Tests | P1 | Test coverage for all components |
 | Integration Tests | P1 | End-to-end pipeline testing |
 
@@ -99,7 +108,10 @@ ReportLayerOutput (to Dashboard)
 report_layer/
 ├── docs/                           # Documentation
 │   ├── checklist.md                # Quality assurance checklist
-│   └── sample_reports.md           # Example reports
+│   ├── readability_evaluation.md   # Readability assessment
+│   ├── sample_report_review.md     # Sample report analysis
+│   ├── sample_reports.md           # Example reports
+│   └── terminology_checklist.md    # Terminology validation
 ├── evaluation/                     # Test cases and results
 │   ├── __init__.py
 │   ├── typical_cooling_stress.json         # Typical fault scenario
@@ -109,14 +121,18 @@ report_layer/
 │   └── scenario_comparison.md              # GL-30 evaluation results
 ├── pipeline/                       # Core logic
 │   ├── __init__.py
-│   ├── context_injection.py        # Format Model Layer output
+│   ├── context_injection.py        # Format Model Layer output + RAG integration
 │   ├── model_comparison.py         # GL-76 model evaluation script
 │   └── scenario_evaluation.py      # GL-30 scenario testing script
 ├── prompts/                        # LLM prompt templates
 │   ├── layer1_description.txt      # Anomaly description prompt
 │   ├── layer2_cause.txt            # Possible cause prompt
 │   └── layer3_action.txt           # Recommended action prompt
-├── tests/                          # Unit tests (planned)
+├── rag/                            # RAG knowledge base (GL-110)
+│   ├── knowledge_indexer.py        # ChromaDB indexer
+│   ├── rag_retriever.py            # Metadata-filtered retrieval
+│   └── chroma_db/                  # ChromaDB storage (gitignored)
+├── tests/                          # Unit tests
 │   └── .gitkeep
 └── README.md                       # This file
 ```
@@ -254,6 +270,43 @@ Three JSON mock data files representing different diagnostic scenarios:
 - Tests model's ability to note contradictions
 
 These files validate the model's ability to distinguish typical from atypical fault patterns (Story 2 AC3).
+
+### 6. RAG Knowledge Base (`rag/`)
+
+**Purpose:** Provide grounded fault diagnosis knowledge to reduce LLM hallucination and improve diagnostic accuracy.
+
+**Components:**
+
+**knowledge_indexer.py** (GL-111)
+- Indexes 7 anomaly types from `shared/ground_knowledge/grounded_knowledge.yaml`
+- Creates 28 documents (7 types × 4 documents each):
+  - description_causes
+  - actions_low
+  - actions_medium
+  - actions_high
+- Stores in ChromaDB with metadata: `{"anomaly_type": "<type>", "risk_level": "<level>"}`
+- Validates all expected anomaly types are present
+- Skips re-indexing if already up to date
+
+**rag_retriever.py** (GL-112)
+- Three retrieval functions with graceful error handling:
+  - `retrieve_description_causes(anomaly_type)`: Returns description and causes
+  - `retrieve_actions(anomaly_type, risk_level)`: Returns risk-appropriate actions
+  - `retrieve_all(anomaly_type, risk_level)`: Returns both as dict
+- Uses exact metadata filtering (not semantic search)
+- Fallback messages for missing documents
+
+**Integration** (GL-114, GL-135, GL-136)
+- `build_context_with_rag()` in `context_injection.py` combines:
+  - Model Layer output formatting
+  - RAG knowledge retrieval
+  - Confidence-based certainty guidance
+  - Multi-signal correlation analysis
+- Returns dict with `context`, `fault_knowledge`, and `actions_knowledge`
+
+**Documentation:** See `docs/adr/303-rag-knowledge-base-design.md`
+
+**Tests:** 33 test cases in `tests/test_rag_retriever.py` (GL-113)
 
 ---
 
@@ -439,12 +492,6 @@ See `docs/checklist.md` for full quality checklist.
 - Performance benchmarks
 
 ### Future Enhancements
-
-**RAG Components** (P2)
-- `rag/knowledge_base/`: Fault diagnosis knowledge base
-- `rag/retriever.py`: Knowledge retrieval for prompt enhancement
-- Improve diagnostic accuracy for edge cases
-- Reduce hallucination risk
 
 **Production Deployment** (P3)
 - Migrate from Ollama to IBM watsonx.ai
