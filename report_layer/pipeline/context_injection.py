@@ -10,6 +10,58 @@ from report_layer.rag.rag_retriever import retrieve_all
 from shared.interface_models import ModelLayerOutput
 
 
+KNOWN_CORRELATIONS = {
+    frozenset(["coolant_temp", "coolant_slope"]):
+        "thermal_stress_pattern",
+    frozenset(["coolant_temp", "coolant_ambient_delta"]):
+        "thermal_stress_pattern",
+    frozenset(["maf", "map"]): "air_intake_issue",
+    frozenset(["maf", "maf_map_cohesion"]): "air_intake_issue",
+    frozenset(["accel_pedal_d", "accel_pedal_e"]):
+        "dual_channel_pedal_divergence",
+    frozenset(["accel_pedal_d", "accel_pedal_channel_delta"]):
+        "dual_channel_pedal_divergence",
+    frozenset(["intake_temp", "intake_ambient_delta"]):
+        "heat_soak_pattern",
+    frozenset(["map", "rpm"]): "map_load_plausibility_issue",
+    frozenset(["accel_pedal_d", "tps"]): "throttle_tracking_issue",
+    frozenset(["accel_pedal_e", "tps"]): "throttle_tracking_issue",
+}
+
+CORRELATION_DESCRIPTIONS = {
+    "thermal_stress_pattern": (
+        "Thermal stress pattern detected — multiple cooling system "
+        "signals are abnormal simultaneously, suggesting systemic "
+        "cooling system degradation."
+    ),
+    "air_intake_issue": (
+        "Air intake anomaly pattern detected — MAF and MAP signals "
+        "are both abnormal, suggesting a systemic air intake or "
+        "sensor plausibility issue."
+    ),
+    "dual_channel_pedal_divergence": (
+        "Dual-channel pedal divergence detected — both accelerator "
+        "pedal sensor channels are abnormal simultaneously, "
+        "suggesting a sensor or wiring fault."
+    ),
+    "heat_soak_pattern": (
+        "Heat soak pattern detected — intake temperature signals "
+        "are abnormal, suggesting elevated underbonnet temperatures "
+        "affecting sensor readings."
+    ),
+    "map_load_plausibility_issue": (
+        "MAP load plausibility issue detected — MAP and RPM signals "
+        "are both abnormal, suggesting a manifold pressure or engine "
+        "load calculation fault."
+    ),
+    "throttle_tracking_issue": (
+        "Throttle tracking issue detected — pedal and throttle "
+        "position signals are both abnormal, suggesting a "
+        "drive-by-wire tracking fault."
+    ),
+}
+
+
 def build_context(ttm_output: ModelLayerOutput) -> str:
     """
     Format ModelLayerOutput into structured text for LLM prompt injection.
@@ -19,7 +71,9 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
 
     Returns:
         Formatted context string with vehicle status, key signals, and
-        Signal Correlation section when abnormal signals are detected
+        Signal Correlation section when abnormal signals are detected.
+        The Signal Correlation section uses known automotive fault
+        correlation patterns where available.
     """
     # Format risk_level with fallback for None
     risk_level = ttm_output.risk_level if ttm_output.risk_level else "Unknown"
@@ -65,24 +119,43 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
         context_lines.append(signal_line)
 
     # Add signal correlation analysis
-    if len(abnormal_signals) > 1:
-        context_lines.append("")
-        context_lines.append("Signal Correlation:")
-        feature_names = ", ".join(s.feature for s in abnormal_signals)
-        context_lines.append(
-            f"- Multiple abnormal signals detected: {feature_names}"
-        )
-        context_lines.append(
-            "- This pattern may indicate a systemic issue affecting "
-            "multiple components simultaneously."
-        )
-    elif len(abnormal_signals) == 1:
-        context_lines.append("")
-        context_lines.append("Signal Correlation:")
-        context_lines.append(
-            f"- Single abnormal signal detected: "
-            f"{abnormal_signals[0].feature}"
-        )
+    if len(abnormal_signals) > 0:
+        # Compute set of abnormal feature names
+        abnormal_feature_names = set(s.feature for s in abnormal_signals)
+
+        # Check for known correlation patterns
+        matched_patterns = []
+        for pattern_features, pattern_name in KNOWN_CORRELATIONS.items():
+            if pattern_features.issubset(abnormal_feature_names):
+                matched_patterns.append(pattern_name)
+
+        if matched_patterns:
+            # Known correlation pattern(s) detected
+            context_lines.append("")
+            context_lines.append("Signal Correlation:")
+            for pattern_name in matched_patterns:
+                description = CORRELATION_DESCRIPTIONS[pattern_name]
+                context_lines.append(f"- {description}")
+        elif len(abnormal_signals) > 1:
+            # Multiple abnormal but no known pattern
+            context_lines.append("")
+            context_lines.append("Signal Correlation:")
+            feature_names = ", ".join(s.feature for s in abnormal_signals)
+            context_lines.append(
+                f"- Multiple abnormal signals detected: {feature_names}"
+            )
+            context_lines.append(
+                "- This pattern may indicate a systemic issue affecting "
+                "multiple components simultaneously."
+            )
+        elif len(abnormal_signals) == 1:
+            # Single abnormal signal
+            context_lines.append("")
+            context_lines.append("Signal Correlation:")
+            context_lines.append(
+                f"- Single abnormal signal detected: "
+                f"{abnormal_signals[0].feature}"
+            )
 
     return "\n".join(context_lines)
 
