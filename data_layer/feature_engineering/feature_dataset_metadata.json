@@ -1,0 +1,176 @@
+{
+  "schema_version": "1.0-cn",
+  "outputs": {
+    "feature_dataset": "C:\\Users\\Peter\\Documents\\Summer\\feature_dataset.csv",
+    "feature_dataset_debug": "C:\\Users\\Peter\\Documents\\Summer\\feature_dataset_debug.csv",
+    "feature_dataset_metadata": "C:\\Users\\Peter\\Documents\\Summer\\feature_dataset_metadata.json"
+  },
+  "sampling_rate_hz": 1,
+  "row_count": 249694,
+  "merge_key": [
+    "timestamp",
+    "trip_id",
+    "segment_id",
+    "row_in_segment"
+  ],
+  "derived_feature_columns": [
+    "coolant_slope",
+    "coolant_ambient_delta",
+    "coolant_stability",
+    "intake_ambient_delta",
+    "intake_temp_slope",
+    "maf_derived_air_load_raw",
+    "map_derived_air_load_raw",
+    "maf_map_cohesion",
+    "speed_density_maf_residual",
+    "map_slope",
+    "accel_pedal_mean",
+    "pedal_throttle_gap",
+    "pedal_to_throttle_delay",
+    "tps_slope",
+    "accel_pedal_channel_delta",
+    "accel_pedal_channel_ratio",
+    "pedal_slope",
+    "engine_on_flag",
+    "rpm_slope",
+    "idle_flag",
+    "idle_rpm_stability"
+  ],
+  "intermediate_feature_files": {
+    "deterministic_features": {
+      "path": "C:\\Users\\Peter\\Documents\\Summer\\deterministic_features.csv",
+      "table_type": "thin_row_level_feature_table"
+    },
+    "event_features": {
+      "path": "C:\\Users\\Peter\\Documents\\Summer\\event_features.csv",
+      "table_type": "thin_row_level_feature_table"
+    },
+    "baseline_features": {
+      "path": "C:\\Users\\Peter\\Documents\\Summer\\baseline_features.csv",
+      "table_type": "thin_row_level_feature_table"
+    }
+  },
+  "missing_value_policy": {
+    "slope_first_row_in_segment": "NaN",
+    "rolling_insufficient_context": "NaN",
+    "non_event_rows_for_event_features": "NaN",
+    "baseline_prediction_unavailable": "NaN",
+    "assembler_imputation": "none"
+  },
+  "event_delay_policy": {
+    "feature": "pedal_to_throttle_delay",
+    "write_strategy": "write delay only on valid pedal step trigger rows",
+    "non_event_rows": "NaN"
+  },
+  "baseline_model_summary": {
+    "baseline_schema_version": "1.0-cn",
+    "base_filter_count": 240903,
+    "cohesion_reference": "golden_post_warmup_steady_driving",
+    "speed_density_fit_scope": "steady_driving_high_confidence_engine_running",
+    "pedal_throttle_model_type": "grouped_linear_regression"
+  },
+  "debug_table_generated": true,
+  "validation_results": {
+    "row_counts": {
+      "operating": 249694,
+      "deterministic": 249694,
+      "event": 249694,
+      "baseline": 249694
+    },
+    "key_validations": {
+      "operating": {
+        "row_count": 249694,
+        "key_duplicate_count": 0,
+        "missing_key_counts": {
+          "timestamp": 0,
+          "trip_id": 0,
+          "segment_id": 0,
+          "row_in_segment": 0
+        }
+      },
+      "deterministic": {
+        "row_count": 249694,
+        "key_duplicate_count": 0,
+        "missing_key_counts": {
+          "timestamp": 0,
+          "trip_id": 0,
+          "segment_id": 0,
+          "row_in_segment": 0
+        }
+      },
+      "event": {
+        "row_count": 249694,
+        "key_duplicate_count": 0,
+        "missing_key_counts": {
+          "timestamp": 0,
+          "trip_id": 0,
+          "segment_id": 0,
+          "row_in_segment": 0
+        }
+      },
+      "baseline": {
+        "row_count": 249694,
+        "key_duplicate_count": 0,
+        "missing_key_counts": {
+          "timestamp": 0,
+          "trip_id": 0,
+          "segment_id": 0,
+          "row_in_segment": 0
+        }
+      }
+    },
+    "feature_dataset": {
+      "row_count": 249694,
+      "column_count": 41,
+      "derived_feature_count": 21,
+      "debug_only_columns_present": [],
+      "derived_feature_missing_rates": {
+        "coolant_slope": 0.000476583338005719,
+        "coolant_ambient_delta": 0.0003804656900045656,
+        "coolant_stability": 0.2882207822374587,
+        "intake_ambient_delta": 0.00037646078800451755,
+        "intake_temp_slope": 0.000548671574006584,
+        "maf_derived_air_load_raw": 9.611764800115342e-05,
+        "map_derived_air_load_raw": 8.009804000096118e-05,
+        "maf_map_cohesion": 0.00010012255000120147,
+        "speed_density_maf_residual": 0.00010012255000120147,
+        "map_slope": 0.0004845931420058151,
+        "accel_pedal_mean": 0.0002442990220029316,
+        "pedal_throttle_gap": 0.0002442990220029316,
+        "pedal_to_throttle_delay": 0.9957948528999495,
+        "tps_slope": 0.0006007353000072088,
+        "accel_pedal_channel_delta": 0.0002442990220029316,
+        "accel_pedal_channel_ratio": 0.0002442990220029316,
+        "pedal_slope": 0.0007128725560085544,
+        "engine_on_flag": 2.8034314000336413e-05,
+        "rpm_slope": 0.0005006127500060074,
+        "idle_flag": 0.0,
+        "idle_rpm_stability": 0.9859267743718311
+      }
+    },
+    "feature_dataset_debug": {
+      "row_count": 249694,
+      "column_count": 45,
+      "debug_columns": [
+        "maf_air_load_z",
+        "map_air_load_z",
+        "expected_maf",
+        "expected_tps"
+      ]
+    },
+    "feature_reference_summary": {
+      "row_count": 882,
+      "feature_count": 21,
+      "summary_scopes": [
+        "all_rows",
+        "base_high_confidence_engine_running"
+      ]
+    }
+  },
+  "notes": [
+    "No feature window dataset is generated in V1.",
+    "No pkl files are generated in V1.",
+    "Intermediate feature CSV files are thin tables containing only key columns and newly generated feature columns.",
+    "Final feature_dataset.csv excludes debug-only columns."
+  ]
+}

@@ -1,10 +1,5 @@
 {
   "schema_version": "1.0-cn",
-  "created_from": {
-    "operating_condition_enriched": "C:\\Users\\Peter\\Documents\\Summer\\operation condition\\operating_condition_enriched.csv",
-    "deterministic_features": "C:\\Users\\Peter\\Documents\\Summer\\deterministic_features.csv",
-    "event_features": "C:\\Users\\Peter\\Documents\\Summer\\event_features.csv"
-  },
   "row_count": 249694,
   "baseline_filters": {
     "base": {
