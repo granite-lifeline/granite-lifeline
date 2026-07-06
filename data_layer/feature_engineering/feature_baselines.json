@@ -1,0 +1,646 @@
+{
+  "schema_version": "1.0-cn",
+  "created_from": {
+    "operating_condition_enriched": "C:\\Users\\Peter\\Documents\\Summer\\operation condition\\operating_condition_enriched.csv",
+    "deterministic_features": "C:\\Users\\Peter\\Documents\\Summer\\deterministic_features.csv",
+    "event_features": "C:\\Users\\Peter\\Documents\\Summer\\event_features.csv"
+  },
+  "row_count": 249694,
+  "baseline_filters": {
+    "base": {
+      "condition_confidence": "high",
+      "engine_on_flag": 1,
+      "thermal_state": "not unknown",
+      "child_state": "not unknown",
+      "count": 240903
+    }
+  },
+  "missing_value_policy": {
+    "fit": "drop rows when target or any model input is NaN",
+    "predict": "return NaN when any model input is NaN",
+    "imputation": "none"
+  },
+  "winsorize": {
+    "lower_quantile": 0.01,
+    "upper_quantile": 0.99,
+    "scope": "computed on each model training set and reused for prediction"
+  },
+  "standardization_parameters": {
+    "maf_map_cohesion": {
+      "selected_level": "golden_post_warmup_steady_driving",
+      "minimum_reference_rows": 100,
+      "count": 78707,
+      "diagnostics": [
+        {
+          "level": "golden_post_warmup_steady_driving",
+          "count": 78707,
+          "maf_std": 0.2916226568211772,
+          "map_std": 296.49101883086706,
+          "usable": true
+        }
+      ],
+      "maf_derived_air_load_raw": {
+        "mean": 0.8094907348647515,
+        "std": 0.2916226568211772
+      },
+      "map_derived_air_load_raw": {
+        "mean": 786.3370559388745,
+        "std": 296.49101883086706
+      }
+    }
+  },
+  "models": {
+    "speed_density_model": {
+      "model_type": "linear_regression",
+      "target": "maf",
+      "input_features": [
+        "map_derived_air_load_raw",
+        "map",
+        "rpm",
+        "intake_temp"
+      ],
+      "coefficients": {
+        "map_derived_air_load_raw": 0.023778032668470294,
+        "map": 0.14127609145896305,
+        "rpm": 6.690047685838753e-05,
+        "intake_temp": 0.07101467711912292
+      },
+      "intercept": -14.688826051927967,
+      "winsorize_bounds": {
+        "map_derived_air_load_raw": {
+          "lower": 293.93209175000004,
+          "upper": 1516.36693525
+        },
+        "map": {
+          "lower": 94.0,
+          "upper": 203.0
+        },
+        "rpm": {
+          "lower": 877.0,
+          "upper": 2205.0
+        },
+        "intake_temp": {
+          "lower": -8.0,
+          "upper": 40.0
+        },
+        "maf": {
+          "lower": 7.83,
+          "upper": 57.19
+        }
+      },
+      "metrics": {
+        "mae": 2.60680273672388,
+        "r2": 0.8663540114932885
+      },
+      "training_row_count": 88376,
+      "fit_scope": "steady_driving_high_confidence_engine_running"
+    },
+    "pedal_throttle_model": {
+      "model_type": "grouped_linear_regression",
+      "target": "tps",
+      "input_features": [
+        "accel_pedal_mean",
+        "rpm"
+      ],
+      "group_key": "operating_state",
+      "minimum_group_count": 100,
+      "fallback_order": [
+        "operating_state_model",
+        "child_state_model",
+        "global_high_confidence_engine_running_model"
+      ],
+      "operating_state_models": {
+        "post_warmup__acceleration": {
+          "model_type": "operating_state_linear_regression",
+          "target": "tps",
+          "input_features": [
+            "accel_pedal_mean",
+            "rpm"
+          ],
+          "coefficients": {
+            "accel_pedal_mean": 0.06615228476551446,
+            "rpm": -0.0034100608808932393
+          },
+          "intercept": 84.12466372610402,
+          "winsorize_bounds": {
+            "accel_pedal_mean": {
+              "lower": 14.3,
+              "upper": 53.7
+            },
+            "rpm": {
+              "lower": 849.0,
+              "upper": 2204.0
+            },
+            "tps": {
+              "lower": 28.6,
+              "upper": 83.5
+            }
+          },
+          "metrics": {
+            "mae": 4.785931259324175,
+            "r2": 0.00976881411162378
+          },
+          "training_row_count": 31850,
+          "fit_scope": "operating_state:post_warmup__acceleration"
+        },
+        "post_warmup__deceleration": {
+          "model_type": "operating_state_linear_regression",
+          "target": "tps",
+          "input_features": [
+            "accel_pedal_mean",
+            "rpm"
+          ],
+          "coefficients": {
+            "accel_pedal_mean": 0.025716285006724696,
+            "rpm": 0.00015094381897302057
+          },
+          "intercept": 80.67764644312425,
+          "winsorize_bounds": {
+            "accel_pedal_mean": {
+              "lower": 14.1,
+              "upper": 49.4
+            },
+            "rpm": {
+              "lower": 768.0,
+              "upper": 2694.0
+            },
+            "tps": {
+              "lower": 24.3,
+              "upper": 83.5
+            }
+          },
+          "metrics": {
+            "mae": 4.055403311661609,
+            "r2": 0.0004982005066993533
+          },
+          "training_row_count": 51981,
+          "fit_scope": "operating_state:post_warmup__deceleration"
+        },
+        "post_warmup__high_load": {
+          "model_type": "operating_state_linear_regression",
+          "target": "tps",
+          "input_features": [
+            "accel_pedal_mean",
+            "rpm"
+          ],
+          "coefficients": {
+            "accel_pedal_mean": 0.02488901108254287,
+            "rpm": 0.0018158144799418005
+          },
+          "intercept": 76.59781578535066,
+          "winsorize_bounds": {
+            "accel_pedal_mean": {
+              "lower": 14.1,
+              "upper": 78.0
+            },
+            "rpm": {
+              "lower": 1143.3,
+              "upper": 3283.3499999999985
+            },
+            "tps": {
+              "lower": 31.0,
+              "upper": 83.5
+            }
+          },
+          "metrics": {
+            "mae": 4.1123143503812605,
+            "r2": 0.01057431363580219
+          },
+          "training_row_count": 23166,
+          "fit_scope": "operating_state:post_warmup__high_load"
+        },
+        "post_warmup__idle": {
+          "model_type": "operating_state_linear_regression",
+          "target": "tps",
+          "input_features": [
+            "accel_pedal_mean",
+            "rpm"
+          ],
+          "coefficients": {
+            "accel_pedal_mean": -0.16287002863164735,
+            "rpm": 0.009064929983040277
+          },
+          "intercept": 75.38545734277157,
+          "winsorize_bounds": {
+            "accel_pedal_mean": {
+              "lower": 14.1,
+              "upper": 26.127999999999886
+            },
+            "rpm": {
+              "lower": 318.0,
+              "upper": 1354.2599999999948
+            },
+            "tps": {
+              "lower": 13.7,
+              "upper": 83.5
+            }
+          },
+          "metrics": {
+            "mae": 5.716230623937329,
+            "r2": 0.004929441096559128
+          },
+          "training_row_count": 8687,
+          "fit_scope": "operating_state:post_warmup__idle"
+        },
+        "post_warmup__steady_driving": {
+          "model_type": "operating_state_linear_regression",
+          "target": "tps",
+          "input_features": [
+            "accel_pedal_mean",
+            "rpm"
+          ],
+          "coefficients": {
+            "accel_pedal_mean": 0.04939041680760985,
+            "rpm": -0.00012029858709703
+          },
+          "intercept": 80.58797873379739,
+          "winsorize_bounds": {
+            "accel_pedal_mean": {
+              "lower": 14.1,
+              "upper": 48.2
+            },
+            "rpm": {
+              "lower": 876.0,
+              "upper": 2210.0
+            },
+            "tps": {
+              "lower": 27.5,
+              "upper": 83.5
+            }
+          },
+          "metrics": {
+            "mae": 4.202799632096794,
+            "r2": 0.0015727937867620057
+          },
+          "training_row_count": 78707,
+          "fit_scope": "operating_state:post_warmup__steady_driving"
+        },
+        "warmup__acceleration": {
+          "model_type": "operating_state_linear_regression",
+          "target": "tps",
+          "input_features": [
+            "accel_pedal_mean",
+            "rpm"
+          ],
+          "coefficients": {
+            "accel_pedal_mean": 0.10687399787649976,
+            "rpm": -0.006341848788530123
+          },
+          "intercept": 86.01779266211447,
+          "winsorize_bounds": {
+            "accel_pedal_mean": {
+              "lower": 14.3,
+              "upper": 56.7
+            },
+            "rpm": {
+              "lower": 875.0,
+              "upper": 2195.1399999999994
+            },
+            "tps": {
+              "lower": 30.6,
+              "upper": 83.5
+            }
+          },
+          "metrics": {
+            "mae": 6.179807196509578,
+            "r2": 0.020487425577370155
+          },
+          "training_row_count": 10944,
+          "fit_scope": "operating_state:warmup__acceleration"
+        },
+        "warmup__deceleration": {
+          "model_type": "operating_state_linear_regression",
+          "target": "tps",
+          "input_features": [
+            "accel_pedal_mean",
+            "rpm"
+          ],
+          "coefficients": {
+            "accel_pedal_mean": -0.010807528731657145,
+            "rpm": 0.00014809750452427493
+          },
+          "intercept": 81.56956511197232,
+          "winsorize_bounds": {
+            "accel_pedal_mean": {
+              "lower": 14.1,
+              "upper": 49.0
+            },
+            "rpm": {
+              "lower": 765.0,
+              "upper": 2135.6800000000003
+            },
+            "tps": {
+              "lower": 22.4,
+              "upper": 83.5
+            }
+          },
+          "metrics": {
+            "mae": 3.6926942442074195,
+            "r2": 6.029854556544034e-05
+          },
+          "training_row_count": 13309,
+          "fit_scope": "operating_state:warmup__deceleration"
+        },
+        "warmup__high_load": {
+          "model_type": "operating_state_linear_regression",
+          "target": "tps",
+          "input_features": [
+            "accel_pedal_mean",
+            "rpm"
+          ],
+          "coefficients": {
+            "accel_pedal_mean": 0.21799905314182935,
+            "rpm": -0.005743952902832299
+          },
+          "intercept": 77.11403443382291,
+          "winsorize_bounds": {
+            "accel_pedal_mean": {
+              "lower": 14.3,
+              "upper": 66.3
+            },
+            "rpm": {
+              "lower": 920.22,
+              "upper": 2540.89
+            },
+            "tps": {
+              "lower": 30.6,
+              "upper": 83.5
+            }
+          },
+          "metrics": {
+            "mae": 12.469892768923863,
+            "r2": 0.04081573298994645
+          },
+          "training_row_count": 3112,
+          "fit_scope": "operating_state:warmup__high_load"
+        },
+        "warmup__idle": {
+          "model_type": "operating_state_linear_regression",
+          "target": "tps",
+          "input_features": [
+            "accel_pedal_mean",
+            "rpm"
+          ],
+          "coefficients": {
+            "accel_pedal_mean": -0.04249778180697028,
+            "rpm": -0.00570027150754965
+          },
+          "intercept": 88.26259892606195,
+          "winsorize_bounds": {
+            "accel_pedal_mean": {
+              "lower": 14.1,
+              "upper": 32.921500000000016
+            },
+            "rpm": {
+              "lower": 766.0,
+              "upper": 1576.4300000000003
+            },
+            "tps": {
+              "lower": 22.7,
+              "upper": 83.5
+            }
+          },
+          "metrics": {
+            "mae": 2.3817445410986395,
+            "r2": 0.010226218131695441
+          },
+          "training_row_count": 9458,
+          "fit_scope": "operating_state:warmup__idle"
+        },
+        "warmup__steady_driving": {
+          "model_type": "operating_state_linear_regression",
+          "target": "tps",
+          "input_features": [
+            "accel_pedal_mean",
+            "rpm"
+          ],
+          "coefficients": {
+            "accel_pedal_mean": 0.06849787965189066,
+            "rpm": -0.0019372581838940528
+          },
+          "intercept": 82.87394316070599,
+          "winsorize_bounds": {
+            "accel_pedal_mean": {
+              "lower": 14.1,
+              "upper": 46.1
+            },
+            "rpm": {
+              "lower": 888.6800000000001,
+              "upper": 2075.3199999999997
+            },
+            "tps": {
+              "lower": 26.3,
+              "upper": 83.5
+            }
+          },
+          "metrics": {
+            "mae": 3.6748213116127233,
+            "r2": 0.005547011030089366
+          },
+          "training_row_count": 9669,
+          "fit_scope": "operating_state:warmup__steady_driving"
+        }
+      },
+      "child_state_models": {
+        "acceleration": {
+          "model_type": "child_state_linear_regression",
+          "target": "tps",
+          "input_features": [
+            "accel_pedal_mean",
+            "rpm"
+          ],
+          "coefficients": {
+            "accel_pedal_mean": 0.06940182719321618,
+            "rpm": -0.003928483859940347
+          },
+          "intercept": 84.51485991152595,
+          "winsorize_bounds": {
+            "accel_pedal_mean": {
+              "lower": 14.3,
+              "upper": 54.5
+            },
+            "rpm": {
+              "lower": 858.0,
+              "upper": 2204.0
+            },
+            "tps": {
+              "lower": 29.4,
+              "upper": 83.5
+            }
+          },
+          "metrics": {
+            "mae": 5.148357431295335,
+            "r2": 0.011192388417345489
+          },
+          "training_row_count": 42794,
+          "fit_scope": "child_state:acceleration"
+        },
+        "deceleration": {
+          "model_type": "child_state_linear_regression",
+          "target": "tps",
+          "input_features": [
+            "accel_pedal_mean",
+            "rpm"
+          ],
+          "coefficients": {
+            "accel_pedal_mean": 0.019735707051547455,
+            "rpm": 9.359334633773158e-05
+          },
+          "intercept": 80.91180515952381,
+          "winsorize_bounds": {
+            "accel_pedal_mean": {
+              "lower": 14.1,
+              "upper": 49.4
+            },
+            "rpm": {
+              "lower": 767.0,
+              "upper": 2636.1100000000006
+            },
+            "tps": {
+              "lower": 23.5,
+              "upper": 83.5
+            }
+          },
+          "metrics": {
+            "mae": 3.9889676309557536,
+            "r2": 0.0002768317214909555
+          },
+          "training_row_count": 65290,
+          "fit_scope": "child_state:deceleration"
+        },
+        "high_load": {
+          "model_type": "child_state_linear_regression",
+          "target": "tps",
+          "input_features": [
+            "accel_pedal_mean",
+            "rpm"
+          ],
+          "coefficients": {
+            "accel_pedal_mean": 0.02858575099287378,
+            "rpm": 0.0024226594099181977
+          },
+          "intercept": 74.59526030371194,
+          "winsorize_bounds": {
+            "accel_pedal_mean": {
+              "lower": 14.1,
+              "upper": 77.8
+            },
+            "rpm": {
+              "lower": 1057.54,
+              "upper": 3262.0
+            },
+            "tps": {
+              "lower": 31.0,
+              "upper": 83.5
+            }
+          },
+          "metrics": {
+            "mae": 5.2864738729498795,
+            "r2": 0.012932043375797564
+          },
+          "training_row_count": 26278,
+          "fit_scope": "child_state:high_load"
+        },
+        "idle": {
+          "model_type": "child_state_linear_regression",
+          "target": "tps",
+          "input_features": [
+            "accel_pedal_mean",
+            "rpm"
+          ],
+          "coefficients": {
+            "accel_pedal_mean": 0.06275122641530947,
+            "rpm": -0.004482962585851896
+          },
+          "intercept": 84.47854068882363,
+          "winsorize_bounds": {
+            "accel_pedal_mean": {
+              "lower": 14.1,
+              "upper": 29.424000000000525
+            },
+            "rpm": {
+              "lower": 676.0,
+              "upper": 1489.7200000000157
+            },
+            "tps": {
+              "lower": 21.6,
+              "upper": 83.5
+            }
+          },
+          "metrics": {
+            "mae": 3.8722217491156616,
+            "r2": 0.002805465328645562
+          },
+          "training_row_count": 18145,
+          "fit_scope": "child_state:idle"
+        },
+        "steady_driving": {
+          "model_type": "child_state_linear_regression",
+          "target": "tps",
+          "input_features": [
+            "accel_pedal_mean",
+            "rpm"
+          ],
+          "coefficients": {
+            "accel_pedal_mean": 0.0508895504046076,
+            "rpm": -0.0002116037648471845
+          },
+          "intercept": 80.7145026076278,
+          "winsorize_bounds": {
+            "accel_pedal_mean": {
+              "lower": 14.1,
+              "upper": 47.85
+            },
+            "rpm": {
+              "lower": 877.0,
+              "upper": 2205.0
+            },
+            "tps": {
+              "lower": 27.1,
+              "upper": 83.5
+            }
+          },
+          "metrics": {
+            "mae": 4.150411733843939,
+            "r2": 0.0018455996965078825
+          },
+          "training_row_count": 88376,
+          "fit_scope": "child_state:steady_driving"
+        }
+      },
+      "global_model": {
+        "model_type": "global_linear_regression",
+        "target": "tps",
+        "input_features": [
+          "accel_pedal_mean",
+          "rpm"
+        ],
+        "coefficients": {
+          "accel_pedal_mean": 0.020400904014988966,
+          "rpm": -0.0005142638571671681
+        },
+        "intercept": 81.52460462134054,
+        "winsorize_bounds": {
+          "accel_pedal_mean": {
+            "lower": 14.1,
+            "upper": 66.1
+          },
+          "rpm": {
+            "lower": 768.0,
+            "upper": 2721.0
+          },
+          "tps": {
+            "lower": 26.3,
+            "upper": 83.5
+          }
+        },
+        "metrics": {
+          "mae": 4.385634947427665,
+          "r2": 0.0007365553024254456
+        },
+        "training_row_count": 240883,
+        "fit_scope": "global_high_confidence_engine_running"
+      }
+    }
+  }
+}
