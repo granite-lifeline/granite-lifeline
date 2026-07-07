@@ -199,7 +199,7 @@ def run_comparison():
     print("Four-Way Retrieval Method Comparison")
     print("=" * 79)
     print(f"\nChromaDB Path: {chroma_db_path}")
-    print(f"Collections:")
+    print("Collections:")
     print(f"  - fault_knowledge: {fault_collection.count()} docs "
           f"(section-level)")
     print(f"  - symptom_knowledge: {symptom_collection.count()} docs "
@@ -468,8 +468,8 @@ def write_markdown_report(results):
                     "robust to chunking strategy (both achieve equal "
                     "accuracy)\n\n")
         else:
-            f.write(f"- **Finding**: Chunking strategy affects metadata "
-                    f"filter accuracy\n\n")
+            f.write("- **Finding**: Chunking strategy affects metadata "
+                    "filter accuracy\n\n")
 
         f.write("**Section-Level (28 docs) vs Document-Level (7 docs) "
                 "with Semantic Search:**\n\n")
