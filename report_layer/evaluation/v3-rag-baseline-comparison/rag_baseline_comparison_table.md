@@ -124,7 +124,48 @@ In the contradictory scenario, the RAG pipeline correctly used hedging language 
 
 ### Metadata-Filtered vs Semantic Vector Search Comparison
 
-This section will be completed after GL-156 evaluation. GL-156 compares the accuracy and reliability of metadata-filtered retrieval (current approach, ADR 303) against semantic vector search for fault knowledge retrieval. Results will be incorporated here to provide additional evidence for the RAG architecture design decision.
+This section presents results from a 2×2 empirical comparison of retrieval methods and knowledge base chunking strategies, conducted as part of GL-156 and GL-166.
+
+**Experimental Design:**
+
+Two retrieval methods × two knowledge base chunking strategies = four method combinations:
+
+| Method | Retrieval | Collection | Documents |
+|--------|-----------|------------|-----------|
+| A | Metadata filter | fault_knowledge | 28 (section-level) |
+| B | Semantic search | fault_knowledge | 28 (section-level) |
+| C | Metadata filter | symptom_knowledge | 7 (document-level) |
+| D | Semantic search | symptom_knowledge | 7 (document-level) |
+
+Both knowledge bases contain the same underlying fault knowledge from grounded_knowledge.yaml but differ in chunking strategy. Each method was tested across all 7 anomaly types with 3 trials per anomaly type.
+
+**Results:**
+
+| Anomaly Type | A Correct | A Time ms | B Correct | B Time ms | C Correct | C Time ms | D Correct | D Time ms |
+|---|---|---|---|---|---|---|---|---|
+| cooling_degradation | ✓ | 0.46 | ✓ | 72.98 | ✓ | 0.32 | ✓ | 57.25 |
+| intake_air_temperature_sensor_or_heat_soak_fault | ✓ | 0.30 | ✗ | 55.96 | ✓ | 0.29 | ✓ | 56.77 |
+| air_intake_maf_anomaly | ✓ | 0.32 | ✗ | 56.16 | ✓ | 0.28 | ✓ | 55.25 |
+| map_load_signal_plausibility_fault | ✓ | 0.29 | ✓ | 57.93 | ✓ | 0.28 | ✓ | 56.58 |
+| electronic_throttle_tracking_fault | ✓ | 0.35 | ✗ | 56.20 | ✓ | 0.33 | ✗ | 55.34 |
+| accelerator_pedal_sensor | ✓ | 0.29 | ✓ | 55.96 | ✓ | 0.36 | ✓ | 62.72 |
+| idle_speed_control_or_surge_degradation | ✓ | 0.38 | ✓ | 71.89 | ✓ | 0.30 | ✓ | 57.94 |
+
+**Key Findings:**
+
+Dimension 1 — Retrieval method comparison: Metadata filter (Methods A and C) achieved 100% accuracy regardless of chunking strategy. Semantic search accuracy varied with chunking granularity: 57.1% at section-level (Method B) versus 85.7% at document-level (Method D). Metadata filter was approximately 180x faster than semantic search across all conditions.
+
+Dimension 2 — Chunking strategy comparison: Metadata-filtered retrieval was robust to chunking strategy, achieving identical accuracy with both 28-document and 7-document collections. Semantic search benefited significantly from document-level chunking, improving from 57.1% to 85.7%, as merged documents provide richer context for embedding model matching.
+
+One anomaly type (electronic_throttle_tracking_fault) failed semantic retrieval under both chunking strategies, indicating that its symptom profile is semantically too similar to other anomaly types for reliable vector-based disambiguation.
+
+**Why Section-Level Chunking Was Retained:**
+
+Although document-level chunking achieves equivalent metadata filter accuracy, section-level chunking (28 documents) was retained in the production pipeline to enable fine-grained retrieval. Each prompt layer receives only the knowledge relevant to its task: Layers 1 and 2 retrieve description and causes, while Layer 3 retrieves risk-level-specific actions. This prevents risk-level confusion in recommended actions — a High risk report will not inadvertently include Low risk monitoring language from a merged document.
+
+**Conclusion:**
+
+Metadata-filtered retrieval is robust, deterministic, and insensitive to chunking strategy, validating the design decision in ADR 303. In the Granite Lifeline pipeline, anomaly_type is confirmed by the Model Layer prior to retrieval, making semantic search unnecessary. These results provide empirical evidence that the current architecture is the optimal choice for this system design.
 
 ## 6. Conclusion
 
