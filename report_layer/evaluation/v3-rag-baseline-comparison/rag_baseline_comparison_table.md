@@ -12,6 +12,18 @@ Three test scenarios were evaluated:
 2. **atypical_cooling_stress**: Medium risk (51% confidence), coolant_temp NORMAL at 93°C but anomaly flagged
 3. **contradictory_cooling_stress**: Low risk (31% confidence), coolant_temp ABNORMAL at 108°C despite low risk classification
 
+### Group Report Suitability Summary
+
+This comparison table is suitable for the group report Evaluation section because it:
+
+| Requirement | Status | Evidence in this document |
+|---|---|---|
+| Uses fixed test scenarios | Met | Section 1 defines the same three scenarios for both baseline and RAG outputs |
+| Compares baseline and RAG outputs directly | Met | Section 2 reports automated scores for both pipelines; Section 3 gives scenario-level examples |
+| Covers the agreed evaluation dimensions | Met | Factual Grounding, Readability, Hedging Appropriateness, and Actionability are scored in Section 2 |
+| Explains score limitations | Met | Sections 3 and 4 identify keyword-based evaluator limitations and add manual interpretation |
+| Provides report-ready findings | Met | Section 5 gives a compact table that can be copied into the group report Evaluation chapter |
+
 ## 2. Automated Quality Scores
 
 ### Baseline Scores
@@ -120,7 +132,22 @@ In the contradictory scenario, the RAG pipeline correctly used hedging language 
 
 **Finding 5 — Overall RAG outperforms baseline**: RAG achieved a mean overall score of 0.95 compared to baseline 0.93, a modest but consistent improvement. The improvement is most significant in scenarios with lower confidence and mixed signals, where fault knowledge grounding has the greatest impact on report quality.
 
-## 5. Retrieval Method Comparison (GL-156)
+## 5. Group Report Evaluation Table (GL-123)
+
+The table below is the recommended compact version for the group report Evaluation section.
+
+| Evaluation Focus | Baseline Result | RAG Result | Interpretation for Group Report |
+|---|---|---|---|
+| Overall quality | Average score: 0.93 | Average score: 0.95 | RAG produced a small but consistent improvement across the three fixed scenarios. |
+| Factual grounding | 1.00 average | 1.00 average | Both pipelines correctly referenced sensor values and risk information from the input context. |
+| Readability | Strong in all scenarios | Mostly strong, but one high-risk report used the raw field name `coolant_temp` | RAG adds useful technical detail, but prompt wording should continue to convert raw field names into owner-friendly language. |
+| Hedging appropriateness | Weaker in low-confidence scenarios due to keyword-based scoring | Stronger in atypical and contradictory scenarios | RAG improved cautious language when prediction confidence was low, which helps avoid presenting predictions as confirmed faults. |
+| Actionability | Clear urgency language, but sometimes generic | More technically specific actions grounded in retrieved fault knowledge | RAG gave more useful inspection steps, such as checking thermostat operation, radiator condition, coolant quality, and fan behaviour. |
+| Main limitation | Some advice is generic | Some advice is more technical and may need simpler wording | The final dashboard report should keep RAG detail but simplify wording for non-technical vehicle owners. |
+
+**Report-ready conclusion**: RAG-enhanced reports were slightly stronger overall than baseline reports and were especially useful for low-confidence or mixed-signal cases. The main benefit was better grounding in retrieved fault knowledge and more specific maintenance actions. The main limitation was that RAG sometimes introduced technical wording, so future prompt work should focus on simplifying retrieved knowledge before presenting it to vehicle owners.
+
+## 6. Retrieval Method Comparison (GL-156)
 
 ### Metadata-Filtered vs Semantic Vector Search Comparison
 
@@ -167,13 +194,14 @@ Although document-level chunking achieves equivalent metadata filter accuracy, s
 
 Metadata-filtered retrieval is robust, deterministic, and insensitive to chunking strategy, validating the design decision in ADR 303. In the Granite Lifeline pipeline, anomaly_type is confirmed by the Model Layer prior to retrieval, making semantic search unnecessary. These results provide empirical evidence that the current architecture is the optimal choice for this system design.
 
-## 6. Conclusion
+## 7. Conclusion
 
 RAG-enhanced reports demonstrated consistent improvement in Hedging Appropriateness and technically grounded Actionability compared to baseline reports, particularly in scenarios with lower prediction confidence. The automated evaluation framework identified genuine quality differences while also revealing limitations of keyword-based scoring metrics that required manual contextualisation. These findings support the adoption of RAG in the Granite Lifeline diagnostic pipeline and provide a basis for the Evaluation chapter of the group report.
 
-## 7. References
+## 8. References
 
 - Huang et al. (2025). A Survey on Hallucination in Large Language Models. ACM Transactions on Information Systems.
+- Qi et al. (2025). Large Language Models for Fault Diagnosis. IEEE BigData 2025.
 - ADR 302: docs/adr/302-granite-llm-model-selection.md
-- ADR 303: docs/adr/ADR-303-rag-knowledge-base-design.md
-- rag_evaluation_criteria.md: report_layer/evaluation/rag_evaluation_criteria.md
+- ADR 303: docs/adr/303-rag-knowledge-base-design.md
+- rag_evaluation_criteria.md: report_layer/evaluation/v3-rag-baseline-comparison/rag_evaluation_criteria.md
