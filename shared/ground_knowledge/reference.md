@@ -268,7 +268,7 @@ For each feature include:
 
 **Source:** Bosch Automotive Handbook  
 
-### 2.6 maf_derived_air_load
+### 2.6 maf_derived_air_load_raw
 
 **Inputs:** `maf`, `rpm`  
 
@@ -280,7 +280,7 @@ For each feature include:
 
 **Source:** Bosch Automotive Handbook  
 
-### 2.7 map_derived_air_load
+### 2.7 map_derived_air_load_raw
 
 **Inputs:** `map`, `intake_temp`, `rpm`  
 
