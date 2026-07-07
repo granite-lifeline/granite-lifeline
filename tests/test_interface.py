@@ -79,7 +79,7 @@ class TestDataLayerOutput:
     def test_data_layer_output_optional_fields(self):
         """Test DataLayerOutput works without optional proxy labels."""
         data = {
-           "timestamp": "2026-06-16T10:00:00Z",
+            "timestamp": "2026-06-16T10:00:00Z",
             "trip_id": "trip_0001",
             "segment_id": "trip_0001_seg_001",
             "row_in_segment": 1,
@@ -125,7 +125,7 @@ class TestDataLayerOutput:
         assert output.failure_label is None
         assert output.risk_class is None
 
-    def test_data_layer_output_optional_fields(self):
+    def test_data_layer_output_nullable_fields(self):
         """Test DataLayerOutput accepts nullable CSV feature values."""
         data = {
             "timestamp": "2026-06-16T10:00:00Z",
@@ -178,7 +178,7 @@ class TestDataLayerOutput:
     def test_data_layer_output_missing_required_field(self):
         """Test DataLayerOutput raises error when required field missing."""
         data = {
-             "timestamp": "2026-06-16T10:00:00Z",
+            "timestamp": "2026-06-16T10:00:00Z",
             "trip_id": "trip_0001",
             "segment_id": "trip_0001_seg_001",
             "row_in_segment": 1,
