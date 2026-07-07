@@ -1,4 +1,4 @@
-# Scenario Comparison Report - GL-30 (Baseline)
+# Scenario Comparison Report - V3 (Baseline)
 
 **Model:** granite4.1:8b
 **Mode:** Baseline

@@ -1,4 +1,4 @@
-# Scenario Comparison Report - GL-30 (RAG-Enhanced)
+# Scenario Comparison Report - V3 (RAG-Enhanced)
 
 **Model:** granite4.1:8b
 **Mode:** RAG-Enhanced

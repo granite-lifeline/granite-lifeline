@@ -8,49 +8,51 @@ This directory contains evaluation reports, test scenarios, and quality assessme
 evaluation/
 ├── README.md                           # This file
 ├── __init__.py
-├── report_quality_evaluator.py         # Automated quality assessment tool (GL-140)
+├── report_quality_evaluator.py         # Automated quality assessment tool
 │
 ├── test_scenarios/                     # Test scenario data files
 │   ├── typical_cooling_stress.json
 │   ├── atypical_cooling_stress.json
 │   └── contradictory_cooling_stress.json
 │
-├── gl-30-original/                     # GL-30: Original scenario evaluation (pre-RAG)
+├── v1-initial-evaluation/              # V1: Initial scenario evaluation (pre-RAG)
 │   └── scenario_comparison.md          # Evaluation with granite4.1:8b (no RAG)
 │
-├── gl-76-model-selection/              # GL-76: Model selection evaluation
-│   └── model_comparison.md             # Comparison across 4 Granite models
+├── v2-model-selection/                 # V2: Model selection evaluation
+│   ├── model_comparison.md             # Comparison across 4 Granite models
+│   └── model_comparison.py             # Model comparison script
 │
-└── gl-118-rag-comparison/              # GL-118: RAG vs Baseline comparison
-    ├── rag_evaluation_criteria.md      # GL-119: Evaluation framework
-    ├── scenario_comparison_baseline.md # GL-120: Baseline reports (no RAG)
-    └── scenario_comparison_rag.md      # GL-120: RAG-enhanced reports
+└── v3-rag-comparison/                  # V3: RAG vs Baseline comparison
+    ├── rag_evaluation_criteria.md      # Evaluation framework
+    ├── scenario_comparison_baseline.md # Baseline reports (no RAG)
+    └── scenario_comparison_rag.md      # RAG-enhanced reports
 ```
 
 ---
 
 ## Evaluation History
 
-### GL-30: Original Scenario Evaluation (June 2026)
-**Location**: `gl-30-original/scenario_comparison.md`
+### V1: Initial Scenario Evaluation (June 2026)
+**Location**: `v1-initial-evaluation/scenario_comparison.md`
 
 - **Model**: granite4.1:8b
 - **Mode**: No RAG (pre-RAG implementation)
 - **Scenarios**: 3 cooling stress scenarios (typical, atypical, contradictory)
 - **Objective**: Validate Story 2 AC3 requirement (distinguish typical from atypical faults)
-- **Result**: ✅ VALIDATED - Model successfully distinguishes scenarios with appropriate language adaptation
+- **Result**: Model successfully distinguishes scenarios with appropriate language adaptation
 
-### GL-76: Model Selection Evaluation (June 2026)
-**Location**: `gl-76-model-selection/model_comparison.md`
+### V2: Model Selection Evaluation (June 2026)
+**Location**: `v2-model-selection/`
 
 - **Models Compared**: granite3.1:8b, granite3.1:2b, granite4.1:8b, granite4.1:3b
 - **Evaluation Dimensions**: Factual grounding, readability, hedging, actionability
 - **Selected Model**: granite3.1:8b (best balance of quality and speed)
+- **Script**: `model_comparison.py` - Automated model comparison tool
 
-### GL-118/119/120: RAG vs Baseline Evaluation (July 2026)
-**Location**: `gl-118-rag-comparison/`
+### V3: RAG vs Baseline Evaluation (July 2026)
+**Location**: `v3-rag-comparison/`
 
-#### GL-119: Evaluation Framework
+#### Evaluation Framework
 **File**: `rag_evaluation_criteria.md`
 
 Defines 4-dimensional evaluation framework:
@@ -61,7 +63,7 @@ Defines 4-dimensional evaluation framework:
 
 Academic grounding: Huang et al. 2025 (hallucination), Qi et al. 2025 (fault diagnosis), ADR 302 (weighted scoring)
 
-#### GL-120: Baseline vs RAG Reports
+#### Baseline vs RAG Reports
 **Files**: 
 - `scenario_comparison_baseline.md` - Reports without RAG knowledge retrieval
 - `scenario_comparison_rag.md` - Reports with RAG fault knowledge
@@ -97,7 +99,7 @@ Three cooling degradation scenarios designed to test model behavior:
 
 ## Quality Assessment Tool
 
-### report_quality_evaluator.py (GL-140)
+### report_quality_evaluator.py
 
 Automated quality assessment across 4 dimensions:
 - Factual grounding
@@ -139,6 +141,11 @@ python report_layer/pipeline/scenario_evaluation.py --mode rag
 ### Run Quality Evaluator
 ```bash
 python report_layer/evaluation/report_quality_evaluator.py
+```
+
+### Run Model Comparison
+```bash
+python report_layer/evaluation/v2-model-selection/model_comparison.py
 ```
 
 ---
