@@ -1,10 +1,15 @@
 """
-Scenario evaluation script for GL-30.
+Scenario evaluation script for GL-30 and GL-120.
 
 Runs granite4.1:8b on three diagnostic scenarios to evaluate how the
 model handles typical, atypical, and contradictory fault patterns.
+
+Supports two modes:
+- baseline: Uses build_context() without RAG knowledge retrieval
+- rag: Uses build_context_with_rag() with fault knowledge retrieval
 """
 
+import argparse
 import json
 import sys
 import requests
@@ -18,6 +23,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 # noqa comments to suppress E402 for imports after path modification
 from shared.interface_models import ModelLayerOutput  # noqa: E402
 from report_layer.pipeline.context_injection import (  # noqa: E402
+    build_context,
     build_context_with_rag
 )
 
@@ -136,22 +142,42 @@ def call_ollama(prompt: str) -> str:
 
 
 def run_three_layer_chain(
-    rag_context: dict,
-    templates: Dict[int, str]
+    context_dict: dict,
+    templates: Dict[int, str],
+    mode: str = "rag"
 ) -> Dict[str, Any]:
-    """Run three-layer prompt chain for a scenario."""
+    """
+    Run three-layer prompt chain for a scenario.
+
+    Args:
+        context_dict: Context dictionary from build_context() or
+                      build_context_with_rag()
+        templates: Prompt templates for each layer
+        mode: "baseline" or "rag"
+    """
     results = {}
 
     print("  Running layer 1...")
-    prompt1 = render_prompt(
-        templates[1],
-        {
-            "context": rag_context["context"],
-            "audience": AUDIENCE,
-            "fault_knowledge": rag_context["fault_knowledge"],
-            "certainty_guidance": rag_context["certainty_guidance"],
-        }
-    )
+    if mode == "baseline":
+        # Baseline mode: only context and audience
+        prompt1 = render_prompt(
+            templates[1],
+            {
+                "context": context_dict["context"],
+                "audience": AUDIENCE,
+            }
+        )
+    else:
+        # RAG mode: include all RAG fields
+        prompt1 = render_prompt(
+            templates[1],
+            {
+                "context": context_dict["context"],
+                "audience": AUDIENCE,
+                "fault_knowledge": context_dict["fault_knowledge"],
+                "certainty_guidance": context_dict["certainty_guidance"],
+            }
+        )
     response1 = call_ollama(prompt1)
     parsed1 = extract_json(response1)
 
@@ -164,16 +190,26 @@ def run_three_layer_chain(
     anomaly_desc = results["anomaly_description"]
 
     print("  Running layer 2...")
-    prompt2 = render_prompt(
-        templates[2],
-        {
-            "context": rag_context["context"],
-            "audience": AUDIENCE,
-            "anomaly_description": anomaly_desc,
-            "fault_knowledge": rag_context["fault_knowledge"],
-            "certainty_guidance": rag_context["certainty_guidance"],
-        }
-    )
+    if mode == "baseline":
+        prompt2 = render_prompt(
+            templates[2],
+            {
+                "context": context_dict["context"],
+                "audience": AUDIENCE,
+                "anomaly_description": anomaly_desc,
+            }
+        )
+    else:
+        prompt2 = render_prompt(
+            templates[2],
+            {
+                "context": context_dict["context"],
+                "audience": AUDIENCE,
+                "anomaly_description": anomaly_desc,
+                "fault_knowledge": context_dict["fault_knowledge"],
+                "certainty_guidance": context_dict["certainty_guidance"],
+            }
+        )
     response2 = call_ollama(prompt2)
     parsed2 = extract_json(response2)
 
@@ -186,18 +222,29 @@ def run_three_layer_chain(
     possible_cause = results["possible_cause"]
 
     print("  Running layer 3...")
-    prompt3 = render_prompt(
-        templates[3],
-        {
-            "context": rag_context["context"],
-            "audience": AUDIENCE,
-            "anomaly_description": anomaly_desc,
-            "possible_cause": possible_cause,
-            "fault_knowledge": rag_context["fault_knowledge"],
-            "actions_knowledge": rag_context["actions_knowledge"],
-            "certainty_guidance": rag_context["certainty_guidance"],
-        }
-    )
+    if mode == "baseline":
+        prompt3 = render_prompt(
+            templates[3],
+            {
+                "context": context_dict["context"],
+                "audience": AUDIENCE,
+                "anomaly_description": anomaly_desc,
+                "possible_cause": possible_cause,
+            }
+        )
+    else:
+        prompt3 = render_prompt(
+            templates[3],
+            {
+                "context": context_dict["context"],
+                "audience": AUDIENCE,
+                "anomaly_description": anomaly_desc,
+                "possible_cause": possible_cause,
+                "fault_knowledge": context_dict["fault_knowledge"],
+                "actions_knowledge": context_dict["actions_knowledge"],
+                "certainty_guidance": context_dict["certainty_guidance"],
+            }
+        )
     response3 = call_ollama(prompt3)
     parsed3 = extract_json(response3)
 
@@ -219,7 +266,8 @@ def format_actions(actions: Any) -> str:
 
 
 def write_comparison_report(
-    scenario_results: List[Dict[str, Any]]
+    scenario_results: List[Dict[str, Any]],
+    mode: str = "rag"
 ) -> None:
     """Write scenario comparison report to markdown."""
     output_path = (
@@ -227,9 +275,12 @@ def write_comparison_report(
         "scenario_comparison.md"
     )
 
+    mode_label = "RAG-Enhanced" if mode == "rag" else "Baseline"
+
     with open(output_path, "w") as f:
-        f.write("# Scenario Comparison Report - GL-30\n\n")
-        f.write(f"**Model:** {MODEL}\n\n")
+        f.write(f"# Scenario Comparison Report - GL-30 ({mode_label})\n\n")
+        f.write(f"**Model:** {MODEL}\n")
+        f.write(f"**Mode:** {mode_label}\n\n")
         f.write("**Objective:** Evaluate how granite4.1:8b handles ")
         f.write("typical, atypical, and contradictory diagnostic ")
         f.write("scenarios.\n\n")
@@ -347,7 +398,21 @@ def write_comparison_report(
 
 def main():
     """Main execution function."""
-    print(f"Running scenario evaluation with {MODEL}...\n")
+    parser = argparse.ArgumentParser(
+        description="Run scenario evaluation in baseline or RAG mode"
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["baseline", "rag"],
+        default="rag",
+        help="Evaluation mode: baseline (no RAG) or rag (with RAG)"
+    )
+    args = parser.parse_args()
+
+    mode = args.mode
+    mode_label = "RAG-Enhanced" if mode == "rag" else "Baseline"
+
+    print(f"Running scenario evaluation with {MODEL} ({mode_label})...\n")
 
     print("Loading prompt templates...")
     templates = {
@@ -365,15 +430,22 @@ def main():
         test_input = load_scenario(scenario_info['file'])
 
         print("Building context...")
-        rag_context = build_context_with_rag(test_input)
+        if mode == "baseline":
+            # Baseline mode: wrap string context in dict
+            context_str = build_context(test_input)
+            context_dict = {"context": context_str}
+        else:
+            # RAG mode: returns dict with all fields
+            context_dict = build_context_with_rag(test_input)
 
         try:
-            results = run_three_layer_chain(rag_context, templates)
+            results = run_three_layer_chain(context_dict, templates, mode)
             scenario_results.append({
                 "name": scenario_info['name'],
                 "description": scenario_info['description'],
                 "input": test_input,
-                "results": results
+                "results": results,
+                "mode": mode
             })
             print(f"Completed {scenario_info['name']}\n")
         except Exception as e:
@@ -386,11 +458,12 @@ def main():
                     "anomaly_description": f"Error: {e}",
                     "possible_cause": f"Error: {e}",
                     "recommended_action": f"Error: {e}"
-                }
+                },
+                "mode": mode
             })
 
     print("\nWriting comparison report...")
-    write_comparison_report(scenario_results)
+    write_comparison_report(scenario_results, mode)
     print("Done!")
 
 
