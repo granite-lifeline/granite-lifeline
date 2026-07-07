@@ -23,48 +23,68 @@ All fields in data-flow order. Pass-through fields originate in one layer and ar
 
 | # | Field Name | Type | Origin Layer | Consumed by | Status |
 |---|---|---|---|---|---|
-| 1 | timestamp | string (ISO 8601) | Data Layer | Model Layer | Draft |
-| 2 | rpm | float | Data Layer | Model Layer | Draft |
-| 3 | speed | float | Data Layer | Model Layer | Draft |
-| 4 | coolant_temp | float | Data Layer | Model Layer | Draft |
-| 5 | map | float | Data Layer | Model Layer | Draft |
-| 6 | maf | float | Data Layer | Model Layer | Draft |
-| 7 | tps | float | Data Layer | Model Layer | Draft |
-| 8 | accel_pedal_d | float | Data Layer | Model Layer | Draft |
-| 9 | accel_pedal_e | float | Data Layer | Model Layer | Draft |
-| 10 | coolant_rolling_avg | float | Data Layer | Model Layer | Draft |
-| 11 | rpm_rolling_avg | float | Data Layer | Model Layer | Draft |
-| 12 | coolant_slope | float | Data Layer | Model Layer | Draft |
-| 13 | acceleration | float | Data Layer | Model Layer | Draft |
-| 14 | load_stress | float | Data Layer | Model Layer | Draft |
-| 15 | maf_map_cohesion | float | Data Layer | Model Layer | Draft |
-| 16 | rpm_variation | float | Data Layer | Model Layer | Draft |
-| 17 | failure_label | string | Data Layer | Model Layer (internal only) | TBD |
-| 18 | risk_class | string | Data Layer | Model Layer (internal only) | TBD |
-| 19 | condition_ratio | float | Data Layer | Model Layer (internal only) | TBD |
-| 20 | window_id | string | Data Layer | Model Layer (internal only) | TBD |
-| 21 | anomaly_type | string (enum) | Model Layer | Report Layer | Confirmed |
-| 22 | risk_score | float (0–1) | Model Layer | Report Layer → Dashboard | Draft |
-| 23 | risk_level | string | Model Layer | Report Layer → Dashboard | TBD |
-| 24 | component | string | Model Layer | Report Layer → Dashboard | Confirmed (mirrors anomaly_type) |
-| 25 | prediction_confidence | float (0–1) | Model Layer | Report Layer → Dashboard | Draft |
-| 26 | key_signals | array of objects | Model Layer | Report Layer → Dashboard | Confirmed |
-| 27 | estimated_cycles_to_failure | int | Model Layer | Report Layer → Dashboard | Draft — required client output; estimation method Story 8 |
-| 28 | estimated_failure_probability | float (0–1) | Model Layer | Report Layer → Dashboard | Draft — required client output; estimation method Story 8 |
-| 29 | risk_history | array of objects | Report Layer | Dashboard | TBD |
-| 30 | anomaly_description | string | Report Layer | Dashboard | Draft |
-| 31 | possible_cause | string | Report Layer | Dashboard | Draft |
-| 32 | recommended_action | array of strings | Report Layer | Dashboard | Draft |
+| 1 | timestamp | string (ISO 8601) | Data Layer | Model Layer | Confirmed |
+| 2 | trip_id | string | Data Layer | Model Layer | Confirmed |
+| 3 | segment_id | string | Data Layer | Model Layer | Confirmed |
+| 4 | row_in_segment | int | Data Layer | Model Layer | Confirmed |
+| 5 | dt_seconds | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 6 | thermal_state | string | Data Layer | Model Layer | Confirmed |
+| 7 | child_state | string | Data Layer | Model Layer | Confirmed |
+| 8 | operating_state | string | Data Layer | Model Layer | Confirmed |
+| 9 | condition_confidence | string | Data Layer | Model Layer | Confirmed |
+| 10 | condition_quality_flags | string | Data Layer | Model Layer | Confirmed |
+| 11 | coolant_temp | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 12 | map | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 13 | rpm | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 14 | speed | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 15 | intake_temp | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 16 | maf | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 17 | tps | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 18 | ambient_temp | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 19 | accel_pedal_d | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 20 | accel_pedal_e | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 21 | coolant_slope | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 22 | coolant_ambient_delta | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 23 | coolant_stability | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 24 | intake_ambient_delta | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 25 | intake_temp_slope | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 26 | maf_derived_air_load_raw | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 27 | map_derived_air_load_raw | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 28 | maf_map_cohesion | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 29 | speed_density_maf_residual | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 30 | map_slope | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 31 | accel_pedal_mean | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 32 | pedal_throttle_gap | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 33 | pedal_to_throttle_delay | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 34 | tps_slope | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 35 | accel_pedal_channel_delta | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 36 | accel_pedal_channel_ratio | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 37 | pedal_slope | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 38 | engine_on_flag | float (0/1, nullable) | Data Layer | Model Layer | Confirmed |
+| 39 | rpm_slope | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 40 | idle_flag | float (0/1, nullable) | Data Layer | Model Layer | Confirmed |
+| 41 | idle_rpm_stability | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 42 | failure_label | string | Data Layer | Model Layer (internal only) | TBD |
+| 43 | risk_class | string | Data Layer | Model Layer (internal only) | TBD |
+| 44 | condition_ratio | float | Data Layer | Model Layer (internal only) | TBD |
+| 45 | window_id | string | Data Layer | Model Layer (internal only) | TBD |
+| 46 | anomaly_type | string (enum) | Model Layer | Report Layer | Confirmed |
+| 47 | risk_score | float (0–1) | Model Layer | Report Layer → Dashboard | Draft |
+| 48 | risk_level | string | Model Layer | Report Layer → Dashboard | TBD |
+| 49 | component | string | Model Layer | Report Layer → Dashboard | Confirmed (mirrors anomaly_type) |
+| 50 | prediction_confidence | float (0–1) | Model Layer | Report Layer → Dashboard | Draft |
+| 51 | key_signals | array of objects | Model Layer | Report Layer → Dashboard | Confirmed |
+| 52 | estimated_cycles_to_failure | int | Model Layer | Report Layer → Dashboard | Draft — required client output; estimation method Story 8 |
+| 53 | estimated_failure_probability | float (0–1) | Model Layer | Report Layer → Dashboard | Draft — required client output; estimation method Story 8 |
+| 54 | risk_history | array of objects | Report Layer | Dashboard | TBD |
+| 55 | anomaly_description | string | Report Layer | Dashboard | Draft |
+| 56 | possible_cause | string | Report Layer | Dashboard | Draft |
+| 57 | recommended_action | array of strings | Report Layer | Dashboard | Draft |
 
 **Status guide**
 - **Confirmed** — field definition and content fully confirmed by owning layer
 - **Draft** — field definition agreed, implementation can start
 - **TBD** — direction known, details pending confirmation
-
-*Pending Data Layer fields referenced by Section 2.4 (`intake_temp`, `ambient_temp`,
-`intake_ambient_delta`, `map_slope`, `pedal_throttle_gap`, `idle_flag`,
-`idle_rpm_stability`, `rpm_slope`) will be added to this table by the Data Layer once
-their definitions are confirmed.*
 
 ---
 
@@ -72,64 +92,93 @@ their definitions are confirmed.*
 
 Consumed by: **Model Layer**
 
-### 1.1 Raw signals
+> Current Data Layer output is the row-level `feature_dataset.csv`. All fields listed below are required columns in the interface model. 
+> Numeric values may be nullable when the corresponding CSV cell is missing because of source-signal gaps, segment-boundary rules, rolling-window validity masks, event-only features, or baseline prediction availability.
+
+### 1.1 Key, time, and operating-condition fields
+
+Fields used to preserve row identity, trip/segment boundaries, and operating-condition context.
+
+| Field Name | Type | Description | Example | Status |
+|---|---|---|---|---|
+| timestamp | string (ISO 8601) | Aligned timestamp converted from KIT raw time | `"2026-06-16T10:00:00Z"` | Confirmed |
+| trip_id | string | Trip identifier derived from source trip/file boundary | `"trip_0001"` | Confirmed |
+| segment_id | string | Segment identifier; windows and slopes must not cross segment boundaries | `"trip_0001_seg_001"` | Confirmed |
+| row_in_segment | int | Row index within the segment | `1` | Confirmed |
+| dt_seconds | float (nullable) | Time delta from the previous row in the same segment | `1.0` | Confirmed |
+| thermal_state | string | Thermal operating state assigned by the Data Layer | `"post_warmup"` | Confirmed |
+| child_state | string | Driving-state subtype assigned by the Data Layer | `"steady_driving"` | Confirmed |
+| operating_state | string | Combined operating-condition label | `"post_warmup_steady_driving"` | Confirmed |
+| condition_confidence | string | Confidence level for the operating-condition assignment | `"high"` | Confirmed |
+| condition_quality_flags | string | Quality flag for the operating-condition assignment | `"OK"` | Confirmed |
+
+*`trip_id` is assigned in chronological cycle order, sorted by source filename date and in-file start time.*
+
+### 1.2 Raw signals
 
 Fields ingested from KIT OBD-II CSV after field mapping and cleaning.
 
 | Field Name | Type | Description | Example | Status |
 |---|---|---|---|---|
-| timestamp | string (ISO 8601) | Aligned timestamp converted from KIT raw time | `"2026-06-16T10:00:00Z"` | Draft |
-| rpm | float | Engine speed (RPM) after cleaning | `2500.0` | Draft |
-| speed | float | Vehicle speed (km/h) after cleaning and optional resampling | `48.0` | Draft |
-| coolant_temp | float | Engine coolant temperature (°C) after cleaning | `92.5` | Draft |
-| map | float | Intake manifold absolute pressure (kPa) after cleaning | `85.0` | Draft |
-| maf | float | Mass airflow rate (g/s) after cleaning | `18.6` | Draft |
-| tps | float | Absolute throttle position (%) after cleaning | `42.0` | Draft |
-| accel_pedal_d | float | Accelerator pedal position D (%) after cleaning | `35.0` | Draft |
-| accel_pedal_e | float | Accelerator pedal position E (%) after cleaning | `37.5` | Draft |
+| coolant_temp | float (nullable) | Engine coolant temperature (degC) after cleaning | `92.5` | Confirmed |
+| map | float (nullable) | Intake manifold absolute pressure (kPa) after cleaning | `85.0` | Confirmed |
+| rpm | float (nullable) | Engine speed (RPM) after cleaning | `2500.0` | Confirmed |
+| speed | float (nullable) | Vehicle speed (km/h) after cleaning and optional resampling | `48.0` | Confirmed |
+| intake_temp | float (nullable) | Intake air temperature (degC) after cleaning | `35.0` | Confirmed |
+| maf | float (nullable) | Mass airflow rate (g/s) after cleaning | `18.6` | Confirmed |
+| tps | float (nullable) | Absolute throttle position (%) after cleaning | `42.0` | Confirmed |
+| ambient_temp | float (nullable) | Ambient air temperature (degC) after cleaning | `22.0` | Confirmed |
+| accel_pedal_d | float (nullable) | Accelerator pedal position D (%) after cleaning | `35.0` | Confirmed |
+| accel_pedal_e | float (nullable) | Accelerator pedal position E (%) after cleaning | `37.5` | Confirmed |
 
-### 1.2 Engineered features
+### 1.3 Engineered features
 
-Derived from raw signals by Data Layer. Used by Model Layer as inputs for TTM fine-tuning and inference.
+Derived from raw signals by the Data Layer. Used by the Model Layer as row-level inputs for analysis, TTM consumption, and later window-level aggregation.
 
 | Field Name | Type | Description | Example | Status |
 |---|---|---|---|---|
-| coolant_rolling_avg | float | Rolling average of coolant temperature over a 30-second window (°C) | `91.8` | Draft |
-| rpm_rolling_avg | float | Rolling average of engine RPM over a 10-second window | `2450.0` | Draft |
-| coolant_slope | float | Rate of coolant temperature change over a rolling window (°C/min) | `3.1` | Draft |
-| acceleration | float | Estimated vehicle acceleration from speed change over time (m/s²) | `0.8` | Draft |
-| load_stress | float | Engine load stress indicator derived from RPM × TPS | `105000.0` | Draft |
-| maf_map_cohesion | float | Normalised deviation between MAF and MAP, representing intake consistency | `0.18` | Draft |
-| rpm_variation | float | Rolling standard deviation of RPM over a 15-second window, representing combustion stability | `120.0` | Draft |
+| coolant_slope | float (nullable) | Rate of coolant temperature change within the same segment (degC/s) | `3.1` | Confirmed |
+| coolant_ambient_delta | float (nullable) | Difference between coolant temperature and ambient temperature (degC) | `70.5` | Confirmed |
+| coolant_stability | float (nullable) | Rolling coolant-temperature stability under valid post-warmup context | `0.4` | Confirmed |
+| intake_ambient_delta | float (nullable) | Difference between intake temperature and ambient temperature (degC) | `13.0` | Confirmed |
+| intake_temp_slope | float (nullable) | Rate of intake temperature change within the same segment (degC/s) | `0.2` | Confirmed |
+| maf_derived_air_load_raw | float (nullable) | Raw MAF-side air-load proxy derived from MAF and RPM | `0.45` | Confirmed |
+| map_derived_air_load_raw | float (nullable) | Raw MAP-side speed-density air-load proxy derived from RPM, MAP, and intake temperature | `720.0` | Confirmed |
+| maf_map_cohesion | float (nullable) | Z-scored absolute difference between MAF-side and MAP-side air-load proxies | `0.18` | Confirmed |
+| speed_density_maf_residual | float (nullable) | Residual between actual MAF and the MAP/speed-density baseline expected MAF | `1.2` | Confirmed |
+| map_slope | float (nullable) | Rate of MAP change within the same segment (kPa/s) | `0.5` | Confirmed |
+| accel_pedal_mean | float (nullable) | Mean of accelerator pedal channels D and E (%) | `36.25` | Confirmed |
+| pedal_throttle_gap | float (nullable) | Residual between actual TPS and baseline expected TPS from pedal/RPM context (%) | `2.1` | Confirmed |
+| pedal_to_throttle_delay | float (nullable) | Event-only delay from pedal step response to throttle response (s); non-event rows are nullable | `1.0` | Confirmed |
+| tps_slope | float (nullable) | Rate of TPS change within the same segment (%/s) | `0.3` | Confirmed |
+| accel_pedal_channel_delta | float (nullable) | Absolute difference between accelerator pedal channels D and E (%) | `2.5` | Confirmed |
+| accel_pedal_channel_ratio | float (nullable) | Ratio between accelerator pedal channels D and E | `0.93` | Confirmed |
+| pedal_slope | float (nullable) | Rate of accelerator pedal mean change within the same segment (%/s) | `0.4` | Confirmed |
+| engine_on_flag | float (0/1, nullable) | Engine-running indicator derived from RPM | `1.0` | Confirmed |
+| rpm_slope | float (nullable) | Rate of RPM change within the same segment (rpm/s) | `12.0` | Confirmed |
+| idle_flag | float (0/1, nullable) | Idle-state indicator from operating-condition analysis | `0.0` | Confirmed |
+| idle_rpm_stability | float (nullable) | Rolling RPM stability under valid idle context | `55.0` | Confirmed |
 
-### 1.3 Proxy labels
+### 1.4 Proxy labels
 
 > **Internal to Model Layer only.** Used for TTM training and evaluation. Do not flow to Report Layer or Dashboard.
 
 | Field Name | Type | Description | Example | Status |
 |---|---|---|---|---|
-| failure_label | string | Proxy failure label from engineering rules. **Not a real mechanical fault label.** | `"cooling_risk"` | TBD — proxy label rules pending validation |
+| failure_label | string | Proxy failure label from engineering rules. **Not a real mechanical fault label.** | `"cooling_degradation"` | TBD — proxy label rules pending validation |
 | risk_class | string | Proxy risk class from rule-based failure conditions | `"HIGH"` | TBD — thresholds pending calibration |
 | condition_ratio | float | Ratio of samples within a window satisfying a proxy abnormal condition | `0.31` | TBD — aggregation threshold pending |
 | window_id | string | Identifier for each sliding input window | `"001"` | TBD — depends on final windowing strategy |
 
 ### 1.4 Request to Data Layer: trip/cycle identifier (added 2026-07-07)
 
-> **Needed for the new Model Layer failure-estimation fields** (`estimated_cycles_to_failure`,
-> `estimated_failure_probability` — see Section 2.2). To accumulate a risk score history and
-> express "failure within the next X cycles", the Model Layer needs a **cycle unit**. We verified
-> this is fully derivable from the raw KIT data (`dataset/10.35097-1130/data/dataset/OBD-II-Dataset/`):
+> **Needed for the new Model Layer failure-estimation fields** (`estimated_cycles_to_failure`,`estimated_failure_probability` -see Section 2.2). To accumulate a risk score history and express "failure within the next X cycles", the Model Layer needs a **cycle unit**. We verified this is fully derivable from the raw KIT data (`dataset/10.35097-1130/data/dataset/OBD-II-Dataset/`):
 >
-> - **One CSV file = one trip/drive cycle.** The filename encodes date + vehicle + route + condition
->   (e.g. `2017-07-05_Seat_Leon_RT_S_Stau.csv`), and the in-file `Time` column gives the start time
->   for ordering multiple trips on the same day.
-> - **Chronological continuity holds**: all 81 trips are the same Seat Leon, so trips sorted by
->   filename date then start time form a genuine per-vehicle history.
-> - **Trip boundaries are file boundaries** — no extra metadata is needed.
+> - **One CSV file = one trip/drive cycle.** The filename encodes date + vehicle + route + condition (e.g. `2017-07-05_Seat_Leon_RT_S_Stau.csv`), and the in-file `Time` column gives the start time for ordering multiple trips on the same day.
+> - **Chronological continuity holds**: all 81 trips are the same Seat Leon, so trips sorted by filename date then start time form a genuine per-vehicle history.
+> - **Trip boundaries are file boundaries**-no extra metadata is needed.
 >
-> **Ask:** forward a `trip_id` (or monotonically increasing cycle index) column per row, derived
-> from source filename + start time, and do not merge trips without it. This is a small mechanical
-> addition on the Data Layer side.
+> **Ask:** forward a `trip_id` (or monotonically increasing cycle index) column per row, derived from source filename + start time, and do not merge trips without it. This is a small mechanical addition on the Data Layer side.
 
 ---
 
