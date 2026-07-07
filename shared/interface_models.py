@@ -1,13 +1,13 @@
 """
 Pydantic models for Granite Lifeline cross-layer data contracts.
-Based on INTERFACE.md v0.3 (updated 2026-06-29).
+Based on INTERFACE.md v0.4 (updated 2026-07-07).
 
 This is an early-stage version with basic validation only.
 Stricter validation will be added once all layers confirm field details.
 """
 
 from typing import List, Optional, Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # Anomaly type enum based on grounded_knowledge.yaml proxy_failures
 AnomalyType = Literal[
@@ -40,39 +40,39 @@ class DataLayerOutput(BaseModel):
 
     # Raw signals
     timestamp: str
-    rpm: Optional[float] = None
-    speed: Optional[float] = None
-    coolant_temp: Optional[float] = None
-    map: Optional[float] = None
-    maf: Optional[float] = None
-    tps: Optional[float] = None
-    intake_temp: Optional[float] = None
-    ambient_temp: Optional[float] = None
-    accel_pedal_d: Optional[float] = None
-    accel_pedal_e: Optional[float] = None
+    rpm: Optional[float] = Field(...)
+    speed: Optional[float] = Field(...)
+    coolant_temp: Optional[float] = Field(...)
+    map: Optional[float] = Field(...)
+    maf: Optional[float] = Field(...)
+    tps: Optional[float] = Field(...)
+    intake_temp: Optional[float] = Field(...)
+    ambient_temp: Optional[float] = Field(...)
+    accel_pedal_d: Optional[float] = Field(...)
+    accel_pedal_e: Optional[float] = Field(...)
 
     # Engineered features
-    coolant_slope: Optional[float] = None
-    coolant_ambient_delta: Optional[float] = None
-    coolant_stability: Optional[float] = None
-    intake_ambient_delta: Optional[float] = None
-    intake_temp_slope: Optional[float] = None
-    maf_derived_air_load_raw: Optional[float] = None
-    map_derived_air_load_raw: Optional[float] = None
-    maf_map_cohesion: Optional[float] = None
-    speed_density_maf_residual: Optional[float] = None
-    map_slope: Optional[float] = None
-    accel_pedal_mean: Optional[float] = None
-    pedal_throttle_gap: Optional[float] = None
-    pedal_to_throttle_delay: Optional[float] = None
-    tps_slope: Optional[float] = None
-    accel_pedal_channel_delta: Optional[float] = None
-    accel_pedal_channel_ratio: Optional[float] = None
-    pedal_slope: Optional[float] = None
-    engine_on_flag: Optional[float] = None
-    rpm_slope: Optional[float] = None
-    idle_flag: Optional[float] = None
-    idle_rpm_stability: Optional[float] = None
+    coolant_slope: Optional[float] = Field(...)
+    coolant_ambient_delta: Optional[float] = Field(...)
+    coolant_stability: Optional[float] = Field(...)
+    intake_ambient_delta: Optional[float] = Field(...)
+    intake_temp_slope: Optional[float] = Field(...)
+    maf_derived_air_load_raw: Optional[float] = Field(...)
+    map_derived_air_load_raw: Optional[float] = Field(...)
+    maf_map_cohesion: Optional[float] = Field(...)
+    speed_density_maf_residual: Optional[float] = Field(...)
+    map_slope: Optional[float] = Field(...)
+    accel_pedal_mean: Optional[float] = Field(...)
+    pedal_throttle_gap: Optional[float] = Field(...)
+    pedal_to_throttle_delay: Optional[float] = Field(...)
+    tps_slope: Optional[float] = Field(...)
+    accel_pedal_channel_delta: Optional[float] = Field(...)
+    accel_pedal_channel_ratio: Optional[float] = Field(...)
+    pedal_slope: Optional[float] = Field(...)
+    engine_on_flag: Optional[float] = Field(...)
+    rpm_slope: Optional[float] = Field(...)
+    idle_flag: Optional[float] = Field(...)
+    idle_rpm_stability: Optional[float] = Field(...)
 
     # Proxy labels (internal to Model Layer, marked Optional as TBD)
     failure_label: Optional[str] = None
