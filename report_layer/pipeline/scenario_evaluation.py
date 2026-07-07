@@ -77,9 +77,10 @@ def render_prompt(template: str, values: Dict[str, str]) -> str:
 
 
 def load_scenario(filename: str) -> ModelLayerOutput:
-    """Load test scenario from evaluation directory."""
+    """Load test scenario from evaluation/test_scenarios directory."""
     scenario_path = (
-        PROJECT_ROOT / "report_layer" / "evaluation" / filename
+        PROJECT_ROOT / "report_layer" / "evaluation" / "test_scenarios" /
+        filename
     )
     with open(scenario_path, "r") as f:
         data = json.load(f)
