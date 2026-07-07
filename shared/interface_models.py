@@ -40,23 +40,39 @@ class DataLayerOutput(BaseModel):
 
     # Raw signals
     timestamp: str
-    rpm: float
-    speed: float
-    coolant_temp: float
-    map: float
-    maf: float
-    tps: float
-    accel_pedal_d: float
-    accel_pedal_e: float
+    rpm: Optional[float] = None
+    speed: Optional[float] = None
+    coolant_temp: Optional[float] = None
+    map: Optional[float] = None
+    maf: Optional[float] = None
+    tps: Optional[float] = None
+    intake_temp: Optional[float] = None
+    ambient_temp: Optional[float] = None
+    accel_pedal_d: Optional[float] = None
+    accel_pedal_e: Optional[float] = None
 
     # Engineered features
-    coolant_rolling_avg: float
-    rpm_rolling_avg: float
-    coolant_slope: float
-    acceleration: float
-    load_stress: float
-    maf_map_cohesion: float
-    rpm_variation: float
+    coolant_slope: Optional[float] = None
+    coolant_ambient_delta: Optional[float] = None
+    coolant_stability: Optional[float] = None
+    intake_ambient_delta: Optional[float] = None
+    intake_temp_slope: Optional[float] = None
+    maf_derived_air_load_raw: Optional[float] = None
+    map_derived_air_load_raw: Optional[float] = None
+    maf_map_cohesion: Optional[float] = None
+    speed_density_maf_residual: Optional[float] = None
+    map_slope: Optional[float] = None
+    accel_pedal_mean: Optional[float] = None
+    pedal_throttle_gap: Optional[float] = None
+    pedal_to_throttle_delay: Optional[float] = None
+    tps_slope: Optional[float] = None
+    accel_pedal_channel_delta: Optional[float] = None
+    accel_pedal_channel_ratio: Optional[float] = None
+    pedal_slope: Optional[float] = None
+    engine_on_flag: Optional[float] = None
+    rpm_slope: Optional[float] = None
+    idle_flag: Optional[float] = None
+    idle_rpm_stability: Optional[float] = None
 
     # Proxy labels (internal to Model Layer, marked Optional as TBD)
     failure_label: Optional[str] = None
