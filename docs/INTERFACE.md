@@ -1,7 +1,7 @@
 # INTERFACE.md — Granite Lifeline Field Definitions
-**Version:** v0.2  
-**Last updated:** 2026-06-20  
-**Status:** Confirmed — anomaly_type classification updated per Model Layer confirmation
+**Version:** v0.4  
+**Last updated:** 2026-07-07  
+**Status:** Confirmed — 7-type anomaly_type enum; 4 types pending Model Layer support; 2 failure-estimation fields added per S3.1 standup
 
 ---
 
@@ -10,7 +10,7 @@
 ```
 KIT OBD-II CSV
     → [Data Layer]  raw signals + engineered features + proxy labels
-    → [Model Layer / TTM]  anomaly_type, risk_score, risk_level, component, prediction_confidence, key_signals
+    → [Model Layer / TTM]  anomaly_type, risk_score, risk_level, component, prediction_confidence, key_signals, estimated_cycles_to_failure, estimated_failure_probability
     → [Report Layer / Granite]  anomaly_description, possible_cause, recommended_action + pass-through fields
     → [Dashboard]
 ```
@@ -49,15 +49,22 @@ All fields in data-flow order. Pass-through fields originate in one layer and ar
 | 24 | component | string | Model Layer | Report Layer → Dashboard | Confirmed (mirrors anomaly_type) |
 | 25 | prediction_confidence | float (0–1) | Model Layer | Report Layer → Dashboard | Draft |
 | 26 | key_signals | array of objects | Model Layer | Report Layer → Dashboard | Confirmed |
-| 27 | risk_history | array of objects | Report Layer | Dashboard | TBD |
-| 28 | anomaly_description | string | Report Layer | Dashboard | Draft |
-| 29 | possible_cause | string | Report Layer | Dashboard | Draft |
-| 30 | recommended_action | array of strings | Report Layer | Dashboard | Draft |
+| 27 | estimated_cycles_to_failure | int | Model Layer | Report Layer → Dashboard | Draft — required client output; estimation method Story 8 |
+| 28 | estimated_failure_probability | float (0–1) | Model Layer | Report Layer → Dashboard | Draft — required client output; estimation method Story 8 |
+| 29 | risk_history | array of objects | Report Layer | Dashboard | TBD |
+| 30 | anomaly_description | string | Report Layer | Dashboard | Draft |
+| 31 | possible_cause | string | Report Layer | Dashboard | Draft |
+| 32 | recommended_action | array of strings | Report Layer | Dashboard | Draft |
 
 **Status guide**
 - **Confirmed** — field definition and content fully confirmed by owning layer
 - **Draft** — field definition agreed, implementation can start
 - **TBD** — direction known, details pending confirmation
+
+*Pending Data Layer fields referenced by Section 2.4 (`intake_temp`, `ambient_temp`,
+`intake_ambient_delta`, `map_slope`, `pedal_throttle_gap`, `idle_flag`,
+`idle_rpm_stability`, `rpm_slope`) will be added to this table by the Data Layer once
+their definitions are confirmed.*
 
 ---
 
@@ -106,6 +113,24 @@ Derived from raw signals by Data Layer. Used by Model Layer as inputs for TTM fi
 | condition_ratio | float | Ratio of samples within a window satisfying a proxy abnormal condition | `0.31` | TBD — aggregation threshold pending |
 | window_id | string | Identifier for each sliding input window | `"001"` | TBD — depends on final windowing strategy |
 
+### 1.4 Request to Data Layer: trip/cycle identifier (added 2026-07-07)
+
+> **Needed for the new Model Layer failure-estimation fields** (`estimated_cycles_to_failure`,
+> `estimated_failure_probability` — see Section 2.2). To accumulate a risk score history and
+> express "failure within the next X cycles", the Model Layer needs a **cycle unit**. We verified
+> this is fully derivable from the raw KIT data (`dataset/10.35097-1130/data/dataset/OBD-II-Dataset/`):
+>
+> - **One CSV file = one trip/drive cycle.** The filename encodes date + vehicle + route + condition
+>   (e.g. `2017-07-05_Seat_Leon_RT_S_Stau.csv`), and the in-file `Time` column gives the start time
+>   for ordering multiple trips on the same day.
+> - **Chronological continuity holds**: all 81 trips are the same Seat Leon, so trips sorted by
+>   filename date then start time form a genuine per-vehicle history.
+> - **Trip boundaries are file boundaries** — no extra metadata is needed.
+>
+> **Ask:** forward a `trip_id` (or monotonically increasing cycle index) column per row, derived
+> from source filename + start time, and do not merge trips without it. This is a small mechanical
+> addition on the Data Layer side.
+
 ---
 
 ## Section 2: Model Layer Output Fields
@@ -124,7 +149,9 @@ Consumed by: **Report Layer** (and pass-through to Dashboard where noted)
   "prediction_confidence": 0.84,
   "key_signals": [
   {"feature": "coolant_temp", "value": 102, "unit": "°C", "reference_range": [90, 95]}
-  ]
+  ],
+  "estimated_cycles_to_failure": 120,
+  "estimated_failure_probability": 0.72
 }
 ```
 
@@ -139,6 +166,8 @@ Consumed by: **Report Layer** (and pass-through to Dashboard where noted)
 | component | string | Affected component. **Mirrors anomaly_type** — retained as a separate field for downstream compatibility (e.g., Dashboard component-based filtering), though currently redundant with anomaly_type. | `"cooling_degradation"` | Updated |
 | prediction_confidence | float (0–1) | Model confidence in risk_score, provided directly by Model Layer. | `0.84` | Draft |
 | key_signals | array of objects | Top signals contributing to risk prediction, in order of importance. Structure: `[{feature, value, unit, reference_range}]`. See Section 2.4. | See JSON above | Confirmed |
+| estimated_cycles_to_failure | int | Estimated number of drive cycles (trips) remaining before the detected anomaly is projected to reach failure threshold, extrapolated from risk score history/trend. Requires the Data Layer `trip_id`/cycle index (Section 1.4). | `120` | Draft — required client output; estimation method Story 8 |
+| estimated_failure_probability | float (0–1) | Probability that failure occurs within the `estimated_cycles_to_failure` horizon. Together with the field above, supports the Report Layer phrase "72% probability of failure within the next X cycles". | `0.72` | Draft — required client output; estimation method Story 8 |
 
 ### 2.3 anomaly_type Classification
 
@@ -190,9 +219,11 @@ Originate in Model Layer, forwarded unchanged by Report Layer.
 | timestamp | string (ISO 8601) | `"2026-06-16T10:00:00Z"` | Draft |
 | risk_score | float (0–1) | `0.72` | Draft |
 | risk_level | string (Low/Medium/High) | `"Medium"` | Draft |
-| component | string | `"cooling_system_stress"` | Confirmed |
+| component | string | `"cooling_degradation"` | Confirmed |
 | prediction_confidence | float (0–1) | `0.84` | Draft |
 | key_signals | array of objects | See Section 2 | Confirmed |
+| estimated_cycles_to_failure | int | `120` | Draft — required client output |
+| estimated_failure_probability | float (0–1) | `0.72` | Draft — required client output |
 
 ### 3.2 Report Layer maintained fields
 
@@ -218,3 +249,10 @@ Generated by the three-layer Granite prompt chain.
 |---|---|---|
 | v0.1 draft | 2026-06-16 | Initial consolidated draft. Key changes from individual layer drafts: (1) `explanation_text` → split into `anomaly_description` + `possible_cause` + `recommended_action`; (2) `affected_signals` (name list) → `key_signals` (object array with value/unit/reference_range); (3) `prediction_confidence` added as Draft — provided directly by Model Layer; (4) `component` origin clarified — derived by Model Layer from `anomaly_type`, mapping defined; (5) `risk_level` origin clarified — derived by Model Layer from `risk_score`; (6) `risk_history` origin resolved — Report Layer maintains persistent local storage, required by project brief; (7) Interim static mapping added for `anomaly_type` → `key_signals` (Section 2.4); (8) Field renamed: `normal_range` → `reference_range` (aligned with Data Layer naming); (9) `reference_range` source confirmed — Data Layer provides V1.0 in Sprint 2 Week 1, based on KIT dataset statistics |
 | v0.2 | 2026-06-20 | Model Layer confirmed final `anomaly_type` classification, replacing interim values (`cooling_degradation` / `vacuum_leak` / `intake_blockage`) with: `cooling_system_stress`, `air_intake_maf_anomaly`, `accelerator_pedal_sensor`. All three `key_signals` mappings (Section 2.4) now confirmed — no longer interim. `component` field retained but now mirrors `anomaly_type` exactly (previously a distinct derived value). |
+| v0.3 | 2026-07-04 | `anomaly_type` enum expanded from 3 to 7 per Data Layer grounded_knowledge.yaml proxy_failures (Sections 2.3/2.4, dated 2026-06-29). Model Layer registered the 4 pending types as 0.0-score placeholders in `kit_residual_detector.py` until the Data Layer forwards their key signals. `maf_map_cohesion` implementation moved from raw maf/map ratio to the agreed z-scored air-load difference (interim trip-window baseline; trigger calibrated at 1.8 across 36 healthy trips). Fixed stale `cooling_system_stress` example in Section 3.1. |
+| v0.4 | 2026-07-07 | Added two Model Layer output fields requested by Report Layer at the S3.1 standup (mandatory client output — "72% probability of failure within the next X cycles" driven by risk score history): `estimated_cycles_to_failure` (int) and `estimated_failure_probability` (float 0–1). Added to Master Field Table (rows 27–28), Section 2.1 JSON example, Section 2.2 definitions, and Section 3.1 pass-through. Added Section 1.4 asking Data Layer to forward a `trip_id`/cycle-index column (verified derivable from raw KIT data: one CSV file = one trip; filename encodes date/route; `Time` column orders same-day trips). Estimation method to be implemented in Model Layer Story 8. |
+
+|      |      |      |
+|---|---|---|
+|      |      |      |
+|      |      |      |
