@@ -52,7 +52,11 @@ def is_number(value: Any) -> bool:
 
 def is_non_negative_int(value: Any) -> bool:
     """Return True for non-negative integers, excluding bool."""
-    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+    return (
+        isinstance(value, int)
+        and not isinstance(value, bool)
+        and value >= 0
+    )
 
 
 def validate_timestamp(value: Any) -> list[str]:
@@ -103,7 +107,8 @@ def validate_key_signals(value: Any) -> list[str]:
                     )
                 elif low > high:
                     errors.append(
-                        f"{prefix}.reference_range lower bound exceeds upper bound"
+                        f"{prefix}.reference_range lower bound "
+                        "exceeds upper bound"
                     )
 
     return errors
@@ -176,7 +181,8 @@ def validate_output(data: Any) -> list[str]:
         cycles = data["estimated_cycles_to_failure"]
         if cycles is not None and not is_non_negative_int(cycles):
             errors.append(
-                "estimated_cycles_to_failure must be null or a non-negative integer"
+                "estimated_cycles_to_failure must be null "
+                "or a non-negative integer"
             )
 
     if "estimated_failure_probability" in data:
@@ -188,7 +194,8 @@ def validate_output(data: Any) -> list[str]:
                 )
             elif not 0.0 <= probability <= 1.0:
                 errors.append(
-                    "estimated_failure_probability must be null or between 0 and 1"
+                    "estimated_failure_probability must be null "
+                    "or between 0 and 1"
                 )
 
     if "notes" in data:
@@ -215,9 +222,13 @@ def validate_file(path: Path) -> list[str]:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Validate Model Layer output JSON against INTERFACE.md v0.5."
+        description=(
+            "Validate Model Layer output JSON against INTERFACE.md v0.5."
+        )
     )
-    parser.add_argument("json_path", type=Path, help="Path to output JSON file")
+    parser.add_argument(
+        "json_path", type=Path, help="Path to output JSON file"
+    )
     return parser.parse_args()
 
 
