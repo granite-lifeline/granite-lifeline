@@ -153,6 +153,7 @@ def make_future_df(rows=20, pedal_delta=None):
             "maf": np.full(rows, 20.0),
             "tps": np.full(rows, 30.0),
             "coolant_slope": np.zeros(rows),
+            "coolant_stability": np.zeros(rows),
             "acceleration": np.zeros(rows),
             "load_stress": np.full(rows, 45000.0),
             "maf_map_cohesion": np.zeros(rows),
@@ -267,6 +268,17 @@ class TestBuildInterfaceJson:
             make_future_df(), "cooling_degradation", notes=[note]
         )
         assert result["notes"] == [note]
+
+    def test_cooling_key_signals_include_stability(self):
+        result = self.build(
+            make_future_df(), "cooling_degradation", notes=[]
+        )
+        features = [
+            signal["feature"] for signal in result["key_signals"]
+        ]
+        assert "coolant_temp" in features
+        assert "coolant_slope" in features
+        assert "coolant_stability" in features
 
     def test_pedal_key_signals_when_pedal_anomaly(self):
         result = self.build(
