@@ -17,7 +17,9 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 # noqa comments to suppress E402 for imports after path modification
 from shared.interface_models import ModelLayerOutput  # noqa: E402
-from report_layer.pipeline.context_injection import build_context  # noqa: E402
+from report_layer.pipeline.context_injection import (  # noqa: E402
+    build_context_with_rag
+)
 
 
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
@@ -42,6 +44,30 @@ SCENARIOS = [
         "description": "Contradictory signals and risk assessment"
     }
 ]
+
+DEFAULT_PROMPT_VALUES = {
+    "fault_knowledge": (
+        "No retrieved fault knowledge was available for this run."
+    ),
+    "actions_knowledge": (
+        "No retrieved action guidance was available for this run."
+    ),
+    "certainty_guidance": (
+        "Use careful wording and do not present predictions as "
+        "confirmed faults."
+    ),
+}
+
+
+def render_prompt(template: str, values: Dict[str, str]) -> str:
+    """Replace prompt placeholders with available values."""
+    prompt_values = DEFAULT_PROMPT_VALUES.copy()
+    prompt_values.update(values)
+
+    prompt = template
+    for key, value in prompt_values.items():
+        prompt = prompt.replace("{" + key + "}", str(value))
+    return prompt
 
 
 def load_scenario(filename: str) -> ModelLayerOutput:
@@ -110,17 +136,21 @@ def call_ollama(prompt: str) -> str:
 
 
 def run_three_layer_chain(
-    context: str,
+    rag_context: dict,
     templates: Dict[int, str]
 ) -> Dict[str, Any]:
     """Run three-layer prompt chain for a scenario."""
     results = {}
 
     print("  Running layer 1...")
-    prompt1 = (
-        templates[1]
-        .replace("{context}", context)
-        .replace("{audience}", AUDIENCE)
+    prompt1 = render_prompt(
+        templates[1],
+        {
+            "context": rag_context["context"],
+            "audience": AUDIENCE,
+            "fault_knowledge": rag_context["fault_knowledge"],
+            "certainty_guidance": rag_context["certainty_guidance"],
+        }
     )
     response1 = call_ollama(prompt1)
     parsed1 = extract_json(response1)
@@ -134,11 +164,15 @@ def run_three_layer_chain(
     anomaly_desc = results["anomaly_description"]
 
     print("  Running layer 2...")
-    prompt2 = (
-        templates[2]
-        .replace("{context}", context)
-        .replace("{audience}", AUDIENCE)
-        .replace("{anomaly_description}", anomaly_desc)
+    prompt2 = render_prompt(
+        templates[2],
+        {
+            "context": rag_context["context"],
+            "audience": AUDIENCE,
+            "anomaly_description": anomaly_desc,
+            "fault_knowledge": rag_context["fault_knowledge"],
+            "certainty_guidance": rag_context["certainty_guidance"],
+        }
     )
     response2 = call_ollama(prompt2)
     parsed2 = extract_json(response2)
@@ -152,12 +186,17 @@ def run_three_layer_chain(
     possible_cause = results["possible_cause"]
 
     print("  Running layer 3...")
-    prompt3 = (
-        templates[3]
-        .replace("{context}", context)
-        .replace("{audience}", AUDIENCE)
-        .replace("{anomaly_description}", anomaly_desc)
-        .replace("{possible_cause}", possible_cause)
+    prompt3 = render_prompt(
+        templates[3],
+        {
+            "context": rag_context["context"],
+            "audience": AUDIENCE,
+            "anomaly_description": anomaly_desc,
+            "possible_cause": possible_cause,
+            "fault_knowledge": rag_context["fault_knowledge"],
+            "actions_knowledge": rag_context["actions_knowledge"],
+            "certainty_guidance": rag_context["certainty_guidance"],
+        }
     )
     response3 = call_ollama(prompt3)
     parsed3 = extract_json(response3)
@@ -326,10 +365,10 @@ def main():
         test_input = load_scenario(scenario_info['file'])
 
         print("Building context...")
-        context = build_context(test_input)
+        rag_context = build_context_with_rag(test_input)
 
         try:
-            results = run_three_layer_chain(context, templates)
+            results = run_three_layer_chain(rag_context, templates)
             scenario_results.append({
                 "name": scenario_info['name'],
                 "description": scenario_info['description'],

@@ -5,6 +5,8 @@ Displays vehicle health status with component risk levels and navigation
 to detailed diagnostic reports.
 """
 
+from __future__ import annotations
+
 import base64
 import math
 import os
@@ -12,13 +14,12 @@ import time
 from datetime import datetime
 import streamlit as st
 import plotly.graph_objects as go
+from anomaly_display import (
+    COMPONENT_DISPLAY_NAMES,
+    GROUND_KNOWLEDGE_ANOMALY_TYPES,
+    LEGACY_COMPONENT_ALIASES,
+)
 from data_loader import load_dashboard_data
-
-COMPONENT_DISPLAY_NAMES = {
-    "cooling_system_stress": "Cooling System",
-    "air_intake_maf_anomaly": "Air Intake System",
-    "accelerator_pedal_sensor": "Accelerator Pedal"
-}
 
 SIGNAL_DISPLAY_NAMES = {
     "coolant_temp": "Coolant Temperature",
@@ -184,6 +185,66 @@ MOCK_DATA = REPORT_DATA if REPORT_DATA is not None else MOCK_DATA_FALLBACK
 
 RISK_PRIORITY = {"High": 0, "Medium": 1, "Low": 2, "Unknown": 3}
 
+
+def make_overview_placeholder(component_key: str) -> dict:
+    """Create UI-only placeholder data for an anomaly type."""
+    return {
+        "timestamp": "",
+        "risk_score": 0.0,
+        "risk_level": "Unknown",
+        "component": component_key,
+        "prediction_confidence": 0.0,
+        "key_signals": [],
+        "risk_history": [],
+        "anomaly_description": "",
+        "possible_cause": "",
+        "recommended_action": [],
+    }
+
+
+def get_overview_components() -> list:
+    """Return real reports plus UI-only placeholders for all 7 types."""
+    real_components = {}
+
+    for raw_key, component_data in MOCK_DATA.items():
+        component = component_data.get("component", raw_key)
+        canonical_key = LEGACY_COMPONENT_ALIASES.get(component, component)
+
+        if canonical_key in real_components and raw_key != canonical_key:
+            continue
+
+        overview_data = dict(component_data)
+        overview_data["component"] = canonical_key
+        real_components[canonical_key] = overview_data
+
+    overview_components = []
+    for component_key in GROUND_KNOWLEDGE_ANOMALY_TYPES:
+        if component_key in real_components:
+            overview_components.append(
+                (
+                    component_key,
+                    real_components[component_key],
+                    False,
+                )
+            )
+        else:
+            overview_components.append(
+                (
+                    component_key,
+                    make_overview_placeholder(component_key),
+                    True,
+                )
+            )
+
+    return sorted(
+        overview_components,
+        key=lambda x: (
+            RISK_PRIORITY.get(x[1].get("risk_level", "Unknown"), 3),
+            -x[1].get("risk_score", 0),
+        )
+    )
+
+
 THEME_TOKENS = {
     "light": {
         "bg": "#f5f5f7",
@@ -264,6 +325,26 @@ ICONS = {
     "activity": (
         '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>'
     ),
+    "thermometer": (
+        '<path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 '
+        '5 0z"></path>'
+        '<line x1="12" y1="7" x2="12" y2="14"></line>'
+    ),
+    "gauge": (
+        '<path d="M12 14l4-4"></path>'
+        '<path d="M3.34 19a10 10 0 1 1 17.32 0"></path>'
+    ),
+    "sliders": (
+        '<line x1="4" y1="21" x2="4" y2="14"></line>'
+        '<line x1="4" y1="10" x2="4" y2="3"></line>'
+        '<line x1="12" y1="21" x2="12" y2="12"></line>'
+        '<line x1="12" y1="8" x2="12" y2="3"></line>'
+        '<line x1="20" y1="21" x2="20" y2="16"></line>'
+        '<line x1="20" y1="12" x2="20" y2="3"></line>'
+        '<line x1="2" y1="14" x2="6" y2="14"></line>'
+        '<line x1="10" y1="8" x2="14" y2="8"></line>'
+        '<line x1="18" y1="16" x2="22" y2="16"></line>'
+    ),
     "file-text": (
         '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 '
         '2-2V8z"></path>'
@@ -314,9 +395,14 @@ ICONS = {
 # Per-component icon, keyed by MOCK_DATA component key (falls back to a
 # generic icon for components not in this map).
 COMPONENT_ICONS = {
+    "cooling_degradation": "droplet",
     "cooling_system_stress": "droplet",
+    "intake_air_temperature_sensor_or_heat_soak_fault": "thermometer",
     "air_intake_maf_anomaly": "wind",
+    "map_load_signal_plausibility_fault": "gauge",
+    "electronic_throttle_tracking_fault": "sliders",
     "accelerator_pedal_sensor": "zap",
+    "idle_speed_control_or_surge_degradation": "trending-up",
 }
 
 
@@ -1027,13 +1113,7 @@ def show_overview_page():
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    sorted_components = sorted(
-        MOCK_DATA.items(),
-        key=lambda x: (
-            RISK_PRIORITY.get(x[1].get("risk_level", "Unknown"), 3),
-            -x[1].get("risk_score", 0)
-        )
-    )
+    sorted_components = get_overview_components()
 
     num_components = len(sorted_components)
 
@@ -1050,7 +1130,11 @@ def show_overview_page():
     else:
         cols = st.columns(3, gap="large")
 
-    for idx, (component_key, component_data) in enumerate(
+    for idx, (
+        component_key,
+        component_data,
+        is_placeholder,
+    ) in enumerate(
         sorted_components
     ):
         col_idx = idx % len(cols) if num_components >= 3 else idx
@@ -1173,7 +1257,7 @@ def show_overview_page():
             if st.button(
                 "View Details  →",
                 key=f"btn_{component_key}",
-                use_container_width=True
+                use_container_width=True,
             ):
                 st.session_state["selected_component"] = component_key
                 st.session_state["page"] = "detail"
@@ -1860,8 +1944,13 @@ def render_component_detail(
 def show_detail_page():
     """Display Component Detail Page with tab-based component switch."""
     component_key = st.session_state.get("selected_component")
+    overview_components = get_overview_components()
+    component_lookup = {
+        key: component_data
+        for key, component_data, _is_placeholder in overview_components
+    }
 
-    if not component_key or component_key not in MOCK_DATA:
+    if not component_key or component_key not in component_lookup:
         st.error("Component not found.")
         if st.button("← Back to Overview"):
             st.session_state["page"] = "overview"
@@ -1875,13 +1964,7 @@ def show_detail_page():
         st.session_state["page"] = "overview"
         st.rerun()
 
-    sorted_components = sorted(
-        MOCK_DATA.items(),
-        key=lambda x: (
-            RISK_PRIORITY.get(x[1].get("risk_level", "Unknown"), 3),
-            -x[1].get("risk_score", 0)
-        )
-    )
+    sorted_components = overview_components
     risk_color_map = {
         "High": tokens["risk_high"],
         "Medium": tokens["risk_medium"],
@@ -1889,10 +1972,44 @@ def show_detail_page():
         "Unknown": tokens["text_secondary"],
     }
 
+    tab_row_key = sorted_components[0][0]
+    tab_row_selector = (
+        'div[data-testid="stHorizontalBlock"]'
+        f":has(.st-key-tab_btn_{tab_row_key})"
+    )
     tab_cols = st.columns(len(sorted_components), gap="small")
     tab_css_rules = []
+    tab_css_rules.append(f"""
+        {tab_row_selector} {{
+            gap: 0.45rem !important;
+            flex-wrap: nowrap !important;
+            align-items: stretch !important;
+        }}
+        {tab_row_selector} > div[data-testid="stColumn"] {{
+            min-width: 0 !important;
+            flex: 1 1 0 !important;
+        }}
+        {tab_row_selector} .stButton {{
+            height: 100% !important;
+        }}
+        {tab_row_selector} button {{
+            min-height: 72px !important;
+            font-size: 13px !important;
+            line-height: 1.25 !important;
+            text-align: center !important;
+            white-space: normal !important;
+        }}
+        {tab_row_selector} button p {{
+            font-size: 13px !important;
+            line-height: 1.25 !important;
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+        }}
+    """)
 
-    for col, (tab_key, tab_data) in zip(tab_cols, sorted_components):
+    for col, (tab_key, tab_data, _is_placeholder) in zip(
+        tab_cols, sorted_components
+    ):
         with col:
             is_active = tab_key == component_key
             icon_color = risk_color_map.get(
@@ -1905,7 +2022,7 @@ def show_detail_page():
                 color=icon_color,
             )
             icon_src = svg_data_uri(icon_svg)
-            label = COMPONENT_DISPLAY_NAMES.get(tab_key, tab_key)
+            label = COMPONENT_DISPLAY_NAMES.get(tab_key, tab_key) or tab_key
             if st.button(
                 label,
                 key=f"tab_btn_{tab_key}",
@@ -1918,9 +2035,9 @@ def show_detail_page():
                 background-color: transparent !important;
                 background-image: url("{icon_src}") !important;
                 background-repeat: no-repeat !important;
-                background-position: 18px center !important;
+                background-position: 10px center !important;
                 background-size: 16px 16px !important;
-                padding-left: 52px !important;
+                padding: 8px 8px 8px 34px !important;
             """
             if is_active:
                 tab_css_rules.append(f"""
@@ -1962,7 +2079,7 @@ def show_detail_page():
 
     show_divider(dark_mode, margin="8px auto 32px auto")
 
-    render_component_detail(MOCK_DATA[component_key], dark_mode, tokens)
+    render_component_detail(component_lookup[component_key], dark_mode, tokens)
 
     show_footer(dark_mode)
 
