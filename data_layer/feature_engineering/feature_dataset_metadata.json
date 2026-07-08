@@ -1,10 +1,5 @@
 {
-  "schema_version": "1.0-cn",
-  "outputs": {
-    "feature_dataset": "C:\\Users\\Peter\\Documents\\Summer\\feature_dataset.csv",
-    "feature_dataset_debug": "C:\\Users\\Peter\\Documents\\Summer\\feature_dataset_debug.csv",
-    "feature_dataset_metadata": "C:\\Users\\Peter\\Documents\\Summer\\feature_dataset_metadata.json"
-  },
+  "schema_version": "2.0",
   "sampling_rate_hz": 1,
   "row_count": 249694,
   "merge_key": [
@@ -38,15 +33,15 @@
   ],
   "intermediate_feature_files": {
     "deterministic_features": {
-      "path": "C:\\Users\\Peter\\Documents\\Summer\\deterministic_features.csv",
+      "path": "feature_engineering\\deterministic_features.csv",
       "table_type": "thin_row_level_feature_table"
     },
     "event_features": {
-      "path": "C:\\Users\\Peter\\Documents\\Summer\\event_features.csv",
+      "path": "feature_engineering\\event_features.csv",
       "table_type": "thin_row_level_feature_table"
     },
     "baseline_features": {
-      "path": "C:\\Users\\Peter\\Documents\\Summer\\baseline_features.csv",
+      "path": "feature_engineering\\baseline_features.csv",
       "table_type": "thin_row_level_feature_table"
     }
   },
@@ -63,7 +58,7 @@
     "non_event_rows": "NaN"
   },
   "baseline_model_summary": {
-    "baseline_schema_version": "1.0-cn",
+    "baseline_schema_version": "2.0",
     "base_filter_count": 240903,
     "cohesion_reference": "golden_post_warmup_steady_driving",
     "speed_density_fit_scope": "steady_driving_high_confidence_engine_running",
@@ -168,8 +163,6 @@
     }
   },
   "notes": [
-    "No feature window dataset is generated in V1.",
-    "No pkl files are generated in V1.",
     "Intermediate feature CSV files are thin tables containing only key columns and newly generated feature columns.",
     "Final feature_dataset.csv excludes debug-only columns."
   ]
