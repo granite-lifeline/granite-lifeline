@@ -158,8 +158,12 @@ def run_quality_audit(
         float_format=output_config.get("float_format"),
     )
 
-    report = build_quality_report
-    (enriched, config, enriched_target, quality_target)
+    report = build_quality_report(
+        enriched,
+        config,
+        enriched_target,
+        quality_target,
+    )
     report["report_json"] = display_path(report_target)
     report_target.write_text(
         json.dumps(report, ensure_ascii=True, indent=2),
