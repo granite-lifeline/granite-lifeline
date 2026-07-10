@@ -1,4 +1,4 @@
-# Scenario Comparison Report - GL-30
+# Scenario Comparison Report - V1
 
 **Model:** granite4.1:8b
 

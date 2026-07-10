@@ -1,9 +1,9 @@
 {
   "timestamp": "2026-06-20T14:32:15Z",
-  "anomaly_type": "cooling_system_stress",
+  "anomaly_type": "cooling_degradation",
   "risk_score": 0.82,
   "risk_level": "High",
-  "component": "cooling_system_stress",
+  "component": "cooling_degradation",
   "prediction_confidence": 0.87,
   "key_signals": [
     {
