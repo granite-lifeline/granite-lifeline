@@ -24,6 +24,17 @@ import pandas as pd
 import torch
 from tsfm_public.toolkit.get_model import get_model
 
+try:
+    from model.input_validation import (
+        validate_required_columns,
+        validate_sensor_ranges,
+    )
+except ImportError:  # direct script run: src/ not on sys.path
+    from input_validation import (
+        validate_required_columns,
+        validate_sensor_ranges,
+    )
+
 
 MODEL_PATH = "ibm-granite/granite-timeseries-ttm-r2"
 DEFAULT_DATA_DIR = Path("dataset/10.35097-1130/data/dataset/OBD-II-Dataset")
@@ -63,8 +74,9 @@ REFERENCE_RANGES = {
     "speed": [0, 218],
     "accel_pedal_d": [0, 100],
     "accel_pedal_e": [0, 100],
+    "accel_pedal_channel_delta": [0, 10],
     "coolant_slope": [0, 2],
-    "maf_map_cohesion": [0.1, 0.3],
+    "maf_map_cohesion": [0.0, 1.8],
     "load_stress": [0, 200000],
     "acceleration": [-3, 3],
     "rpm_variation": [0, 500],
@@ -79,8 +91,9 @@ FEATURE_UNITS = {
     "speed": "km/h",
     "accel_pedal_d": "%",
     "accel_pedal_e": "%",
+    "accel_pedal_channel_delta": "pp",
     "coolant_slope": "°C/min",
-    "maf_map_cohesion": "ratio",
+    "maf_map_cohesion": "z-score",
     "load_stress": "rpm×%",
     "acceleration": "m/s²",
     "rpm_variation": "RPM",
@@ -141,19 +154,25 @@ def find_default_csv() -> Path:
 
 def load_and_resample_kit_csv(
     csv_path: Path, resample_rule: str
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, list[str]]:
+    """Load one KIT trip CSV; return (frame, degradation notes)."""
     raw = pd.read_csv(csv_path)
-    missing = [col for col in REQUIRED_KIT_COLUMNS if col not in raw.columns]
-    if missing:
-        raise ValueError(
-            f"Missing expected KIT columns in {csv_path}: {missing}"
-        )
+    validate_required_columns(
+        raw.columns, REQUIRED_KIT_COLUMNS, str(csv_path)
+    )
 
+    notes: list[str] = []
     available_column_map = {
         source: target
         for source, target in KIT_COLUMN_MAP.items()
         if source in raw.columns
     }
+    pedal_columns = {"accel_pedal_d", "accel_pedal_e"}
+    if not pedal_columns.issubset(available_column_map.values()):
+        notes.append(
+            "accel_pedal_d/accel_pedal_e unavailable in input; "
+            "accelerator_pedal_sensor detection disabled"
+        )
     df = raw.rename(columns=available_column_map)
     df = df[list(available_column_map.values())].copy()
     df["timestamp"] = parse_kit_time(df["timestamp"])
@@ -164,12 +183,20 @@ def load_and_resample_kit_csv(
     for column in numeric_columns:
         df[column] = pd.to_numeric(df[column], errors="coerce")
 
+    # Repair before resampling so .mean() never blends
+    # physically implausible values into neighbouring rows.
+    validation = validate_sensor_ranges(df)
+    df = validation.df
+    notes.extend(validation.notes)
+
     df = df.sort_values("timestamp").set_index("timestamp")
     df = df.resample(resample_rule).mean()
-    df = df.interpolate(method="time", limit_direction="both").ffill().bfill()
+    df = df.interpolate(
+        method="time", limit_direction="both"
+    ).ffill().bfill()
     df = df.reset_index()
 
-    return add_derived_features(df)
+    return add_derived_features(df), notes
 
 
 def parse_kit_time(time_series: pd.Series) -> pd.Series:
@@ -202,21 +229,45 @@ def parse_kit_time(time_series: pd.Series) -> pd.Series:
     return pd.Series(adjusted)
 
 
+def zscore(series: pd.Series) -> pd.Series:
+    """Z-score against current-trip stats (interim baseline).
+
+    Story 5 will replace trip stats with a fitted healthy
+    vehicle baseline (failure_type_research.md, B1 formula).
+    """
+    std = float(series.std())
+    if not np.isfinite(std) or std < 1e-6:
+        return series * 0.0
+    return (series - series.mean()) / std
+
+
 def add_derived_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["coolant_slope"] = df["coolant_temp"].diff().fillna(0) * 60.0
     df["acceleration"] = df["speed"].diff().fillna(0) / 3.6
     df["load_stress"] = df["rpm"] * df["tps"]
-    df["maf_map_cohesion"] = df["maf"] / df["map"].replace(0, np.nan)
-    df["maf_map_cohesion"] = df["maf_map_cohesion"].replace(
-        [np.inf, -np.inf], np.nan
-    )
-    df["maf_map_cohesion"] = df["maf_map_cohesion"].interpolate(
-        limit_direction="both"
-    )
+    # Air-load plausibility (INTERFACE.md 2.4, research note B1):
+    # maf_derived_air_load = maf / (rpm / 60)  [g/rev]
+    # map_derived_air_load ~ map (speed-density proxy;
+    # intake_temp not yet forwarded by Data Layer).
+    # Floor at 1 rev/s so engine-off rows do not explode.
+    rev_per_s = (df["rpm"] / 60.0).clip(lower=1.0)
+    maf_load = df["maf"] / rev_per_s
+    map_load = df["map"]
+    df["maf_map_cohesion"] = (
+        zscore(maf_load) - zscore(map_load)
+    ).abs()
     df["rpm_variation"] = (
         df["rpm"].rolling(window=10, min_periods=2).std().fillna(0)
     )
+    # Dual-channel pedal disagreement (INTERFACE.md 2.4): the two
+    # redundant pedal sensors should track each other; a sustained
+    # gap indicates a pedal sensor fault. Only computable when the
+    # input forwards both channels.
+    if {"accel_pedal_d", "accel_pedal_e"}.issubset(df.columns):
+        df["accel_pedal_channel_delta"] = (
+            df["accel_pedal_d"] - df["accel_pedal_e"]
+        ).abs()
     return df
 
 
@@ -294,7 +345,9 @@ def extract_prediction_tensor(output: Any) -> torch.Tensor:
     if hasattr(output, "last_hidden_state"):
         return output.last_hidden_state
     if isinstance(output, dict):
-        for key in ("prediction_outputs", "predictions", "last_hidden_state"):
+        for key in (
+            "prediction_outputs", "predictions", "last_hidden_state"
+        ):
             if key in output:
                 return output[key]
     if isinstance(output, (tuple, list)) and output:
@@ -312,7 +365,9 @@ def calculate_residuals(
     return residual
 
 
-def summarize_residuals(residual: pd.DataFrame) -> dict[str, dict[str, float]]:
+def summarize_residuals(
+    residual: pd.DataFrame,
+) -> dict[str, dict[str, float]]:
     return {
         signal: {
             "mean": float(residual[signal].mean()),
@@ -336,7 +391,9 @@ def normalized_residual_scores(
 def calculate_risk(
     residual_summary: dict[str, dict[str, float]],
     future: pd.DataFrame,
-) -> tuple[str, float, float, list[str]]:
+    notes: list[str] | None = None,
+) -> tuple[str, float, float, list[str], list[str]]:
+    notes = list(notes) if notes else []
     scores = normalized_residual_scores(residual_summary)
 
     coolant_temp = float(future["coolant_temp"].max())
@@ -356,7 +413,10 @@ def calculate_risk(
     intake_score = max(
         scores["maf"],
         scores["map"],
-        clipped_scale(abs(maf_map_cohesion - 0.2), low=0.15, high=0.45),
+        # Cohesion is a z-score deviation, ~0 when MAF/MAP-side
+        # air loads agree. Floor calibrated above the max healthy
+        # future-window mean (1.56 across 36 Normal/Frei trips).
+        clipped_scale(maf_map_cohesion, low=1.8, high=3.0),
     )
     _ = max(
         scores["rpm"],
@@ -364,20 +424,44 @@ def calculate_risk(
         clipped_scale(load_stress, low=120000.0, high=250000.0),
     )
 
+    # Pedal fault = sustained dual-channel disagreement over the
+    # window. Healthy mean delta is ~0.8pp with benign spikes
+    # >10pp in ~1% of samples (INTERFACE.md 2.4), so score the
+    # window mean between 2pp and 10pp (tunable calibration).
+    if "accel_pedal_channel_delta" in future.columns:
+        pedal_score = clipped_scale(
+            float(future["accel_pedal_channel_delta"].mean()),
+            low=2.0,
+            high=10.0,
+        )
+    else:
+        pedal_score = 0.0
+        notes.append(
+            "accelerator_pedal_sensor score forced to 0.0 "
+            "(pedal channels unavailable); anomaly_type falls "
+            "back to next-highest score"
+        )
+
     anomaly_scores = {
-        "cooling_system_stress": cooling_score,
+        "cooling_degradation": cooling_score,
         "air_intake_maf_anomaly": intake_score,
-        # accel_pedal_d/e not yet forwarded by Group 1 —
-        # detection disabled until Story 5
-        "accelerator_pedal_sensor": 0.0,
+        "accelerator_pedal_sensor": pedal_score,
+        # Pending — Data Layer signals not yet forwarded
+        # (INTERFACE.md 2.3/2.4, added 2026-06-29).
+        "intake_air_temperature_sensor_or_heat_soak_fault": 0.0,
+        "map_load_signal_plausibility_fault": 0.0,
+        "electronic_throttle_tracking_fault": 0.0,
+        "idle_speed_control_or_surge_degradation": 0.0,
     }
     anomaly_type = max(anomaly_scores, key=anomaly_scores.get)
     risk_score = float(anomaly_scores[anomaly_type])
 
+    # Confidence and top signals stay residual-based (TTM channels
+    # only); the rule-based pedal score is deliberately excluded.
     top_residual_signals = sorted(scores, key=scores.get, reverse=True)[:3]
     std = float(np.std(list(scores.values())))
     confidence = float(max(0.35, min(0.95, 1.0 - std)))
-    return anomaly_type, risk_score, confidence, top_residual_signals
+    return anomaly_type, risk_score, confidence, top_residual_signals, notes
 
 
 def clipped_scale(value: float, low: float, high: float) -> float:
@@ -403,6 +487,7 @@ def build_interface_json(
     risk_score: float,
     confidence: float,
     top_residual_signals: list[str],
+    notes: list[str],
 ) -> dict[str, Any]:
     last_future_row = future.iloc[-1]
     feature_values = {
@@ -418,11 +503,36 @@ def build_interface_json(
         "acceleration": float(future["acceleration"].max()),
         "rpm_variation": float(future["rpm_variation"].max()),
     }
+    for pedal_column in ("accel_pedal_d", "accel_pedal_e"):
+        if pedal_column in future.columns:
+            feature_values[pedal_column] = float(
+                last_future_row[pedal_column]
+            )
+    if "accel_pedal_channel_delta" in future.columns:
+        feature_values["accel_pedal_channel_delta"] = float(
+            future["accel_pedal_channel_delta"].mean()
+        )
 
     priority = {
-        "cooling_system_stress": ["coolant_temp", "coolant_slope"],
+        "cooling_degradation": ["coolant_temp", "coolant_slope"],
         "air_intake_maf_anomaly": ["maf", "map", "maf_map_cohesion"],
-        "accelerator_pedal_sensor": ["accel_pedal_d", "accel_pedal_e"],
+        "accelerator_pedal_sensor": [
+            "accel_pedal_d", "accel_pedal_e",
+            "accel_pedal_channel_delta",
+        ],
+        "intake_air_temperature_sensor_or_heat_soak_fault": [
+            "intake_temp", "ambient_temp", "intake_ambient_delta"
+        ],
+        "map_load_signal_plausibility_fault": [
+            "map", "maf", "tps", "map_slope"
+        ],
+        "electronic_throttle_tracking_fault": [
+            "accel_pedal_d", "accel_pedal_e", "tps",
+            "pedal_throttle_gap"
+        ],
+        "idle_speed_control_or_surge_degradation": [
+            "rpm", "idle_flag", "idle_rpm_stability", "rpm_slope"
+        ],
     }[anomaly_type]
 
     features = []
@@ -449,6 +559,11 @@ def build_interface_json(
             }
             for feature in features
         ],
+        # Null placeholders until Story 8 implements the
+        # risk-history estimator (INTERFACE.md 2.2, v0.4).
+        "estimated_cycles_to_failure": None,
+        "estimated_failure_probability": None,
+        "notes": notes,
     }
 
 
@@ -472,7 +587,7 @@ def main() -> None:
     csv_path = args.csv_path or find_default_csv()
 
     print(f"Reading KIT CSV: {csv_path}")
-    df = load_and_resample_kit_csv(csv_path, args.resample_rule)
+    df, notes = load_and_resample_kit_csv(csv_path, args.resample_rule)
     print(f"Resampled rows: {len(df)} at rule={args.resample_rule}")
 
     context, future = select_context_and_truth(
@@ -492,8 +607,8 @@ def main() -> None:
     residual_summary = summarize_residuals(residual)
     print_residual_summary(residual_summary)
 
-    anomaly_type, score, confidence, top_signals = calculate_risk(
-        residual_summary, future
+    anomaly_type, score, confidence, top_signals, notes = calculate_risk(
+        residual_summary, future, notes
     )
     result = build_interface_json(
         future=future,
@@ -502,6 +617,7 @@ def main() -> None:
         risk_score=score,
         confidence=confidence,
         top_residual_signals=top_signals,
+        notes=notes,
     )
 
     print("\nInterface JSON")

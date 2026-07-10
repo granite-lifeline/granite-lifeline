@@ -286,6 +286,50 @@ def _format_utc_timestamp(value: Any) -> str:
     return timestamp.strftime(UTC_TIMESTAMP_FORMAT)
 
 
+# Build a chronological cycle sort key before assigning trip_id values.
+def _get_trip_sort_key(
+    path: Path,
+    config: dict[str, Any],
+) -> tuple[pd.Timestamp, str]:
+    metadata = parse_filename(path)
+    input_config = config["input"]
+    time_source = normalize_column_name(config["time"]["source_field"])
+
+    header = pd.read_csv(
+        path,
+        nrows=0,
+        encoding=input_config.get("encoding", "utf-8-sig"),
+        delimiter=input_config.get("delimiter", ","),
+    )
+    normalized_sources = {
+        normalize_column_name(column): column for column in header.columns
+    }
+    time_column = normalized_sources.get(time_source)
+    if time_column is None:
+        raise CleaningError(
+            f"Could not find time field '{config['time']['source_field']}' "
+            f"in {path.name}."
+        )
+
+    time_values = pd.read_csv(
+        path,
+        usecols=[time_column],
+        encoding=input_config.get("encoding", "utf-8-sig"),
+        delimiter=input_config.get("delimiter", ","),
+    )[time_column].dropna()
+    if time_values.empty:
+        raise CleaningError(f"No valid time values found in {path.name}.")
+
+    timestamps = _parse_timestamps(
+        time_values,
+        metadata.date,
+        config["time"]["timezone"],
+        config["time"]["source_format"],
+    )
+    start_timestamp = pd.Timestamp(timestamps.min()).tz_convert("UTC")
+    return start_timestamp, path.name
+
+
 # Count True runs in a boolean mask for missing-value audit summaries.
 def _count_true_runs(mask: pd.Series) -> dict[str, int]:
     if mask.empty:
@@ -677,9 +721,12 @@ def discover_input_files(
         "cleaning_quality",
     )
     paths = sorted(
-        path
-        for path in directory.glob(pattern)
-        if path.is_file() and not path.name.startswith(generated_prefixes)
+        (
+            path
+            for path in directory.glob(pattern)
+            if path.is_file() and not path.name.startswith(generated_prefixes)
+        ),
+        key=lambda path: _get_trip_sort_key(path, config),
     )
     if not paths:
         raise CleaningError(
@@ -778,6 +825,9 @@ def build_global_report(
         "timezone": config["time"]["timezone"],
         "output_timezone": "UTC",
         "timestamp_format": UTC_TIMESTAMP_FORMAT,
+        "trip_id_ordering": (
+            "chronological_by_filename_date_then_in_file_start_time"
+        ),
         "resample_frequency": config["time"]["resample_frequency"],
         "segment_gap_seconds": config["time"]["segment_gap_seconds"],
         "imputation_max_seconds": config["time"]["imputation_max_seconds"],
