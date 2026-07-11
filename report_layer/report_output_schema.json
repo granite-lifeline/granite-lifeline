@@ -70,6 +70,10 @@
         }
       }
     },
+    "estimated_cycles_to_failure": {
+      "type": ["integer", "null"],
+      "description": "Estimated number of drive cycles before component failure, provided by Model Layer"
+    },
     "risk_history": {
       "type": "array",
       "items": {
