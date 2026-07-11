@@ -100,10 +100,13 @@ class ModelLayerOutput(BaseModel):
     timestamp: str
     anomaly_type: AnomalyType
     risk_score: float
-    risk_level: Optional[str] = None  # TBD - thresholds pending calibration
+    risk_level: Optional[str] = None  # TBD - thresholds pending
     component: AnomalyType  # Mirrors anomaly_type
     prediction_confidence: float
     key_signals: List[KeySignal]
+    estimated_cycles_to_failure: Optional[int] = None
+    estimated_failure_probability: Optional[float] = None
+    notes: List[str] = Field(default_factory=list)
 
 
 class ReportLayerOutput(BaseModel):
