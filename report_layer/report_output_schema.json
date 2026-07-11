@@ -10,7 +10,8 @@
     "key_signals",
     "anomaly_description",
     "possible_cause",
-    "recommended_action"
+    "recommended_action",
+    "notes"
   ],
   "properties": {
     "timestamp": {
