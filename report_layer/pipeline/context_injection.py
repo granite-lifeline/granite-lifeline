@@ -4,7 +4,7 @@ Context injection utilities for Report Layer.
 Formats Model Layer output into structured text for Granite LLM prompts.
 """
 
-from typing import Dict
+from typing import Dict, List, Union
 
 from report_layer.rag.rag_retriever import retrieve_all
 from shared.interface_models import ModelLayerOutput
@@ -168,7 +168,9 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
     return "\n".join(context_lines)
 
 
-def build_context_with_rag(ttm_output: ModelLayerOutput) -> Dict[str, str]:
+def build_context_with_rag(
+    ttm_output: ModelLayerOutput
+) -> Dict[str, Union[str, List[str]]]:
     """
     Build context with RAG-retrieved fault knowledge from ChromaDB.
 
@@ -180,7 +182,7 @@ def build_context_with_rag(ttm_output: ModelLayerOutput) -> Dict[str, str]:
         ttm_output: Model Layer output containing predictions and signals
 
     Returns:
-        Dictionary with four keys:
+        Dictionary with five keys:
         - "context": Structured vehicle status and key signals
         - "fault_knowledge": Description and causes grounded in
           automotive references
@@ -188,6 +190,8 @@ def build_context_with_rag(ttm_output: ModelLayerOutput) -> Dict[str, str]:
           actions
         - "certainty_guidance": Language strength guideline based on
           prediction_confidence for controlling LLM output certainty
+        - "notes": List of input validation and degradation messages
+          from Model Layer
     """
     # Get existing context
     context = build_context(ttm_output)
@@ -228,4 +232,5 @@ def build_context_with_rag(ttm_output: ModelLayerOutput) -> Dict[str, str]:
         "fault_knowledge": rag_knowledge["description_causes"],
         "actions_knowledge": rag_knowledge["actions"],
         "certainty_guidance": certainty_guidance,
+        "notes": ttm_output.notes if ttm_output.notes else [],
     }
