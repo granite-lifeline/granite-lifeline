@@ -10,7 +10,8 @@
     "key_signals",
     "anomaly_description",
     "possible_cause",
-    "recommended_action"
+    "recommended_action",
+    "notes"
   ],
   "properties": {
     "timestamp": {
@@ -69,6 +70,16 @@
         }
       }
     },
+    "estimated_cycles_to_failure": {
+      "type": ["integer", "null"],
+      "description": "Estimated number of drive cycles before component failure, provided by Model Layer"
+    },
+    "estimated_failure_probability": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Probability of component failure (0.0-1.0), provided by Model Layer"
+    },
     "risk_history": {
       "type": "array",
       "items": {
@@ -98,6 +109,13 @@
       "items": {
         "type": "string"
       }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Input validation and degradation messages from Model Layer"
     }
   }
 }
