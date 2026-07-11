@@ -70,10 +70,11 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
         ttm_output: Model Layer output containing predictions and signals
 
     Returns:
-        Formatted context string with vehicle status, key signals, and
-        Signal Correlation section when abnormal signals are detected.
-        The Signal Correlation section uses known automotive fault
-        correlation patterns where available.
+        Formatted context string with vehicle status, key signals,
+        Signal Correlation section when abnormal signals are detected,
+        and Model Layer Notes section when input validation or
+        degradation messages are present. The Signal Correlation section
+        uses known automotive fault correlation patterns where available.
     """
     # Format risk_level with fallback for None
     risk_level = ttm_output.risk_level if ttm_output.risk_level else "Unknown"
@@ -156,6 +157,13 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
                 f"- Single abnormal signal detected: "
                 f"{abnormal_signals[0].feature}"
             )
+
+    # Add Model Layer Notes section if notes are present
+    if ttm_output.notes:
+        context_lines.append("")
+        context_lines.append("Model Layer Notes:")
+        for note in ttm_output.notes:
+            context_lines.append(f"- {note}")
 
     return "\n".join(context_lines)
 
