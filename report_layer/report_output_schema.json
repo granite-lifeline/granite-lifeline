@@ -109,6 +109,13 @@
       "items": {
         "type": "string"
       }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Input validation and degradation messages from Model Layer"
     }
   }
 }
