@@ -119,6 +119,9 @@ class ReportLayerOutput(BaseModel):
     component: AnomalyType  # Mirrors anomaly_type from Model Layer
     prediction_confidence: float
     key_signals: List[KeySignal]
+    estimated_cycles_to_failure: Optional[int] = None
+    estimated_failure_probability: Optional[float] = None
+    notes: List[str] = Field(default_factory=list)
 
     # Report Layer maintained fields
     # TBD - storage implementation pending
