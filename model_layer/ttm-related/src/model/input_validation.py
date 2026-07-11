@@ -33,6 +33,58 @@ PLAUSIBLE_RANGES: dict[str, list[float]] = {
 # rejected instead of repaired.
 DEFAULT_MAX_BAD_FRACTION = 0.05
 
+# Group 1 `feature_dataset.csv` required columns — INTERFACE.md v0.6
+# Section 1 (keys/conditions + raw signals + engineered features).
+# Section 1.4 proxy labels are TBD and deliberately excluded.
+# Story 4 consumption tests validate against this list; Story 7
+# reuses it when the pipeline switches to Group 1 input.
+GROUP1_REQUIRED_COLUMNS: list[str] = [
+    # 1.1 key, time, and operating-condition fields
+    "timestamp",
+    "trip_id",
+    "segment_id",
+    "row_in_segment",
+    "dt_seconds",
+    "thermal_state",
+    "child_state",
+    "operating_state",
+    "condition_confidence",
+    "condition_quality_flags",
+    # 1.2 raw signals
+    "coolant_temp",
+    "map",
+    "rpm",
+    "speed",
+    "intake_temp",
+    "maf",
+    "tps",
+    "ambient_temp",
+    "accel_pedal_d",
+    "accel_pedal_e",
+    # 1.3 engineered features
+    "coolant_slope",
+    "coolant_ambient_delta",
+    "coolant_stability",
+    "intake_ambient_delta",
+    "intake_temp_slope",
+    "maf_derived_air_load_raw",
+    "map_derived_air_load_raw",
+    "maf_map_cohesion",
+    "speed_density_maf_residual",
+    "map_slope",
+    "accel_pedal_mean",
+    "pedal_throttle_gap",
+    "pedal_to_throttle_delay",
+    "tps_slope",
+    "accel_pedal_channel_delta",
+    "accel_pedal_channel_ratio",
+    "pedal_slope",
+    "engine_on_flag",
+    "rpm_slope",
+    "idle_flag",
+    "idle_rpm_stability",
+]
+
 
 @dataclass
 class ValidationResult:

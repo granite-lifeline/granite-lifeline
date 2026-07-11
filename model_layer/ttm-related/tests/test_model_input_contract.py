@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -73,18 +74,34 @@ class TestGroup1ModelInputContract:
 
         assert_features_inside_contract(frame)
 
-    def test_engineered_feature_contract_catches_out_of_range_values(self):
-        frame = make_group1_frame(rows=10)
-        frame.loc[0, "maf_map_cohesion"] = 99.0
+    @pytest.mark.parametrize(
+        "feature", sorted(ENGINEERED_FEATURE_CONTRACT_RANGES)
+    )
+    def test_engineered_feature_contract_catches_out_of_range_values(
+        self, feature
+    ):
+        low, high = ENGINEERED_FEATURE_CONTRACT_RANGES[feature]
+        for bad_value in (low - 1.0, high + 1.0):
+            frame = make_group1_frame(rows=10)
+            frame.loc[0, feature] = bad_value
 
-        try:
+            with pytest.raises(
+                AssertionError,
+                match=f"{feature} outside contract range",
+            ):
+                assert_features_inside_contract(frame)
+
+    def test_engineered_feature_contract_catches_non_numeric_values(self):
+        # Engineered features are not in PLAUSIBLE_RANGES, so the
+        # consumption path never type-checks them; this contract
+        # check is what catches a wrong-type engineered column.
+        frame = make_group1_frame(rows=10)
+        frame["rpm_slope"] = "sensor_error"
+
+        with pytest.raises(
+            AssertionError, match="rpm_slope contains non-numeric"
+        ):
             assert_features_inside_contract(frame)
-        except AssertionError as exc:
-            assert "maf_map_cohesion" in str(exc)
-        else:
-            raise AssertionError(
-                "Expected out-of-range maf_map_cohesion to fail"
-            )
 
     def test_frame_has_enough_rows_for_default_ttm_window(self):
         required_rows = DEFAULT_CONTEXT_LENGTH + DEFAULT_PREDICTION_LENGTH
@@ -98,6 +115,12 @@ class TestGroup1ModelInputContract:
 
         assert len(context) == DEFAULT_CONTEXT_LENGTH
         assert len(future) == DEFAULT_PREDICTION_LENGTH
+        # Future window must start right after the context window
+        # (no overlap, no gap) for residuals to be meaningful.
+        assert (
+            future["row_in_segment"].iloc[0]
+            == context["row_in_segment"].iloc[-1] + 1
+        )
 
     def test_row_identity_supports_segment_safe_windowing(self):
         frame = make_group1_frame(rows=20)
@@ -105,6 +128,8 @@ class TestGroup1ModelInputContract:
         assert frame["trip_id"].nunique() == 1
         assert frame["segment_id"].nunique() == 1
         assert frame["row_in_segment"].tolist() == list(range(1, 21))
-        assert pd.to_numeric(frame["dt_seconds"], errors="coerce").eq(1.0).all()
-        assert pd.to_datetime(frame["timestamp"], errors="coerce").is_monotonic_increasing
-
+        dt = pd.to_numeric(frame["dt_seconds"], errors="coerce")
+        assert dt.eq(1.0).all()
+        parsed = pd.to_datetime(frame["timestamp"], errors="coerce")
+        assert not parsed.isna().any()
+        assert parsed.is_monotonic_increasing
