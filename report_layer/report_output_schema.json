@@ -74,6 +74,12 @@
       "type": ["integer", "null"],
       "description": "Estimated number of drive cycles before component failure, provided by Model Layer"
     },
+    "estimated_failure_probability": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Probability of component failure (0.0-1.0), provided by Model Layer"
+    },
     "risk_history": {
       "type": "array",
       "items": {
