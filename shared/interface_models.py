@@ -1,6 +1,6 @@
 """
 Pydantic models for Granite Lifeline cross-layer data contracts.
-Based on INTERFACE.md v0.4 (updated 2026-07-07).
+Based on INTERFACE.md v0.6 (updated 2026-07-08).
 
 This is an early-stage version with basic validation only.
 Stricter validation will be added once all layers confirm field details.
@@ -100,10 +100,13 @@ class ModelLayerOutput(BaseModel):
     timestamp: str
     anomaly_type: AnomalyType
     risk_score: float
-    risk_level: Optional[str] = None  # TBD - thresholds pending calibration
+    risk_level: Optional[str] = None  # TBD - thresholds pending
     component: AnomalyType  # Mirrors anomaly_type
     prediction_confidence: float
     key_signals: List[KeySignal]
+    estimated_cycles_to_failure: Optional[int] = None
+    estimated_failure_probability: Optional[float] = None
+    notes: List[str] = Field(default_factory=list)
 
 
 class ReportLayerOutput(BaseModel):
@@ -116,6 +119,9 @@ class ReportLayerOutput(BaseModel):
     component: AnomalyType  # Mirrors anomaly_type from Model Layer
     prediction_confidence: float
     key_signals: List[KeySignal]
+    estimated_cycles_to_failure: Optional[int] = None
+    estimated_failure_probability: Optional[float] = None
+    notes: List[str] = Field(default_factory=list)
 
     # Report Layer maintained fields
     # TBD - storage implementation pending
