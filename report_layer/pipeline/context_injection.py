@@ -2,12 +2,46 @@
 Context injection utilities for Report Layer.
 
 Formats Model Layer output into structured text for Granite LLM prompts.
+Raw OBD-II field names are mapped to human-readable names before being
+passed to the LLM.
 """
 
 from typing import Dict, List, Union
 
 from report_layer.rag.rag_retriever import retrieve_all
 from shared.interface_models import ModelLayerOutput
+
+
+SIGNAL_DISPLAY_NAMES = {
+    "coolant_temp": "Coolant Temperature",
+    "coolant_slope": "Coolant Temperature Rise Rate",
+    "coolant_stability": "Coolant Temperature Stability",
+    "maf": "Mass Airflow",
+    "map": "Manifold Air Pressure",
+    "maf_map_cohesion": "Airflow-Pressure Consistency",
+    "intake_temp": "Intake Air Temperature",
+    "ambient_temp": "Ambient Temperature",
+    "intake_ambient_delta": "Intake-Ambient Temperature Difference",
+    "accel_pedal_d": "Accelerator Pedal Position (Channel D)",
+    "accel_pedal_e": "Accelerator Pedal Position (Channel E)",
+    "accel_pedal_channel_delta": (
+        "Accelerator Pedal Channel Difference"
+    ),
+    "tps": "Throttle Position",
+    "rpm": "Engine RPM",
+    "idle_flag": "Idle Condition Flag",
+    "idle_rpm_stability": "Idle RPM Stability",
+    "rpm_slope": "RPM Rate of Change",
+    "map_slope": "Manifold Pressure Rate of Change",
+    "speed": "Vehicle Speed",
+    "pedal_throttle_gap": "Pedal-to-Throttle Gap",
+    "speed_density_maf_residual": "Speed-Density MAF Residual",
+}
+
+
+def _get_signal_display_name(feature: str) -> str:
+    """Return the human-readable signal name when one is configured."""
+    return SIGNAL_DISPLAY_NAMES.get(feature, feature)
 
 
 KNOWN_CORRELATIONS = {
@@ -111,10 +145,11 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
 
         # Format unit (omit if empty or None)
         unit_str = signal.unit if signal.unit else ""
+        display_name = _get_signal_display_name(signal.feature)
 
         # Build signal line
         signal_line = (
-            f"- {signal.feature}: {signal.value}{unit_str} "
+            f"- {display_name}: {signal.value}{unit_str} "
             f"(reference: {ref_lower}-{ref_upper}{unit_str}) [{status}]"
         )
         context_lines.append(signal_line)
@@ -141,7 +176,10 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
             # Multiple abnormal but no known pattern
             context_lines.append("")
             context_lines.append("Signal Correlation:")
-            feature_names = ", ".join(s.feature for s in abnormal_signals)
+            feature_names = ", ".join([
+                _get_signal_display_name(s.feature)
+                for s in abnormal_signals
+            ])
             context_lines.append(
                 f"- Multiple abnormal signals detected: {feature_names}"
             )
@@ -153,9 +191,12 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
             # Single abnormal signal
             context_lines.append("")
             context_lines.append("Signal Correlation:")
+            feature_name = _get_signal_display_name(
+                abnormal_signals[0].feature
+            )
             context_lines.append(
                 f"- Single abnormal signal detected: "
-                f"{abnormal_signals[0].feature}"
+                f"{feature_name}"
             )
 
     # Add Model Layer Notes section if notes are present
