@@ -1,6 +1,6 @@
 """
 Pydantic models for Granite Lifeline cross-layer data contracts.
-Based on INTERFACE.md v0.4 (updated 2026-07-07).
+Based on INTERFACE.md v0.6 (updated 2026-07-08).
 
 This is an early-stage version with basic validation only.
 Stricter validation will be added once all layers confirm field details.
