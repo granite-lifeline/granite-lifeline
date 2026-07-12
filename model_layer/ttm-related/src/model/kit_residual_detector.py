@@ -29,11 +29,13 @@ try:
         validate_required_columns,
         validate_sensor_ranges,
     )
+    from model.validate_output import validate_output
 except ImportError:  # direct script run: src/ not on sys.path
     from input_validation import (
         validate_required_columns,
         validate_sensor_ranges,
     )
+    from validate_output import validate_output
 
 
 MODEL_PATH = "ibm-granite/granite-timeseries-ttm-r2"
@@ -76,6 +78,7 @@ REFERENCE_RANGES = {
     "accel_pedal_e": [0, 100],
     "accel_pedal_channel_delta": [0, 10],
     "coolant_slope": [0, 2],
+    "coolant_stability": [0, 2],
     "maf_map_cohesion": [0.0, 1.8],
     "load_stress": [0, 200000],
     "acceleration": [-3, 3],
@@ -93,6 +96,7 @@ FEATURE_UNITS = {
     "accel_pedal_e": "%",
     "accel_pedal_channel_delta": "pp",
     "coolant_slope": "°C/min",
+    "coolant_stability": "°C",
     "maf_map_cohesion": "z-score",
     "load_stress": "rpm×%",
     "acceleration": "m/s²",
@@ -232,7 +236,7 @@ def parse_kit_time(time_series: pd.Series) -> pd.Series:
 def zscore(series: pd.Series) -> pd.Series:
     """Z-score against current-trip stats (interim baseline).
 
-    Story 5 will replace trip stats with a fitted healthy
+    Story 6 will replace trip stats with a fitted healthy
     vehicle baseline (failure_type_research.md, B1 formula).
     """
     std = float(series.std())
@@ -244,6 +248,9 @@ def zscore(series: pd.Series) -> pd.Series:
 def add_derived_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["coolant_slope"] = df["coolant_temp"].diff().fillna(0) * 60.0
+    df["coolant_stability"] = (
+        df["coolant_temp"].rolling(window=30, min_periods=2).std().fillna(0)
+    )
     df["acceleration"] = df["speed"].diff().fillna(0) / 3.6
     df["load_stress"] = df["rpm"] * df["tps"]
     # Air-load plausibility (INTERFACE.md 2.4, research note B1):
@@ -493,6 +500,7 @@ def build_interface_json(
     feature_values = {
         "coolant_temp": float(last_future_row["coolant_temp"]),
         "coolant_slope": float(future["coolant_slope"].max()),
+        "coolant_stability": float(future["coolant_stability"].max()),
         "map": float(last_future_row["map"]),
         "maf": float(last_future_row["maf"]),
         "maf_map_cohesion": float(future["maf_map_cohesion"].mean()),
@@ -514,7 +522,9 @@ def build_interface_json(
         )
 
     priority = {
-        "cooling_degradation": ["coolant_temp", "coolant_slope"],
+        "cooling_degradation": [
+            "coolant_temp", "coolant_slope", "coolant_stability",
+        ],
         "air_intake_maf_anomaly": ["maf", "map", "maf_map_cohesion"],
         "accelerator_pedal_sensor": [
             "accel_pedal_d", "accel_pedal_e",
@@ -619,6 +629,13 @@ def main() -> None:
         top_residual_signals=top_signals,
         notes=notes,
     )
+    validation_errors = validate_output(result)
+    if validation_errors:
+        print("\nOutput validation failed")
+        print("-" * 44)
+        for error in validation_errors:
+            print(f"- {error}")
+        raise SystemExit(1)
 
     print("\nInterface JSON")
     print("-" * 44)

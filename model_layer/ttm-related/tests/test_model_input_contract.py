@@ -31,7 +31,7 @@ from model.kit_residual_detector import (  # noqa: E402
 # Story 4 contract ranges for confirmed INTERFACE.md v0.6 engineered
 # features. These are deliberately input-contract checks, not final
 # anomaly thresholds. They keep mock Group 1 feature values realistic
-# while Story 5/6 later calibrate model and risk thresholds.
+# while Story 6/7 later calibrate model and risk thresholds.
 ENGINEERED_FEATURE_CONTRACT_RANGES: dict[str, tuple[float, float]] = {
     "coolant_slope": (-0.05, 0.05),
     "coolant_stability": (0.0, 2.0),
