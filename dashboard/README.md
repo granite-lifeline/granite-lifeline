@@ -35,14 +35,15 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | Risk Score Trend Chart | GL-42 | Interactive Plotly line chart with theme support |
 | Theme Toggle | GL-40 | Light/dark mode with Pro (IBM Carbon-inspired) aesthetics |
 | Team Footer | - | Team attribution footer |
+| Diagnostic Report Display | GL-41 | anomaly_description, possible_cause, recommended_action cards |
+| Key Signals Table | GL-41 | ABNORMAL/NORMAL signal rows with reference range |
+| Report Layer Integration | GL-41 | Loads ReportLayerOutput via data_loader.py; MOCK_DATA_FALLBACK retained |
 
 ### [PLANNED]
 
 | Feature | Priority | Description |
 |---------|----------|-------------|
-| Diagnostic Report Display | P0 | Show anomaly_description, possible_cause, recommended_action |
-| Key Signals Table | P0 | Display key_signals with ABNORMAL/NORMAL indicators |
-| Report Layer Integration | P0 | Consume ReportLayerOutput instead of MOCK_DATA |
+| Failure Prediction Display | P0 | Show estimated_failure_probability, estimated_cycles_to_failure, notes (GL-198) |
 | Mobile Optimization | P1 | Responsive design for mobile devices |
 | PDF Export | P2 | Download reports and charts |
 | 3D Component Visualization | P3 | Interactive 3D car model with component highlighting |
@@ -62,10 +63,12 @@ Dashboard consumes:
     - key_signals
     - anomaly_description, possible_cause, recommended_action
     - risk_history (for trend chart)
+    - estimated_failure_probability, estimated_cycles_to_failure
+    - notes
     ↓
 Renders:
     - Overview Page (component cards)
-    - Detail Page (metrics + trend chart + reports)
+    - Detail Page (metrics + trend chart + signals + report)
 ```
 
 ### Technology Stack
@@ -83,10 +86,14 @@ Renders:
 
 ```
 dashboard/
-├── app.py              # Main Streamlit application
-├── tests/              # Unit tests (planned)
-│   └── .gitkeep
-└── README.md           # This file
+├── app.py                  # Main Streamlit application
+├── anomaly_display.py      # Component/signal display name mappings
+├── data_loader.py          # JSON → component-keyed dict loader
+├── assets/                 # Static assets
+├── DATA_INTEGRATION.md     # Data contract and field documentation
+├── tests/
+│   └── ui_required_data.json   # INTERFACE.md v0.6 sample data (3 components)
+└── README.md               # This file
 ```
 
 ---
@@ -227,18 +234,24 @@ Theme state is stored in `st.session_state["dark_mode"]` and persists across pag
 
 ### Data Structure
 
-The dashboard currently uses `MOCK_DATA` for development. Production integration will consume `ReportLayerOutput` from the Report Layer.
+The dashboard loads `ReportLayerOutput` JSON via `data_loader.py`. A `MOCK_DATA_FALLBACK` dict is retained in `app.py` for offline development.
 
-**Current Mock Data Schema:**
+**Live Data Schema (INTERFACE.md v0.6):**
 ```python
-MOCK_DATA = {
-    "component_key": {
-        "display_name": str,        # User-friendly name
-        "risk_level": str,          # "High" | "Medium" | "Low"
-        "risk_score": float,        # 0.0 - 1.0
-        "trend": List[float],       # Historical risk scores (last 5)
-        "key_signals": List[dict]   # Signal details
-    }
+{
+    "timestamp": str,                       # ISO 8601
+    "risk_score": float,                    # 0.0–1.0
+    "risk_level": str,                      # "Low" | "Medium" | "High"
+    "component": str,                       # Component identifier
+    "prediction_confidence": float,         # 0.0–1.0
+    "key_signals": List[dict],              # feature, value, unit, reference_range
+    "risk_history": List[dict],             # timestamp + risk_score entries
+    "anomaly_description": str,             # Granite LLM generated
+    "possible_cause": str,                  # Granite LLM generated
+    "recommended_action": List[str],        # Granite LLM generated
+    "estimated_failure_probability": float | None,  # Model Layer, may be null
+    "estimated_cycles_to_failure": int | None,      # Model Layer, may be null
+    "notes": List[str],                     # Model Layer validation messages
 }
 ```
 
@@ -310,30 +323,29 @@ Before committing dashboard changes:
 
 ## Integration with Report Layer
 
-### Current Status: Mock Data
+### Current Status: Live Data via data_loader.py
 
-The dashboard currently uses hardcoded `MOCK_DATA` for development and UI testing.
+The dashboard loads `ReportLayerOutput`-shaped JSON at startup via
+`load_dashboard_data()` in `data_loader.py`. The data file path defaults to
+`dashboard/tests/ui_required_data.json` and can be overridden with the
+`DASHBOARD_TEST_DATA` environment variable.
 
 ### Planned Integration
 
-The dashboard will consume `ReportLayerOutput` from the Report Layer:
+When the Report Layer pipeline is complete, point the dashboard at its output:
 
 ```python
-from report_layer import generate_report
-from shared.interface_models import ReportLayerOutput
-
-# Get report for a component
-report: ReportLayerOutput = generate_report(model_output)
-
-# Display in dashboard
-display_component_detail(report)
+# Set env var before starting Streamlit
+DASHBOARD_TEST_DATA=data/processed/latest_report.json streamlit run dashboard/app.py
 ```
 
-**Required Fields from ReportLayerOutput:**
+**Consumed Fields from ReportLayerOutput (INTERFACE.md v0.6):**
 - `timestamp`, `risk_score`, `risk_level`, `component`
 - `prediction_confidence`, `key_signals`
 - `anomaly_description`, `possible_cause`, `recommended_action`
-- `risk_history` (for trend chart)
+- `risk_history` (trend chart)
+- `estimated_failure_probability`, `estimated_cycles_to_failure` (GL-198)
+- `notes` (GL-198)
 
 See `docs/INTERFACE.md` Section 3 for complete field definitions.
 
@@ -343,19 +355,15 @@ See `docs/INTERFACE.md` Section 3 for complete field definitions.
 
 ### Current Limitations
 
-1. **Mock Data Only**: Not yet integrated with Report Layer
-2. **No Diagnostic Reports**: anomaly_description, possible_cause, recommended_action not displayed
-3. **No Key Signals Table**: key_signals not shown in detail page
-4. **Fixed Components**: Only 3 component types supported
-5. **No Export**: Cannot download reports or charts
-6. **Desktop-First**: Mobile experience needs optimization
-7. **No Persistence**: Risk history not stored between sessions
+1. **Failure Prediction Fields**: estimated_failure_probability, estimated_cycles_to_failure, notes not yet displayed in UI (GL-198)
+2. **Fixed Components**: Only 3 component types supported
+3. **No Export**: Cannot download reports or charts
+4. **Desktop-First**: Mobile experience needs optimization
+5. **No Persistence**: Risk history not stored between sessions
 
 ### Planned Improvements
 
-- Report Layer integration (consume ReportLayerOutput)
-- Display diagnostic report sections
-- Key signals table with ABNORMAL/NORMAL indicators
+- Display failure prediction fields in detail page (GL-198)
 - Mobile-responsive improvements
 - PDF export functionality
 - Accessibility enhancements (WCAG 2.1 AA)
