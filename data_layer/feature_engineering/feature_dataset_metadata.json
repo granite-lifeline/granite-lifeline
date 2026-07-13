@@ -1,5 +1,5 @@
 {
-  "schema_version": "2.0",
+  "schema_version": "3.0(07-13)",
   "sampling_rate_hz": 1,
   "row_count": 249694,
   "merge_key": [
@@ -19,57 +19,44 @@
     "maf_map_cohesion",
     "speed_density_maf_residual",
     "map_slope",
+    "map_stability",
     "accel_pedal_mean",
-    "pedal_throttle_gap",
-    "pedal_to_throttle_delay",
-    "tps_slope",
     "accel_pedal_channel_delta",
     "accel_pedal_channel_ratio",
     "pedal_slope",
     "engine_on_flag",
     "rpm_slope",
     "idle_flag",
-    "idle_rpm_stability"
+    "idle_rpm_stability",
+    "segment_gap_seconds",
+    "cold_soak_candidate_flag",
+    "intake_temp_stability"
   ],
   "intermediate_feature_files": {
     "deterministic_features": {
-      "path": "feature_engineering\\deterministic_features.csv",
-      "table_type": "thin_row_level_feature_table"
-    },
-    "event_features": {
-      "path": "feature_engineering\\event_features.csv",
       "table_type": "thin_row_level_feature_table"
     },
     "baseline_features": {
-      "path": "feature_engineering\\baseline_features.csv",
       "table_type": "thin_row_level_feature_table"
     }
   },
   "missing_value_policy": {
     "slope_first_row_in_segment": "NaN",
     "rolling_insufficient_context": "NaN",
-    "non_event_rows_for_event_features": "NaN",
     "baseline_prediction_unavailable": "NaN",
     "assembler_imputation": "none"
   },
-  "event_delay_policy": {
-    "feature": "pedal_to_throttle_delay",
-    "write_strategy": "write delay only on valid pedal step trigger rows",
-    "non_event_rows": "NaN"
-  },
   "baseline_model_summary": {
-    "baseline_schema_version": "2.0",
+    "baseline_schema_version": "1.0-cn",
     "base_filter_count": 240903,
     "cohesion_reference": "golden_post_warmup_steady_driving",
-    "speed_density_fit_scope": "steady_driving_high_confidence_engine_running",
-    "pedal_throttle_model_type": "grouped_linear_regression"
+    "speed_density_fit_scope": "steady_driving_high_confidence_engine_running"
   },
   "debug_table_generated": true,
   "validation_results": {
     "row_counts": {
       "operating": 249694,
       "deterministic": 249694,
-      "event": 249694,
       "baseline": 249694
     },
     "key_validations": {
@@ -93,16 +80,6 @@
           "row_in_segment": 0
         }
       },
-      "event": {
-        "row_count": 249694,
-        "key_duplicate_count": 0,
-        "missing_key_counts": {
-          "timestamp": 0,
-          "trip_id": 0,
-          "segment_id": 0,
-          "row_in_segment": 0
-        }
-      },
       "baseline": {
         "row_count": 249694,
         "key_duplicate_count": 0,
@@ -116,8 +93,8 @@
     },
     "feature_dataset": {
       "row_count": 249694,
-      "column_count": 41,
-      "derived_feature_count": 21,
+      "column_count": 42,
+      "derived_feature_count": 22,
       "debug_only_columns_present": [],
       "derived_feature_missing_rates": {
         "coolant_slope": 0.000476583338005719,
@@ -130,17 +107,18 @@
         "maf_map_cohesion": 0.00010012255000120147,
         "speed_density_maf_residual": 0.00010012255000120147,
         "map_slope": 0.0004845931420058151,
+        "map_stability": 0.1181245844914175,
         "accel_pedal_mean": 0.0002442990220029316,
-        "pedal_throttle_gap": 0.0002442990220029316,
-        "pedal_to_throttle_delay": 0.9957948528999495,
-        "tps_slope": 0.0006007353000072088,
         "accel_pedal_channel_delta": 0.0002442990220029316,
         "accel_pedal_channel_ratio": 0.0002442990220029316,
         "pedal_slope": 0.0007128725560085544,
         "engine_on_flag": 2.8034314000336413e-05,
         "rpm_slope": 0.0005006127500060074,
         "idle_flag": 0.0,
-        "idle_rpm_stability": 0.9859267743718311
+        "idle_rpm_stability": 0.958080690765497,
+        "segment_gap_seconds": 0.9996796078399962,
+        "cold_soak_candidate_flag": 0.9998518186259983,
+        "intake_temp_stability": 0.07868430959494421
       }
     },
     "feature_dataset_debug": {
@@ -149,13 +127,12 @@
       "debug_columns": [
         "maf_air_load_z",
         "map_air_load_z",
-        "expected_maf",
-        "expected_tps"
+        "expected_maf"
       ]
     },
     "feature_reference_summary": {
-      "row_count": 882,
-      "feature_count": 21,
+      "row_count": 924,
+      "feature_count": 22,
       "summary_scopes": [
         "all_rows",
         "base_high_confidence_engine_running"
@@ -163,6 +140,8 @@
     }
   },
   "notes": [
+    "No feature window dataset is generated.",
+    "No pkl files are generated.",
     "Intermediate feature CSV files are thin tables containing only key columns and newly generated feature columns.",
     "Final feature_dataset.csv excludes debug-only columns."
   ]
