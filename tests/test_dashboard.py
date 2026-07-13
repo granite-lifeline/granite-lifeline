@@ -316,10 +316,10 @@ def test_model_layer_output_valid_input():
     # Arrange
     valid_data = {
         "timestamp": "2026-06-16T12:00:00Z",
-        "anomaly_type": "cooling_system_stress",
+        "anomaly_type": "cooling_degradation",
         "risk_score": 86.0,
         "risk_level": "High",
-        "component": "cooling_system_stress",
+        "component": "cooling_degradation",
         "prediction_confidence": 0.88,
         "key_signals": [
             {
@@ -338,7 +338,7 @@ def test_model_layer_output_valid_input():
     assert model.timestamp == "2026-06-16T12:00:00Z"
     assert model.risk_score == 86.0
     assert model.risk_level == "High"
-    assert model.component == "cooling_system_stress"
+    assert model.component == "cooling_degradation"
     assert model.prediction_confidence == 0.88
     assert len(model.key_signals) == 1
     assert model.key_signals[0].feature == "coolant_temp"
@@ -404,9 +404,9 @@ def test_model_layer_output_risk_score_out_of_range():
     # Arrange
     data_out_of_range = {
         "timestamp": "2026-06-16T12:00:00Z",
-        "anomaly_type": "cooling_system_stress",
+        "anomaly_type": "cooling_degradation",
         "risk_score": 150.0,  # Out of range
-        "component": "cooling_system_stress",
+        "component": "cooling_degradation",
         "prediction_confidence": 0.88,
         "key_signals": []
     }
@@ -433,7 +433,7 @@ def test_report_layer_output_valid_input():
         "timestamp": "2026-06-16T12:00:00Z",
         "risk_score": 86.0,
         "risk_level": "High",
-        "component": "cooling_system_stress",
+        "component": "cooling_degradation",
         "prediction_confidence": 0.88,
         "key_signals": [
             {

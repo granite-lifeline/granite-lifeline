@@ -18,6 +18,7 @@ Write the anomaly_description section for a diagnostic report.
 Rules:
 - Describe what is happening based only on the input context.
 - Use retrieved fault knowledge only as background for what this anomaly type usually means.
+- Treat the input context as the main source of truth. If retrieved fault knowledge conflicts with the input context, follow the input context.
 - Do not add possible causes or repair actions in this section.
 - If retrieved fault knowledge is missing or says no specific knowledge was found, rely on the input context only.
 - Mention the affected component if it is shown in the context.
@@ -28,6 +29,8 @@ Rules:
 - Use key signals as evidence, including values where useful.
 - If a signal is marked ABNORMAL, explain that it is outside the reference range.
 - If a signal is marked NORMAL, do not describe it as abnormal.
+- If the context includes a Failure Projection section, mention only the failure probability or estimated cycles that are actually present. Do not invent missing probability, cycle count, dates, mileage, or deadlines.
+- If the context includes Model Layer Notes, use them only to explain data-quality limits when helpful. Do not describe notes as mechanical fault causes.
 - Do not claim a real mechanical fault is confirmed.
 - Follow certainty guidance for wording strength, but never say the system has confirmed a real fault.
 - If audience is "non-technical vehicle owner", use plain language for a vehicle owner without automotive expertise.
@@ -89,6 +92,16 @@ Why this works:
   range)
 - Uses conversational tone appropriate for vehicle owner
 - Translates risk level to practical guidance
+
+If the context includes a Failure Projection section, reference this
+information naturally as part of the risk description. Use only the
+numbers present in the context. If either value is missing, describe
+the current risk level and signal evidence only.
+
+Output format rules:
+- Return exactly one valid JSON object.
+- Do not include Markdown, code fences, commentary, or extra keys.
+- The JSON value must be a plain string suitable for direct parsing.
 
 Return JSON only:
 {

@@ -106,9 +106,11 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
     Returns:
         Formatted context string with vehicle status, key signals,
         Signal Correlation section when abnormal signals are detected,
-        and Model Layer Notes section when input validation or
-        degradation messages are present. The Signal Correlation section
-        uses known automotive fault correlation patterns where available.
+        Failure Projection section when estimated_cycles_to_failure or
+        estimated_failure_probability is not None, and Model Layer Notes
+        section when input validation or degradation messages are
+        present. The Signal Correlation section uses known automotive
+        fault correlation patterns where available.
     """
     # Format risk_level with fallback for None
     risk_level = ttm_output.risk_level if ttm_output.risk_level else "Unknown"
@@ -199,10 +201,32 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
                 f"{feature_name}"
             )
 
+    # Add Failure Projection section if prediction fields are present
+    failure_prob = ttm_output.estimated_failure_probability
+    cycles_to_failure = ttm_output.estimated_cycles_to_failure
+    if failure_prob is not None or cycles_to_failure is not None:
+        context_lines.append("")
+        context_lines.append("Failure Projection:")
+        if failure_prob is not None:
+            prob_pct = round(failure_prob * 100)
+            context_lines.append(
+                f"- Failure probability: {prob_pct}%"
+            )
+        if cycles_to_failure is not None:
+            context_lines.append(
+                f"- Estimated cycles to failure: "
+                f"{cycles_to_failure} drive cycles"
+            )
+
     # Add Model Layer Notes section if notes are present
     if ttm_output.notes:
         context_lines.append("")
         context_lines.append("Model Layer Notes:")
+        context_lines.append(
+            "- These notes describe input data quality, repaired "
+            "values, or disabled detections. They are not mechanical "
+            "fault causes by themselves."
+        )
         for note in ttm_output.notes:
             context_lines.append(f"- {note}")
 
@@ -254,13 +278,14 @@ def build_context_with_rag(
     prediction_confidence = ttm_output.prediction_confidence
     if prediction_confidence > 0.8:
         certainty_guidance = (
-            "Use definitive language: 'indicates', 'shows', "
-            "'demonstrates'"
+            "Use stronger but still predictive language: 'strongly "
+            "suggests', 'is consistent with', 'shows signs of'. Do "
+            "not say the fault is confirmed."
         )
     elif prediction_confidence > 0.5:
         certainty_guidance = (
             "Use moderate language: 'suggests', 'may indicate', "
-            "'could be'"
+            "'could be related to'"
         )
     else:
         certainty_guidance = (

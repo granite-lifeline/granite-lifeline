@@ -21,12 +21,15 @@ Write the possible_cause section for a diagnostic report.
 Rules:
 - Explain why the observed pattern might be happening.
 - Use retrieved fault knowledge to choose likely causes that match the component and key signals.
+- Treat the input context as the main source of truth. If retrieved fault knowledge conflicts with the input context, follow the input context.
 - Do not use a knowledge-base cause if the current input context does not support it.
 - If retrieved fault knowledge is missing or says no specific knowledge was found, explain the cause from the input context only.
 - Use careful wording such as "may indicate", "could suggest", or "could be related to".
 - Do not say the cause is confirmed.
 - Connect the possible cause to the key signal values in the context.
 - If the signals are mixed or unclear, say the evidence is limited.
+- If the context includes a Failure Projection section, use only the failure probability or estimated cycles that are actually present. Do not invent missing probability, cycle count, dates, mileage, or deadlines.
+- If the context includes Model Layer Notes, use them only to explain data-quality limits when helpful. Do not treat notes as possible mechanical causes.
 - Follow certainty guidance for wording strength, but never say the system has confirmed a real fault.
 - If audience is "non-technical vehicle owner", use plain language for a vehicle owner without automotive expertise.
 - Avoid unexplained technical jargon.
@@ -96,6 +99,16 @@ Why this works:
 - Connects low risk level to uncertainty about fault confirmation
 - Provides context that helps owner understand this may be normal
   variation
+
+If the context includes a Failure Projection section, reference this
+information naturally to support the urgency of the possible cause.
+Use only the values present in the context. If either value is missing,
+explain the possible cause from the risk level and signal evidence only.
+
+Output format rules:
+- Return exactly one valid JSON object.
+- Do not include Markdown, code fences, commentary, or extra keys.
+- The JSON value must be a plain string suitable for direct parsing.
 
 Return JSON only:
 {

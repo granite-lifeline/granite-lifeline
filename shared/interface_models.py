@@ -14,9 +14,8 @@ AnomalyType = Literal[
     "cooling_degradation",
     "air_intake_maf_anomaly",
     "accelerator_pedal_sensor",
-    "intake_air_temperature_sensor_or_heat_soak_fault",
+    "intake_air_temperature_sensor_fault",
     "map_load_signal_plausibility_fault",
-    "electronic_throttle_tracking_fault",
     "idle_speed_control_or_surge_degradation"
 ]
 
@@ -76,9 +75,6 @@ class DataLayerOutput(BaseModel):
     speed_density_maf_residual: Optional[float] = Field(...)
     map_slope: Optional[float] = Field(...)
     accel_pedal_mean: Optional[float] = Field(...)
-    pedal_throttle_gap: Optional[float] = Field(...)
-    pedal_to_throttle_delay: Optional[float] = Field(...)
-    tps_slope: Optional[float] = Field(...)
     accel_pedal_channel_delta: Optional[float] = Field(...)
     accel_pedal_channel_ratio: Optional[float] = Field(...)
     pedal_slope: Optional[float] = Field(...)
@@ -86,6 +82,10 @@ class DataLayerOutput(BaseModel):
     rpm_slope: Optional[float] = Field(...)
     idle_flag: Optional[float] = Field(...)
     idle_rpm_stability: Optional[float] = Field(...)
+    segment_gap_seconds: Optional[float] = Field(...)
+    cold_soak_candidate_flag: Optional[float] = Field(...)
+    intake_temp_stability: Optional[float] = Field(...)
+    map_stability: Optional[float] = Field(...)
 
     # Proxy labels (internal to Model Layer, marked Optional as TBD)
     failure_label: Optional[str] = None

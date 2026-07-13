@@ -29,7 +29,10 @@
       "Stop driving if safe to do so.",
       "Check coolant level immediately.",
       "Seek mechanic attention urgently."
-    ]
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T11:30:00Z",
@@ -61,7 +64,10 @@
       "Stop the engine immediately.",
       "Check oil level.",
       "Do not drive until inspected by a mechanic."
-    ]
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T11:00:00Z",
@@ -92,7 +98,10 @@
     "recommended_action": [
       "Schedule inspection soon.",
       "Monitor for performance issues."
-    ]
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T10:30:00Z",
@@ -123,7 +132,10 @@
     "recommended_action": [
       "Monitor fuel system.",
       "Schedule inspection if persists."
-    ]
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T10:00:00Z",
@@ -154,7 +166,10 @@
     "recommended_action": [
       "Check transmission fluid level.",
       "Avoid heavy loads."
-    ]
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T09:00:00Z",
@@ -184,6 +199,9 @@
     "possible_cause": "No significant issue detected.",
     "recommended_action": [
       "Continue normal monitoring."
-    ]
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
   }
 ]

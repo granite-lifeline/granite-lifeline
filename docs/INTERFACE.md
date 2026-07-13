@@ -1,7 +1,7 @@
 # INTERFACE.md — Granite Lifeline Field Definitions
-**Version:** v0.7  
-**Last updated:** 2026-07-11  
-**Status:** Confirmed — 7-type anomaly_type enum; 4 types pending Model Layer support; Section 1 replaced with the Data Layer's confirmed `feature_dataset.csv` field set (returned 2026-07-08; `trip_id` request satisfied); Model Layer Story 3 hardening retained (`notes` field, null estimation placeholders, `accelerator_pedal_sensor` detection); Model Layer input requirements added as §1.5 (2026-07-11)
+**Version:** v0.8  
+**Last updated:** 2026-07-13  
+**Status:** Confirmed — 6-type anomaly_type enum; 3 types pending Model Layer support; Section 1 replaced with the Data Layer's confirmed `feature_dataset.csv` field set (returned 2026-07-13; `trip_id` request satisfied; proxy failures and derive feature modifications); Model Layer Story 3 hardening retained (`notes` field, null estimation placeholders, `accelerator_pedal_sensor` detection); Model Layer input requirements added as §1.5 (2026-07-11)
 
 ---
 
@@ -54,33 +54,34 @@ All fields in data-flow order. Pass-through fields originate in one layer and ar
 | 29 | speed_density_maf_residual | float (nullable) | Data Layer | Model Layer | Confirmed |
 | 30 | map_slope | float (nullable) | Data Layer | Model Layer | Confirmed |
 | 31 | accel_pedal_mean | float (nullable) | Data Layer | Model Layer | Confirmed |
-| 32 | pedal_throttle_gap | float (nullable) | Data Layer | Model Layer | Confirmed |
-| 33 | pedal_to_throttle_delay | float (nullable) | Data Layer | Model Layer | Confirmed |
-| 34 | tps_slope | float (nullable) | Data Layer | Model Layer | Confirmed |
-| 35 | accel_pedal_channel_delta | float (nullable) | Data Layer | Model Layer | Confirmed |
-| 36 | accel_pedal_channel_ratio | float (nullable) | Data Layer | Model Layer | Confirmed |
-| 37 | pedal_slope | float (nullable) | Data Layer | Model Layer | Confirmed |
-| 38 | engine_on_flag | float (0/1, nullable) | Data Layer | Model Layer | Confirmed |
-| 39 | rpm_slope | float (nullable) | Data Layer | Model Layer | Confirmed |
-| 40 | idle_flag | float (0/1, nullable) | Data Layer | Model Layer | Confirmed |
-| 41 | idle_rpm_stability | float (nullable) | Data Layer | Model Layer | Confirmed |
-| 42 | failure_label | string | Data Layer | Model Layer (internal only) | TBD |
-| 43 | risk_class | string | Data Layer | Model Layer (internal only) | TBD |
-| 44 | condition_ratio | float | Data Layer | Model Layer (internal only) | TBD |
-| 45 | window_id | string | Data Layer | Model Layer (internal only) | TBD |
-| 46 | anomaly_type | string (enum) | Model Layer | Report Layer | Confirmed |
-| 47 | risk_score | float (0–1) | Model Layer | Report Layer → Dashboard | Draft |
-| 48 | risk_level | string | Model Layer | Report Layer → Dashboard | TBD |
-| 49 | component | string | Model Layer | Report Layer → Dashboard | Confirmed (mirrors anomaly_type) |
-| 50 | prediction_confidence | float (0–1) | Model Layer | Report Layer → Dashboard | Draft |
-| 51 | key_signals | array of objects | Model Layer | Report Layer → Dashboard | Confirmed |
-| 52 | estimated_cycles_to_failure | int \| null | Model Layer | Report Layer → Dashboard | Draft — required client output; emitted as `null` placeholder until Story 8 |
-| 53 | estimated_failure_probability | float (0–1) \| null | Model Layer | Report Layer → Dashboard | Draft — required client output; emitted as `null` placeholder until Story 8 |
-| 54 | notes | array of strings | Model Layer | Report Layer → Dashboard | Confirmed — added Story 3 |
-| 55 | risk_history | array of objects | Report Layer | Dashboard | TBD |
-| 56 | anomaly_description | string | Report Layer | Dashboard | Draft |
-| 57 | possible_cause | string | Report Layer | Dashboard | Draft |
-| 58 | recommended_action | array of strings | Report Layer | Dashboard | Draft |
+| 32 | accel_pedal_channel_delta | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 33 | accel_pedal_channel_ratio | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 34 | pedal_slope | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 35 | engine_on_flag | float (0/1, nullable) | Data Layer | Model Layer | Confirmed |
+| 36 | rpm_slope | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 37 | idle_flag | float (0/1, nullable) | Data Layer | Model Layer | Confirmed |
+| 38 | idle_rpm_stability | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 39 | segment_gap_seconds | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 40 | cold_soak_candidate_flag | float (0/1, nullable) | Data Layer | Model Layer | Confirmed |
+| 41 | intake_temp_stability | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 42 | map_stability | float (nullable) | Data Layer | Model Layer | Confirmed |
+| 43 | failure_label | string | Data Layer | Model Layer (internal only) | TBD |
+| 44 | risk_class | string | Data Layer | Model Layer (internal only) | TBD |
+| 45 | condition_ratio | float | Data Layer | Model Layer (internal only) | TBD |
+| 46 | window_id | string | Data Layer | Model Layer (internal only) | TBD |
+| 47 | anomaly_type | string (enum) | Model Layer | Report Layer | Confirmed |
+| 48 | risk_score | float (0–1) | Model Layer | Report Layer → Dashboard | Draft |
+| 49 | risk_level | string | Model Layer | Report Layer → Dashboard | TBD |
+| 50 | component | string | Model Layer | Report Layer → Dashboard | Confirmed (mirrors anomaly_type) |
+| 51 | prediction_confidence | float (0–1) | Model Layer | Report Layer → Dashboard | Draft |
+| 52 | key_signals | array of objects | Model Layer | Report Layer → Dashboard | Confirmed |
+| 53 | estimated_cycles_to_failure | int \| null | Model Layer | Report Layer → Dashboard | Draft — required client output; emitted as `null` placeholder until Story 8 |
+| 54 | estimated_failure_probability | float (0–1) \| null | Model Layer | Report Layer → Dashboard | Draft — required client output; emitted as `null` placeholder until Story 8 |
+| 55 | notes | array of strings | Model Layer | Report Layer → Dashboard | Confirmed — added Story 3 |
+| 56 | risk_history | array of objects | Report Layer | Dashboard | TBD |
+| 57 | anomaly_description | string | Report Layer | Dashboard | Draft |
+| 58 | possible_cause | string | Report Layer | Dashboard | Draft |
+| 59 | recommended_action | array of strings | Report Layer | Dashboard | Draft |
 
 **Status guide**
 - **Confirmed** — field definition and content fully confirmed by owning layer
@@ -140,6 +141,8 @@ Derived from raw signals by the Data Layer. Used by the Model Layer as row-level
 
 > **Supersedes the provisional v0.1–v0.5 feature set.** `coolant_rolling_avg`, `rpm_rolling_avg`, `acceleration`, `load_stress`, and `rpm_variation` are no longer part of the interface; the Model Layer MVP keeps computing internal equivalents until Story 5 switches the pipeline to this output. Note also that `coolant_slope` is delivered in **°C/s within a segment** (earlier drafts specified °C/min) — Model Layer cooling thresholds are rescaled at the Story 5 switch.
 
+> **Updated on 2026-07-13:** `pedal_throttle_gap`, `pedal_to_throttle_delay`, and `tps_slope` were removed from the active interface because the dataset's `tps` signal is not physically reliable enough for throttle-tracking logic. Added `segment_gap_seconds` and `cold_soak_candidate_flag` to support low-confidence cold-soak plausibility checks, plus `intake_temp_stability` and `map_stability` for sustained stuck-signal checks on IAT and MAP.
+
 | Field Name | Type | Description | Example | Status |
 |---|---|---|---|---|
 | coolant_slope | float (nullable) | Rate of coolant temperature change within the same segment (°C/s) | `3.1` | Confirmed |
@@ -153,9 +156,6 @@ Derived from raw signals by the Data Layer. Used by the Model Layer as row-level
 | speed_density_maf_residual | float (nullable) | Residual between actual MAF and the MAP/speed-density baseline expected MAF | `1.2` | Confirmed |
 | map_slope | float (nullable) | Rate of MAP change within the same segment (kPa/s) | `0.5` | Confirmed |
 | accel_pedal_mean | float (nullable) | Mean of accelerator pedal channels D and E (%) | `36.25` | Confirmed |
-| pedal_throttle_gap | float (nullable) | Residual between actual TPS and baseline expected TPS from pedal/RPM context (%) | `2.1` | Confirmed |
-| pedal_to_throttle_delay | float (nullable) | Event-only delay from pedal step response to throttle response (s); non-event rows are nullable | `1.0` | Confirmed |
-| tps_slope | float (nullable) | Rate of TPS change within the same segment (%/s) | `0.3` | Confirmed |
 | accel_pedal_channel_delta | float (nullable) | Absolute difference between accelerator pedal channels D and E (%) | `2.5` | Confirmed |
 | accel_pedal_channel_ratio | float (nullable) | Ratio between accelerator pedal channels D and E | `0.93` | Confirmed |
 | pedal_slope | float (nullable) | Rate of accelerator pedal mean change within the same segment (%/s) | `0.4` | Confirmed |
@@ -163,6 +163,10 @@ Derived from raw signals by the Data Layer. Used by the Model Layer as row-level
 | rpm_slope | float (nullable) | Rate of RPM change within the same segment (rpm/s) | `12.0` | Confirmed |
 | idle_flag | float (0/1, nullable) | Idle-state indicator from operating-condition analysis | `0.0` | Confirmed |
 | idle_rpm_stability | float (nullable) | Rolling RPM stability under valid idle context | `55.0` | Confirmed |
+| segment_gap_seconds | float (nullable) | Time gap between previous trip end and current segment start, used as a cold-soak proxy | `21600.0` | Confirmed |
+| cold_soak_candidate_flag | float (0/1, nullable) | Low-confidence cold-soak candidate flag; `1.0` for plausible cold-soak restart, `0.0` for checked but not close, nullable when not evaluated | `1.0` | Confirmed |
+| intake_temp_stability | float (nullable) | Rolling intake-temperature stability under valid engine-running context | `0.6` | Confirmed |
+| map_stability | float (nullable) | Rolling MAP stability under valid engine-running context | `4.2` | Confirmed |
 
 ### 1.4 Proxy labels
 
@@ -240,7 +244,7 @@ Consumed by: **Report Layer** (and pass-through to Dashboard where noted)
 
 > Updated on 2026-06-29 to align with grounded_knowledge.yaml proxy_failures definitions.
 > Expanded from 3 to 7 anomaly types to match Data Layer domain knowledge.
->
+>**Update (2026-07-13):** Deleted `electronic_throttle_tracking_fault` and change the name of `intake_air_temperature_sensor_fault`
 > Note: `component` mirrors `anomaly_type` for all values (see 2.2).
 
 | anomaly_type | component | Status |
@@ -248,9 +252,8 @@ Consumed by: **Report Layer** (and pass-through to Dashboard where noted)
 | `cooling_degradation` | `cooling_degradation` | Confirmed - Model Layer supported |
 | `air_intake_maf_anomaly` | `air_intake_maf_anomaly` | Confirmed - Model Layer supported |
 | `accelerator_pedal_sensor` | `accelerator_pedal_sensor` | Confirmed - Model Layer supported (implemented Story 3: dual-channel delta rule, window mean scored 2–10pp; falls back to 0.0 score + note when pedal channels are absent) |
-| `intake_air_temperature_sensor_or_heat_soak_fault` | `intake_air_temperature_sensor_or_heat_soak_fault` | Pending - Data Layer defined, Model Layer TBD |
+| `intake_air_temperature_sensor_fault` | `intake_air_temperature_sensor_fault` | Pending - Data Layer defined, Model Layer TBD |
 | `map_load_signal_plausibility_fault` | `map_load_signal_plausibility_fault` | Pending - Data Layer defined, Model Layer TBD |
-| `electronic_throttle_tracking_fault` | `electronic_throttle_tracking_fault` | Pending - Data Layer defined, Model Layer TBD |
 | `idle_speed_control_or_surge_degradation` | `idle_speed_control_or_surge_degradation` | Pending - Data Layer defined, Model Layer TBD |
 
 ### 2.4 anomaly_type → key_signals Mapping
@@ -259,16 +262,17 @@ Consumed by: **Report Layer** (and pass-through to Dashboard where noted)
 >
 > Report Layer uses this mapping to understand which signals are expected to be anomalous for each fault type. This supports prompt design and test case construction (typical vs atypical scenarios).
 >
-> **Update (2026-07-08):** every key_signal referenced by the four pending types is now confirmed and forwarded in the Data Layer `feature_dataset.csv` (Section 1.3), so Model Layer support for those types is no longer blocked on data availability — implementation is scheduled via Story 5. Rationale text below still quotes coolant limits in °C/min; the delivered `coolant_slope` unit is °C/s (see §1.3 note).
+> **Update (2026-07-08):** every key_signal referenced by the four pending types is now confirmed and forwarded in the Data Layer `feature_dataset.csv` (Section 1.3), so Model Layer support for those types is no longer blocked on data availability — implementation is scheduled via Story 7. Rationale text below still quotes coolant limits in °C/min; the delivered `coolant_slope` unit is °C/s (see §1.3 note).
+>
+> **Update (2026-07-13):** Deleted `electronic_throttle_tracking_fault` and change the name of `intake_air_temperature_sensor_fault`. `tps` is excluded from triggering logic because it is unreliable in this dataset.
 
 | anomaly_type | key_signals (in order of importance) | Rationale | Status |
 |---|---|---|---|
 | `cooling_degradation` | `coolant_temp`, `coolant_slope`, `coolant_stability` | After warm-up phase (>85°C reached), flag elevated risk when: (1) coolant temp exceeds ~100°C, and/or (2) temp keeps rising at >2–3°C/min instead of plateauing. Normal range is 90–95°C. | Confirmed |
 | `air_intake_maf_anomaly` | `maf`, `map`, `maf_map_cohesion` | MAF correlates with intake MAP at ~0.83 average (range 0.6–0.9). Proxy: fit "expected MAF" baseline from map, then flag when residual (actual − expected MAF) is large/sustained. Suggests MAF sensor drift, dirty air filter, or vacuum leak. | Confirmed |
 | `accelerator_pedal_sensor` | `accel_pedal_d`, `accel_pedal_e`, `accel_pedal_channel_delta` | Dual redundant sensors show high correlation (0.96–0.99) consistently across all 81 trips. Mean absolute difference ~0.8pp, with brief spikes >10pp in ~1% of samples (likely sensor lag during fast movements, not faults). | Confirmed |
-| `intake_air_temperature_sensor_or_heat_soak_fault` | `intake_temp`, `ambient_temp`, `intake_ambient_delta` | Intake temperature abnormally high or low relative to ambient temperature, or does not vary with vehicle speed/load. Proxies IAT sensor faults, severe heat soak, or poor thermal management. | Data Layer defined |
-| `map_load_signal_plausibility_fault` | `map`, `maf`, `tps`, `map_slope` | MAP cannot reasonably reflect load changes, or its relationship with MAF, throttle position, and engine speed is inconsistent. Proxies MAP sensor drift, blockage, hose issues, or signal sticking. | Data Layer defined |
-| `electronic_throttle_tracking_fault` | `accel_pedal_d`, `accel_pedal_e`, `tps`, `pedal_throttle_gap` | After pedal demand increases, throttle opening does not change accordingly, or actual throttle position remains offset from expected value. Proxies ETC actuator sticking or position-control abnormalities. | Data Layer defined |
+| `intake_air_temperature_sensor_fault` | `intake_temp`, `ambient_temp`, `coolant_temp`, `intake_ambient_delta`| IAT fails plausibility against ambient/coolant references after a cold-soak candidate, remains abnormally stable despite sustained speed/load context, or is unusually high in an idle window following high load. Proxies IAT sensor rationality faults, signal sticking, or heat-soak-related thermal distortion. | Data Layer defined |
+| `map_load_signal_plausibility_fault` | `map`, `maf`, `rpm`, `accel_pedal_mean`| MAP does not respond plausibly to driver-demand/load changes, or its relationship with MAF, RPM, intake-temperature-based speed-density expectation, and operating-state context is inconsistent. Proxies MAP sensor drift, blockage, hose issues, load-measurement-chain abnormalities, or signal sticking.  | Data Layer defined |
 | `idle_speed_control_or_surge_degradation` | `rpm`, `idle_flag`, `idle_rpm_stability`, `rpm_slope` | Under idle conditions, RPM fluctuation is excessive, cyclic surging occurs, or engine cannot stabilize near target idle speed. Proxies idle-control degradation or combustion-stability issues. | Data Layer defined |
 
 ---
@@ -324,3 +328,6 @@ Generated by the three-layer Granite prompt chain.
 | v0.5 | 2026-07-07 | Story 3 output hardening. (1) New Model Layer output field `notes` (array of strings, always present, empty when clean) carrying input-repair and detection-fallback messages — added to Master Field Table, Sections 2.1/2.2, and 3.1 pass-through. (2) `estimated_cycles_to_failure` / `estimated_failure_probability` are now emitted by the pipeline as `null` placeholders until Story 8 — consumers (incl. `validate_output.py`) must treat them as required but nullable. (3) `accelerator_pedal_sensor` detection implemented via the dual-channel disagreement rule from Section 2.4 (`accel_pedal_channel_delta` window mean, scored between 2pp and 10pp — thresholds tunable); when pedal channels are absent the score is forced to 0.0, `anomaly_type` falls back to the next-highest score, and a note is emitted. (4) Model Layer input validation added: required-column check plus two-tier range semantics — physically implausible values (outside sensor limits, e.g. coolant beyond [-40, 150]°C) are repaired to NaN + interpolation with a note, or rejected with a clear error above 5% of rows per column; values that are merely outside the healthy baseline pass through untouched so genuine anomalies remain detectable. |
 | v0.7 | 2026-07-11 | Model Layer input requirements made explicit after the Data Layer's window-table query. (1) New §1.5: 1-second uniform sampling and ≥700 contiguous rows per `segment_id` (512 context + 96 forecast, windows never cross segments) — both previously implicit, now Requested pending Data Layer confirmation; identity columns requirement confirmed. (2) §1.4 note added: the labeled proxy window table must carry per-window `trip_id`/`segment_id`/start–end `timestamp` for time-range alignment with the Model Layer's fixed windows; labels are used for healthy-training filtering and evaluation only, not TTM training; `failure_label` naming to be reconciled with the §2.3 enum. *Addendum 2026-07-12:* Data Layer delivered the row-level label master table and five duration window tables on branch `gl-171`; alignment columns present, `failure_label` naming matches the §2.3 enum exactly, §1.5 sampling/segment-length requirements verified on the delivered data (see §1.4/§1.5 notes). *Addendum 2 (2026-07-12):* Model Layer stories renumbered to the new execution order — the pipeline switch is now Story 5 (was 7), fine-tuning Story 6 (was 5), synthetic evaluation Story 7 (was 6); forward references in this document use the new numbers, while older changelog rows keep the numbering used at the time of writing. |
 | v0.6 | 2026-07-08 | Merged the Data Layer's returned interface (`INTERFACE-from data layer.md`, delivered 2026-07-08, forked from v0.4 and also labelled "v0.5" — renumbered here to v0.6). Section 1 replaced with the confirmed `feature_dataset.csv` field set: (1) new §1.1 key/time/operating-condition fields incl. `trip_id`/`segment_id` — **the v0.4 §1.4 trip/cycle-identifier request is satisfied** (chronological `trip_0001`–`trip_0081`), unblocking Story 8; (2) raw signals now include `intake_temp` and `ambient_temp`, all nullable; (3) 21 confirmed engineered features replace the provisional set — `coolant_rolling_avg`, `rpm_rolling_avg`, `acceleration`, `load_stress`, `rpm_variation` are dropped from the interface (Model Layer MVP computes internal equivalents until Story 7); (4) `coolant_slope` unit changed °C/min → °C/s (per segment) — Model Layer cooling thresholds rescale at the Story 7 switch; (5) all key_signals for the four pending anomaly types are now forwarded, resolving the Master Field Table "pending Data Layer fields" open item (footnote removed). Model Layer v0.5 Story 3 changes (`notes`, nullable estimation placeholders, pedal detection) retained — the Data Layer fork predates them and they remain in force. |
+| v0.7 | 2026-07-11 | Model Layer input requirements made explicit after the Data Layer's window-table query. (1) New §1.5: 1-second uniform sampling and ≥700 contiguous rows per `segment_id` (512 context + 96 forecast, windows never cross segments) — both previously implicit, now Requested pending Data Layer confirmation; identity columns requirement confirmed. (2) §1.4 note added: the labeled proxy window table must carry per-window `trip_id`/`segment_id`/start–end `timestamp` for time-range alignment with the Model Layer's fixed windows; labels are used for healthy-training filtering and evaluation only, not TTM training; `failure_label` naming to be reconciled with the §2.3 enum. |
+| v0.8 | 2026-07-13 | Interface and proxy-failure scope updated after the Data Layer feature audit. (1) §1.5 sampling/window assumptions are now confirmed: 1-second uniform sampling, fixed windows remain within a single `segment_id`, and identity/time-alignment fields are required for Model Layer window construction. (2) Engineered feature interface updated: `tps_slope`, `pedal_throttle_gap`, and `pedal_to_throttle_delay` are removed from the active interface because the dataset's `tps` signal is not physically reliable enough for throttle-tracking logic; new active features added for cold-soak and stuck-signal support, including `segment_gap_seconds`, `cold_soak_candidate_flag`, `intake_temp_stability`, and `map_stability`. (3) Proxy-failure definitions updated accordingly: `electronic_throttle_tracking_fault` is retired from the active proxy set,, while `intake_air_temperature_sensor_fault`, `map_load_signal_plausibility_fault`, and `idle_speed_control_or_surge_degradation` now reference the revised feature set and data-quality constraints. |
+
