@@ -178,7 +178,7 @@ class TestDataLayerOutput:
         }
         output = DataLayerOutput(**data)
         assert output.coolant_stability is None
-        assert output.pedal_to_throttle_delay is None
+        assert output.cold_soak_candidate_flag is None
         assert output.idle_rpm_stability is None
 
     def test_data_layer_output_missing_required_field(self):
