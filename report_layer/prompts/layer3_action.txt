@@ -137,6 +137,11 @@ Why this works:
   performance, fuel economy)
 - Provides specific, actionable steps appropriate for vehicle owner
 
+If the context includes a Failure Projection section, reference this
+information naturally to reinforce the recommended actions with a
+specific timeframe. For example, use the estimated cycles to failure
+and failure probability to guide how urgently the owner should act.
+
 Return JSON only:
 {
   "recommended_action": [

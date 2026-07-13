@@ -90,6 +90,11 @@ Why this works:
 - Uses conversational tone appropriate for vehicle owner
 - Translates risk level to practical guidance
 
+If the context includes a Failure Projection section, reference this
+information naturally as part of the risk description. For example,
+mention the failure probability and estimated cycles to failure when
+describing the urgency or severity of the issue.
+
 Return JSON only:
 {
   "anomaly_description": "..."
