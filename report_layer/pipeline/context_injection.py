@@ -222,6 +222,11 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
     if ttm_output.notes:
         context_lines.append("")
         context_lines.append("Model Layer Notes:")
+        context_lines.append(
+            "- These notes describe input data quality, repaired "
+            "values, or disabled detections. They are not mechanical "
+            "fault causes by themselves."
+        )
         for note in ttm_output.notes:
             context_lines.append(f"- {note}")
 
@@ -273,13 +278,14 @@ def build_context_with_rag(
     prediction_confidence = ttm_output.prediction_confidence
     if prediction_confidence > 0.8:
         certainty_guidance = (
-            "Use definitive language: 'indicates', 'shows', "
-            "'demonstrates'"
+            "Use stronger but still predictive language: 'strongly "
+            "suggests', 'is consistent with', 'shows signs of'. Do "
+            "not say the fault is confirmed."
         )
     elif prediction_confidence > 0.5:
         certainty_guidance = (
             "Use moderate language: 'suggests', 'may indicate', "
-            "'could be'"
+            "'could be related to'"
         )
     else:
         certainty_guidance = (
