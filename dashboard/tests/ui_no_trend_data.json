@@ -27,7 +27,8 @@
       "Check for cooling system issues.",
       "Continue monitoring to build trend history."
     ],
-    "estimated_cycles_to_failure": null
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null
   },
   {
     "timestamp": "2026-06-16T11:00:00Z",
@@ -50,6 +51,7 @@
       "Monitor for changes.",
       "Continue monitoring to establish baseline."
     ],
-    "estimated_cycles_to_failure": null
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null
   }
 ]

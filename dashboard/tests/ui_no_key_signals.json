@@ -35,7 +35,8 @@
       "Schedule a diagnostic inspection.",
       "Avoid heavy driving until inspected."
     ],
-    "estimated_cycles_to_failure": null
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null
   },
   {
     "timestamp": "2026-06-16T11:00:00Z",
@@ -60,6 +61,7 @@
       "Monitor for performance issues.",
       "Schedule inspection if problems persist."
     ],
-    "estimated_cycles_to_failure": null
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null
   }
 ]
