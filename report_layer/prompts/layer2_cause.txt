@@ -97,6 +97,11 @@ Why this works:
 - Provides context that helps owner understand this may be normal
   variation
 
+If the context includes a Failure Projection section, reference this
+information naturally to support the urgency of the possible cause.
+For example, use the failure probability and estimated cycles to
+failure to convey how soon the issue may become significant.
+
 Return JSON only:
 {
   "possible_cause": "..."
