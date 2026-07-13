@@ -2,13 +2,16 @@
 
 **Owner:** Report Team
 **Status:** Active Development
-**Last Updated:** 2026-07-04
+**Last Updated:** 2026-07-13
 
 ---
 
 ## Overview
 
-The Report Layer is the third stage in the Granite Lifeline predictive maintenance pipeline, responsible for transforming Model Layer predictions into human-readable diagnostic reports using IBM Granite LLM.
+The Report Layer is the third stage in the Granite Lifeline predictive
+maintenance pipeline. It transforms Model Layer predictions into
+human-readable diagnostic reports using IBM Granite LLM, RAG-grounded
+fault knowledge, and a three-layer prompt chain.
 
 ```
 Data Layer → Model Layer → Report Layer → Dashboard
@@ -20,6 +23,7 @@ Data Layer → Model Layer → Report Layer → Dashboard
 2. **Report Generation**: Use Granite LLM to generate plain-language diagnostic reports
 3. **Pass-Through**: Forward Model Layer fields unchanged to Dashboard
 4. **History Management**: Maintain risk_history for trend visualization (planned)
+5. **RAG Grounding**: Retrieve anomaly-specific fault knowledge and risk-level action guidance
 
 ### Generated Report Sections
 
@@ -31,7 +35,7 @@ Data Layer → Model Layer → Report Layer → Dashboard
 
 ## Current Implementation Status
 
-### [COMPLETED] Sprint 1
+### [COMPLETED]
 
 | Component | Ticket | Description |
 |-----------|--------|-------------|
@@ -51,21 +55,23 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | RAG Language Review | GL-117 | Verify plain language and no confirmed fault claims |
 | Confidence Guidance | GL-135 | Certainty language based on prediction_confidence |
 | Signal Correlation | GL-136 | Multi-signal correlation analysis |
+| Failure Projection Context | GL-190, GL-192 | Inject estimated failure probability and cycles into prompts when available |
+| Prompt Rule Hardening | GL-213 | Enforce context-first grounding, strict JSON output, safe use of notes, and no invented failure projection values |
 | ADR 303 | GL-110 | Document RAG knowledge base design |
 
 ### [IN PROGRESS]
 
 | Component | Ticket | Status |
 |-----------|--------|--------|
-| Dashboard Integration | GL-41, GL-42 | Dashboard UI complete, API integration pending |
+| Report Generation Pipeline | P0 | Production report generator still pending; evaluation chain exists in `scenario_evaluation.py` |
+| Risk History Storage | P0 | Persistent `risk_history` storage still pending |
 
-### [PLANNED] Sprint 2+
+### [PLANNED]
 
 | Component | Priority | Description |
 |-----------|----------|-------------|
-| Report Generation Pipeline | P0 | Orchestrate three-layer Granite LLM chain |
-| Risk History Storage | P0 | Persist risk_history for trend charts |
-| Unit Tests | P1 | Test coverage for all components |
+| Dashboard Integration Follow-up | P1 | Dashboard loads ReportLayerOutput-shaped JSON; live pipeline output location still needs final wiring |
+| Unit Tests | P1 | Broaden coverage for context injection, prompt validation, and failure projection cases |
 | Integration Tests | P1 | End-to-end pipeline testing |
 
 ---
@@ -79,6 +85,8 @@ ModelLayerOutput (from Model Layer)
     ↓
 Context Injection (build_context)
     ↓
+RAG Retrieval (build_context_with_rag)
+    ↓
 Granite LLM Three-Layer Chain
     ├─ Layer 1: anomaly_description
     ├─ Layer 2: possible_cause
@@ -86,7 +94,9 @@ Granite LLM Three-Layer Chain
     ↓
 ReportLayerOutput (to Dashboard)
     ├─ Pass-through: timestamp, risk_score, risk_level, component,
-    │                prediction_confidence, key_signals
+    │                prediction_confidence, key_signals,
+    │                estimated_cycles_to_failure,
+    │                estimated_failure_probability, notes
     ├─ Generated: anomaly_description, possible_cause, recommended_action
     └─ Maintained: risk_history
 ```
@@ -108,6 +118,8 @@ ReportLayerOutput (to Dashboard)
 report_layer/
 ├── docs/                           # Documentation
 │   ├── checklist.md                # Quality assurance checklist
+│   ├── rag_language_quality_review.md
+│   ├── rag_sample_reports.md
 │   ├── readability_evaluation.md   # Readability assessment
 │   ├── sample_report_review.md     # Sample report analysis
 │   ├── sample_reports.md           # Example reports
@@ -156,17 +168,29 @@ report_layer/
 - Handles optional risk_level field (defaults to "Unknown" if None)
 - Classifies signals as NORMAL/ABNORMAL based on reference_range
 - Omits empty unit strings for cleaner output
+- Maps raw signal IDs to owner-readable signal names
+- Includes Failure Projection when estimated values are available
+- Includes Model Layer Notes as data-quality information only
+- Adds signal correlation notes when abnormal signals match known patterns
 
 **Output Format:**
 ```
 Vehicle Status:
-- Component: cooling_system_stress
+- Component: cooling_degradation
 - Risk Level: High
 - Risk Score: 82%
 - Prediction Confidence: 87%
 
 Key Signals:
-- coolant_temp: 102.0°C (reference: 90.0-95.0°C) [ABNORMAL]
+- Coolant Temperature: 102.0°C (reference: 90.0-95.0°C) [ABNORMAL]
+
+Failure Projection:
+- Failure probability: 72%
+- Estimated cycles to failure: 120 drive cycles
+
+Model Layer Notes:
+- These notes describe input data quality, repaired values, or disabled
+  detections. They are not mechanical fault causes by themselves.
 ```
 
 **Documentation:** See `docs/adr/301-context-injection-design.md`
@@ -180,28 +204,36 @@ Three-layer prompt chain designed for plain-language diagnostic reports:
 - Uses risk_level to convey urgency appropriately
 - References key signals as evidence
 - Distinguishes NORMAL vs ABNORMAL signals
+- Uses Failure Projection only when values are present
 
 **Layer 2: Possible Cause** (`layer2_cause.txt`)
 - Explains why the observed pattern might be happening
 - Uses careful wording ("may indicate", "could suggest")
 - Connects possible cause to key signal values
 - Avoids claiming confirmed faults
+- Uses retrieved fault knowledge only when supported by current context
 
 **Layer 3: Recommended Action** (`layer3_action.txt`)
 - Returns 2-4 clear, concrete action items in JSON array format
 - Matches urgency to risk_level (Low/Medium/High)
 - Matches wording strength to prediction_confidence
 - Provides practical guidance for vehicle owners
+- Uses retrieved action guidance only when it matches current risk and signals
 
 **Design Principles:**
 - Plain language for non-technical vehicle owners (Story 3 AC)
 - No automotive jargon without explanation
 - Appropriate hedging for predictions (not confirmed diagnoses)
 - Risk-level-appropriate urgency
+- Input context is the main source of truth; RAG knowledge is supporting background
+- Do not invent missing failure probabilities, cycles, dates, mileage, or deadlines
+- Treat Model Layer Notes as data-quality notes, not mechanical causes
+- Return exactly one valid JSON object per prompt layer, with no Markdown or extra keys
 
-**Documentation:** See GL-49, GL-55 tickets and `docs/sample_reports.md`
+**Documentation:** See GL-49, GL-55, GL-213, `docs/sample_reports.md`,
+and `docs/checklist.md`.
 
-### 3. Model Comparison (`pipeline/model_comparison.py`)
+### 3. Model Comparison (`evaluation/v2-model-selection/model_comparison.py`)
 
 **Purpose:** Evaluate four Granite models to select the best for production.
 
@@ -226,7 +258,8 @@ Three-layer prompt chain designed for plain-language diagnostic reports:
 - **Strengths:** Most actionable recommendations, 100% JSON parsing, latest IBM Granite version
 - **Fallback:** granite4.1:3b (4.55/5.0) if speed/hardware constraints arise
 
-**Results:** See `evaluation/model_comparison.md` and `docs/adr/302-granite-llm-model-selection.md`
+**Results:** See `evaluation/v2-model-selection/model_comparison.md`
+and `docs/adr/302-granite-llm-model-selection.md`
 
 ### 4. Scenario Evaluation (`pipeline/scenario_evaluation.py`)
 
@@ -255,9 +288,11 @@ Three-layer prompt chain designed for plain-language diagnostic reports:
 - Generates comparative analysis report
 - Validates Story 2 AC3 requirement
 
-**Results:** See `evaluation/scenario_comparison.md`
+**Results:** See `evaluation/v1-initial-evaluation/scenario_comparison.md`
+and the RAG comparison files under
+`evaluation/v3-rag-baseline-comparison/`.
 
-### 5. Test Cases (`evaluation/*.json`)
+### 5. Test Cases (`evaluation/test_scenarios/*.json`)
 
 Three JSON mock data files representing different diagnostic scenarios:
 
@@ -323,12 +358,15 @@ Consumes `ModelLayerOutput` from `shared/interface_models.py`:
 ```python
 class ModelLayerOutput(BaseModel):
     timestamp: str                      # ISO 8601
-    anomaly_type: str                   # e.g., "cooling_system_stress"
+    anomaly_type: str                   # e.g., "cooling_degradation"
     risk_score: float                   # 0.0 - 1.0
     risk_level: Optional[str]           # "Low" | "Medium" | "High"
-    component: str                      # Affected component
+    component: str                      # Mirrors anomaly_type
     prediction_confidence: float        # 0.0 - 1.0
     key_signals: List[KeySignal]        # Signal details
+    estimated_cycles_to_failure: Optional[int]
+    estimated_failure_probability: Optional[float]
+    notes: List[str]                    # Empty list if no messages
 ```
 
 See `docs/INTERFACE.md` Section 2 for complete field definitions.
@@ -363,7 +401,8 @@ See `docs/INTERFACE.md` Section 3 for complete field definitions.
 
 ### External Dependencies
 
-- **Python Packages:** `pydantic`, `requests` (see root `requirements.txt`)
+- **Python Packages:** `pydantic`, `requests`, `chromadb`, `langchain`,
+  `langchain-community`, `pyyaml` (see root `requirements.txt`)
 - **Ollama:** Local LLM inference server (http://localhost:11434)
 - **Granite Models:** granite4.1:8b (production), granite4.1:3b (fallback)
 
@@ -401,6 +440,9 @@ ollama pull granite4.1:8b
 
 # Run scenario evaluation
 python report_layer/pipeline/scenario_evaluation.py
+
+# Or explicitly choose baseline / RAG mode
+python report_layer/pipeline/scenario_evaluation.py --mode rag
 ```
 
 **Output:** `report_layer/evaluation/scenario_comparison.md`
@@ -411,8 +453,11 @@ python report_layer/pipeline/scenario_evaluation.py
 # Run all project tests
 pytest tests/ -v
 
-# Run Report Layer tests only (when implemented)
-pytest report_layer/tests/ -v
+# Run RAG retriever tests
+pytest tests/test_rag_retriever.py -v
+
+# Run interface and dashboard data loading contract tests
+pytest tests/test_interface.py tests/test_data_loader.py -v
 ```
 
 ---
@@ -435,7 +480,7 @@ Model outputs are evaluated across five dimensions with weighted scoring:
 - Qi et al. (2025): LLM-based fault diagnosis evaluation framework
 - Huang et al. (2025): Faithfulness vs factuality hallucination distinction
 
-See `evaluation/model_comparison.md` for detailed methodology.
+See `evaluation/v2-model-selection/model_comparison.md` for detailed methodology.
 
 ### Compliance Checklist
 
@@ -452,11 +497,9 @@ See `docs/checklist.md` for full quality checklist.
 
 ---
 
-## Planned Implementation
+## Remaining Work
 
-### Sprint 2 Priorities
-
-**1. Report Generation Pipeline** (P0)
+**1. Production Report Generation Pipeline** (P0)
 - `pipeline/report_generator.py`: Orchestrate three-layer Granite LLM chain
 - Integrate with granite4.1:8b via Ollama API
 - Handle error cases and retries
@@ -468,8 +511,10 @@ See `docs/checklist.md` for full quality checklist.
 - Retrieve historical data for Dashboard trend visualization
 - Implement efficient storage (SQLite or JSON file)
 
-**3. Unit Tests** (P1)
-- Test `context_injection.py` with various inputs
+**3. Unit Tests and Prompt Regression Tests** (P1)
+- Test `context_injection.py` with v0.7 inputs
+- Test Failure Projection present/null cases
+- Test Model Layer Notes are treated as data-quality notes only
 - Test prompt template variable substitution
 - Mock Ollama API for testing without live calls
 - Test atypical and contradictory scenario handling
@@ -545,7 +590,7 @@ cd /path/to/granite-lifeline
 which python  # Should show .venv/bin/python
 
 # Run script from root
-python report_layer/pipeline/model_comparison.py
+python report_layer/evaluation/v2-model-selection/model_comparison.py
 ```
 
 ---
