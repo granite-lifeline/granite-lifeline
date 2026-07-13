@@ -142,7 +142,7 @@ def build_quality_flags(df: pd.DataFrame) -> tuple[pd.Series, pd.Series]:
 
 def ffill_within_segment(
         values: pd.Series, segment_id: pd.Series
-    ) -> pd.Series:
+) -> pd.Series:
     # Forward-fill only within each segment.
     return values.groupby(segment_id).ffill()
 
