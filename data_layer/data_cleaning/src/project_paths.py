@@ -9,19 +9,19 @@ from __future__ import annotations
 from pathlib import Path
 
 
-CLEANING_DIR = Path(__file__).resolve().parent
-REPO_ROOT = CLEANING_DIR.parents[2]
+BASE_DIR = Path(__file__).resolve().parent
+REPO_ROOT = BASE_DIR.parents[2]
 
 DATA_DIR = REPO_ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 
-CONFIG_PATH = CLEANING_DIR / "cleaning_config.yaml"
+CONFIG_PATH = BASE_DIR / "cleaning_config.yaml"
 
 CLEANED_DATASET = PROCESSED_DIR / "cleaned_dataset.csv"
-ENRICHED_DATASET = CLEANING_DIR / "cleaning_enriched.csv"
-QUALITY_CSV = CLEANING_DIR / "cleaning_quality.csv"
-REPORT_JSON = CLEANING_DIR / "cleaning_report.json"
+ENRICHED_DATASET = BASE_DIR / "cleaning_enriched.csv"
+QUALITY_CSV = BASE_DIR / "cleaning_quality.csv"
+REPORT_JSON = BASE_DIR / "cleaning_report.json"
 
 
 def resolve_from_repo(path: str | Path) -> Path:
