@@ -108,7 +108,7 @@ class OBDDataSimulator:
 
         variant="low_maf" (was generate_intake_blockage):
             MAF reads 30% low for the given MAP — dirty air
-            filter / MAF sensor drift. Story 6 `maf x 0.7`
+            filter / MAF sensor drift. Story 7 `maf x 0.7`
             scenario.
         variant="map_bias" (was generate_vacuum_leak):
             MAP 30% high with throttle 30% low — vacuum-leak

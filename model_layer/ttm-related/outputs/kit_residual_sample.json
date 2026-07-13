@@ -1,14 +1,14 @@
 {
-  "timestamp": "2026-01-01T07:16:42Z",
+  "timestamp": "2017-07-05T05:26:37Z",
   "anomaly_type": "cooling_degradation",
-  "risk_score": 0.2338,
-  "risk_level": "Low",
+  "risk_score": 1.0,
+  "risk_level": "High",
   "component": "cooling_degradation",
-  "prediction_confidence": 0.9301,
+  "prediction_confidence": 0.6534,
   "key_signals": [
     {
       "feature": "coolant_temp",
-      "value": 58.0,
+      "value": 80.0,
       "unit": "°C",
       "reference_range": [
         90,
@@ -17,16 +17,16 @@
     },
     {
       "feature": "coolant_slope",
-      "value": 38.1818,
-      "unit": "°C/min",
+      "value": 0.0729,
+      "unit": "°C/s",
       "reference_range": [
         0,
-        2
+        0.0333
       ]
     },
     {
       "feature": "coolant_stability",
-      "value": 0.8555,
+      "value": 1.3208,
       "unit": "°C",
       "reference_range": [
         0,
@@ -35,7 +35,7 @@
     },
     {
       "feature": "speed",
-      "value": 84.2308,
+      "value": 85.0,
       "unit": "km/h",
       "reference_range": [
         0,
@@ -44,7 +44,7 @@
     },
     {
       "feature": "rpm",
-      "value": 1703.4615,
+      "value": 1443.0,
       "unit": "RPM",
       "reference_range": [
         0,

@@ -1,15 +1,19 @@
 """
 Zero-shot KIT residual detector using IBM Granite TTM.
 
-This script is an MVP integration check, not a training script. It verifies:
-KIT CSV -> sensor frame -> TTM forecast -> residuals -> interface JSON.
+Consumes the Data Layer's feature-engineered dataset
+(`data_layer/feature_engineering/feature_dataset.csv`,
+INTERFACE.md Section 1) directly: raw signals and engineered
+features are Group 1's columns, no internal feature computation.
+Pipeline: feature CSV -> segment-safe window -> TTM forecast ->
+residuals -> interface JSON.
 
 Run from the repository root:
     .venv/bin/python ttm-related/src/model/kit_residual_detector.py
 
-Optionally pass a specific KIT trip CSV:
+Optionally pass a specific feature CSV and segment:
     .venv/bin/python ttm-related/src/model/kit_residual_detector.py \
-        path/to/trip.csv
+        path/to/feature_dataset.csv --segment-id trip_0001_seg_001
 """
 
 from __future__ import annotations
@@ -26,45 +30,57 @@ from tsfm_public.toolkit.get_model import get_model
 
 try:
     from model.input_validation import (
+        GROUP1_REQUIRED_COLUMNS,
+        PLAUSIBLE_RANGES,
         validate_required_columns,
         validate_sensor_ranges,
     )
+    from model.validate_output import validate_output
 except ImportError:  # direct script run: src/ not on sys.path
     from input_validation import (
+        GROUP1_REQUIRED_COLUMNS,
+        PLAUSIBLE_RANGES,
         validate_required_columns,
         validate_sensor_ranges,
     )
+    from validate_output import validate_output
 
 
 MODEL_PATH = "ibm-granite/granite-timeseries-ttm-r2"
-DEFAULT_DATA_DIR = Path("dataset/10.35097-1130/data/dataset/OBD-II-Dataset")
+DEFAULT_INPUT_CSV = Path(
+    "data_layer/feature_engineering/feature_dataset.csv"
+)
 DEFAULT_CONTEXT_LENGTH = 512
 DEFAULT_PREDICTION_LENGTH = 96
-DEFAULT_RESAMPLE_RULE = "1s"
-
-KIT_COLUMN_MAP = {
-    "Time": "timestamp",
-    "Engine RPM [RPM]": "rpm",
-    "Vehicle Speed Sensor [km/h]": "speed",
-    "Engine Coolant Temperature [°C]": "coolant_temp",
-    "Intake Manifold Absolute Pressure [kPa]": "map",
-    "Air Flow Rate from Mass Flow Sensor [g/s]": "maf",
-    "Absolute Throttle Position [%]": "tps",
-    "Accelerator Pedal Position D [%]": "accel_pedal_d",
-    "Accelerator Pedal Position E [%]": "accel_pedal_e",
-}
+# INTERFACE.md 1.5: a usable segment must have >= 700 contiguous
+# rows (512 context + 96 forecast + margin; windows never cross
+# segment boundaries).
+MIN_SEGMENT_ROWS = 700
 
 MODEL_SIGNALS = ["rpm", "speed", "coolant_temp", "map", "maf", "tps"]
-REQUIRED_KIT_COLUMNS = [
-    "Time",
-    "Engine RPM [RPM]",
-    "Vehicle Speed Sensor [km/h]",
-    "Engine Coolant Temperature [°C]",
-    "Intake Manifold Absolute Pressure [kPa]",
-    "Air Flow Rate from Mass Flow Sensor [g/s]",
-    "Absolute Throttle Position [%]",
+
+# Non-numeric identity/condition columns (INTERFACE.md 1.1); every
+# other required Group 1 column must be numeric.
+GROUP1_STRING_COLUMNS = {
+    "timestamp",
+    "trip_id",
+    "segment_id",
+    "thermal_state",
+    "child_state",
+    "operating_state",
+    "condition_confidence",
+    "condition_quality_flags",
+}
+GROUP1_NUMERIC_COLUMNS = [
+    column
+    for column in GROUP1_REQUIRED_COLUMNS
+    if column not in GROUP1_STRING_COLUMNS
 ]
 
+# Healthy reference ranges. Raw-signal ranges come from the Story 1
+# baseline; ranges for the delivered engineered features (incl. the
+# pending anomaly types' key signals) are healthy 5th-95th
+# percentiles measured on `feature_dataset.csv` (2026-07-13).
 REFERENCE_RANGES = {
     "coolant_temp": [90, 95],
     "map": [36, 237],
@@ -75,11 +91,19 @@ REFERENCE_RANGES = {
     "accel_pedal_d": [0, 100],
     "accel_pedal_e": [0, 100],
     "accel_pedal_channel_delta": [0, 10],
-    "coolant_slope": [0, 2],
-    "maf_map_cohesion": [0.0, 1.8],
-    "load_stress": [0, 200000],
-    "acceleration": [-3, 3],
-    "rpm_variation": [0, 500],
+    # Healthy coolant plateaus below a 2 degC/min sustained rise
+    # (INTERFACE.md 2.4) = 0.0333 degC/s in the delivered unit.
+    "coolant_slope": [0, 0.0333],
+    "coolant_stability": [0, 2],
+    # Healthy 96-row window medians reach 2.50 (see calculate_risk).
+    "maf_map_cohesion": [0.0, 2.6],
+    "intake_temp": [-3, 41],
+    "ambient_temp": [-7, 25],
+    "intake_ambient_delta": [0, 20],
+    "map_slope": [-14, 16],
+    "idle_flag": [0, 1],
+    "idle_rpm_stability": [0, 90],
+    "rpm_slope": [-120, 135],
 }
 
 FEATURE_UNITS = {
@@ -92,18 +116,24 @@ FEATURE_UNITS = {
     "accel_pedal_d": "%",
     "accel_pedal_e": "%",
     "accel_pedal_channel_delta": "pp",
-    "coolant_slope": "°C/min",
+    "coolant_slope": "°C/s",
+    "coolant_stability": "°C",
     "maf_map_cohesion": "z-score",
-    "load_stress": "rpm×%",
-    "acceleration": "m/s²",
-    "rpm_variation": "RPM",
+    "intake_temp": "°C",
+    "ambient_temp": "°C",
+    "intake_ambient_delta": "°C",
+    "map_slope": "kPa/s",
+    "idle_flag": "0/1",
+    "idle_rpm_stability": "RPM",
+    "rpm_slope": "RPM/s",
 }
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Run KIT CSV through Granite TTM zero-shot residual detection."
+            "Run Group 1's feature_dataset.csv through Granite TTM "
+            "zero-shot residual detection."
         )
     )
     parser.add_argument(
@@ -111,8 +141,20 @@ def parse_args() -> argparse.Namespace:
         nargs="?",
         type=Path,
         help=(
-            "Path to one KIT OBD-II trip CSV. "
-            "Defaults to the first CSV in the KIT data directory."
+            "Path to Group 1's feature-engineered CSV "
+            "(INTERFACE.md Section 1). Defaults to "
+            f"{DEFAULT_INPUT_CSV}."
+        ),
+    )
+    parser.add_argument(
+        "--trip-id",
+        help="Restrict segment selection to this trip_id.",
+    )
+    parser.add_argument(
+        "--segment-id",
+        help=(
+            "Run on this segment_id. Defaults to the first "
+            f"segment with >= {MIN_SEGMENT_ROWS} rows."
         ),
     )
     parser.add_argument(
@@ -121,7 +163,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--prediction-length", type=int, default=DEFAULT_PREDICTION_LENGTH
     )
-    parser.add_argument("--resample-rule", default=DEFAULT_RESAMPLE_RULE)
     parser.add_argument(
         "--output",
         type=Path,
@@ -130,145 +171,100 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def find_default_csv() -> Path:
-    csv_files = [
-        path
-        for path in sorted(DEFAULT_DATA_DIR.glob("*.csv"))
-        if path.stem.strip()
-    ]
-    if not csv_files:
-        raise FileNotFoundError(
-            f"No KIT CSV files found under {DEFAULT_DATA_DIR}"
-        )
-    normal = [path for path in csv_files if "Normal" in path.name]
-    preferred_files = normal + csv_files
-    for path in preferred_files:
-        header = pd.read_csv(path, nrows=0).columns
-        if all(column in header for column in REQUIRED_KIT_COLUMNS):
-            return path
-    raise FileNotFoundError(
-        "No KIT CSV file contains all required TTM input columns: "
-        f"{REQUIRED_KIT_COLUMNS}"
-    )
+def load_group1_features(csv_path: Path) -> pd.DataFrame:
+    """Load and validate Group 1's feature_dataset.csv.
 
-
-def load_and_resample_kit_csv(
-    csv_path: Path, resample_rule: str
-) -> tuple[pd.DataFrame, list[str]]:
-    """Load one KIT trip CSV; return (frame, degradation notes)."""
+    Raises ValueError naming the offending columns when required
+    columns are missing or numeric columns contain non-numeric
+    values. Policy NaNs (feature_dataset_metadata.json
+    `missing_value_policy`: event-only features, rolling/slope
+    warm-up rows, baseline availability) are by design and pass
+    through untouched.
+    """
     raw = pd.read_csv(csv_path)
     validate_required_columns(
-        raw.columns, REQUIRED_KIT_COLUMNS, str(csv_path)
+        raw.columns, GROUP1_REQUIRED_COLUMNS, str(csv_path)
     )
 
-    notes: list[str] = []
-    available_column_map = {
-        source: target
-        for source, target in KIT_COLUMN_MAP.items()
-        if source in raw.columns
-    }
-    pedal_columns = {"accel_pedal_d", "accel_pedal_e"}
-    if not pedal_columns.issubset(available_column_map.values()):
-        notes.append(
-            "accel_pedal_d/accel_pedal_e unavailable in input; "
-            "accelerator_pedal_sensor detection disabled"
+    df = raw.copy()
+    non_numeric = []
+    for column in GROUP1_NUMERIC_COLUMNS:
+        coerced = pd.to_numeric(df[column], errors="coerce")
+        if (coerced.isna() & df[column].notna()).any():
+            non_numeric.append(column)
+        df[column] = coerced
+    if non_numeric:
+        raise ValueError(
+            f"Non-numeric values in numeric columns of {csv_path}: "
+            f"{non_numeric}"
         )
-    df = raw.rename(columns=available_column_map)
-    df = df[list(available_column_map.values())].copy()
-    df["timestamp"] = parse_kit_time(df["timestamp"])
 
-    numeric_columns = [
-        col for col in df.columns if col != "timestamp"
-    ]
-    for column in numeric_columns:
-        df[column] = pd.to_numeric(df[column], errors="coerce")
-
-    # Repair before resampling so .mean() never blends
-    # physically implausible values into neighbouring rows.
-    validation = validate_sensor_ranges(df)
-    df = validation.df
-    notes.extend(validation.notes)
-
-    df = df.sort_values("timestamp").set_index("timestamp")
-    df = df.resample(resample_rule).mean()
-    df = df.interpolate(
-        method="time", limit_direction="both"
-    ).ffill().bfill()
-    df = df.reset_index()
-
-    return add_derived_features(df), notes
-
-
-def parse_kit_time(time_series: pd.Series) -> pd.Series:
-    """Convert KIT time-of-day strings to a monotonic datetime index."""
-    parsed = pd.to_datetime(
-        "2026-01-01 " + time_series.astype(str),
-        format="%Y-%m-%d %H:%M:%S.%f",
-        errors="coerce",
-    )
-    if parsed.isna().any():
-        parsed = pd.to_datetime(
-            "2026-01-01 " + time_series.astype(str), errors="coerce"
+    # Delivered timestamps are ISO 8601 at 1 Hz (INTERFACE.md 1.1).
+    df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+    if df["timestamp"].isna().any():
+        bad_count = int(df["timestamp"].isna().sum())
+        raise ValueError(
+            f"Could not parse {bad_count} timestamp values in {csv_path}"
         )
-    if parsed.isna().any():
-        bad_count = int(parsed.isna().sum())
-        raise ValueError(f"Could not parse {bad_count} KIT Time values")
-
-    # Some trips cross midnight; preserve monotonic time when clock wraps.
-    parsed = pd.Series(parsed)
-    day_offset = pd.Timedelta(days=0)
-    adjusted = []
-    previous = None
-    for value in parsed:
-        candidate = value + day_offset
-        if previous is not None and candidate < previous:
-            day_offset += pd.Timedelta(days=1)
-            candidate = value + day_offset
-        adjusted.append(candidate)
-        previous = candidate
-    return pd.Series(adjusted)
-
-
-def zscore(series: pd.Series) -> pd.Series:
-    """Z-score against current-trip stats (interim baseline).
-
-    Story 5 will replace trip stats with a fitted healthy
-    vehicle baseline (failure_type_research.md, B1 formula).
-    """
-    std = float(series.std())
-    if not np.isfinite(std) or std < 1e-6:
-        return series * 0.0
-    return (series - series.mean()) / std
-
-
-def add_derived_features(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.copy()
-    df["coolant_slope"] = df["coolant_temp"].diff().fillna(0) * 60.0
-    df["acceleration"] = df["speed"].diff().fillna(0) / 3.6
-    df["load_stress"] = df["rpm"] * df["tps"]
-    # Air-load plausibility (INTERFACE.md 2.4, research note B1):
-    # maf_derived_air_load = maf / (rpm / 60)  [g/rev]
-    # map_derived_air_load ~ map (speed-density proxy;
-    # intake_temp not yet forwarded by Data Layer).
-    # Floor at 1 rev/s so engine-off rows do not explode.
-    rev_per_s = (df["rpm"] / 60.0).clip(lower=1.0)
-    maf_load = df["maf"] / rev_per_s
-    map_load = df["map"]
-    df["maf_map_cohesion"] = (
-        zscore(maf_load) - zscore(map_load)
-    ).abs()
-    df["rpm_variation"] = (
-        df["rpm"].rolling(window=10, min_periods=2).std().fillna(0)
-    )
-    # Dual-channel pedal disagreement (INTERFACE.md 2.4): the two
-    # redundant pedal sensors should track each other; a sustained
-    # gap indicates a pedal sensor fault. Only computable when the
-    # input forwards both channels.
-    if {"accel_pedal_d", "accel_pedal_e"}.issubset(df.columns):
-        df["accel_pedal_channel_delta"] = (
-            df["accel_pedal_d"] - df["accel_pedal_e"]
-        ).abs()
     return df
+
+
+def select_segment(
+    df: pd.DataFrame,
+    trip_id: str | None = None,
+    segment_id: str | None = None,
+    min_rows: int = MIN_SEGMENT_ROWS,
+) -> pd.DataFrame:
+    """Return one segment so TTM windows never cross a boundary.
+
+    With no selection flags, picks the first segment (file order)
+    with at least ``min_rows`` rows (INTERFACE.md 1.5).
+    """
+    frame = df
+    if trip_id is not None:
+        frame = frame[frame["trip_id"] == trip_id]
+        if frame.empty:
+            raise ValueError(f"trip_id not found in input: {trip_id}")
+    if segment_id is not None:
+        segment = frame[frame["segment_id"] == segment_id]
+        if segment.empty:
+            raise ValueError(
+                f"segment_id not found in input: {segment_id}"
+            )
+    else:
+        segment = None
+        for _, group in frame.groupby("segment_id", sort=False):
+            if len(group) >= min_rows:
+                segment = group
+                break
+        if segment is None:
+            raise ValueError(
+                f"No segment with >= {min_rows} rows found "
+                "(INTERFACE.md 1.5 minimum for TTM windowing)"
+            )
+    return segment.sort_values("row_in_segment").reset_index(drop=True)
+
+
+def prepare_segment(
+    segment: pd.DataFrame,
+) -> tuple[pd.DataFrame, list[str]]:
+    """Plausibility-repair raw signals; return (frame, notes).
+
+    Implausible raw-sensor values become NaN (Story 3 two-tier
+    semantics) and raw-signal gaps are interpolated so the TTM
+    context is dense. Engineered feature columns are left exactly
+    as delivered — their policy NaNs are handled by NaN-safe
+    window aggregations downstream.
+    """
+    validation = validate_sensor_ranges(segment)
+    df = validation.df
+    raw_columns = [
+        column for column in PLAUSIBLE_RANGES if column in df.columns
+    ]
+    df[raw_columns] = df[raw_columns].interpolate(
+        limit_direction="both"
+    )
+    return df, list(validation.notes)
 
 
 def select_context_and_truth(
@@ -277,7 +273,7 @@ def select_context_and_truth(
     required_length = context_length + prediction_length
     if len(df) < required_length:
         raise ValueError(
-            f"Need at least {required_length} resampled rows "
+            f"Need at least {required_length} rows "
             f"({context_length} context + {prediction_length} "
             f"future), got {len(df)}"
         )
@@ -388,6 +384,11 @@ def normalized_residual_scores(
     return scores
 
 
+def finite_or(value: float, fallback: float = 0.0) -> float:
+    """Guard window aggregates against all-NaN policy columns."""
+    return value if np.isfinite(value) else fallback
+
+
 def calculate_risk(
     residual_summary: dict[str, dict[str, float]],
     future: pd.DataFrame,
@@ -396,44 +397,60 @@ def calculate_risk(
     notes = list(notes) if notes else []
     scores = normalized_residual_scores(residual_summary)
 
-    coolant_temp = float(future["coolant_temp"].max())
-    coolant_slope = float(future["coolant_slope"].max())
-    maf_map_cohesion = float(future["maf_map_cohesion"].mean())
-    load_stress = float(future["load_stress"].max())
+    # pandas aggregations skip NaN, so Group 1 policy NaNs
+    # (slope/rolling warm-up rows) do not poison window stats;
+    # finite_or covers the all-NaN-window case.
+    coolant_temp = finite_or(float(future["coolant_temp"].max()))
+    coolant_slope = finite_or(float(future["coolant_slope"].mean()))
+    maf_map_cohesion = finite_or(
+        float(future["maf_map_cohesion"].median())
+    )
 
+    # coolant_slope is delivered in degC/s (INTERFACE.md 1.3). A
+    # sustained rise of 2-3 degC/min instead of a post-warm-up
+    # plateau marks cooling degradation (INTERFACE.md 2.4), so the
+    # window MEAN slope is scored between 2 degC/min (0.0333 degC/s)
+    # and 8 degC/min (0.1333 degC/s). The window max would misfire:
+    # the delivered slope is quantised to whole-degree steps, so any
+    # 1 degC tick reads 1.0 degC/s and the max exceeds the floor in
+    # 75% of healthy gated windows. Healthy gated 96-row window
+    # means measured on feature_dataset.csv (2026-07-13):
+    # p95 0.031, p99 0.115, max 0.25 degC/s.
     cooling_score = max(
         scores["coolant_temp"],
         clipped_scale(coolant_temp, low=95.0, high=110.0),
         (
-            clipped_scale(coolant_slope, low=2.0, high=8.0)
+            clipped_scale(coolant_slope, low=0.0333, high=0.1333)
             if coolant_temp > 85.0
             else 0.0
         ),
     )
+    # maf_map_cohesion is the Data Layer's z-scored MAF/MAP air-load
+    # disagreement (INTERFACE.md 1.3), ~0 when both sides agree. The
+    # window MEDIAN is scored, not the mean: engine-off rows (rpm=0)
+    # inflate the delivered column past 1e6, so healthy window means
+    # reach 1.5e6 while medians stay bounded. Floor set from healthy
+    # 96-row window medians across all 83 usable segments of
+    # feature_dataset.csv (2026-07-13): mean 0.64, p95 1.62,
+    # p99 2.28, max 2.50 -> floor 2.6 sits just above the healthy
+    # max. (The old 1.8 floor was calibrated on the internal
+    # z-score's window mean, max healthy 1.56 — clearly wrong for
+    # the delivered column, whose healthy p95 alone is 2.24.)
     intake_score = max(
         scores["maf"],
         scores["map"],
-        # Cohesion is a z-score deviation, ~0 when MAF/MAP-side
-        # air loads agree. Floor calibrated above the max healthy
-        # future-window mean (1.56 across 36 Normal/Frei trips).
-        clipped_scale(maf_map_cohesion, low=1.8, high=3.0),
-    )
-    _ = max(
-        scores["rpm"],
-        scores["tps"],
-        clipped_scale(load_stress, low=120000.0, high=250000.0),
+        clipped_scale(maf_map_cohesion, low=2.6, high=4.0),
     )
 
     # Pedal fault = sustained dual-channel disagreement over the
     # window. Healthy mean delta is ~0.8pp with benign spikes
     # >10pp in ~1% of samples (INTERFACE.md 2.4), so score the
     # window mean between 2pp and 10pp (tunable calibration).
+    pedal_delta = float("nan")
     if "accel_pedal_channel_delta" in future.columns:
-        pedal_score = clipped_scale(
-            float(future["accel_pedal_channel_delta"].mean()),
-            low=2.0,
-            high=10.0,
-        )
+        pedal_delta = float(future["accel_pedal_channel_delta"].mean())
+    if np.isfinite(pedal_delta):
+        pedal_score = clipped_scale(pedal_delta, low=2.0, high=10.0)
     else:
         pedal_score = 0.0
         notes.append(
@@ -446,11 +463,11 @@ def calculate_risk(
         "cooling_degradation": cooling_score,
         "air_intake_maf_anomaly": intake_score,
         "accelerator_pedal_sensor": pedal_score,
-        # Pending — Data Layer signals not yet forwarded
-        # (INTERFACE.md 2.3/2.4, added 2026-06-29).
+        # Pending — Data Layer defined, Model Layer scoring TBD
+        # (INTERFACE.md 2.3/2.4); key signals are delivered but
+        # scoring is out of Story 5 scope.
         "intake_air_temperature_sensor_or_heat_soak_fault": 0.0,
         "map_load_signal_plausibility_fault": 0.0,
-        "electronic_throttle_tracking_fault": 0.0,
         "idle_speed_control_or_surge_degradation": 0.0,
     }
     anomaly_type = max(anomaly_scores, key=anomaly_scores.get)
@@ -480,6 +497,59 @@ def risk_level(risk_score: float) -> str:
     return "High"
 
 
+def window_feature_values(future: pd.DataFrame) -> dict[str, float]:
+    """NaN-safe key_signal values for the report window.
+
+    Aggregations mirror calculate_risk where a feature drives a
+    score. Features absent from the frame or all-NaN in the window
+    (policy NaNs) are dropped so no NaN reaches the output JSON.
+    """
+    last_row = future.iloc[-1]
+
+    def last(column: str) -> float:
+        return float(last_row[column])
+
+    def window(column: str, how: str) -> float:
+        return float(getattr(future[column], how)())
+
+    aggregations = {
+        "coolant_temp": lambda: last("coolant_temp"),
+        "coolant_slope": lambda: window("coolant_slope", "mean"),
+        "coolant_stability": lambda: window("coolant_stability", "max"),
+        "map": lambda: last("map"),
+        "maf": lambda: last("maf"),
+        "maf_map_cohesion": lambda: window("maf_map_cohesion", "median"),
+        "tps": lambda: last("tps"),
+        "rpm": lambda: last("rpm"),
+        "speed": lambda: last("speed"),
+        "accel_pedal_d": lambda: last("accel_pedal_d"),
+        "accel_pedal_e": lambda: last("accel_pedal_e"),
+        "accel_pedal_channel_delta": lambda: window(
+            "accel_pedal_channel_delta", "mean"
+        ),
+        # Pending-type key signals (INTERFACE.md 2.4), forwarded by
+        # Group 1 since v0.6.
+        "intake_temp": lambda: last("intake_temp"),
+        "ambient_temp": lambda: last("ambient_temp"),
+        "intake_ambient_delta": lambda: last("intake_ambient_delta"),
+        "map_slope": lambda: window("map_slope", "mean"),
+        "idle_flag": lambda: last("idle_flag"),
+        "idle_rpm_stability": lambda: window(
+            "idle_rpm_stability", "mean"
+        ),
+        "rpm_slope": lambda: window("rpm_slope", "mean"),
+    }
+
+    values: dict[str, float] = {}
+    for feature, aggregate in aggregations.items():
+        if feature not in future.columns:
+            continue
+        value = aggregate()
+        if np.isfinite(value):
+            values[feature] = value
+    return values
+
+
 def build_interface_json(
     future: pd.DataFrame,
     residual_summary: dict[str, dict[str, float]],
@@ -489,32 +559,12 @@ def build_interface_json(
     top_residual_signals: list[str],
     notes: list[str],
 ) -> dict[str, Any]:
-    last_future_row = future.iloc[-1]
-    feature_values = {
-        "coolant_temp": float(last_future_row["coolant_temp"]),
-        "coolant_slope": float(future["coolant_slope"].max()),
-        "map": float(last_future_row["map"]),
-        "maf": float(last_future_row["maf"]),
-        "maf_map_cohesion": float(future["maf_map_cohesion"].mean()),
-        "tps": float(last_future_row["tps"]),
-        "rpm": float(last_future_row["rpm"]),
-        "speed": float(last_future_row["speed"]),
-        "load_stress": float(future["load_stress"].max()),
-        "acceleration": float(future["acceleration"].max()),
-        "rpm_variation": float(future["rpm_variation"].max()),
-    }
-    for pedal_column in ("accel_pedal_d", "accel_pedal_e"):
-        if pedal_column in future.columns:
-            feature_values[pedal_column] = float(
-                last_future_row[pedal_column]
-            )
-    if "accel_pedal_channel_delta" in future.columns:
-        feature_values["accel_pedal_channel_delta"] = float(
-            future["accel_pedal_channel_delta"].mean()
-        )
+    feature_values = window_feature_values(future)
 
     priority = {
-        "cooling_degradation": ["coolant_temp", "coolant_slope"],
+        "cooling_degradation": [
+            "coolant_temp", "coolant_slope", "coolant_stability",
+        ],
         "air_intake_maf_anomaly": ["maf", "map", "maf_map_cohesion"],
         "accelerator_pedal_sensor": [
             "accel_pedal_d", "accel_pedal_e",
@@ -525,10 +575,6 @@ def build_interface_json(
         ],
         "map_load_signal_plausibility_fault": [
             "map", "maf", "tps", "map_slope"
-        ],
-        "electronic_throttle_tracking_fault": [
-            "accel_pedal_d", "accel_pedal_e", "tps",
-            "pedal_throttle_gap"
         ],
         "idle_speed_control_or_surge_degradation": [
             "rpm", "idle_flag", "idle_rpm_stability", "rpm_slope"
@@ -542,7 +588,10 @@ def build_interface_json(
         if len(features) >= 5:
             break
 
-    ts = pd.Timestamp(last_future_row["timestamp"]).isoformat() + "Z"
+    timestamp = pd.Timestamp(future.iloc[-1]["timestamp"])
+    if timestamp.tzinfo is None:
+        timestamp = timestamp.tz_localize("UTC")
+    ts = timestamp.isoformat().replace("+00:00", "Z")
     return {
         "timestamp": ts,
         "anomaly_type": anomaly_type,
@@ -584,14 +633,22 @@ def print_residual_summary(
 
 def main() -> None:
     args = parse_args()
-    csv_path = args.csv_path or find_default_csv()
+    csv_path = args.csv_path or DEFAULT_INPUT_CSV
 
-    print(f"Reading KIT CSV: {csv_path}")
-    df, notes = load_and_resample_kit_csv(csv_path, args.resample_rule)
-    print(f"Resampled rows: {len(df)} at rule={args.resample_rule}")
+    print(f"Reading Group 1 feature dataset: {csv_path}")
+    df = load_group1_features(csv_path)
+    segment = select_segment(
+        df, trip_id=args.trip_id, segment_id=args.segment_id
+    )
+    print(
+        f"Selected trip={segment['trip_id'].iloc[0]} "
+        f"segment={segment['segment_id'].iloc[0]} "
+        f"rows={len(segment)}"
+    )
+    segment, notes = prepare_segment(segment)
 
     context, future = select_context_and_truth(
-        df, args.context_length, args.prediction_length
+        segment, args.context_length, args.prediction_length
     )
     print(
         f"Context={len(context)} steps, "
@@ -619,6 +676,13 @@ def main() -> None:
         top_residual_signals=top_signals,
         notes=notes,
     )
+    validation_errors = validate_output(result)
+    if validation_errors:
+        print("\nOutput validation failed")
+        print("-" * 44)
+        for error in validation_errors:
+            print(f"- {error}")
+        raise SystemExit(1)
 
     print("\nInterface JSON")
     print("-" * 44)

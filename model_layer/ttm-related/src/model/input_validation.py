@@ -6,7 +6,7 @@ limits, deliberately wider than the healthy-baseline REFERENCE_RANGES
 in kit_residual_detector.py. Rejecting inputs at healthy-range bounds
 would blind the detector to the very anomalies it exists to flag
 (01_user_story/failure_type_research.md, "Range consistency caveats").
-Reused by Story 4 data-quality tests and Story 7 Group 1 CSV loading.
+Reused by Story 4 data-quality tests and Story 5 Group 1 CSV loading.
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ DEFAULT_MAX_BAD_FRACTION = 0.05
 # Group 1 `feature_dataset.csv` required columns — INTERFACE.md v0.6
 # Section 1 (keys/conditions + raw signals + engineered features).
 # Section 1.4 proxy labels are TBD and deliberately excluded.
-# Story 4 consumption tests validate against this list; Story 7
+# Story 4 consumption tests validate against this list; Story 5
 # reuses it when the pipeline switches to Group 1 input.
 GROUP1_REQUIRED_COLUMNS: list[str] = [
     # 1.1 key, time, and operating-condition fields

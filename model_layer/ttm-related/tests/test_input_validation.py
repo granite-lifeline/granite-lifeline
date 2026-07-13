@@ -102,44 +102,12 @@ class TestValidateSensorRanges:
         assert PLAUSIBLE_RANGES["coolant_temp"][1] >= 120
 
 
-KIT_HEADERS = {
-    "Time": "Time",
-    "rpm": "Engine RPM [RPM]",
-    "speed": "Vehicle Speed Sensor [km/h]",
-    "coolant_temp": "Engine Coolant Temperature [°C]",
-    "map": "Intake Manifold Absolute Pressure [kPa]",
-    "maf": "Air Flow Rate from Mass Flow Sensor [g/s]",
-    "tps": "Absolute Throttle Position [%]",
-    "accel_pedal_d": "Accelerator Pedal Position D [%]",
-    "accel_pedal_e": "Accelerator Pedal Position E [%]",
-}
-
-
-def write_kit_csv(path, rows=30, with_pedals=True, rpm_override=None):
-    """Write a minimal KIT-format trip CSV for loader tests."""
-    time_col = [f"10:00:{i:02d}.0" for i in range(rows)]
-    data = {
-        KIT_HEADERS["Time"]: time_col,
-        KIT_HEADERS["rpm"]: np.full(rows, 1500.0),
-        KIT_HEADERS["speed"]: np.full(rows, 60.0),
-        KIT_HEADERS["coolant_temp"]: np.full(rows, 90.0),
-        KIT_HEADERS["map"]: np.full(rows, 110.0),
-        KIT_HEADERS["maf"]: np.full(rows, 20.0),
-        KIT_HEADERS["tps"]: np.full(rows, 30.0),
-    }
-    if with_pedals:
-        data[KIT_HEADERS["accel_pedal_d"]] = np.full(rows, 25.0)
-        data[KIT_HEADERS["accel_pedal_e"]] = np.full(rows, 25.5)
-    if rpm_override is not None:
-        data[KIT_HEADERS["rpm"]] = rpm_override
-    pd.DataFrame(data).to_csv(path, index=False)
-    return path
-
-
 def make_future_df(rows=20, pedal_delta=None):
     """Healthy future window for risk/JSON tests.
 
-    pedal_delta=None omits the pedal channels entirely.
+    Columns follow Group 1's feature_dataset.csv (INTERFACE.md
+    Section 1) subset the detector reads. pedal_delta=None omits
+    the pedal channels entirely (degraded-input case).
     """
     df = pd.DataFrame(
         {
@@ -154,10 +122,7 @@ def make_future_df(rows=20, pedal_delta=None):
             "tps": np.full(rows, 30.0),
             "coolant_slope": np.zeros(rows),
             "coolant_stability": np.zeros(rows),
-            "acceleration": np.zeros(rows),
-            "load_stress": np.full(rows, 45000.0),
             "maf_map_cohesion": np.zeros(rows),
-            "rpm_variation": np.full(rows, 10.0),
         }
     )
     if pedal_delta is not None:
@@ -177,22 +142,6 @@ def make_residual_summary(mean=0.1, maximum=0.2):
 
 
 class TestPedalDetection:
-    def test_derived_delta_added_when_pedals_present(self):
-        from model.kit_residual_detector import add_derived_features
-
-        df = make_healthy_df()
-        df["accel_pedal_d"] = 25.0
-        df["accel_pedal_e"] = 26.0
-        out = add_derived_features(df)
-        assert "accel_pedal_channel_delta" in out.columns
-        assert out["accel_pedal_channel_delta"].iloc[0] == 1.0
-
-    def test_no_delta_and_no_crash_without_pedals(self):
-        from model.kit_residual_detector import add_derived_features
-
-        out = add_derived_features(make_healthy_df())
-        assert "accel_pedal_channel_delta" not in out.columns
-
     def test_sustained_disagreement_selects_pedal_anomaly(self):
         from model.kit_residual_detector import calculate_risk
 
@@ -216,6 +165,22 @@ class TestPedalDetection:
         from model.kit_residual_detector import calculate_risk
 
         future = make_future_df(pedal_delta=None)
+        anomaly_type, _, _, _, notes = calculate_risk(
+            make_residual_summary(), future
+        )
+        assert anomaly_type != "accelerator_pedal_sensor"
+        assert any(
+            "accelerator_pedal_sensor" in note for note in notes
+        )
+
+    def test_all_nan_pedal_window_falls_back_with_note(self):
+        # Group 1 delivers the pedal columns on every row, but a
+        # selected window can still be all-NaN; the documented
+        # pedal-score-0.0 fallback must fire, not a NaN score.
+        from model.kit_residual_detector import calculate_risk
+
+        future = make_future_df(pedal_delta=15.0)
+        future["accel_pedal_channel_delta"] = np.nan
         anomaly_type, _, _, _, notes = calculate_risk(
             make_residual_summary(), future
         )
@@ -302,36 +267,57 @@ class TestBuildInterfaceJson:
         json.dumps(result)
 
 
-class TestLoadAndResampleKitCsv:
-    def test_returns_frame_and_empty_notes_for_clean_input(
-        self, tmp_path
-    ):
-        from model.kit_residual_detector import load_and_resample_kit_csv
+class TestLoadGroup1Features:
+    def test_returns_frame_for_clean_input(self, tmp_path):
+        from group1_fixtures import write_group1_csv
+        from model.kit_residual_detector import load_group1_features
 
-        csv_path = write_kit_csv(tmp_path / "trip.csv")
-        df, notes = load_and_resample_kit_csv(csv_path, "1s")
-        assert notes == []
+        csv_path = write_group1_csv(tmp_path / "feature_dataset.csv")
+        df = load_group1_features(csv_path)
         assert "rpm" in df.columns
+        assert pd.api.types.is_datetime64_any_dtype(df["timestamp"])
 
-    def test_missing_pedal_columns_add_note(self, tmp_path):
-        from model.kit_residual_detector import load_and_resample_kit_csv
+    def test_non_numeric_column_raises_named_error(self, tmp_path):
+        from group1_fixtures import write_group1_csv
+        from model.kit_residual_detector import load_group1_features
 
-        csv_path = write_kit_csv(
-            tmp_path / "trip.csv", with_pedals=False
+        csv_path = write_group1_csv(
+            tmp_path / "feature_dataset.csv",
+            wrong_type_columns=["rpm_slope"],
         )
-        df, notes = load_and_resample_kit_csv(csv_path, "1s")
-        assert any("accel_pedal" in note for note in notes)
-        assert "accel_pedal_d" not in df.columns
+        with pytest.raises(ValueError) as excinfo:
+            load_group1_features(csv_path)
+        assert "rpm_slope" in str(excinfo.value)
+
+    def test_policy_nan_columns_are_tolerated(self, tmp_path):
+        # Group 1 policy NaNs (feature_dataset_metadata.json):
+        # event-only and rolling features are NaN by design and
+        # must load without error.
+        from group1_fixtures import make_group1_frame
+        from model.kit_residual_detector import load_group1_features
+
+        frame = make_group1_frame(rows=10)
+        frame["pedal_to_throttle_delay"] = np.nan
+        frame["idle_rpm_stability"] = np.nan
+        frame.loc[:3, "coolant_stability"] = np.nan
+        csv_path = tmp_path / "feature_dataset.csv"
+        frame.to_csv(csv_path, index=False)
+        df = load_group1_features(csv_path)
+        assert df["pedal_to_throttle_delay"].isna().all()
 
     def test_implausible_value_repaired_and_noted(self, tmp_path):
-        from model.kit_residual_detector import load_and_resample_kit_csv
-
-        rpm = np.full(30, 1500.0)
-        rpm[5] = -900.0
-        csv_path = write_kit_csv(
-            tmp_path / "trip.csv", rpm_override=rpm
+        from group1_fixtures import write_group1_csv
+        from model.kit_residual_detector import (
+            load_group1_features,
+            prepare_segment,
         )
-        df, notes = load_and_resample_kit_csv(csv_path, "1s")
+
+        csv_path = write_group1_csv(
+            tmp_path / "feature_dataset.csv", rows=30
+        )
+        df = load_group1_features(csv_path)
+        df.loc[5, "rpm"] = -900.0
+        repaired, notes = prepare_segment(df)
         assert any("rpm" in note for note in notes)
         # Repaired via interpolation, no negative rpm survives.
-        assert (df["rpm"] >= 0).all()
+        assert (repaired["rpm"] >= 0).all()
