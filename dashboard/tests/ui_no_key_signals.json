@@ -34,7 +34,8 @@
       "Monitor the vehicle dashboard for warning lights.",
       "Schedule a diagnostic inspection.",
       "Avoid heavy driving until inspected."
-    ]
+    ],
+    "estimated_cycles_to_failure": null
   },
   {
     "timestamp": "2026-06-16T11:00:00Z",
@@ -58,6 +59,7 @@
     "recommended_action": [
       "Monitor for performance issues.",
       "Schedule inspection if problems persist."
-    ]
+    ],
+    "estimated_cycles_to_failure": null
   }
 ]
