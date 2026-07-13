@@ -21,7 +21,9 @@ DATA_PATH = PROCESSED_DATA_DIR / "cleaned_dataset.csv"
 CONFIG_PATH = CLEANING_DIR / "cleaning_config.yaml"
 
 ENRICHED_OUTPUT_PATH = BASE_DIR.parents / "operating_condition_enriched.csv"
-COUNTS_OUTPUT_PATH = BASE_DIR.parents / "operating_condition_counts_overall.csv"
+COUNTS_OUTPUT_PATH = (
+    BASE_DIR.parents / "operating_condition_counts_overall.csv"
+)
 SIGNAL_SUMMARY_OUTPUT_PATH = (
     BASE_DIR.parents / "operating_condition_signal_summary.csv"
 )
@@ -75,11 +77,15 @@ def require_inputs() -> None:
 
 def load_cleaned_data(fields: dict[str, Any]) -> pd.DataFrame:
     # Read only the columns needed by the state machine and signal statistics.
-    expected_signals = [signal for signal in fields if signal in SIGNAL_COLUMNS]
+    expected_signals = [
+        signal for signal in fields if signal in SIGNAL_COLUMNS
+    ]
     required_columns = [*KEY_COLUMNS, *expected_signals]
     df = pd.read_csv(DATA_PATH, usecols=lambda col: col in required_columns)
 
-    missing_columns = [col for col in required_columns if col not in df.columns]
+    missing_columns = [
+        col for col in required_columns if col not in df.columns
+    ]
     if missing_columns:
         raise ValueError(
             "Cleaned dataset is missing required columns: "
@@ -87,7 +93,9 @@ def load_cleaned_data(fields: dict[str, Any]) -> pd.DataFrame:
         )
 
     # Convert time to UTC; coerce invalid sensor values to NaN.
-    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
+    df["timestamp"] = pd.to_datetime(
+        df["timestamp"], utc=True, errors="coerce"
+    )
     for signal in expected_signals:
         df[signal] = pd.to_numeric(df[signal], errors="coerce")
 
@@ -132,7 +140,9 @@ def build_quality_flags(df: pd.DataFrame) -> tuple[pd.Series, pd.Series]:
     return pd.Series(flags, index=df.index, dtype="string"), confidence
 
 
-def ffill_within_segment(values: pd.Series, segment_id: pd.Series) -> pd.Series:
+def ffill_within_segment(
+        values: pd.Series, segment_id: pd.Series
+    ) -> pd.Series:
     # Forward-fill only within each segment.
     return values.groupby(segment_id).ffill()
 
@@ -153,7 +163,7 @@ def cleanup_short_state_runs(
             cleaned_parts.append(group)
             continue
 
-        # Multiple passes remove new short fragments created by earlier merges.
+        # Multiple passes remove new short fragment created by earlier merges.
         for _ in range(5):
             changed = False
             starts: list[int] = []
