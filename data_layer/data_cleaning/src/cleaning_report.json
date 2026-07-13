@@ -1,8 +1,8 @@
 {
   "pipeline_version": "3.0",
   "report_source": "enriched_intermediate_csv",
-  "enriched_csv": "data_layer/cleaning_and_profiling/data_cleaning/cleaning_enriched.csv",
-  "quality_csv": "data_layer/cleaning_and_profiling/data_cleaning/cleaning_quality.csv",
+  "enriched_csv": "data_layer/data_cleaning/src/cleaning_enriched.csv",
+  "quality_csv": "data_layer/data_cleaning/src/cleaning_quality.csv",
   "quality_rows": 249694,
   "quality_columns": [
     "timestamp",
@@ -138,5 +138,5 @@
     "This report was generated from the enriched intermediate CSV.",
     "Raw input row counts are not recomputed by the audit step."
   ],
-  "report_json": "data_layer/cleaning_and_profiling/data_cleaning/cleaning_report.json"
+  "report_json": "data_layer/data_cleaning/src/cleaning_report.json"
 }
