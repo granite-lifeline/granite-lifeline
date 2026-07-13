@@ -28,8 +28,9 @@ Data Layer
 Model Layer
   (IBM Granite TTM — anomaly detection)
     │
-    ▼  [anomaly_type, risk_score, risk_level,
-        component, prediction_confidence, key_signals]
+    ▼  [anomaly_type, risk_score, risk_level, component,
+        prediction_confidence, key_signals,
+        estimated_failure_probability, estimated_cycles_to_failure, notes]
 Report Layer
   (IBM Granite LLM — 3-layer prompt chain
    + RAG knowledge base with ChromaDB)
