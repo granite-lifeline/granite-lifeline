@@ -27,7 +27,8 @@
       "Check that the UI still renders the report card."
     ],
     "estimated_cycles_to_failure": null,
-    "estimated_failure_probability": null
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T11:00:00Z",
@@ -40,7 +41,8 @@
     "possible_cause": "",
     "recommended_action": [],
     "estimated_cycles_to_failure": null,
-    "estimated_failure_probability": null
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "risk_score": 0.22,
@@ -64,6 +66,7 @@
     "anomaly_description": "This test item is missing timestamp, possible_cause, and recommended_action.",
     "recommended_action": "",
     "estimated_cycles_to_failure": null,
-    "estimated_failure_probability": null
+    "estimated_failure_probability": null,
+    "notes": []
   }
 ]

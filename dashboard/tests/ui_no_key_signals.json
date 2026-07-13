@@ -36,7 +36,8 @@
       "Avoid heavy driving until inspected."
     ],
     "estimated_cycles_to_failure": null,
-    "estimated_failure_probability": null
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T11:00:00Z",
@@ -62,6 +63,7 @@
       "Schedule inspection if problems persist."
     ],
     "estimated_cycles_to_failure": null,
-    "estimated_failure_probability": null
+    "estimated_failure_probability": null,
+    "notes": []
   }
 ]

@@ -31,7 +31,8 @@
       "Seek mechanic attention urgently."
     ],
     "estimated_cycles_to_failure": null,
-    "estimated_failure_probability": null
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T11:30:00Z",
@@ -65,7 +66,8 @@
       "Do not drive until inspected by a mechanic."
     ],
     "estimated_cycles_to_failure": null,
-    "estimated_failure_probability": null
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T11:00:00Z",
@@ -98,7 +100,8 @@
       "Monitor for performance issues."
     ],
     "estimated_cycles_to_failure": null,
-    "estimated_failure_probability": null
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T10:30:00Z",
@@ -131,7 +134,8 @@
       "Schedule inspection if persists."
     ],
     "estimated_cycles_to_failure": null,
-    "estimated_failure_probability": null
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T10:00:00Z",
@@ -164,7 +168,8 @@
       "Avoid heavy loads."
     ],
     "estimated_cycles_to_failure": null,
-    "estimated_failure_probability": null
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T09:00:00Z",
@@ -196,6 +201,7 @@
       "Continue normal monitoring."
     ],
     "estimated_cycles_to_failure": null,
-    "estimated_failure_probability": null
+    "estimated_failure_probability": null,
+    "notes": []
   }
 ]

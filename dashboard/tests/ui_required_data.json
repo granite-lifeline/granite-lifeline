@@ -49,7 +49,8 @@
       "Ask a mechanic to inspect the cooling system as soon as possible."
     ],
     "estimated_cycles_to_failure": null,
-    "estimated_failure_probability": null
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T11:00:00Z",
@@ -101,7 +102,8 @@
       "Keep watching for rough idling, poor acceleration, or warning lights."
     ],
     "estimated_cycles_to_failure": null,
-    "estimated_failure_probability": null
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T10:00:00Z",
@@ -152,6 +154,7 @@
       "If the warning appears repeatedly, ask a mechanic to check the pedal sensor."
     ],
     "estimated_cycles_to_failure": null,
-    "estimated_failure_probability": null
+    "estimated_failure_probability": null,
+    "notes": []
   }
 ]
