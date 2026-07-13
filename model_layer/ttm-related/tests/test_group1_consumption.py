@@ -1,11 +1,12 @@
 """
 Story 4 (Lucca): Group 1 feature-CSV consumption tests.
 
-Evaluation-story evidence: characterises how the shared Story 3
-validation (model/input_validation.py) behaves on mock Group 1
+Evaluation-story evidence: characterises how the pipeline's Group 1
+loading path (Story 5 `load_group1_features` + `prepare_segment`,
+built on the shared Story 3 validation) behaves on mock Group 1
 `feature_dataset.csv` inputs — correct, missing-column, wrong-type,
-and too-short cases. Building the production Group 1 loader is
-Story 5 and out of scope here.
+and too-short cases — and that segment selection keeps TTM windows
+inside one segment.
 
 Run from ttm-related/:  ../.venv/bin/python -m pytest tests -v
 """
@@ -24,29 +25,20 @@ from group1_fixtures import (  # noqa: E402
 )
 from model.input_validation import (  # noqa: E402
     GROUP1_REQUIRED_COLUMNS,
-    PLAUSIBLE_RANGES,
-    validate_required_columns,
-    validate_sensor_ranges,
+)
+from model.kit_residual_detector import (  # noqa: E402
+    load_group1_features,
+    prepare_segment,
+    select_segment,
 )
 
 
 def consume_group1_csv(csv_path: Path):
-    """Mirror the pipeline's consumption steps on a Group 1 CSV.
-
-    Read, required-column check, numeric coercion of range-checked
-    signals, plausibility validation — the same shared Story 3
-    validation path the Story 5 loader will call.
-    """
-    raw = pd.read_csv(csv_path)
-    validate_required_columns(
-        raw.columns, GROUP1_REQUIRED_COLUMNS, str(csv_path)
-    )
-    for column in PLAUSIBLE_RANGES:
-        if column in raw.columns:
-            raw[column] = pd.to_numeric(
-                raw[column], errors="coerce"
-            )
-    return validate_sensor_ranges(raw)
+    """Run the pipeline's production consumption steps on a CSV:
+    load + column/numeric validation, then plausibility repair."""
+    df = load_group1_features(csv_path)
+    repaired, notes = prepare_segment(df)
+    return repaired, notes
 
 
 class TestGroup1Fixtures:
@@ -92,9 +84,8 @@ class TestGroup1NormalConsumption:
         path = write_group1_csv(
             tmp_path / "feature_dataset.csv"
         )
-        result = consume_group1_csv(path)
-        assert result.notes == []
-        assert result.repaired_counts == {}
+        _, notes = consume_group1_csv(path)
+        assert notes == []
 
     def test_extra_bookkeeping_columns_are_tolerated(
         self, tmp_path
@@ -105,30 +96,85 @@ class TestGroup1NormalConsumption:
         path = write_group1_csv(
             tmp_path / "enriched.csv", extra_bookkeeping=True
         )
-        result = consume_group1_csv(path)
-        assert result.notes == []
+        _, notes = consume_group1_csv(path)
+        assert notes == []
 
-    def test_model_signals_route_into_detector_features(
+    def test_model_signals_and_features_come_from_group1(
         self, tmp_path
     ):
-        from model.kit_residual_detector import (
-            MODEL_SIGNALS,
-            add_derived_features,
-        )
+        from model.kit_residual_detector import MODEL_SIGNALS
 
         path = write_group1_csv(
             tmp_path / "feature_dataset.csv"
         )
-        loaded = consume_group1_csv(path).df
+        loaded, _ = consume_group1_csv(path)
         for signal in MODEL_SIGNALS:
             assert signal in loaded.columns
-        # MVP recomputes internal derived equivalents until
-        # Story 5 switches to Group 1's engineered features
-        # (INTERFACE.md 1.3 supersession note).
-        derived = add_derived_features(loaded)
-        assert "load_stress" in derived.columns
-        assert "maf_map_cohesion" in derived.columns
-        assert "accel_pedal_channel_delta" in derived.columns
+        # Story 5: engineered features are consumed directly from
+        # Group 1's columns — nothing is recomputed internally.
+        assert "maf_map_cohesion" in loaded.columns
+        assert "accel_pedal_channel_delta" in loaded.columns
+        assert (
+            loaded["maf_map_cohesion"]
+            == make_group1_frame(rows=len(loaded))["maf_map_cohesion"]
+        ).all()
+
+
+class TestSegmentSelection:
+    def make_multi_segment_frame(self):
+        first = make_group1_frame(rows=650)
+        second = make_group1_frame(rows=750)
+        second["segment_id"] = "trip_0001_seg_002"
+        third = make_group1_frame(rows=800)
+        third["trip_id"] = "trip_0002"
+        third["segment_id"] = "trip_0002_seg_001"
+        return pd.concat(
+            [first, second, third], ignore_index=True
+        )
+
+    def test_default_picks_first_segment_with_enough_rows(self):
+        df = self.make_multi_segment_frame()
+        segment = select_segment(df)
+        # First segment (650 rows) is below the INTERFACE.md 1.5
+        # minimum of 700; the second qualifies.
+        assert segment["segment_id"].unique().tolist() == [
+            "trip_0001_seg_002"
+        ]
+        assert len(segment) == 750
+
+    def test_selected_window_never_crosses_segments(self):
+        from model.kit_residual_detector import (
+            select_context_and_truth,
+        )
+
+        df = self.make_multi_segment_frame()
+        segment = select_segment(df)
+        context, future = select_context_and_truth(
+            segment, context_length=512, prediction_length=96
+        )
+        window = pd.concat([context, future])
+        assert window["segment_id"].nunique() == 1
+
+    def test_trip_and_segment_flags_are_honoured(self):
+        df = self.make_multi_segment_frame()
+        by_trip = select_segment(df, trip_id="trip_0002")
+        assert by_trip["trip_id"].unique().tolist() == ["trip_0002"]
+        by_segment = select_segment(
+            df, segment_id="trip_0001_seg_002"
+        )
+        assert by_segment["segment_id"].unique().tolist() == [
+            "trip_0001_seg_002"
+        ]
+
+    def test_unknown_ids_and_short_segments_raise(self):
+        df = self.make_multi_segment_frame()
+        with pytest.raises(ValueError, match="trip_9999"):
+            select_segment(df, trip_id="trip_9999")
+        with pytest.raises(ValueError, match="seg_042"):
+            select_segment(df, segment_id="trip_0001_seg_042")
+        short_only = make_group1_frame(rows=100)
+        with pytest.raises(ValueError, match="700"):
+            select_segment(short_only)
 
 
 class TestGroup1BadInput:

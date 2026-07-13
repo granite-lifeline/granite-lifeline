@@ -1,5 +1,5 @@
 """
-Validate Model Layer output JSON against INTERFACE.md v0.5.
+Validate Model Layer output JSON against INTERFACE.md v0.7.
 
 This script checks the output contract only: required fields, JSON
 types, enum values, and interface-level numeric ranges. It does not
@@ -38,7 +38,6 @@ ALLOWED_ANOMALY_TYPES = {
     "accelerator_pedal_sensor",
     "intake_air_temperature_sensor_or_heat_soak_fault",
     "map_load_signal_plausibility_fault",
-    "electronic_throttle_tracking_fault",
     "idle_speed_control_or_surge_degradation",
 }
 
@@ -223,7 +222,7 @@ def validate_file(path: Path) -> list[str]:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Validate Model Layer output JSON against INTERFACE.md v0.5."
+            "Validate Model Layer output JSON against INTERFACE.md v0.7."
         )
     )
     parser.add_argument(
@@ -237,12 +236,12 @@ def main() -> None:
     errors = validate_file(args.json_path)
 
     if errors:
-        print("FAIL: output JSON does not match INTERFACE.md v0.5")
+        print("FAIL: output JSON does not match INTERFACE.md v0.7")
         for error in errors:
             print(f"- {error}")
         raise SystemExit(1)
 
-    print("PASS: output JSON matches INTERFACE.md v0.5")
+    print("PASS: output JSON matches INTERFACE.md v0.7")
 
 
 if __name__ == "__main__":
