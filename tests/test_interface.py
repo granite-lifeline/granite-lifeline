@@ -55,9 +55,6 @@ class TestDataLayerOutput:
             "speed_density_maf_residual": 1.2,
             "map_slope": 0.5,
             "accel_pedal_mean": 36.25,
-            "pedal_throttle_gap": 2.1,
-            "pedal_to_throttle_delay": 1.0,
-            "tps_slope": 0.3,
             "accel_pedal_channel_delta": 2.5,
             "accel_pedal_channel_ratio": 0.93,
             "pedal_slope": 0.4,
@@ -65,6 +62,10 @@ class TestDataLayerOutput:
             "rpm_slope": 12.0,
             "idle_flag": 0.0,
             "idle_rpm_stability": 55.0,
+            "segment_gap_seconds": None,
+            "cold_soak_candidate_flag": None,
+            "intake_temp_stability": 0.6,
+            "map_stability": 4.2,
 
             "failure_label": "cooling_risk",
             "risk_class": "HIGH",
@@ -110,9 +111,6 @@ class TestDataLayerOutput:
             "speed_density_maf_residual": 1.2,
             "map_slope": 0.5,
             "accel_pedal_mean": 36.25,
-            "pedal_throttle_gap": 2.1,
-            "pedal_to_throttle_delay": 1.0,
-            "tps_slope": 0.3,
             "accel_pedal_channel_delta": 2.5,
             "accel_pedal_channel_ratio": 0.93,
             "pedal_slope": 0.4,
@@ -120,6 +118,10 @@ class TestDataLayerOutput:
             "rpm_slope": 12.0,
             "idle_flag": 0.0,
             "idle_rpm_stability": 55.0,
+            "segment_gap_seconds": None,
+            "cold_soak_candidate_flag": None,
+            "intake_temp_stability": 0.6,
+            "map_stability": 4.2,
         }
         output = DataLayerOutput(**data)
         assert output.failure_label is None
@@ -169,6 +171,10 @@ class TestDataLayerOutput:
             "rpm_slope": 12.0,
             "idle_flag": 0.0,
             "idle_rpm_stability": None,
+            "segment_gap_seconds": None,
+            "cold_soak_candidate_flag": None,
+            "intake_temp_stability": 0.6,
+            "map_stability": 4.2,
         }
         output = DataLayerOutput(**data)
         assert output.coolant_stability is None
@@ -219,6 +225,10 @@ class TestDataLayerOutput:
             "rpm_slope": 12.0,
             "idle_flag": 0.0,
             "idle_rpm_stability": 55.0,
+            "segment_gap_seconds": None,
+            "cold_soak_candidate_flag": None,
+            "intake_temp_stability": 0.6,
+            "map_stability": 4.2,
         }
         with pytest.raises(ValidationError):
             DataLayerOutput(**data)
@@ -267,6 +277,10 @@ class TestDataLayerOutput:
             "rpm_slope": 12.0,
             "idle_flag": 0.0,
             "idle_rpm_stability": 55.0,
+            "segment_gap_seconds": None,
+            "cold_soak_candidate_flag": None,
+            "intake_temp_stability": 0.6,
+            "map_stability": 4.2,
         }
         with pytest.raises(ValidationError):
             DataLayerOutput(**data)
