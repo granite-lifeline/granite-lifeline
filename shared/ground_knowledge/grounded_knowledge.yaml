@@ -1,5 +1,5 @@
-﻿metadata:
-  schema_version: "1.0"
+﻿﻿metadata:
+  schema_version: "2.0(7.13: modify proxy failure and feature)"
   source_document: "reference.md"
   source_path: "shared/ground_knowledge/reference.md"
   purpose: "Structured, machine-readable domain knowledge for raw OBD-II signals, derived features, and proxy failure signatures."
@@ -336,7 +336,7 @@ features:
       normal_range: "dataset normal-reference baseline by operating phase"
     supporting_source: "Bosch Automotive Handbook"
 
-  maf_derived_air_load:
+  maf_derived_air_load_raw:
     inputs:
       - "maf"
       - "rpm"
@@ -349,7 +349,7 @@ features:
       normal_range: "dataset normal-reference baseline by rpm and load region"
     supporting_source: "Bosch Automotive Handbook"
 
-  map_derived_air_load:
+  map_derived_air_load_raw:
     inputs:
       - "map"
       - "intake_temp"
@@ -367,9 +367,9 @@ features:
 
   maf_map_cohesion:
     inputs:
-      - "maf_derived_air_load"
-      - "map_derived_air_load"
-    formula: "abs(zscore_dataset(maf_derived_air_load) - zscore_dataset(map_derived_air_load))"
+      - "maf_derived_air_load_raw"
+      - "map_derived_air_load_raw"
+    formula: "abs(zscore_dataset(maf_derived_air_load_raw) - zscore_dataset(map_derived_air_load_raw))"
     unit: "dimensionless"
     physical_meaning: "Standardized deviation between the MAF-side and MAP-side air-load estimates."
     intended_signal: "air_load_estimate_consistency"
@@ -418,48 +418,6 @@ features:
     reference_range:
       type: "bounded_by_inputs"
       normal_range: "0-100%"
-    supporting_source: "Bosch Automotive Handbook"
-
-  pedal_throttle_gap:
-    inputs:
-      - "accel_pedal_mean"
-      - "tps"
-      - "rpm"
-      - "operating_state"
-    formula: "tps_normalized - g_dataset(accel_pedal_mean, rpm, operating_state)"
-    unit: "%"
-    physical_meaning: "Residual between actual throttle position and expected value based on driver demand and operating state."
-    intended_signal: "throttle_tracking_residual"
-    reference_range:
-      type: "calibrated_baseline"
-      normal_range: "dataset normal-reference throttle-tracking residual baseline"
-    baseline_requirement: "g_dataset is the expected throttle model fitted from dataset normal-reference conditions."
-    supporting_source: "Bosch Automotive Handbook"
-
-  pedal_to_throttle_delay:
-    inputs:
-      - "pedal_slope"
-      - "tps_slope"
-    formula: "argmax_tau(corr(pedal_slope(t), tps_slope(t + tau))) within an event window"
-    unit: "s"
-    physical_meaning: "Estimated delay between a driver pedal change and throttle response."
-    intended_signal: "pedal_to_throttle_response_delay"
-    reference_range:
-      type: "calibrated_baseline | validity_condition"
-      normal_range: "dataset normal-reference delay baseline within valid pedal-change event windows"
-    supporting_source: "Bosch Automotive Handbook"
-
-  tps_slope:
-    inputs:
-      - "tps"
-      - "timestamp"
-    formula: "delta(tps) / delta(time)"
-    unit: "%/s"
-    physical_meaning: "Throttle actuation speed."
-    intended_signal: "throttle_position_change_rate"
-    reference_range:
-      type: "calibrated_baseline | validity_condition"
-      normal_range: "dataset normal-reference baseline within comparable throttle-control windows"
     supporting_source: "Bosch Automotive Handbook"
 
   accel_pedal_channel_delta:
@@ -536,9 +494,8 @@ features:
       - "engine_on_flag"
       - "speed"
       - "rpm"
-      - "tps"
-      - "accel_pedal_mean"
-    formula: "engine_on_flag == 1 and speed < v_idle and rpm within calibrated_idle_band and accel_pedal_mean <= calibrated_idle_pedal_threshold and tps <= calibrated_idle_tps_threshold"
+      - "child_state"
+    formula: "idle_flag = 1 when child_state == idle in the operating-condition layer, based on engine-running, smoothed low-speed, and low speed-derived acceleration conditions. Does not directly depend on accelerator-pedal position or on tps."
     unit: "dimensionless"
     physical_meaning: "Identifies engine idle state."
     intended_signal: "idle_operating_state"
@@ -556,23 +513,160 @@ features:
     inputs:
       - "rpm"
       - "idle_flag"
-    formula: "rolling_std(rpm | idle_flag == 1, W_idle_stability)"
+    formula: "rolling_std(rpm, W_idle_stability), computed only within one contiguous idle episode (idle_flag == 1); never bridges non-idle samples or segment boundaries. Missing unless the full 10 s window has valid rpm and idle_flag == 1 throughout."
     unit: "rpm"
-    physical_meaning: "Idle-speed stability."
+    physical_meaning: "Idle-speed stability over a short sustained idle window. The 10 s window matches the second-scale dynamics of idle-speed control, in contrast to the 60 s windows used for slower thermal features (coolant_stability, intake_temp_stability)."
     intended_signal: "idle_speed_stability"
     reference_range:
       type: "calibrated_baseline | validity_condition"
-      normal_range: "dataset normal-reference baseline within idle windows"
+      normal_range: "dataset normal-reference baseline within idle windows, per operating_state"
     parameters:
       W_idle_stability:
-        value: 30
+        value: 10
         unit: "s"
       sampling_rate:
         value: 1
         unit: "Hz"
       window_samples:
-        value: 30
+        value: 10
         formula: "W_idle_stability * sampling_rate"
+    coverage_note: "Idle episodes shorter than 10 s produce no value for the entire episode (an intentional coverage limitation, not a low-precision estimate); such episodes should be covered by rpm_slope instead. Replaces the earlier 30 s window, which covered only ~19.3% of idle rows versus ~57.6% for the 10 s window (dataset median idle-episode length ~13 s). Changing the window length invalidates any previously computed 30 s baseline percentiles."
+    supporting_source: "Bosch Automotive Handbook; dataset-derived calibration of idle episode lengths"
+
+  segment_gap_seconds:
+    inputs:
+      - "timestamp"
+      - "trip_id"
+      - "segment_id"
+    formula: "current_segment_start_time - previous_segment_end_time, evaluated only at the first sample of a segment and only when trip_id changes relative to the previous segment. Null for intra-trip segment boundaries and for the first segment in the dataset."
+    unit: "s (or null)"
+    physical_meaning: "Elapsed unrecorded time between the end of the previous trip and the start of the current trip. A time-gap proxy, not a confirmed engine-off duration — the dataset does not capture the actual moment the engine was switched off."
+    intended_signal: "cold_soak_candidate_support"
+    reference_range:
+      type: "dataset_derived"
+      normal_range: "not applicable — supports cold_soak_candidate_flag only"
+    supporting_source: "Dataset timestamp/trip-boundary continuity; OBD rationality-check methodology"
+
+  cold_soak_candidate_flag:
+    inputs:
+      - "segment_gap_seconds"
+      - "coolant_temp"
+      - "intake_temp"
+      - "ambient_temp"
+      - "engine_on_flag"
+      - "thermal_state"
+      - "condition_confidence"
+    formula: "Evaluated at the first sample of a segment when segment_gap_seconds >= 21600 (6 h) and first-sample thermal_state is engine_off or warmup: tight_close if abs(coolant_temp-ambient_temp) and abs(intake_temp-ambient_temp) are both <=10°C; loose_close if both are <=15°C and the segment is not already tight_close; otherwise not_close or none_or_unknown."
+    unit: "dimensionless (categorical)"
+    physical_meaning: "Low-confidence candidate flag for plausible cold-soak restarts, based on a long unrecorded gap plus temperature convergence toward ambient. A confidence modifier for IAT plausibility evidence, not a standalone fault trigger."
+    intended_signal: "cold_soak_restart_candidate"
+    reference_range:
+      type: "project_derived_provisional"
+      normal_range: "not applicable — supporting/confidence-modifier flag only"
+    parameters:
+      T_soak_candidate:
+        value: 6
+        unit: "h"
+      tight_close_threshold:
+        value: 10
+        unit: "°C"
+      loose_close_threshold:
+        value: 15
+        unit: "°C"
+    production_note: "Shipped output is a single numeric field (1.0 when tight_close or loose_close, 0.0 when not_close, NaN when none_or_unknown) rather than a separate cold_soak_candidate_level categorical field; the tight/loose distinction is preserved only in reference.md's Calibration Note text, not as a queryable output column."
+    calibration_note: "Threshold values are provisional, calibrated on a small eligible set (n=37 segment starts meeting gap>=6h, complete first-row temperatures, and thermal_state in {engine_off, warmup}); see reference.md for the full breakdown and a correction note (an earlier n=69 figure came from a GroupBy.first() bug in the calibration probe script, since fixed)."
+    supporting_source: "OBD rationality-check methodology; dataset-derived implementation constraint"
+
+  intake_temp_stability:
+    inputs:
+      - "intake_temp"
+      - "engine_on_flag"
+      - "segment_id"
+    formula: "rolling_std(intake_temp, W_intake_stability), computed only within the same segment_id. Missing if fewer than min_valid_fraction * window_samples samples in the window have engine_on_flag == 1 and non-missing intake_temp."
+    unit: "°C"
+    physical_meaning: "Rolling stability of intake-air temperature; supports IAT skewed/stuck-signal checks by measuring whether intake_temp remains abnormally stable during windows where speed/load would normally produce thermal change."
+    intended_signal: "intake_temperature_stuck_signal_support"
+    reference_range:
+      type: "calibrated_baseline | validity_condition"
+      normal_range: "dataset normal-reference baseline within comparable speed/load windows"
+    parameters:
+      W_intake_stability:
+        value: 60
+        unit: "s"
+      min_valid_fraction:
+        value: 0.7
+        unit: "dimensionless"
+    supporting_source: "Bosch Automotive Handbook; adapted from the coolant_stability rolling-feature design; dataset-derived feature engineering"
+
+  map_stability:
+    inputs:
+      - "map"
+      - "engine_on_flag"
+      - "segment_id"
+    formula: "rolling_std(map, W_map_stability), computed only within the same segment_id. Missing unless the full window has valid map samples and engine_on_flag == 1 throughout."
+    unit: "kPa"
+    physical_meaning: "Rolling stability of manifold absolute pressure; supports MAP stuck-signal checks by measuring whether map remains abnormally stable while RPM, pedal demand, MAF, or speed/load state is changing."
+    intended_signal: "map_stuck_signal_support"
+    reference_range:
+      type: "calibrated_baseline | validity_condition"
+      normal_range: "dataset normal-reference baseline by operating_state"
+    parameters:
+      W_map_stability:
+        value: 60
+        unit: "s"
+    supporting_source: "Bosch Automotive Handbook; adapted from the coolant_stability / idle_rpm_stability rolling-feature implementation"
+
+  # Retired features (record-only, not computed by the pipeline).
+  # No active proxy failure depends on these. Each is retained only because the
+  # specific baseline statistics it produced are cited as evidence in
+  # electronic_throttle_tracking_fault's exclusion rationale (see proxy_failures);
+  # those numbers are a frozen historical record, not a live/reproducible column.
+  # If that exclusion is ever revisited, these features would need re-deriving
+  # against corrected tps data rather than re-enabling the current computation as-is.
+
+  pedal_throttle_gap:
+    inputs:
+      - "accel_pedal_mean"
+      - "tps"
+      - "rpm"
+      - "operating_state"
+    formula: "tps_normalized - g_dataset(accel_pedal_mean, rpm, operating_state)"
+    unit: "%"
+    physical_meaning: "Residual between actual throttle position and expected value based on driver demand and operating state."
+    intended_signal: "throttle_tracking_residual"
+    reference_range:
+      type: "calibrated_baseline"
+      normal_range: "dataset normal-reference throttle-tracking residual baseline"
+    baseline_requirement: "g_dataset is the expected throttle model fitted from dataset normal-reference conditions."
+    status: "retired_record_only: not computed by the current pipeline and not present in output CSVs; no active proxy failure depends on it."
+    supporting_source: "Bosch Automotive Handbook"
+
+  pedal_to_throttle_delay:
+    inputs:
+      - "pedal_slope"
+      - "tps_slope"
+    formula: "argmax_tau(corr(pedal_slope(t), tps_slope(t + tau))) within an event window"
+    unit: "s"
+    physical_meaning: "Estimated delay between a driver pedal change and throttle response."
+    intended_signal: "pedal_to_throttle_response_delay"
+    reference_range:
+      type: "calibrated_baseline | validity_condition"
+      normal_range: "dataset normal-reference delay baseline within valid pedal-change event windows"
+    status: "retired_record_only: not computed by the current pipeline and not present in output CSVs; no active proxy failure depends on it."
+    supporting_source: "Bosch Automotive Handbook"
+
+  tps_slope:
+    inputs:
+      - "tps"
+      - "timestamp"
+    formula: "delta(tps) / delta(time)"
+    unit: "%/s"
+    physical_meaning: "Throttle actuation speed."
+    intended_signal: "throttle_position_change_rate"
+    reference_range:
+      type: "calibrated_baseline | validity_condition"
+      normal_range: "dataset normal-reference baseline within comparable throttle-control windows"
+    status: "retired_record_only: not computed by the current pipeline and not present in output CSVs; no active proxy failure depends on it."
     supporting_source: "Bosch Automotive Handbook"
 
 proxy_failures:
@@ -690,34 +784,43 @@ proxy_failures:
           - action: "Check that the pump wheel is not loose on the drive shaft"
             source: "MAHLE, p.39–40, 'Engine overheats' troubleshooting (Classification by Bob based on maintenance urgency)"
 
-  intake_air_temperature_sensor_or_heat_soak_fault:
-    component: "Intake-air temperature sensing / intake-air temperature regulation"
+  intake_air_temperature_sensor_fault:
+    component: "Intake-air temperature (IAT) sensor circuit and signal plausibility"
     evidence:
       - "intake_temp"
       - "ambient_temp"
+      - "coolant_temp"
       - "speed"
       - "rpm"
-      - "tps"
+      - "maf"
+      - "map"
+      - "operating_state"
       - "intake_ambient_delta"
-      - "intake_temp_slope"
-    definition: "Intake temperature is abnormally high or low relative to ambient temperature, or does not vary with vehicle speed/load. This can proxy intake-air temperature sensor faults, severe heat soak, intake preheating/temperature regulation faults, or poor thermal management in the intake path."
+      - "intake_temp_stability"
+      - "segment_gap_seconds"
+      - "cold_soak_candidate_flag"
+      - "condition_confidence"
+    definition: "The IAT signal fails a plausibility check against ambient/coolant references after a cold soak, stays flat (skewed/stuck) despite sustained speed/airflow that would normally change intake temperature, or remains implausibly high in the idle window following high load. This proxies IAT sensor circuit degradation, signal drift, or signal sticking, consistent with SAE J2012 DTC P0111."
     expected_pattern:
-      high_heat_soak_after_stable_driving:
-        signal: "intake_temp - ambient_temp"
-        condition: ">25-35°C"
+      cold_soak_plausibility:
+        role: "low_confidence_candidate_not_a_standalone_trigger"
+        signal: "abs(coolant_temp - ambient_temp) and abs(intake_temp - ambient_temp)"
+        condition: "both <=10-15°C at segment restart"
         context:
-          speed: ">40 km/h"
-          duration: "5 min"
-      low_after_extended_cold_start_running:
+          segment_gap_seconds: ">=6-8 h"
+        note: "True engine-off duration cannot be confirmed from this dataset; used as a confidence modifier for a co-occurring intake_ambient_delta anomaly, not a standalone P0111 trigger."
+      skewed_or_stuck_signal:
+        signal: "intake_temp_stability"
+        condition: "near zero"
+        duration: "sustained window"
+        context: "sustained speed/load context using speed, rpm, maf, map, or operating_state; tps is not used as an airflow proxy because it is unreliable in this dataset"
+      post_high_load_heat_soak:
         signal: "intake_temp"
-        condition: "< ambient_temp - 5°C"
-        phase: "after extended running following cold start"
-      high_under_load:
-        signal: "intake_temp"
-        condition: ">60°C"
-        phase: "high load"
-    rationale: "Colder air has higher density, while heated intake air reduces density and output. Intake systems can regulate intake temperature, affecting performance, fuel consumption, and emissions. For diesel engines, higher intake temperature increases combustion temperature and NOx emissions."
-    supporting_source: "Bosch Automotive Handbook"
+        condition: ">~63°C"
+        phase: "idle window following high load, not during high load itself"
+        threshold_role: "project_derived_from_post_warmup_idle_p99_baseline"
+    rationale: "Intake air temperature directly affects air density and combustion efficiency — colder air is denser. IAT should track ambient/coolant references at cold start and respond dynamically to speed/airflow changes once the engine is running; failure to do so indicates the sensor circuit is not measuring true intake-air temperature."
+    supporting_source: "SAE International, Diagnostic trouble code definitions (P0111); Bosch Automotive Handbook; project-derived baseline calibration"
     report_layer:
       description: "Air-temperature sensor is installed in the air-intake tract. Together with the signal from the boost-pressure sensor, its signal is applied in calculating the intake-air mass. Setpoint values for various control loops (e.g. EGR, boost-pressure control) can be adapted to the air temperature (measuring range –40 to +120 °C). Its job is simple but crucial: provide accurate air temperature readings to the car's engine control unit (ECU) or powertrain control module (PCM). Cold air is denser and contains more oxygen, so your car needs more fuel for combustion. On the flip side, warm air requires less fuel. It is used by the Powertrain Control Module to assist with the calculation of idle speed, fuel mixture, and spark advance. The sensor operates using a thermistor — a component that measures temperature by changing its resistance. Its resistance decreases as the air temperature rises. Intake air temperature sensor is built into the mass airflow sensor. The intake air temperature sensor converts the intake air temperature into a voltage and inputs the voltage signal to the engine-ECU. In response to the signal, the engine-ECU corrects the fuel injection amount, etc. Heat Soak: Engine heat soak happens when heat from the engine, exhaust, turbo or cooling system builds up under the bonnet and is absorbed by surrounding components. Heat soak means components are absorbing heat faster than they can get rid of it. When the car is moving, airflow helps carry heat out of the engine bay. When you stop in traffic, sit in a queue or shut the engine off, airflow drops. Hot parts keep radiating heat, but that heat has nowhere useful to go. Hot intake air is less dense, more knock-prone and more likely to make the ECU pull timing or reduce boost."
       causes:
@@ -769,8 +872,8 @@ proxy_failures:
       - "map"
       - "rpm"
       - "intake_temp"
-      - "maf_derived_air_load"
-      - "map_derived_air_load"
+      - "maf_derived_air_load_raw"
+      - "map_derived_air_load_raw"
       - "maf_map_cohesion"
     definition: "Triggered when maf_map_cohesion remains high. This proxy identifies inconsistency between the MAF-side air-load estimate and the MAP-side air-load estimate, mainly indicating MAF sensor drift, contamination, response delay, or abnormalities in the intake measurement chain."
     expected_pattern:
@@ -781,7 +884,7 @@ proxy_failures:
         threshold_role: "initial_proxy_hint_not_final_decision_threshold"
         requires_dataset_baseline: true
       steady_state_standardized_deviation:
-        signal: "standardized_deviation(maf_derived_air_load, map_derived_air_load)"
+        signal: "standardized_deviation(maf_derived_air_load_raw, map_derived_air_load_raw)"
         condition: ">25-30%"
         phase: "steady-state conditions"
       masks:
@@ -813,36 +916,41 @@ proxy_failures:
             source: "ELTA TechASSIST Bulletin 03, 'General Fitting Advice — After Fitting' (Classification by Bob based on maintenance urgency)"
 
   map_load_signal_plausibility_fault:
-    component: "Intake manifold absolute pressure sensor / load signal"
+    component: "Intake manifold absolute pressure (MAP) sensor / load-signal plausibility"
     evidence:
       - "map"
       - "maf"
       - "rpm"
-      - "tps"
+      - "accel_pedal_mean"
+      - "pedal_slope"
       - "intake_temp"
       - "speed_density_maf_residual"
       - "map_slope"
-    definition: "MAP cannot reasonably reflect load changes, or its relationship with MAF, throttle position, and engine speed is inconsistent. This proxies MAP sensor drift, blockage, hose issues, signal sticking, or load-measurement abnormalities."
+      - "map_stability"
+    excluded_diagnostic_context:
+      tps: "Retained only as raw diagnostic context, not a triggering input — its physical meaning is unreliable in this dataset (saturated near 83.1-83.5% across nearly all operating states; a simple 100 - tps inversion does not fix it, and map responds more plausibly to pedal_slope than to tps)."
+    definition: "MAP fails to reasonably reflect load changes, or its relationship with MAF, driver-demand/load context, and engine speed is inconsistent. This proxies MAP sensor drift, blockage, hose issues, signal sticking, or load-measurement-chain abnormalities, consistent with SAE J2012 DTC P0106; the step-response check approximates the diagnostic intent of P0068 using pedal demand instead of tps as the trigger."
     expected_pattern:
-      no_map_response_to_tps_step:
+      step_response:
         trigger:
-          signal: "tps"
-          condition: "step change >15 percentage points"
+          signal: "accel_pedal_mean"
+          detected_via: "pedal_slope exceeding a per-operating_state threshold"
         observation:
           signal: "abs(map_slope)"
-          condition: "close to 0"
-          window: "within 1 s"
-      map_maf_air_amount_deviation:
-        signal: "air_amount_derived_from_map_vs_maf"
-        condition: ">25-30%"
+          condition: "near zero"
+          window: "calibrated response window"
+      steady_state_cross_consistency:
+        signal: "speed_density_maf_residual"
+        condition: "exceeds a per-operating_state tolerance"
         phase: "steady-state conditions"
-      fixed_unreasonable_map:
-        signal: "map"
-        condition: "near unreasonable fixed value"
-        duration: "extended period"
-        phase: "engine running"
-    rationale: "Intake manifold absolute pressure is a preferred method for monitoring load, and relative charge can be determined from available measurement signals such as MAF or MAP through an intake manifold model. If MAP is distorted, load, ignition, fuel injection, and torque calculations will be biased."
-    supporting_source: "Bosch Automotive Handbook"
+      stuck_signal:
+        signal: "map_stability"
+        condition: "below a per-operating_state low-variance threshold"
+        duration: "sustained window"
+        context: "RPM/pedal/MAF/speed-load context changing"
+    calibration_note: "All three thresholds must be calibrated per operating_state; normal MAP/pedal variability differs by roughly 4-11x between idle and high-load conditions in this project's baseline."
+    rationale: "MAP is a preferred method for monitoring engine load; MAF- and MAP-derived load estimates should stay physically consistent, and MAP should respond to driver torque demand. If MAP is distorted, load, ignition timing, fuel injection, and torque calculations are all biased."
+    supporting_source: "SAE International, Diagnostic trouble code definitions (P0106/P0068); Bosch Automotive Handbook; Nyberg & Nielsen (1997), SAE Technical Paper 970209; U.S. Patent No. 6,701,282"
     report_layer:
       description: "Intake manifold pressure sensors, also known as MAP sensors (from the English 'Manifold Absolute Pressure'), are used together with the values of the throttle potentiometer to calculate the intake air mass of uncharged gasoline engines. In turbo engines (diesel and petrol) the sensor is mainly used to control the turbocharging system. By monitoring the manifold pressure, the MAP sensor continuously provides real-time data to the ECU. This data is used to adjust the air/fuel ratio, the ignition timing, and other parameters for optimal power output and fuel efficiency. It measures the air pressure inside the intake manifold and sends this data to the Engine Control Unit (ECU), which then adjusts fuel injection and ignition timing accordingly. The MAP sensor operates using a diaphragm and strain gauge, which work together to detect changes in pressure between the intake manifold and the outside air. A pressure sensor has 3 electrical connections. One pin has the supply voltage of 5 volts, the second pin has the signal voltage, which is normally between 0.2 V and 4.8 V. The signal ground is located on the third pin. For sparkignition engines without supercharging, the vacuum at idle should be between 400 and 500 mbar absolute. When the accelerator pedal is fully depressed, the pressure should be 900 to 1000 mbar absolute. Plausibility algorithms ask: 'Does this value make sense compared to other measurements and physical expectations?' The ECU estimates airflow using Engine speed (RPM), Manifold absolute pressure (MAP), Intake air temperature (IAT), and Volumetric efficiency tables. This estimate is compared to the measured MAF signal. If the difference exceeds limits for a calibrated duration, the ECU may conclude that either the MAF or MAP system is unreliable."
       causes:
@@ -886,38 +994,11 @@ proxy_failures:
             source: "NGK Spark Plug Europe, 'MAP Sensor', Technical Bulletin (Classification by Bob based on maintenance urgency)"
 
   electronic_throttle_tracking_fault:
-    component: "Electronic throttle control / throttle actuator"
-    evidence:
-      - "accel_pedal_d"
-      - "accel_pedal_e"
-      - "tps"
-      - "rpm"
-      - "map"
-      - "maf"
-      - "pedal_throttle_gap"
-      - "pedal_to_throttle_delay"
-      - "tps_slope"
-    definition: "After pedal demand increases, throttle opening does not change accordingly, or the actual throttle position remains offset from the expected value based on pedal/load for an extended period. This proxies electronic throttle actuator sticking, position-control abnormalities, or ETC entering a restricted-control mode."
-    expected_pattern:
-      weak_tps_response_to_pedal_increase:
-        trigger:
-          signal: "accel_pedal_mean"
-          condition: "increase >20 percentage points"
-        observation:
-          signal: "tps"
-          condition: "change <5 percentage points"
-          window: "0.5-1.0 s"
-      sustained_pedal_throttle_gap:
-        signal: "pedal_throttle_gap"
-        condition: ">15-20 percentage points"
-        duration: "2 s"
-        threshold_role: "initial_proxy_hint_not_final_decision_threshold"
-        requires_dataset_baseline: true
-      confidence_boost:
-        - "map shows no response"
-        - "maf shows no response"
-    rationale: "ETC calculates throttle opening through the ECU based on pedal position and current operating conditions, and uses the throttle angle sensor to monitor whether the actual position matches the expected position. OBD diagnostic targets include the ETC throttle-valve actuator."
-    supporting_source: "Bosch Automotive Handbook"
+    status: "excluded_not_implementable_with_current_dataset"
+    component: "Electronic throttle control (ETC) / throttle actuator command-response tracking"
+    exclusion_note: "Unlike cooling_degradation and air_intake_maf_anomaly, which are deferred pending DTC-mapping coordination, this exclusion is not a coordination-pending state — it reflects a data-acquisition limitation that additional trip data of the same kind cannot resolve."
+    reason_for_exclusion: "This failure's diagnostic intent (SAE J2012 P2111/P2112/P2108) requires an independent observation of actual throttle position to distinguish actuator-tracking faults from driver-demand or air-path issues. In this dataset, the only available throttle-position channel (tps) shows a sampling artifact — long flat stretches interrupted by large abrupt jumps — consistent with polling-interval/refresh-rate behavior of the OBD dongle rather than continuous physical throttle response. A candidate derived feature (pedal_throttle_gap) was evaluated as a substitute, but its widened-residual regions coincide with exactly the same operating states where the sampling artifact concentrates, making it structurally unable to separate a true actuator fault from the measurement artifact. No other signal in the current feature set (map, maf, rpm) provides an independent observation of throttle position; using them alone would duplicate map_load_signal_plausibility_fault's step-response check under a different DTC label rather than provide independent evidence."
+    reconsideration_criteria: "This exclusion should be revisited if (a) raw per-PID polling timestamps become available to correct for refresh-rate artifacts, or (b) a higher-fidelity throttle-position source (e.g., VCDS/UDS measuring-block data) is captured alongside future trips."
     report_layer:
       description: "Electronic throttle control (ETC), also known as drive-by-wire throttle, is an automotive technology that replaces mechanical cables linking the accelerator pedal to the throttle valve with electronic sensors, an engine control unit (ECU), and actuators to precisely regulate engine air intake based on driver input and other vehicle parameters. The system interprets pedal position via potentiometers or Hall effect sensors, processes the signal through the ECU—often integrating data from throttle position sensors, mass airflow sensors, and vehicle dynamics—and drives a DC motor or stepper motor to adjust the throttle plate's angle. A typical ETC system includes the following components: electronic throttle body, accelerator pedal module and electronic control unit. An electric throttle actuator control (TAC) is made of a throttle control motor and two throttle position sensors. When the throttle valve moves, the two throttle position sensors respond with a signal to verify position. These sensors act as potentiometers to convert the throttle valve position into a voltage signal that is sent to the ECM. The TAC turns two reduction gears inside the throttle body that link the drive gear from the motor to the throttle plate shaft. On most systems, idle speed is entirely controlled by throttle plate angle. The ECM calculates the opening angle of the throttle valve from these signals and then commands the throttle control motor to make the proper throttle valve opening angle in response to the driving conditions. The ECM then commands the throttle actuator, usually a DC brushless motor or gear-driven stepper motor integrated into the throttle body, via pulse-width modulation (PWM) or H-bridge circuitry to precisely position the butterfly valve. Throttle position sensors (TPS), often dual-redundant for fault detection, provide closed-loop feedback by monitoring the valve's actual angle and relaying it back to the ECM, enabling proportional-integral-derivative (PID) control algorithms to minimize positioning errors within milliseconds. The system achieves rapid response times—typically under 100 ms for full travel. Calibration maps stored in ECM firmware correlate pedal position to throttle opening nonlinearly; for instance, light pedal inputs yield minimal airflow for idle stability, while full depression commands wide-open throttle under safe conditions. Two redundant sensors control the up to date throttle position. All ETBs have an idle air position. Output signal I: 0 to 5 V for 0 to 90°. Output signal II: 5 to 0 V for 0 to 90°. The accelerator pedal position sensor is also involved in converting the acceleration movement when the pedal is pressed into an electronic signal, which then initiates throttle body control either as opening or closing movements. The APP sensor comprises two individual sensors, with both sensors designed to have individual sensor return wiring. Each sensor has a varying voltage range. If there is a discrepancy between either the output voltage signal by the potentiometers monitoring the pedal position or the sensor itself, the PCM unit will reduce the performance of the vehicle, thereby setting the APP unit into a 'limp-home-mode'."
       causes:
@@ -1039,29 +1120,33 @@ proxy_failures:
     evidence:
       - "rpm"
       - "speed"
-      - "tps"
       - "accel_pedal_d"
       - "accel_pedal_e"
       - "maf"
       - "map"
-      - "idle_flag"
+      - "operating_state"
       - "idle_rpm_stability"
       - "rpm_slope"
-    definition: "Under idle conditions, RPM fluctuation is excessive, cyclic surging occurs, or the engine cannot stabilize near the target idle speed. This proxies idle-control degradation, intake/fuel-injection/ignition disturbances, excessive EGR, or insufficient load compensation."
+    definition: "Under idle conditions, RPM fluctuation is excessive, cyclic surging occurs, or the engine cannot stabilize near its expected idle speed. This proxies idle-control degradation, intake/fuel-injection/ignition disturbances, excessive EGR, or insufficient load compensation, consistent with SAE J2012 DTCs P0506, P0507, and P0519."
     expected_pattern:
       idle_window:
-        speed: "<3 km/h"
-        tps: "<= calibrated_idle_tps_threshold"
-        pedal_position: "<= calibrated_idle_pedal_threshold"
-      high_rpm_std:
-        signal: "std(rpm)"
-        condition: ">50-100 rpm"
-        duration: "30 s"
-      high_peak_amplitude:
-        signal: "peak_amplitude(rpm)"
-        condition: ">150-200 rpm"
-    rationale: "The goal of idle control is to maintain the desired idle speed under all conditions. Persistent high fluctuation within the idle window directly reflects control or combustion-stability issues."
-    supporting_source: "Bosch Automotive Handbook"
+        source: "operating_state / child_state == idle"
+        note: "Derived from smoothed vehicle speed and speed-derived acceleration, not accelerator-pedal position or tps."
+      deviation_and_duration:
+        signal: "idle RPM"
+        condition: "deviates from a project-derived expected-idle-RPM reference band for a calibrated duration"
+        reference: "this project's post_warmup__idle / warmup__idle healthy-trip baseline — no commanded-idle-RPM PID exists in this dataset"
+      stability_variance:
+        idle_rpm_stability:
+          window: "10 s rolling std of RPM within a contiguous idle episode"
+          note: "Episodes shorter than 10 s have no value; use rpm_slope instead."
+          thresholds:
+            post_warmup__idle: "150 rpm (project-derived/provisional)"
+            warmup__idle: "100 rpm (project-derived/provisional)"
+        rpm_slope:
+          condition: "repeated sign reversals above a calibrated amplitude"
+    rationale: "Idle-speed control aims to maintain the desired idle speed under disturbances from accessory loads, intake/EGR flow variation, and combustion-quality variation. Persistent RPM fluctuation or failure to converge to an expected idle speed reflects degradation in this control loop or the combustion stability it depends on."
+    supporting_source: "SAE International, Diagnostic trouble code definitions (P0506/P0507/P0519); Bosch Automotive Handbook; U.S. Patent No. 5,408,871; U.S. Patent No. 5,936,152; Montes-Solano & Pisu (2009), SAFEPROCESS 2009"
     report_layer:
       description: "The speed of vehicle engine at idle state is called an idle speed. An idle speed is basically a rotational speed of an engine when the engine is uncoupled to the drivetrain and the throttle pedal is up to the combustion engine. The aim of idle speed control is to maintain the desired engine speed or rpm to avoid any sort of disturbances such as torque disturbance which arises due to accessory loads on an engine such as air conditioning, power steering/alternators, automatic transmissions, etc. To optimize vehicle and powertrain operations at idle conditions a control has to be established especially when there are conflicting requirements such as improved fuel economy, reduced emissions, and stable combustions. The desired main input of the idle speed controller is the engine speed. In addition, inputs are described as throttle position, vehicle speed, feedforward indicators from automatic transmission, air conditioning, power steering and battery charging system with some environmental measurements such as engine coolant temperature and barometric pressure. The main control output is achieved by controlling the amount of air supplied to the engine. The amount of air controlled by a throttle bypass valve turns the intake manifold air towards the closed primary throttle plate. During the stages of sudden deacceleration air, the bypass valve supplies some additional amount of air in the start and end of damper work which prevents stalling of the engine and provides a smooth transition from higher speed rpm to idle speed rpm. This code is often triggered in vehicles with an electronic throttle control rather than a throttle cable going from the accelerator pedal to the engine. This code usually presents itself when the Powertrain control module detects a lower engine idle speed than what is pre-programmed for the RPM. The P0506 check engine error code means that the Idle Air Control System RPM is lower than expected. The code is triggered when the engine control module detects that your engine's idle speed is lower than the programmed threshold. That speed is measured by either the idle air control system or by the electronic throttle control on newer vehicles. The latter system adjusts how much air is allowed into the engine when the throttle is closed. When your idle speed is higher than a preset threshold, it triggers error code P0507. Depending on the vehicle, it could be as much as 200 RPMs over the expected rate."
       causes:
