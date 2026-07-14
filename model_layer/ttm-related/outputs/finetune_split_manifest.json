@@ -1,0 +1,600 @@
+{
+  "generated_at": "2026-07-14T21:00:28.855581+00:00",
+  "input_file": "data_layer/feature_engineering/feature_dataset.csv",
+  "labels_file": "data_layer/proxy_design/proxy_training_labels.csv",
+  "min_rows": 700,
+  "train_fraction": 0.8,
+  "seed": 42,
+  "label_columns": [
+    "final_label_accelerator_pedal_sensor",
+    "final_label_air_intake_maf_anomaly",
+    "final_label_cooling_degradation",
+    "final_label_electronic_throttle_tracking_fault",
+    "final_label_idle_speed_control_or_surge_degradation",
+    "final_label_intake_air_temperature_sensor_or_heat_soak_fault",
+    "final_label_map_load_signal_plausibility_fault"
+  ],
+  "n_trips_total": 81,
+  "n_trips_eligible": 80,
+  "n_segments_total": 118,
+  "n_segments_eligible": 83,
+  "segment_row_counts": {
+    "trip_0001_seg_001": 3946,
+    "trip_0002_seg_001": 3323,
+    "trip_0003_seg_001": 1547,
+    "trip_0004_seg_001": 4973,
+    "trip_0005_seg_001": 3239,
+    "trip_0006_seg_001": 2445,
+    "trip_0007_seg_001": 1244,
+    "trip_0008_seg_001": 515,
+    "trip_0008_seg_002": 3,
+    "trip_0008_seg_003": 2,
+    "trip_0008_seg_004": 5,
+    "trip_0008_seg_005": 1042,
+    "trip_0008_seg_006": 5,
+    "trip_0008_seg_007": 1,
+    "trip_0008_seg_008": 2,
+    "trip_0008_seg_009": 1,
+    "trip_0009_seg_001": 3523,
+    "trip_0010_seg_001": 2918,
+    "trip_0011_seg_001": 3702,
+    "trip_0012_seg_001": 3133,
+    "trip_0013_seg_001": 32,
+    "trip_0013_seg_002": 34,
+    "trip_0013_seg_003": 37,
+    "trip_0013_seg_004": 4,
+    "trip_0013_seg_005": 1,
+    "trip_0013_seg_006": 9,
+    "trip_0013_seg_007": 2,
+    "trip_0013_seg_008": 15,
+    "trip_0013_seg_009": 2,
+    "trip_0013_seg_010": 12,
+    "trip_0013_seg_011": 9,
+    "trip_0013_seg_012": 5024,
+    "trip_0013_seg_013": 6,
+    "trip_0014_seg_001": 1269,
+    "trip_0015_seg_001": 593,
+    "trip_0015_seg_002": 1,
+    "trip_0015_seg_003": 3,
+    "trip_0015_seg_004": 2,
+    "trip_0015_seg_005": 1,
+    "trip_0015_seg_006": 1,
+    "trip_0015_seg_007": 1,
+    "trip_0016_seg_001": 689,
+    "trip_0016_seg_002": 1431,
+    "trip_0016_seg_003": 4122,
+    "trip_0017_seg_001": 4665,
+    "trip_0018_seg_001": 4033,
+    "trip_0019_seg_001": 3442,
+    "trip_0020_seg_001": 1157,
+    "trip_0021_seg_001": 1449,
+    "trip_0022_seg_001": 1186,
+    "trip_0023_seg_001": 4280,
+    "trip_0023_seg_002": 2211,
+    "trip_0024_seg_001": 5082,
+    "trip_0025_seg_001": 1234,
+    "trip_0026_seg_001": 1240,
+    "trip_0027_seg_001": 4897,
+    "trip_0028_seg_001": 3284,
+    "trip_0029_seg_001": 2354,
+    "trip_0030_seg_001": 2793,
+    "trip_0031_seg_001": 4303,
+    "trip_0032_seg_001": 4697,
+    "trip_0033_seg_001": 3915,
+    "trip_0034_seg_001": 3006,
+    "trip_0035_seg_001": 2315,
+    "trip_0036_seg_001": 3293,
+    "trip_0037_seg_001": 2594,
+    "trip_0038_seg_001": 2762,
+    "trip_0039_seg_001": 2317,
+    "trip_0040_seg_001": 2631,
+    "trip_0041_seg_001": 3154,
+    "trip_0042_seg_001": 2375,
+    "trip_0043_seg_001": 2492,
+    "trip_0044_seg_001": 3529,
+    "trip_0045_seg_001": 1010,
+    "trip_0045_seg_002": 3579,
+    "trip_0045_seg_003": 2,
+    "trip_0046_seg_001": 1206,
+    "trip_0047_seg_001": 1309,
+    "trip_0048_seg_001": 3790,
+    "trip_0049_seg_001": 2050,
+    "trip_0050_seg_001": 3081,
+    "trip_0051_seg_001": 2710,
+    "trip_0052_seg_001": 1915,
+    "trip_0053_seg_001": 1,
+    "trip_0053_seg_002": 1728,
+    "trip_0053_seg_003": 1,
+    "trip_0054_seg_001": 863,
+    "trip_0055_seg_001": 982,
+    "trip_0056_seg_001": 4820,
+    "trip_0057_seg_001": 1115,
+    "trip_0057_seg_002": 6,
+    "trip_0058_seg_001": 1491,
+    "trip_0059_seg_001": 4376,
+    "trip_0060_seg_001": 3402,
+    "trip_0061_seg_001": 2922,
+    "trip_0062_seg_001": 2720,
+    "trip_0063_seg_001": 4839,
+    "trip_0064_seg_001": 2940,
+    "trip_0065_seg_001": 4336,
+    "trip_0066_seg_001": 3101,
+    "trip_0067_seg_001": 239,
+    "trip_0067_seg_002": 3059,
+    "trip_0068_seg_001": 3558,
+    "trip_0069_seg_001": 5988,
+    "trip_0070_seg_001": 1298,
+    "trip_0071_seg_001": 1627,
+    "trip_0072_seg_001": 4709,
+    "trip_0073_seg_001": 3215,
+    "trip_0074_seg_001": 2876,
+    "trip_0075_seg_001": 3255,
+    "trip_0076_seg_001": 3739,
+    "trip_0077_seg_001": 2859,
+    "trip_0078_seg_001": 1836,
+    "trip_0079_seg_001": 2,
+    "trip_0079_seg_002": 544,
+    "trip_0079_seg_003": 7385,
+    "trip_0080_seg_001": 6523,
+    "trip_0081_seg_001": 1128
+  },
+  "train_trips": {
+    "trip_0051": [
+      "trip_0051_seg_001"
+    ],
+    "trip_0065": [
+      "trip_0065_seg_001"
+    ],
+    "trip_0025": [
+      "trip_0025_seg_001"
+    ],
+    "trip_0052": [
+      "trip_0052_seg_001"
+    ],
+    "trip_0032": [
+      "trip_0032_seg_001"
+    ],
+    "trip_0057": [
+      "trip_0057_seg_001"
+    ],
+    "trip_0009": [
+      "trip_0009_seg_001"
+    ],
+    "trip_0048": [
+      "trip_0048_seg_001"
+    ],
+    "trip_0059": [
+      "trip_0059_seg_001"
+    ],
+    "trip_0041": [
+      "trip_0041_seg_001"
+    ],
+    "trip_0017": [
+      "trip_0017_seg_001"
+    ],
+    "trip_0074": [
+      "trip_0074_seg_001"
+    ],
+    "trip_0061": [
+      "trip_0061_seg_001"
+    ],
+    "trip_0040": [
+      "trip_0040_seg_001"
+    ],
+    "trip_0044": [
+      "trip_0044_seg_001"
+    ],
+    "trip_0064": [
+      "trip_0064_seg_001"
+    ],
+    "trip_0027": [
+      "trip_0027_seg_001"
+    ],
+    "trip_0058": [
+      "trip_0058_seg_001"
+    ],
+    "trip_0078": [
+      "trip_0078_seg_001"
+    ],
+    "trip_0002": [
+      "trip_0002_seg_001"
+    ],
+    "trip_0072": [
+      "trip_0072_seg_001"
+    ],
+    "trip_0055": [
+      "trip_0055_seg_001"
+    ],
+    "trip_0020": [
+      "trip_0020_seg_001"
+    ],
+    "trip_0069": [
+      "trip_0069_seg_001"
+    ],
+    "trip_0021": [
+      "trip_0021_seg_001"
+    ],
+    "trip_0022": [
+      "trip_0022_seg_001"
+    ],
+    "trip_0045": [
+      "trip_0045_seg_001",
+      "trip_0045_seg_002"
+    ],
+    "trip_0049": [
+      "trip_0049_seg_001"
+    ],
+    "trip_0035": [
+      "trip_0035_seg_001"
+    ],
+    "trip_0063": [
+      "trip_0063_seg_001"
+    ],
+    "trip_0034": [
+      "trip_0034_seg_001"
+    ],
+    "trip_0008": [
+      "trip_0008_seg_005"
+    ],
+    "trip_0067": [
+      "trip_0067_seg_002"
+    ],
+    "trip_0003": [
+      "trip_0003_seg_001"
+    ],
+    "trip_0018": [
+      "trip_0018_seg_001"
+    ],
+    "trip_0038": [
+      "trip_0038_seg_001"
+    ],
+    "trip_0024": [
+      "trip_0024_seg_001"
+    ],
+    "trip_0042": [
+      "trip_0042_seg_001"
+    ],
+    "trip_0026": [
+      "trip_0026_seg_001"
+    ],
+    "trip_0006": [
+      "trip_0006_seg_001"
+    ],
+    "trip_0007": [
+      "trip_0007_seg_001"
+    ],
+    "trip_0062": [
+      "trip_0062_seg_001"
+    ],
+    "trip_0075": [
+      "trip_0075_seg_001"
+    ],
+    "trip_0010": [
+      "trip_0010_seg_001"
+    ],
+    "trip_0054": [
+      "trip_0054_seg_001"
+    ],
+    "trip_0023": [
+      "trip_0023_seg_001",
+      "trip_0023_seg_002"
+    ],
+    "trip_0068": [
+      "trip_0068_seg_001"
+    ],
+    "trip_0060": [
+      "trip_0060_seg_001"
+    ],
+    "trip_0011": [
+      "trip_0011_seg_001"
+    ],
+    "trip_0050": [
+      "trip_0050_seg_001"
+    ],
+    "trip_0001": [
+      "trip_0001_seg_001"
+    ],
+    "trip_0053": [
+      "trip_0053_seg_002"
+    ],
+    "trip_0076": [
+      "trip_0076_seg_001"
+    ],
+    "trip_0039": [
+      "trip_0039_seg_001"
+    ],
+    "trip_0077": [
+      "trip_0077_seg_001"
+    ],
+    "trip_0081": [
+      "trip_0081_seg_001"
+    ],
+    "trip_0028": [
+      "trip_0028_seg_001"
+    ],
+    "trip_0036": [
+      "trip_0036_seg_001"
+    ],
+    "trip_0046": [
+      "trip_0046_seg_001"
+    ],
+    "trip_0043": [
+      "trip_0043_seg_001"
+    ],
+    "trip_0047": [
+      "trip_0047_seg_001"
+    ],
+    "trip_0013": [
+      "trip_0013_seg_012"
+    ],
+    "trip_0079": [
+      "trip_0079_seg_003"
+    ],
+    "trip_0070": [
+      "trip_0070_seg_001"
+    ]
+  },
+  "validation_trips": {
+    "trip_0066": [
+      "trip_0066_seg_001"
+    ],
+    "trip_0031": [
+      "trip_0031_seg_001"
+    ],
+    "trip_0029": [
+      "trip_0029_seg_001"
+    ],
+    "trip_0073": [
+      "trip_0073_seg_001"
+    ],
+    "trip_0080": [
+      "trip_0080_seg_001"
+    ],
+    "trip_0005": [
+      "trip_0005_seg_001"
+    ],
+    "trip_0056": [
+      "trip_0056_seg_001"
+    ],
+    "trip_0012": [
+      "trip_0012_seg_001"
+    ],
+    "trip_0071": [
+      "trip_0071_seg_001"
+    ],
+    "trip_0014": [
+      "trip_0014_seg_001"
+    ],
+    "trip_0019": [
+      "trip_0019_seg_001"
+    ],
+    "trip_0030": [
+      "trip_0030_seg_001"
+    ],
+    "trip_0033": [
+      "trip_0033_seg_001"
+    ],
+    "trip_0037": [
+      "trip_0037_seg_001"
+    ],
+    "trip_0004": [
+      "trip_0004_seg_001"
+    ],
+    "trip_0016": [
+      "trip_0016_seg_002",
+      "trip_0016_seg_003"
+    ]
+  },
+  "excluded_segments": [
+    {
+      "trip_id": "trip_0008",
+      "segment_id": "trip_0008_seg_001",
+      "rows": 515,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0008",
+      "segment_id": "trip_0008_seg_002",
+      "rows": 3,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0008",
+      "segment_id": "trip_0008_seg_003",
+      "rows": 2,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0008",
+      "segment_id": "trip_0008_seg_004",
+      "rows": 5,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0008",
+      "segment_id": "trip_0008_seg_006",
+      "rows": 5,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0008",
+      "segment_id": "trip_0008_seg_007",
+      "rows": 1,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0008",
+      "segment_id": "trip_0008_seg_008",
+      "rows": 2,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0008",
+      "segment_id": "trip_0008_seg_009",
+      "rows": 1,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0013",
+      "segment_id": "trip_0013_seg_001",
+      "rows": 32,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0013",
+      "segment_id": "trip_0013_seg_002",
+      "rows": 34,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0013",
+      "segment_id": "trip_0013_seg_003",
+      "rows": 37,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0013",
+      "segment_id": "trip_0013_seg_004",
+      "rows": 4,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0013",
+      "segment_id": "trip_0013_seg_005",
+      "rows": 1,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0013",
+      "segment_id": "trip_0013_seg_006",
+      "rows": 9,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0013",
+      "segment_id": "trip_0013_seg_007",
+      "rows": 2,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0013",
+      "segment_id": "trip_0013_seg_008",
+      "rows": 15,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0013",
+      "segment_id": "trip_0013_seg_009",
+      "rows": 2,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0013",
+      "segment_id": "trip_0013_seg_010",
+      "rows": 12,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0013",
+      "segment_id": "trip_0013_seg_011",
+      "rows": 9,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0013",
+      "segment_id": "trip_0013_seg_013",
+      "rows": 6,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0015",
+      "segment_id": "trip_0015_seg_001",
+      "rows": 593,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0015",
+      "segment_id": "trip_0015_seg_002",
+      "rows": 1,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0015",
+      "segment_id": "trip_0015_seg_003",
+      "rows": 3,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0015",
+      "segment_id": "trip_0015_seg_004",
+      "rows": 2,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0015",
+      "segment_id": "trip_0015_seg_005",
+      "rows": 1,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0015",
+      "segment_id": "trip_0015_seg_006",
+      "rows": 1,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0015",
+      "segment_id": "trip_0015_seg_007",
+      "rows": 1,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0016",
+      "segment_id": "trip_0016_seg_001",
+      "rows": 689,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0045",
+      "segment_id": "trip_0045_seg_003",
+      "rows": 2,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0053",
+      "segment_id": "trip_0053_seg_001",
+      "rows": 1,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0053",
+      "segment_id": "trip_0053_seg_003",
+      "rows": 1,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0057",
+      "segment_id": "trip_0057_seg_002",
+      "rows": 6,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0067",
+      "segment_id": "trip_0067_seg_001",
+      "rows": 239,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0079",
+      "segment_id": "trip_0079_seg_001",
+      "rows": 2,
+      "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0079",
+      "segment_id": "trip_0079_seg_002",
+      "rows": 544,
+      "reason": "below minimum length 700"
+    }
+  ]
+}
