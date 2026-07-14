@@ -28,7 +28,10 @@
     "recommended_action": [
       "Monitor the coolant level.",
       "Schedule a routine inspection."
-    ]
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T11:00:00Z",
@@ -59,7 +62,10 @@
     "recommended_action": [
       "Check the air filter.",
       "Monitor for changes."
-    ]
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T10:00:00Z",
@@ -90,6 +96,9 @@
     "recommended_action": [
       "Monitor fuel system performance.",
       "Schedule inspection if issue persists."
-    ]
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
   }
 ]

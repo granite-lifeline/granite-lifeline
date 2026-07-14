@@ -1,0 +1,94 @@
+{
+  "schema_version": "3.0(07-13)",
+  "row_count": 249694,
+  "baseline_filters": {
+    "base": {
+      "condition_confidence": "high",
+      "engine_on_flag": 1,
+      "thermal_state": "not unknown",
+      "child_state": "not unknown",
+      "count": 240903
+    }
+  },
+  "missing_value_policy": {
+    "fit": "drop rows when target or any model input is NaN",
+    "predict": "return NaN when any model input is NaN",
+    "imputation": "none"
+  },
+  "winsorize": {
+    "lower_quantile": 0.01,
+    "upper_quantile": 0.99,
+    "scope": "computed on each model training set and reused for prediction"
+  },
+  "standardization_parameters": {
+    "maf_map_cohesion": {
+      "selected_level": "golden_post_warmup_steady_driving",
+      "minimum_reference_rows": 100,
+      "count": 78707,
+      "diagnostics": [
+        {
+          "level": "golden_post_warmup_steady_driving",
+          "count": 78707,
+          "maf_std": 0.2916226568211772,
+          "map_std": 296.49101883086706,
+          "usable": true
+        }
+      ],
+      "maf_derived_air_load_raw": {
+        "mean": 0.8094907348647515,
+        "std": 0.2916226568211772
+      },
+      "map_derived_air_load_raw": {
+        "mean": 786.3370559388745,
+        "std": 296.49101883086706
+      }
+    }
+  },
+  "models": {
+    "speed_density_model": {
+      "model_type": "linear_regression",
+      "target": "maf",
+      "input_features": [
+        "map_derived_air_load_raw",
+        "map",
+        "rpm",
+        "intake_temp"
+      ],
+      "coefficients": {
+        "map_derived_air_load_raw": 0.023778032668470294,
+        "map": 0.14127609145896305,
+        "rpm": 6.690047685838753e-05,
+        "intake_temp": 0.07101467711912292
+      },
+      "intercept": -14.688826051927967,
+      "winsorize_bounds": {
+        "map_derived_air_load_raw": {
+          "lower": 293.93209175000004,
+          "upper": 1516.36693525
+        },
+        "map": {
+          "lower": 94.0,
+          "upper": 203.0
+        },
+        "rpm": {
+          "lower": 877.0,
+          "upper": 2205.0
+        },
+        "intake_temp": {
+          "lower": -8.0,
+          "upper": 40.0
+        },
+        "maf": {
+          "lower": 7.83,
+          "upper": 57.19
+        }
+      },
+      "metrics": {
+        "mae": 2.60680273672388,
+        "r2": 0.8663540114932885
+      },
+      "training_row_count": 88376,
+      "fit_scope": "steady_driving_high_confidence_engine_running"
+    }
+  }
+}

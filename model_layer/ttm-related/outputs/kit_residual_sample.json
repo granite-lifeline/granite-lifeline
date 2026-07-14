@@ -1,55 +1,58 @@
 {
-  "timestamp": "2026-01-01T07:16:42Z",
-  "anomaly_type": "air_intake_maf_anomaly",
-  "risk_score": 0.3046,
-  "risk_level": "Medium",
-  "component": "air_intake_maf_anomaly",
-  "prediction_confidence": 0.8948,
+  "timestamp": "2017-07-05T05:26:37Z",
+  "anomaly_type": "cooling_degradation",
+  "risk_score": 1.0,
+  "risk_level": "High",
+  "component": "cooling_degradation",
+  "prediction_confidence": 0.6534,
   "key_signals": [
     {
-      "feature": "maf",
-      "value": 15.4792,
-      "unit": "g/s",
-      "reference_range": [
-        2,
-        25
-      ]
-    },
-    {
-      "feature": "map",
-      "value": 107.3846,
-      "unit": "kPa",
-      "reference_range": [
-        20,
-        100
-      ]
-    },
-    {
-      "feature": "maf_map_cohesion",
-      "value": 0.1536,
-      "unit": "ratio",
-      "reference_range": [
-        0.1,
-        0.3
-      ]
-    },
-    {
-      "feature": "speed",
-      "value": 84.2308,
-      "unit": "km/h",
-      "reference_range": [
-        0,
-        120
-      ]
-    },
-    {
       "feature": "coolant_temp",
-      "value": 58.0,
+      "value": 80.0,
       "unit": "°C",
       "reference_range": [
         90,
         95
       ]
+    },
+    {
+      "feature": "coolant_slope",
+      "value": 0.0729,
+      "unit": "°C/s",
+      "reference_range": [
+        0,
+        0.0333
+      ]
+    },
+    {
+      "feature": "coolant_stability",
+      "value": 1.3208,
+      "unit": "°C",
+      "reference_range": [
+        0,
+        2
+      ]
+    },
+    {
+      "feature": "speed",
+      "value": 85.0,
+      "unit": "km/h",
+      "reference_range": [
+        0,
+        218
+      ]
+    },
+    {
+      "feature": "rpm",
+      "value": 1443.0,
+      "unit": "RPM",
+      "reference_range": [
+        0,
+        3682
+      ]
     }
-  ]
+  ],
+  "estimated_cycles_to_failure": null,
+  "estimated_failure_probability": null,
+  "notes": []
 }

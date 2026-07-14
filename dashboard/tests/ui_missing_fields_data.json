@@ -25,7 +25,10 @@
     "possible_cause": "This test item is missing risk_level and anomaly_description so the UI can show placeholder text.",
     "recommended_action": [
       "Check that the UI still renders the report card."
-    ]
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T11:00:00Z",
@@ -36,7 +39,10 @@
     "risk_history": [],
     "anomaly_description": "",
     "possible_cause": "",
-    "recommended_action": []
+    "recommended_action": [],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "risk_score": 0.22,
@@ -58,6 +64,9 @@
       }
     ],
     "anomaly_description": "This test item is missing timestamp, possible_cause, and recommended_action.",
-    "recommended_action": ""
+    "recommended_action": "",
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
   }
 ]

@@ -2,7 +2,7 @@
 
 **Owner:** Report Team  
 **Status:** Active Development  
-**Last Updated:** 2026-06-23
+**Last Updated:** 2026-07-13
 
 ---
 
@@ -20,6 +20,7 @@ Data Layer → Model Layer → Report Layer → Dashboard
 - **Component Details**: Drill-down pages with metrics and interactive trend charts
 - **Risk Score Trends**: Plotly-powered visualizations showing risk progression over time
 - **Theme Support**: Light/dark mode toggle with an IBM Carbon-inspired "Pro" design
+- **Interface v0.7 Data Loading**: Loads ReportLayerOutput-shaped JSON, including failure prediction fields and Model Layer notes
 - **Responsive Design**: Optimized for desktop viewing (mobile optimization planned)
 
 ---
@@ -35,14 +36,17 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | Risk Score Trend Chart | GL-42 | Interactive Plotly line chart with theme support |
 | Theme Toggle | GL-40 | Light/dark mode with Pro (IBM Carbon-inspired) aesthetics |
 | Team Footer | - | Team attribution footer |
+| Diagnostic Report Display | GL-41 | anomaly_description, possible_cause, recommended_action cards |
+| Key Signals Table | GL-41 | ABNORMAL/NORMAL signal rows with reference range |
+| Report Layer Integration | GL-41 | Loads ReportLayerOutput via data_loader.py; MOCK_DATA_FALLBACK retained |
+| Failure Prediction Data Support | GL-198 | Loads estimated_failure_probability, estimated_cycles_to_failure, notes from INTERFACE.md v0.7 test data |
+| Seven-Type Component Display Mapping | GL-198 | Maps all 7 anomaly types to owner-friendly display names; legacy cooling_system_stress alias retained |
 
 ### [PLANNED]
 
 | Feature | Priority | Description |
 |---------|----------|-------------|
-| Diagnostic Report Display | P0 | Show anomaly_description, possible_cause, recommended_action |
-| Key Signals Table | P0 | Display key_signals with ABNORMAL/NORMAL indicators |
-| Report Layer Integration | P0 | Consume ReportLayerOutput instead of MOCK_DATA |
+| Failure Prediction UI Display | P0 | Add visible cards/labels for estimated_failure_probability, estimated_cycles_to_failure, and notes |
 | Mobile Optimization | P1 | Responsive design for mobile devices |
 | PDF Export | P2 | Download reports and charts |
 | 3D Component Visualization | P3 | Interactive 3D car model with component highlighting |
@@ -62,10 +66,12 @@ Dashboard consumes:
     - key_signals
     - anomaly_description, possible_cause, recommended_action
     - risk_history (for trend chart)
+    - estimated_failure_probability, estimated_cycles_to_failure
+    - notes
     ↓
 Renders:
     - Overview Page (component cards)
-    - Detail Page (metrics + trend chart + reports)
+    - Detail Page (metrics + trend chart + signals + report)
 ```
 
 ### Technology Stack
@@ -83,10 +89,14 @@ Renders:
 
 ```
 dashboard/
-├── app.py              # Main Streamlit application
-├── tests/              # Unit tests (planned)
-│   └── .gitkeep
-└── README.md           # This file
+├── app.py                  # Main Streamlit application
+├── anomaly_display.py      # Component/signal display name mappings
+├── data_loader.py          # JSON → component-keyed dict loader
+├── assets/                 # Static assets
+├── DATA_INTEGRATION.md     # Data contract and field documentation
+├── tests/
+│   └── ui_required_data.json   # INTERFACE.md v0.7-shaped sample data
+└── README.md               # This file
 ```
 
 ---
@@ -156,7 +166,7 @@ streamlit run dashboard/app.py --server.runOnSave true
   team attribution
 
 **Design Principles:**
-- Non-technical language (no jargon like "cooling_system_stress")
+- Non-technical language (no raw anomaly IDs in owner-facing labels)
 - Color-coded risk levels (red/orange/green)
 - Large, readable fonts (IBM Plex Sans family)
 - Minimal cognitive load
@@ -227,25 +237,39 @@ Theme state is stored in `st.session_state["dark_mode"]` and persists across pag
 
 ### Data Structure
 
-The dashboard currently uses `MOCK_DATA` for development. Production integration will consume `ReportLayerOutput` from the Report Layer.
+The dashboard loads `ReportLayerOutput` JSON via `data_loader.py`. A
+`MOCK_DATA_FALLBACK` dict is retained in `app.py` for offline development.
 
-**Current Mock Data Schema:**
+**Live Data Schema (INTERFACE.md v0.7):**
 ```python
-MOCK_DATA = {
-    "component_key": {
-        "display_name": str,        # User-friendly name
-        "risk_level": str,          # "High" | "Medium" | "Low"
-        "risk_score": float,        # 0.0 - 1.0
-        "trend": List[float],       # Historical risk scores (last 5)
-        "key_signals": List[dict]   # Signal details
-    }
+{
+    "timestamp": str,                       # ISO 8601
+    "risk_score": float,                    # 0.0–1.0
+    "risk_level": str,                      # "Low" | "Medium" | "High"
+    "component": str,                       # Component identifier
+    "prediction_confidence": float,         # 0.0–1.0
+    "key_signals": List[dict],              # feature, value, unit, reference_range
+    "risk_history": List[dict],             # timestamp + risk_score entries
+    "anomaly_description": str,             # Granite LLM generated
+    "possible_cause": str,                  # Granite LLM generated
+    "recommended_action": List[str],        # Granite LLM generated
+    "estimated_failure_probability": float | None,  # Model Layer, may be null
+    "estimated_cycles_to_failure": int | None,      # Model Layer, may be null
+    "notes": List[str],                     # Model Layer validation messages
 }
 ```
 
 **Supported Components:**
-- `cooling_system_stress` → "Cooling System"
+- `cooling_degradation` → "Cooling System"
 - `air_intake_maf_anomaly` → "Air Intake System"
 - `accelerator_pedal_sensor` → "Accelerator Pedal"
+- `intake_air_temperature_sensor_or_heat_soak_fault` → "Intake Air Temperature"
+- `map_load_signal_plausibility_fault` → "MAP Load Signal"
+- `electronic_throttle_tracking_fault` → "Electronic Throttle"
+- `idle_speed_control_or_surge_degradation` → "Idle Speed Control"
+
+`cooling_system_stress` is retained as a legacy alias for older dashboard
+test data and is displayed as "Cooling System".
 
 ### Page Routing
 
@@ -310,30 +334,29 @@ Before committing dashboard changes:
 
 ## Integration with Report Layer
 
-### Current Status: Mock Data
+### Current Status: Live Data via data_loader.py
 
-The dashboard currently uses hardcoded `MOCK_DATA` for development and UI testing.
+The dashboard loads `ReportLayerOutput`-shaped JSON at startup via
+`load_dashboard_data()` in `data_loader.py`. The data file path defaults to
+`dashboard/tests/ui_required_data.json` and can be overridden with the
+`DASHBOARD_TEST_DATA` environment variable.
 
 ### Planned Integration
 
-The dashboard will consume `ReportLayerOutput` from the Report Layer:
+When the Report Layer pipeline is complete, point the dashboard at its output:
 
 ```python
-from report_layer import generate_report
-from shared.interface_models import ReportLayerOutput
-
-# Get report for a component
-report: ReportLayerOutput = generate_report(model_output)
-
-# Display in dashboard
-display_component_detail(report)
+# Set env var before starting Streamlit
+DASHBOARD_TEST_DATA=data/processed/latest_report.json streamlit run dashboard/app.py
 ```
 
-**Required Fields from ReportLayerOutput:**
+**Consumed Fields from ReportLayerOutput (INTERFACE.md v0.7):**
 - `timestamp`, `risk_score`, `risk_level`, `component`
 - `prediction_confidence`, `key_signals`
 - `anomaly_description`, `possible_cause`, `recommended_action`
-- `risk_history` (for trend chart)
+- `risk_history` (trend chart)
+- `estimated_failure_probability`, `estimated_cycles_to_failure`
+- `notes`
 
 See `docs/INTERFACE.md` Section 3 for complete field definitions.
 
@@ -343,19 +366,15 @@ See `docs/INTERFACE.md` Section 3 for complete field definitions.
 
 ### Current Limitations
 
-1. **Mock Data Only**: Not yet integrated with Report Layer
-2. **No Diagnostic Reports**: anomaly_description, possible_cause, recommended_action not displayed
-3. **No Key Signals Table**: key_signals not shown in detail page
-4. **Fixed Components**: Only 3 component types supported
-5. **No Export**: Cannot download reports or charts
-6. **Desktop-First**: Mobile experience needs optimization
-7. **No Persistence**: Risk history not stored between sessions
+1. **Failure Prediction UI**: estimated_failure_probability, estimated_cycles_to_failure, and notes are loaded but do not yet have dedicated visible cards in the detail page.
+2. **Partial Real Data**: test JSON currently contains full sample reports for the main 3 components; other anomaly types appear as UI placeholders unless data is provided.
+3. **No Export**: Cannot download reports or charts.
+4. **Desktop-First**: Mobile experience needs optimization.
+5. **No Persistence**: Risk history is read from loaded JSON and is not stored between dashboard sessions.
 
 ### Planned Improvements
 
-- Report Layer integration (consume ReportLayerOutput)
-- Display diagnostic report sections
-- Key signals table with ABNORMAL/NORMAL indicators
+- Display failure prediction fields in dedicated detail-page UI cards
 - Mobile-responsive improvements
 - PDF export functionality
 - Accessibility enhancements (WCAG 2.1 AA)
@@ -393,7 +412,7 @@ pip install -r requirements.txt
 **Issue:** Shows "Not enough data yet to show a trend."
 
 **Solution:**
-- Verify `component_data["trend"]` has at least 2 data points
+- Verify `component_data["risk_history"]` has at least 2 data points
 - Check browser console for Plotly errors
 - Ensure `plotly` is installed: `pip install plotly`
 
@@ -415,7 +434,7 @@ streamlit run dashboard/app.py --server.port 8502
 **Issue:** "Component not found" error on detail page
 
 **Solution:**
-- Verify component key exists in MOCK_DATA
+- Verify component key exists in loaded report data or in `anomaly_display.py`
 - Check `st.session_state["selected_component"]` value
 - Clear session state: Stop and restart Streamlit
 

@@ -103,22 +103,28 @@ class OBDDataSimulator:
 
         return df
 
-    def generate_vacuum_leak(self):
-        """Generate vacuum leak pattern"""
+    def generate_air_intake_maf_anomaly(self, variant="low_maf"):
+        """Generate air_intake_maf_anomaly patterns (INTERFACE.md enum).
+
+        variant="low_maf" (was generate_intake_blockage):
+            MAF reads 30% low for the given MAP — dirty air
+            filter / MAF sensor drift. Story 7 `maf x 0.7`
+            scenario.
+        variant="map_bias" (was generate_vacuum_leak):
+            MAP 30% high with throttle 30% low — vacuum-leak
+            style plausibility fault.
+        """
         df = self.generate_normal_sequence()
 
-        # MAP is higher than normal while throttle is low
-        df['map'] *= 1.3   # 30% higher MAP
-        df['tps'] *= 0.7   # 30% lower throttle
-
-        return df
-
-    def generate_intake_blockage(self):
-        """Generate intake blockage pattern (dirty air filter)"""
-        df = self.generate_normal_sequence()
-
-        # MAF is lower than expected for given MAP
-        df['maf'] *= 0.7  # 30% lower MAF
+        if variant == "low_maf":
+            # MAF is lower than expected for given MAP
+            df['maf'] *= 0.7  # 30% lower MAF
+        elif variant == "map_bias":
+            # MAP is higher than normal while throttle is low
+            df['map'] *= 1.3   # 30% higher MAP
+            df['tps'] *= 0.7   # 30% lower throttle
+        else:
+            raise ValueError(f"Unknown variant: {variant}")
 
         return df
 
@@ -146,15 +152,15 @@ if __name__ == "__main__":
 
     normal = simulator.generate_normal_sequence()
     cooling = simulator.generate_cooling_degradation()
-    vacuum = simulator.generate_vacuum_leak()
-    intake = simulator.generate_intake_blockage()
+    maf_low = simulator.generate_air_intake_maf_anomaly("low_maf")
+    map_bias = simulator.generate_air_intake_maf_anomaly("map_bias")
     pedal = simulator.generate_pedal_sensor_fault()
 
     print("\nGenerated 5 sequences:")
     print(f"   - Normal: {len(normal)} samples")
     print(f"   - Cooling degradation: {len(cooling)} samples")
-    print(f"   - Vacuum leak: {len(vacuum)} samples")
-    print(f"   - Intake blockage: {len(intake)} samples")
+    print(f"   - MAF anomaly (low_maf): {len(maf_low)} samples")
+    print(f"   - MAF anomaly (map_bias): {len(map_bias)} samples")
     print(f"   - Pedal sensor fault: {len(pedal)} samples")
 
     print("\nNormal sequence stats:")

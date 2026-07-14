@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-06-20T14:32:15Z",
+  "anomaly_type": "cooling_degradation",
+  "risk_score": 0.82,
+  "risk_level": "High",
+  "component": "cooling_degradation",
+  "prediction_confidence": 0.87,
+  "key_signals": [
+    {
+      "feature": "coolant_temp",
+      "value": 102.0,
+      "unit": "°C",
+      "reference_range": [90.0, 95.0]
+    }
+  ]
+}
