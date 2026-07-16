@@ -10,13 +10,19 @@
         "feature": "coolant_temp",
         "value": 104.0,
         "unit": "°C",
-        "reference_range": [90.0, 95.0]
+        "reference_range": [
+          90.0,
+          95.0
+        ]
       },
       {
         "feature": "coolant_slope",
         "value": 3.4,
         "unit": "°C/min",
-        "reference_range": [0.0, 2.0]
+        "reference_range": [
+          0.0,
+          2.0
+        ]
       }
     ],
     "risk_history": [
@@ -34,7 +40,7 @@
       },
       {
         "timestamp": "2026-06-16T08:00:00Z",
-        "risk_score": 0.70
+        "risk_score": 0.7
       },
       {
         "timestamp": "2026-06-16T12:00:00Z",
@@ -48,9 +54,12 @@
       "Check the coolant level when the engine is cool.",
       "Ask a mechanic to inspect the cooling system as soon as possible."
     ],
-    "estimated_cycles_to_failure": null,
-    "estimated_failure_probability": null,
-    "notes": []
+    "estimated_cycles_to_failure": 15,
+    "estimated_failure_probability": 0.72,
+    "notes": [
+      "Coolant readings include repaired sensor gaps from the latest drive cycle.",
+      "Failure estimate may become more stable after more drive cycles."
+    ]
   },
   {
     "timestamp": "2026-06-16T11:00:00Z",
@@ -63,19 +72,25 @@
         "feature": "maf",
         "value": 28.5,
         "unit": "g/s",
-        "reference_range": [10.0, 22.0]
+        "reference_range": [
+          10.0,
+          22.0
+        ]
       },
       {
         "feature": "map",
         "value": 82.0,
         "unit": "kPa",
-        "reference_range": [60.0, 90.0]
+        "reference_range": [
+          60.0,
+          90.0
+        ]
       }
     ],
     "risk_history": [
       {
         "timestamp": "2026-06-15T07:00:00Z",
-        "risk_score": 0.30
+        "risk_score": 0.3
       },
       {
         "timestamp": "2026-06-15T11:00:00Z",
@@ -83,7 +98,7 @@
       },
       {
         "timestamp": "2026-06-15T15:00:00Z",
-        "risk_score": 0.40
+        "risk_score": 0.4
       },
       {
         "timestamp": "2026-06-16T07:00:00Z",
@@ -116,13 +131,19 @@
         "feature": "accel_pedal_d",
         "value": 35.0,
         "unit": "%",
-        "reference_range": [0.0, 100.0]
+        "reference_range": [
+          0.0,
+          100.0
+        ]
       },
       {
         "feature": "accel_pedal_e",
         "value": 37.5,
         "unit": "%",
-        "reference_range": [0.0, 100.0]
+        "reference_range": [
+          0.0,
+          100.0
+        ]
       }
     ],
     "risk_history": [
@@ -136,11 +157,11 @@
       },
       {
         "timestamp": "2026-06-15T14:00:00Z",
-        "risk_score": 0.20
+        "risk_score": 0.2
       },
       {
         "timestamp": "2026-06-16T06:00:00Z",
-        "risk_score": 0.20
+        "risk_score": 0.2
       },
       {
         "timestamp": "2026-06-16T10:00:00Z",

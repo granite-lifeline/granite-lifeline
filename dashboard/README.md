@@ -40,13 +40,13 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | Key Signals Table | GL-41 | ABNORMAL/NORMAL signal rows with reference range |
 | Report Layer Integration | GL-41 | Loads ReportLayerOutput via data_loader.py; MOCK_DATA_FALLBACK retained |
 | Failure Prediction Data Support | GL-198 | Loads estimated_failure_probability, estimated_cycles_to_failure, notes from INTERFACE.md v0.7 test data |
+| Failure Prediction UI Display | GL-278/GL-280 | Shows failure probability card and Data Quality Notes on the detail page |
 | Six-Type Component Display Mapping | GL-273 | Maps all 6 current anomaly types to owner-friendly display names; legacy cooling_system_stress alias retained |
 
 ### [PLANNED]
 
 | Feature | Priority | Description |
 |---------|----------|-------------|
-| Failure Prediction UI Display | P0 | Add visible cards/labels for estimated_failure_probability, estimated_cycles_to_failure, and notes |
 | Mobile Optimization | P1 | Responsive design for mobile devices |
 | PDF Export | P2 | Download reports and charts |
 | 3D Component Visualization | P3 | Interactive 3D car model with component highlighting |
@@ -365,15 +365,13 @@ See `docs/INTERFACE.md` Section 3 for complete field definitions.
 
 ### Current Limitations
 
-1. **Failure Prediction UI**: estimated_failure_probability, estimated_cycles_to_failure, and notes are loaded but do not yet have dedicated visible cards in the detail page.
-2. **Partial Real Data**: test JSON currently contains full sample reports for the main 3 components; other anomaly types appear as UI placeholders unless data is provided.
-3. **No Export**: Cannot download reports or charts.
-4. **Desktop-First**: Mobile experience needs optimization.
-5. **No Persistence**: Risk history is read from loaded JSON and is not stored between dashboard sessions.
+1. **Partial Real Data**: test JSON currently contains full sample reports for the main 3 components; other anomaly types appear as UI placeholders unless data is provided.
+2. **No Export**: Cannot download reports or charts.
+3. **Desktop-First**: Mobile experience needs optimization.
+4. **No Persistence**: Risk history is read from loaded JSON and is not stored between dashboard sessions.
 
 ### Planned Improvements
 
-- Display failure prediction fields in dedicated detail-page UI cards
 - Mobile-responsive improvements
 - PDF export functionality
 - Accessibility enhancements (WCAG 2.1 AA)
