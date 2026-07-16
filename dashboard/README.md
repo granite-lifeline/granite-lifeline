@@ -40,7 +40,7 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | Key Signals Table | GL-41 | ABNORMAL/NORMAL signal rows with reference range |
 | Report Layer Integration | GL-41 | Loads ReportLayerOutput via data_loader.py; MOCK_DATA_FALLBACK retained |
 | Failure Prediction Data Support | GL-198 | Loads estimated_failure_probability, estimated_cycles_to_failure, notes from INTERFACE.md v0.7 test data |
-| Seven-Type Component Display Mapping | GL-198 | Maps all 7 anomaly types to owner-friendly display names; legacy cooling_system_stress alias retained |
+| Six-Type Component Display Mapping | GL-273 | Maps all 6 current anomaly types to owner-friendly display names; legacy cooling_system_stress alias retained |
 
 ### [PLANNED]
 
@@ -265,7 +265,6 @@ The dashboard loads `ReportLayerOutput` JSON via `data_loader.py`. A
 - `accelerator_pedal_sensor` → "Accelerator Pedal"
 - `intake_air_temperature_sensor_or_heat_soak_fault` → "Intake Air Temperature"
 - `map_load_signal_plausibility_fault` → "MAP Load Signal"
-- `electronic_throttle_tracking_fault` → "Electronic Throttle"
 - `idle_speed_control_or_surge_degradation` → "Idle Speed Control"
 
 `cooling_system_stress` is retained as a legacy alias for older dashboard
