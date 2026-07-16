@@ -80,6 +80,8 @@ def test_load_dashboard_data():
     assert "anomaly_description" in cooling
     assert "possible_cause" in cooling
     assert "recommended_action" in cooling
+    assert cooling["estimated_failure_probability"] == 0.72
+    assert cooling["estimated_cycles_to_failure"] == 15
 
 
 def test_report_data_interface_compliance():
@@ -96,7 +98,10 @@ def test_report_data_interface_compliance():
         "risk_history",
         "anomaly_description",
         "possible_cause",
-        "recommended_action"
+        "recommended_action",
+        "estimated_cycles_to_failure",
+        "estimated_failure_probability",
+        "notes",
     ]
 
     for component_data in data.values():
@@ -118,3 +123,8 @@ def test_report_data_interface_compliance():
 
         # Verify recommended_action is a list
         assert isinstance(component_data["recommended_action"], list)
+
+        # Verify future Failure Prediction UI fields are passed through
+        assert "estimated_cycles_to_failure" in component_data
+        assert "estimated_failure_probability" in component_data
+        assert isinstance(component_data["notes"], list)

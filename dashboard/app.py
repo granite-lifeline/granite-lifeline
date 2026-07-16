@@ -20,6 +20,7 @@ from anomaly_display import (
     LEGACY_COMPONENT_ALIASES,
 )
 from data_loader import load_dashboard_data
+from failure_prediction import format_failure_prediction_text
 
 SIGNAL_DISPLAY_NAMES = {
     "coolant_temp": "Coolant Temperature",
@@ -538,6 +539,56 @@ def show_icon_heading(
         f'{confidence_badge_html}</div>'
     )
     st.markdown(heading_html, unsafe_allow_html=True)
+
+
+def show_failure_prediction_card(component_data: dict, tokens: dict):
+    """Display the failure prediction card below the diagnostic report."""
+    prediction_text, has_value = format_failure_prediction_text(component_data)
+    icon_color = tokens["accent"] if has_value else tokens["text_secondary"]
+    text_color = tokens["text"] if has_value else tokens["text_secondary"]
+    border_color = (
+        hex_to_rgba(tokens["accent"], 0.32)
+        if has_value else tokens["glass_border"]
+    )
+    card_icon = lucide_icon("trending-up", size=22, color=icon_color)
+
+    card_html = f"""
+    <div style="
+        background: {tokens["glass_surface"]};
+        backdrop-filter: blur(24px) saturate(160%);
+        -webkit-backdrop-filter: blur(24px) saturate(160%);
+        border: 1px solid {border_color};
+        border-radius: 16px;
+        padding: 18px 22px;
+        margin: 18px auto 0 auto;
+        box-shadow:
+            0 8px 28px {tokens["shadow"]},
+            inset 0 1px 0 rgba(255, 255, 255, 0.10);
+        max-width: 760px;
+    ">
+        <div style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: {tokens["text"]};
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 8px;
+        ">
+            {card_icon}Failure Prediction
+        </div>
+        <div style="
+            color: {text_color};
+            font-size: 15px;
+            line-height: 1.55;
+            text-align: center;
+        ">
+            {prediction_text}
+        </div>
+    </div>
+    """
+    st.markdown(card_html, unsafe_allow_html=True)
 
 
 def apply_theme(dark_mode: bool):
@@ -1938,6 +1989,8 @@ def render_component_detail(
         </div>
         """
         st.markdown(card_html, unsafe_allow_html=True)
+
+    show_failure_prediction_card(component_data, tokens)
 
 
 def show_detail_page():

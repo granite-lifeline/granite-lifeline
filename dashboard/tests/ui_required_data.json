@@ -48,8 +48,8 @@
       "Check the coolant level when the engine is cool.",
       "Ask a mechanic to inspect the cooling system as soon as possible."
     ],
-    "estimated_cycles_to_failure": null,
-    "estimated_failure_probability": null,
+    "estimated_cycles_to_failure": 15,
+    "estimated_failure_probability": 0.72,
     "notes": []
   },
   {
