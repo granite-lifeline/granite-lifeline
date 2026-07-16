@@ -15,17 +15,11 @@ from typing import Any, Dict, List
 import chromadb
 import yaml
 
+from shared.anomaly_mapping import GROUND_KNOWLEDGE_ANOMALY_TYPES
 
-# Seven canonical anomaly types from grounded_knowledge.yaml
-EXPECTED_ANOMALY_TYPES = [
-    "cooling_degradation",
-    "intake_air_temperature_sensor_or_heat_soak_fault",
-    "air_intake_maf_anomaly",
-    "map_load_signal_plausibility_fault",
-    "electronic_throttle_tracking_fault",
-    "accelerator_pedal_sensor",
-    "idle_speed_control_or_surge_degradation",
-]
+
+# Six current anomaly types from docs/INTERFACE.md v0.9.
+EXPECTED_ANOMALY_TYPES = list(GROUND_KNOWLEDGE_ANOMALY_TYPES)
 
 # ChromaDB configuration
 CHROMA_DB_PATH = Path(__file__).parent / "chroma_db"
@@ -192,7 +186,7 @@ def index_knowledge_base() -> int:
 
     # Check if index is already up to date
     existing_count = collection.count()
-    expected_count = len(EXPECTED_ANOMALY_TYPES) * 4  # 7 types × 4 docs
+    expected_count = len(EXPECTED_ANOMALY_TYPES) * 4
 
     if existing_count == expected_count:
         # Verify all expected document IDs exist
@@ -207,11 +201,22 @@ def index_knowledge_base() -> int:
 
         try:
             collection.get(ids=all_ids)
-            print("✓ Index is already up to date (28 documents present)")
+            print(
+                "✓ Index is already up to date "
+                f"({expected_count} documents present)"
+            )
             return existing_count
         except Exception:
-            # Some documents are missing, proceed with re-indexing
-            pass
+            # Some documents are missing, so rebuild the collection.
+            client.delete_collection(name=COLLECTION_NAME)
+            collection = client.get_or_create_collection(
+                name=COLLECTION_NAME
+            )
+    else:
+        # Recreate the collection so stale documents from old anomaly types
+        # are removed when the interface enum changes.
+        client.delete_collection(name=COLLECTION_NAME)
+        collection = client.get_or_create_collection(name=COLLECTION_NAME)
 
     # Create documents for all anomaly types
     all_documents = []

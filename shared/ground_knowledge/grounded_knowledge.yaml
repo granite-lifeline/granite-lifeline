@@ -784,7 +784,7 @@ proxy_failures:
           - action: "Check that the pump wheel is not loose on the drive shaft"
             source: "MAHLE, p.39–40, 'Engine overheats' troubleshooting (Classification by Bob based on maintenance urgency)"
 
-  intake_air_temperature_sensor_fault:
+  intake_air_temperature_sensor_or_heat_soak_fault:
     component: "Intake-air temperature (IAT) sensor circuit and signal plausibility"
     evidence:
       - "intake_temp"
@@ -1200,4 +1200,3 @@ proxy_failures:
         high:
           - action: "If that doesn't work, you may need to repair or replace the idle air control valve."
             source: "Edmunds, 'P0506', August 13, 2025 (Classification by Bob based on maintenance urgency)"
-
