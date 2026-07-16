@@ -49,8 +49,14 @@ For each proxy include:
 #### Stage 2 — Literature Anchoring (TBD)
 
 - Bosch Automotive Handbook [4] — cooling-system function and thermal-balance argument (existing source, retained).
-- CARB Title 13 CCR §1968.2 mandates thermostat monitoring (failure of coolant to reach regulating temperature) — **TBD: extract exact clause reference.**
+- CARB Title 13 CCR §1968.2(e)(10.1.1) — mandates thermostat monitoring: "The OBD II system shall monitor the thermostat on vehicles so-equipped for proper operation."
+- CARB Title 13 CCR §1968.2(e)(10.2.1)(A) — defines the thermostat malfunction criterion: coolant temperature must reach within 20°F of the manufacturer's nominal thermostat regulating temperature within a calibrated time interval after engine start. This provides the regulatory basis for S1's warm-up threshold.
+- CARB Title 13 CCR §1968.2(e)(10.2.1)(C) — expressly permits temperature-at-start compensation ("alternate malfunction criteria...as a function of temperature at engine start"), providing regulatory support for S1's ambient-correction requirement.
+- CARB Title 13 CCR §1968.2(e)(10.1.2), (e)(10.2.2)(C) — mandates ECT sensor rationality monitoring and stuck-in-range detection. Provides the regulatory basis for S4 (cold-start plausibility) and S5 (stuck/frozen signal).
 - **TBD: OEM/patent precedent for overheat detection and plateau-loss windows.**
+- SAE 2000-01-0939 [10] — develops an OBD-II coolant-temperature model for cooling-system and coolant-temperature-sensor diagnostics, demonstrating that cooling-system failures are observable through warm-up behaviour, cold-soak conditions, and coolant-temperature rationality checks. This paper provides the primary support for S1 (slow warm-up), S4 (ECT plausibility), and S5 (stuck/faulty sensor detection).
+- SAE 2007-01-2570 [11] — experimentally investigates engine overheating and shows that cooling-system degradation leads to sustained coolant-temperature increase and loss of thermal regulation, supporting S2 (overheating) and S3 (loss of plateau).
+
 
 #### Stage 3 — Decision Rules (provisional; literature-derived values, not yet baseline-calibrated)
 
@@ -97,7 +103,8 @@ Output: three-state per sub-check (`pass` / `triggered` / `not_evaluable`), repo
 
 - Bosch Automotive Handbook [4] (existing source, retained).
 - Model-based MAF/MAP cross-check architecture: same references as 3.5 ([5][6]) — the throttle-model input is not available here (unreliable `tps`), so this proxy uses the two-estimator reduced form. **TBD: confirm citation scope.**
-- **TBD: CARB §1968.2 MAF rationality monitoring clause.**
+- CARB Title 13 CCR §1968.2(e)(16.1.1)(A) — comprehensive component monitoring requirement: all input components that affect emissions must be monitored. MAF is an input component covered under this requirement.
+- CARB Title 13 CCR §1968.2(e)(16.2.1)(A) — defines the required diagnostic scope: "The OBD II system shall detect malfunctions of input components caused by a lack of circuit continuity, out of range values, and, where feasible, rationality faults." Rationality fault verification must detect "inappropriately high nor inappropriately low" sensor output (two-sided diagnostics). This provides the regulatory basis for F1 (MAF drift — cross-sensor rationality) and F3 (stuck/low MAF signal — out-of-range).
 
 #### Stage 3 — Decision Rules (provisional)
 
@@ -142,7 +149,10 @@ All modes map to P2138; sub-check identity and severity tier carry the different
 
 - SAE J2012 [1] — DTC definition (existing source, retained).
 - Bosch Automotive Handbook [4] — ETC dual-sensor redundancy design. **TBD: page reference.**
-- **TBD: CARB §1968.2 comprehensive-component monitoring clause (pedal position sensor as input component).**
+- CARB Title 13 CCR §1968.2(e)(16.1.1)(A) — comprehensive component monitoring: pedal position sensor is an input component covered under this requirement (listed as part of the throttle control system input chain).
+- CARB Title 13 CCR §1968.2(e)(16.2.1)(A) — rationality fault diagnostic requirement. Dual-channel accelerator pedal sensors are a direct application: channel correlation is a standard rationality check where each channel verifies the other's plausibility.
+- ISO 26262-5:2018 — provides the functional-safety framework for hardware-level design and diagnostic mechanisms in automotive E/E systems. It supports the use of redundant sensing and consistency monitoring as safety mechanisms, although the specific dual-channel accelerator pedal implementation is an OEM design choice.
+
 
 #### Stage 3 — Decision Rules (provisional)
 
@@ -243,7 +253,12 @@ Retained from the previous revision ("Expected Pattern"): First learn the datase
 
 - Bosch Automotive Handbook [4] — MAP as load-monitoring method (existing source, retained).
 - Nyberg & Nielsen [5], intake-system fault-isolation patent [6] — model-based cross-check architecture. Their specific implementations use throttle position as a model input; this project's substitution of pedal demand for that input is not directly validated by those sources and should be treated as this project's own dataset-driven adaptation (existing note, retained).
-- **TBD: CARB §1968.2 MAP rationality monitoring clause.**
+- CARB Title 13 CCR §1968.2(e)(16.1.1)(A) — comprehensive component monitoring: MAP sensor is an input component covered under this requirement.
+- CARB Title 13 CCR §1968.2(e)(16.2.1)(A) — rationality fault diagnostic requirement. MAP rationality is explicitly demonstrated through two-sided verification: the signal must be neither "inappropriately high" (sensor stuck high vs. pedal demand) nor "inappropriately low" (sensor stuck low, or frozen at ambient) — directly supporting the step-response check (F1), the cross-estimator check (F2), and the stuck-signal check (F3).
+- CARB Title 13 CCR §1968.2(e)(16.3.1)(A) — continuous monitoring for range; (e)(16.3.1)(B) — rationality per manufacturer-defined conditions.
+- Note on substituting pedal demand for throttle position: The regulation at (e)(16.2.1)(A) states rationality checks shall be performed "to the extent feasible" and "where feasible." The specific rationality check method is not prescribed — the regulation requires the outcome (two-sided verification), not the means. This project's substitution of the unreliable tps signal with the validated pedal-demand signal is consistent with this regulatory framework.
+
+
 
 #### Stage 3 — Decision Rules
 
@@ -308,7 +323,8 @@ Retained from the previous revision ("Expected Pattern"): First learn the datase
 
 *(establishes that the architecture is standard practice, not a project invention)*
 
-- **Regulatory mandate:** CARB Title 13 CCR §1968.2 requires OBD monitoring of idle control — detection when the system cannot achieve target idle speed within manufacturer tolerances [2]. This grounds the *existence* of the monitor; the regulation is current (2004+ MY vehicles, revised through 2019).
+- **Regulatory mandate:** CARB Title 13 CCR §1968.2(e)(16.2.2)(B) requires OBD monitoring of idle control — detection when the system cannot achieve target idle speed within manufacturer tolerances [2]. This grounds the *existence* of the monitor; the regulation is current (2004+ MY vehicles, revised through 2019).
+- **Specific malfunction criterion:** CARB Title 13 CCR §1968.2(e)(16.2.2)(B)(i) — a malfunction shall be detected when "The idle speed control system cannot achieve the target idle speed within 200 revolutions per minute (rpm) above the target speed or 100 rpm below the target speed." This provides the regulatory reference for the asymmetric tolerance band design.
 - **Window qualification:** idle-diagnostic patents evaluate idle-RPM faults only once idling conditions are confirmed [7] — Stage 1's enable window is the dataset adaptation of this precondition.
 - **Asymmetric tolerance band:** one documented OEM implementation uses a band on the order of −100/+200–400 rpm around target idle [8]; cited to motivate an asymmetric band design (idle-up is legitimate under load compensation; idle-down is not), not as values to adopt.
 - **Duration gating and residual architecture:** model-based idle FDI compares expected vs. actual speed response with persistence requirements [9]; the deviation-and-duration rule below mirrors this.
@@ -360,3 +376,9 @@ Retained from the previous revision ("Expected Pattern"): First learn the datase
 [8] *System for detecting functional abnormalities of idle speed control system* (U.S. Patent No. 5,936,152). (1999). U.S. Patent and Trademark Office.
 
 [9] Montes-Solano, C. A., & Pisu, P. (2009). Model based fault detection and isolation in idle speed control of IC engines. Proceedings of the 7th IFAC Symposium on Fault Detection, Supervision and Safety of Technical Processes (SAFEPROCESS 2009), Barcelona, Spain. https://doi.org/10.3182/20090630-4-ES-2003.00149
+
+[10] Yoo, I., Simpson, K., Bell, M., & Majkowski, S. (2000). *An engine coolant temperature model and application for cooling system diagnosis* (SAE Technical Paper No. 2000-01-0939). SAE International. https://doi.org/10.4271/2000-01-0939
+
+[11] Ebrinc, A., & Cehreli, Z. (2007). *Overheating investigation on 5-cylinder engine* (SAE Technical Paper No. 2007-01-2570). SAE International. https://doi.org/10.4271/2007-01-2570
+
+[12] International Organization for Standardization. (2018). *Road vehicles — Functional safety — Part 5: Product development at the hardware level* (ISO Standard No. 26262-5:2018). ISO.
