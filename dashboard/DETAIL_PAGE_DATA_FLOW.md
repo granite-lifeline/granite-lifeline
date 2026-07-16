@@ -73,6 +73,8 @@ dashboard/tests/ui_required_data.json
   broken chart.
 - Missing `key_signals` shows a missing-data state.
 - Missing report text falls back to "Pending Granite LLM report generation..."
+- Missing, null, or blank failure prediction fields show the pending
+  placeholder instead of an empty card.
 
 ## Notes For Next Tasks
 
@@ -87,6 +89,8 @@ Recommended display rules:
 - Has value: show something like `72% probability of failure within the next 15 trips`.
 - Null value: show muted placeholder text:
   `Failure probability estimate pending — awaiting more drive cycles`.
+- If only one of `estimated_failure_probability` or
+  `estimated_cycles_to_failure` is missing, use the same placeholder.
 
 GL-280 can render the Notes area directly under the Failure Prediction card
 using:

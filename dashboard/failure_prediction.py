@@ -6,12 +6,17 @@ PENDING_FAILURE_PREDICTION_TEXT = (
 )
 
 
+def is_missing_value(value) -> bool:
+    """Check if a value should use the pending placeholder."""
+    return value is None or value == ""
+
+
 def format_failure_prediction_text(component_data: dict) -> tuple[str, bool]:
     """Return failure prediction text and whether it is real data."""
     probability = component_data.get("estimated_failure_probability")
     cycles = component_data.get("estimated_cycles_to_failure")
 
-    if probability is None or cycles is None:
+    if is_missing_value(probability) or is_missing_value(cycles):
         return PENDING_FAILURE_PREDICTION_TEXT, False
 
     probability_pct = int(round(probability * 100))
