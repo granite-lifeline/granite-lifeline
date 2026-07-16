@@ -8,6 +8,7 @@ to detailed diagnostic reports.
 from __future__ import annotations
 
 import base64
+import html
 import math
 import os
 import time
@@ -20,7 +21,10 @@ from anomaly_display import (
     LEGACY_COMPONENT_ALIASES,
 )
 from data_loader import load_dashboard_data
-from failure_prediction import format_failure_prediction_text
+from failure_prediction import (
+    format_failure_prediction_text,
+    get_data_quality_notes,
+)
 
 SIGNAL_DISPLAY_NAMES = {
     "coolant_temp": "Coolant Temperature",
@@ -550,7 +554,7 @@ def show_failure_prediction_card(component_data: dict, tokens: dict):
         hex_to_rgba(tokens["accent"], 0.32)
         if has_value else tokens["glass_border"]
     )
-    card_icon = lucide_icon("trending-up", size=22, color=icon_color)
+    card_icon = lucide_icon("alert-triangle", size=22, color=icon_color)
 
     card_html = f"""
     <div style="
@@ -589,6 +593,33 @@ def show_failure_prediction_card(component_data: dict, tokens: dict):
     </div>
     """
     st.markdown(card_html, unsafe_allow_html=True)
+
+
+def show_data_quality_notes_area(component_data: dict, tokens: dict):
+    """Display data quality notes under the failure prediction card."""
+    notes = get_data_quality_notes(component_data)
+    if not notes:
+        return
+
+    note_items = "".join(
+        f'<div style="color: {tokens["text_secondary"]}; '
+        f'font-size: 13px; line-height: 1.5; margin-top: 6px;">'
+        f'{html.escape(note)}</div>'
+        for note in notes
+    )
+    info_icon = lucide_icon("info", size=16, color=tokens["text_secondary"])
+
+    notes_html = (
+        '<div style="max-width: 760px; margin: 10px auto 0 auto; '
+        'padding: 0 4px;">'
+        '<div style="display: flex; align-items: center; '
+        'justify-content: center; gap: 7px; '
+        f'color: {tokens["text_secondary"]}; font-size: 13px; '
+        'font-weight: 700; margin-bottom: 2px;">'
+        f'{info_icon}Data Quality Notes</div>'
+        f'<div style="text-align: center;">{note_items}</div></div>'
+    )
+    st.markdown(notes_html, unsafe_allow_html=True)
 
 
 def apply_theme(dark_mode: bool):
@@ -1991,6 +2022,7 @@ def render_component_detail(
         st.markdown(card_html, unsafe_allow_html=True)
 
     show_failure_prediction_card(component_data, tokens)
+    show_data_quality_notes_area(component_data, tokens)
 
 
 def show_detail_page():

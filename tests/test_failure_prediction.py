@@ -3,6 +3,7 @@
 from dashboard.failure_prediction import (
     PENDING_FAILURE_PREDICTION_TEXT,
     format_failure_prediction_text,
+    get_data_quality_notes,
 )
 
 
@@ -77,3 +78,36 @@ def test_failure_prediction_text_zero_probability_is_value():
 
     assert text == "0% probability of failure within the next 15 trips"
     assert has_value is True
+
+
+def test_data_quality_notes_with_values():
+    """Test non-empty notes are kept for the notes area."""
+    component_data = {
+        "notes": [
+            " Coolant readings include repaired sensor gaps. ",
+            "",
+            "Failure estimate may change after more drive cycles.",
+        ]
+    }
+
+    notes = get_data_quality_notes(component_data)
+
+    assert notes == [
+        "Coolant readings include repaired sensor gaps.",
+        "Failure estimate may change after more drive cycles.",
+    ]
+
+
+def test_data_quality_notes_empty_list():
+    """Test empty notes list renders nothing."""
+    assert get_data_quality_notes({"notes": []}) == []
+
+
+def test_data_quality_notes_missing_field():
+    """Test missing notes field renders nothing."""
+    assert get_data_quality_notes({}) == []
+
+
+def test_data_quality_notes_non_list_value():
+    """Test non-list notes value renders nothing."""
+    assert get_data_quality_notes({"notes": "not a list"}) == []

@@ -60,7 +60,7 @@ dashboard/tests/ui_required_data.json
 | `recommended_action` | Shows the "What You Should Do" action list. |
 | `estimated_failure_probability` | Shows the Failure Prediction card when paired with cycles. |
 | `estimated_cycles_to_failure` | Shows the Failure Prediction card when paired with probability. |
-| `notes` | Loaded but not rendered yet. Needed for GL-280. |
+| `notes` | Shows Data Quality Notes below the Failure Prediction card when non-empty. |
 
 ## Existing Fallbacks
 
@@ -92,7 +92,7 @@ Recommended display rules:
 - If only one of `estimated_failure_probability` or
   `estimated_cycles_to_failure` is missing, use the same placeholder.
 
-GL-280 can render the Notes area directly under the Failure Prediction card
+GL-280 renders the Notes area directly under the Failure Prediction card
 using:
 
 - `notes`

@@ -365,15 +365,13 @@ See `docs/INTERFACE.md` Section 3 for complete field definitions.
 
 ### Current Limitations
 
-1. **Failure Prediction UI**: estimated_failure_probability, estimated_cycles_to_failure, and notes are loaded but do not yet have dedicated visible cards in the detail page.
-2. **Partial Real Data**: test JSON currently contains full sample reports for the main 3 components; other anomaly types appear as UI placeholders unless data is provided.
-3. **No Export**: Cannot download reports or charts.
-4. **Desktop-First**: Mobile experience needs optimization.
-5. **No Persistence**: Risk history is read from loaded JSON and is not stored between dashboard sessions.
+1. **Partial Real Data**: test JSON currently contains full sample reports for the main 3 components; other anomaly types appear as UI placeholders unless data is provided.
+2. **No Export**: Cannot download reports or charts.
+3. **Desktop-First**: Mobile experience needs optimization.
+4. **No Persistence**: Risk history is read from loaded JSON and is not stored between dashboard sessions.
 
 ### Planned Improvements
 
-- Display failure prediction fields in dedicated detail-page UI cards
 - Mobile-responsive improvements
 - PDF export functionality
 - Accessibility enhancements (WCAG 2.1 AA)

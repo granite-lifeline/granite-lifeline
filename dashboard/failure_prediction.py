@@ -26,3 +26,17 @@ def format_failure_prediction_text(component_data: dict) -> tuple[str, bool]:
         f"{cycles} {trip_word}",
         True,
     )
+
+
+def get_data_quality_notes(component_data: dict) -> list[str]:
+    """Return non-empty data quality notes for display."""
+    notes = component_data.get("notes", [])
+    if not isinstance(notes, list):
+        return []
+
+    clean_notes = []
+    for note in notes:
+        note_text = str(note).strip()
+        if note_text:
+            clean_notes.append(note_text)
+    return clean_notes

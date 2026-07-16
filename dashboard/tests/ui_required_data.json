@@ -50,7 +50,10 @@
     ],
     "estimated_cycles_to_failure": 15,
     "estimated_failure_probability": 0.72,
-    "notes": []
+    "notes": [
+      "Coolant readings include repaired sensor gaps from the latest drive cycle.",
+      "Failure estimate may become more stable after more drive cycles."
+    ]
   },
   {
     "timestamp": "2026-06-16T11:00:00Z",
