@@ -9,7 +9,10 @@
         "feature": "coolant_temp",
         "value": 104.0,
         "unit": "°C",
-        "reference_range": [90.0, 95.0]
+        "reference_range": [
+          90.0,
+          95.0
+        ]
       }
     ],
     "risk_history": [
@@ -28,7 +31,9 @@
     ],
     "estimated_cycles_to_failure": null,
     "estimated_failure_probability": null,
-    "notes": []
+    "notes": [
+      "risk_level and anomaly_description are intentionally missing for fallback testing."
+    ]
   },
   {
     "timestamp": "2026-06-16T11:00:00Z",
@@ -42,7 +47,9 @@
     "recommended_action": [],
     "estimated_cycles_to_failure": null,
     "estimated_failure_probability": null,
-    "notes": []
+    "notes": [
+      "key_signals and risk_history are intentionally empty for fallback testing."
+    ]
   },
   {
     "risk_score": 0.22,
@@ -54,7 +61,10 @@
         "feature": "accel_pedal_d",
         "value": 35.0,
         "unit": "%",
-        "reference_range": [0.0, 100.0]
+        "reference_range": [
+          0.0,
+          100.0
+        ]
       }
     ],
     "risk_history": [

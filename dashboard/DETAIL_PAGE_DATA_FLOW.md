@@ -17,9 +17,8 @@ in the test data:
 - `estimated_cycles_to_failure`
 - `notes`
 
-The failure prediction fields are loaded and rendered by the detail page.
-`notes` is still loaded but not rendered yet, so GL-280 can add that UI
-section without changing the loader contract first.
+The failure prediction fields and data quality notes are loaded and rendered
+by the detail page. Empty notes lists render nothing.
 
 ## Current Flow
 
