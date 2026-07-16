@@ -39,7 +39,11 @@ def test_failure_prediction_has_value_and_null_states():
         data["air_intake_maf_anomaly"]
     )
 
-    assert cooling_text == "72% probability of failure within the next 15 trips"
+    expected_text = (
+        "72% probability of failure within the next 15 trips"
+    )
+
+    assert cooling_text == expected_text
     assert cooling_has_value is True
     assert intake_text == PENDING_FAILURE_PREDICTION_TEXT
     assert intake_has_value is False
@@ -53,7 +57,10 @@ def test_data_quality_notes_visible_and_hidden_states():
     intake_notes = get_data_quality_notes(data["air_intake_maf_anomaly"])
 
     assert cooling_notes == [
-        "Coolant readings include repaired sensor gaps from the latest drive cycle.",
+        (
+            "Coolant readings include repaired sensor gaps from the "
+            "latest drive cycle."
+        ),
         "Failure estimate may become more stable after more drive cycles.",
     ]
     assert intake_notes == []
