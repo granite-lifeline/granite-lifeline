@@ -18,7 +18,6 @@ COMPONENT_DISPLAY_NAMES = {
         "Intake Air Temperature",
     "air_intake_maf_anomaly": "Air Intake System",
     "map_load_signal_plausibility_fault": "MAP Load Signal",
-    "electronic_throttle_tracking_fault": "Electronic Throttle",
     "accelerator_pedal_sensor": "Accelerator Pedal",
     "idle_speed_control_or_surge_degradation": "Idle Speed Control",
 }

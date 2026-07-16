@@ -203,7 +203,7 @@ def make_overview_placeholder(component_key: str) -> dict:
 
 
 def get_overview_components() -> list:
-    """Return real reports plus UI-only placeholders for all 7 types."""
+    """Return real reports plus UI-only placeholders for all 6 types."""
     real_components = {}
 
     for raw_key, component_data in MOCK_DATA.items():
@@ -400,7 +400,6 @@ COMPONENT_ICONS = {
     "intake_air_temperature_sensor_or_heat_soak_fault": "thermometer",
     "air_intake_maf_anomaly": "wind",
     "map_load_signal_plausibility_fault": "gauge",
-    "electronic_throttle_tracking_fault": "sliders",
     "accelerator_pedal_sensor": "zap",
     "idle_speed_control_or_surge_degradation": "trending-up",
 }
