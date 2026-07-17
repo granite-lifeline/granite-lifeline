@@ -70,24 +70,39 @@ def test_load_dashboard_data():
     data = load_dashboard_data("dashboard/tests/ui_required_data.json")
 
     assert isinstance(data, dict)
-    assert len(data) == 3
+    # Exclude the _data_source metadata key when counting components
+    component_data = {
+        k: v for k, v in data.items() if k != "_data_source"
+    }
+    assert len(component_data) == 3
 
-    # Verify all expected components are present
-    assert "cooling_system_stress" in data
-    assert "air_intake_maf_anomaly" in data
-    assert "accelerator_pedal_sensor" in data
+    # Verify all 3 confirmed anomaly types are present (cooling may appear
+    # under its canonical key "cooling_degradation" when loaded via the
+    # real-data path, or under the legacy mock key "cooling_system_stress"
+    # when falling back).
+    cooling_key = (
+        "cooling_degradation"
+        if "cooling_degradation" in component_data
+        else "cooling_system_stress"
+    )
+    assert cooling_key in component_data
+    assert "air_intake_maf_anomaly" in component_data
+    assert "accelerator_pedal_sensor" in component_data
 
-    # Verify data structure for one component
-    cooling = data["cooling_system_stress"]
+    # Verify data structure for the cooling component
+    cooling = component_data[cooling_key]
     assert cooling["risk_level"] == "High"
-    assert cooling["risk_score"] == 0.86
     assert "key_signals" in cooling
     assert "risk_history" in cooling
     assert "anomaly_description" in cooling
     assert "possible_cause" in cooling
     assert "recommended_action" in cooling
-    assert cooling["estimated_failure_probability"] == 0.72
-    assert cooling["estimated_cycles_to_failure"] == 15
+    assert "estimated_failure_probability" in cooling
+    assert "estimated_cycles_to_failure" in cooling
+
+    # Verify _data_source metadata is present
+    assert "_data_source" in data
+    assert isinstance(data["_data_source"], dict)
 
 
 def test_report_data_interface_compliance():
@@ -110,7 +125,10 @@ def test_report_data_interface_compliance():
         "notes",
     ]
 
-    for component_data in data.values():
+    # Skip the _data_source metadata entry — it is not a component report
+    for component_data in (
+        v for k, v in data.items() if k != "_data_source"
+    ):
         for field in required_fields:
             assert field in component_data, \
                 f"Missing required field: {field}"

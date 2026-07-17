@@ -19,8 +19,9 @@ def test_complete_data_flow():
     # Load data as dashboard would
     data = load_dashboard_data("dashboard/tests/ui_required_data.json")
 
-    # Verify all components loaded
-    assert len(data) == 3, "Should load 3 components"
+    # _data_source is metadata; exclude it when counting components
+    components = {k: v for k, v in data.items() if k != "_data_source"}
+    assert len(components) == 3, "Should load 3 components"
 
     expected_components = [
         "cooling_system_stress",
@@ -29,7 +30,7 @@ def test_complete_data_flow():
     ]
 
     for component in expected_components:
-        assert component in data, f"Missing component: {component}"
+        assert component in components, f"Missing component: {component}"
 
     print("PASS: All components loaded successfully")
 
@@ -112,6 +113,8 @@ def test_risk_history_trend_calculation():
     data = load_dashboard_data("dashboard/tests/ui_required_data.json")
 
     for component_name, component_data in data.items():
+        if component_name == "_data_source":
+            continue
         risk_history = component_data["risk_history"]
 
         # Extract trend values (as dashboard would)
@@ -174,13 +177,17 @@ def test_display_name_mapping():
         "accel_pedal_e": "Pedal Sensor E"
     }
 
-    # Verify all components can be mapped
+    # Verify all components can be mapped (skip _data_source metadata key)
     for component_id in data.keys():
+        if component_id == "_data_source":
+            continue
         assert component_id in component_names, \
             f"Missing display name mapping for: {component_id}"
 
-    # Verify all signals can be mapped
-    for component_data in data.values():
+    # Verify all signals can be mapped (skip _data_source metadata key)
+    for key, component_data in data.items():
+        if key == "_data_source":
+            continue
         for signal in component_data["key_signals"]:
             signal_id = signal["feature"]
             assert signal_id in signal_names, \
