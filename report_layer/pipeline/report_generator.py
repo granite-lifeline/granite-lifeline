@@ -180,7 +180,9 @@ def generate_report(
     Generate a diagnostic report from Model Layer output.
 
     Runs the full RAG-grounded three-layer Granite prompt chain and
-    returns a ReportLayerOutput-compatible dict.
+    returns a ReportLayerOutput-compatible dict.  This function never
+    raises — any failure activates the graceful fallback path and
+    sets ``report_generation_success`` to False in the returned dict.
 
     Args:
         model_output: ModelLayerOutput-compatible dict from the
@@ -188,185 +190,217 @@ def generate_report(
 
     Returns:
         ReportLayerOutput-compatible dict with generated diagnostic
-        content and a ``report_generation_success`` boolean.
-
-    Raises:
-        ValueError: If model_output is missing required fields or
-            fails Pydantic validation.
+        content and a ``report_generation_success`` boolean flag.
+        ``report_generation_success`` is True when the full pipeline
+        succeeded; False when the fallback (empty report) was used.
     """
-    # Step 0: Validate input
     try:
-        validated = ModelLayerOutput(**model_output)
-    except Exception as exc:
-        raise ValueError(
-            f"Invalid model_output: {exc}"
-        ) from exc
-
-    # Step 1: Build RAG context
-    context_dict = build_context_with_rag(validated)
-
-    # Step 2: Load prompt templates
-    templates = {
-        1: load_prompt_template(1),
-        2: load_prompt_template(2),
-        3: load_prompt_template(3),
-    }
-
-    # Step 3 + 4: Call Ollama for each layer with retry logic
-
-    # --- Layer 1: anomaly_description ---
-    prompt1 = render_prompt(
-        templates[1],
-        {
-            "context": context_dict["context"],
-            "audience": AUDIENCE,
-            "fault_knowledge": context_dict["fault_knowledge"],
-            "certainty_guidance": context_dict["certainty_guidance"],
-        },
-    )
-    anomaly_description: Optional[str] = None
-    for attempt in range(1, MAX_RETRIES + 1):
+        # Step 0: Validate input
         try:
-            response1 = call_ollama(prompt1)
-            parsed1 = extract_json(response1)
-            if (
-                parsed1 is not None
-                and "anomaly_description" in parsed1
-            ):
-                anomaly_description = parsed1["anomaly_description"]
-                break
-        except (
-            requests.Timeout, requests.ConnectionError
-        ) as exc:
-            logger.warning(
-                "Layer 1 attempt %d/%d failed (%s): %s",
-                attempt, MAX_RETRIES, type(exc).__name__, exc,
-            )
-        else:
-            if anomaly_description is None:
-                logger.warning(
-                    "Layer 1 attempt %d/%d: JSON parse failed",
-                    attempt, MAX_RETRIES,
-                )
-        if anomaly_description is None and attempt < MAX_RETRIES:
-            time.sleep(2)
+            validated = ModelLayerOutput(**model_output)
+        except Exception as exc:
+            raise ValueError(
+                f"Invalid model_output: {exc}"
+            ) from exc
 
-    if anomaly_description is None:
-        raise RuntimeError(
-            f"Layer 1 failed after {MAX_RETRIES} retries"
+        # Step 1: Build RAG context
+        context_dict = build_context_with_rag(validated)
+
+        # Step 2: Load prompt templates
+        templates = {
+            1: load_prompt_template(1),
+            2: load_prompt_template(2),
+            3: load_prompt_template(3),
+        }
+
+        # Step 3 + 4: Call Ollama for each layer with retry logic
+
+        # --- Layer 1: anomaly_description ---
+        prompt1 = render_prompt(
+            templates[1],
+            {
+                "context": context_dict["context"],
+                "audience": AUDIENCE,
+                "fault_knowledge": context_dict["fault_knowledge"],
+                "certainty_guidance": (
+                    context_dict["certainty_guidance"]
+                ),
+            },
         )
-
-    # --- Layer 2: possible_cause ---
-    prompt2 = render_prompt(
-        templates[2],
-        {
-            "context": context_dict["context"],
-            "audience": AUDIENCE,
-            "anomaly_description": anomaly_description,
-            "fault_knowledge": context_dict["fault_knowledge"],
-            "certainty_guidance": context_dict["certainty_guidance"],
-        },
-    )
-    possible_cause: Optional[str] = None
-    for attempt in range(1, MAX_RETRIES + 1):
-        try:
-            response2 = call_ollama(prompt2)
-            parsed2 = extract_json(response2)
-            if (
-                parsed2 is not None
-                and "possible_cause" in parsed2
-            ):
-                possible_cause = parsed2["possible_cause"]
-                break
-        except (
-            requests.Timeout, requests.ConnectionError
-        ) as exc:
-            logger.warning(
-                "Layer 2 attempt %d/%d failed (%s): %s",
-                attempt, MAX_RETRIES, type(exc).__name__, exc,
-            )
-        else:
-            if possible_cause is None:
+        anomaly_description: Optional[str] = None
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                response1 = call_ollama(prompt1)
+                parsed1 = extract_json(response1)
+                if (
+                    parsed1 is not None
+                    and "anomaly_description" in parsed1
+                ):
+                    anomaly_description = (
+                        parsed1["anomaly_description"]
+                    )
+                    break
+            except (
+                requests.Timeout, requests.ConnectionError
+            ) as exc:
                 logger.warning(
-                    "Layer 2 attempt %d/%d: JSON parse failed",
-                    attempt, MAX_RETRIES,
+                    "Layer 1 attempt %d/%d failed (%s): %s",
+                    attempt, MAX_RETRIES, type(exc).__name__, exc,
                 )
-        if possible_cause is None and attempt < MAX_RETRIES:
-            time.sleep(2)
+            else:
+                if anomaly_description is None:
+                    logger.warning(
+                        "Layer 1 attempt %d/%d: JSON parse failed",
+                        attempt, MAX_RETRIES,
+                    )
+            if (
+                anomaly_description is None
+                and attempt < MAX_RETRIES
+            ):
+                time.sleep(2)
 
-    if possible_cause is None:
-        raise RuntimeError(
-            f"Layer 2 failed after {MAX_RETRIES} retries"
+        if anomaly_description is None:
+            raise RuntimeError(
+                f"Layer 1 failed after {MAX_RETRIES} retries"
+            )
+
+        # --- Layer 2: possible_cause ---
+        prompt2 = render_prompt(
+            templates[2],
+            {
+                "context": context_dict["context"],
+                "audience": AUDIENCE,
+                "anomaly_description": anomaly_description,
+                "fault_knowledge": context_dict["fault_knowledge"],
+                "certainty_guidance": (
+                    context_dict["certainty_guidance"]
+                ),
+            },
         )
+        possible_cause: Optional[str] = None
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                response2 = call_ollama(prompt2)
+                parsed2 = extract_json(response2)
+                if (
+                    parsed2 is not None
+                    and "possible_cause" in parsed2
+                ):
+                    possible_cause = parsed2["possible_cause"]
+                    break
+            except (
+                requests.Timeout, requests.ConnectionError
+            ) as exc:
+                logger.warning(
+                    "Layer 2 attempt %d/%d failed (%s): %s",
+                    attempt, MAX_RETRIES, type(exc).__name__, exc,
+                )
+            else:
+                if possible_cause is None:
+                    logger.warning(
+                        "Layer 2 attempt %d/%d: JSON parse failed",
+                        attempt, MAX_RETRIES,
+                    )
+            if (
+                possible_cause is None
+                and attempt < MAX_RETRIES
+            ):
+                time.sleep(2)
 
-    # --- Layer 3: recommended_action ---
-    prompt3 = render_prompt(
-        templates[3],
-        {
-            "context": context_dict["context"],
-            "audience": AUDIENCE,
+        if possible_cause is None:
+            raise RuntimeError(
+                f"Layer 2 failed after {MAX_RETRIES} retries"
+            )
+
+        # --- Layer 3: recommended_action ---
+        prompt3 = render_prompt(
+            templates[3],
+            {
+                "context": context_dict["context"],
+                "audience": AUDIENCE,
+                "anomaly_description": anomaly_description,
+                "possible_cause": possible_cause,
+                "fault_knowledge": context_dict["fault_knowledge"],
+                "actions_knowledge": (
+                    context_dict["actions_knowledge"]
+                ),
+                "certainty_guidance": (
+                    context_dict["certainty_guidance"]
+                ),
+            },
+        )
+        recommended_action: Optional[Any] = None
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                response3 = call_ollama(prompt3)
+                parsed3 = extract_json(response3)
+                if (
+                    parsed3 is not None
+                    and "recommended_action" in parsed3
+                ):
+                    recommended_action = (
+                        parsed3["recommended_action"]
+                    )
+                    break
+            except (
+                requests.Timeout, requests.ConnectionError
+            ) as exc:
+                logger.warning(
+                    "Layer 3 attempt %d/%d failed (%s): %s",
+                    attempt, MAX_RETRIES, type(exc).__name__, exc,
+                )
+            else:
+                if recommended_action is None:
+                    logger.warning(
+                        "Layer 3 attempt %d/%d: JSON parse failed",
+                        attempt, MAX_RETRIES,
+                    )
+            if (
+                recommended_action is None
+                and attempt < MAX_RETRIES
+            ):
+                time.sleep(2)
+
+        if recommended_action is None:
+            raise RuntimeError(
+                f"Layer 3 failed after {MAX_RETRIES} retries"
+            )
+
+        # Step 5: Assemble successful output
+        result = {
+            # Pass-through fields
+            "timestamp": model_output.get("timestamp", ""),
+            "risk_score": model_output.get("risk_score", 0.0),
+            "risk_level": model_output.get("risk_level"),
+            "component": model_output.get("component", ""),
+            "prediction_confidence": model_output.get(
+                "prediction_confidence", 0.0
+            ),
+            "key_signals": model_output.get("key_signals", []),
+            "estimated_cycles_to_failure": model_output.get(
+                "estimated_cycles_to_failure"
+            ),
+            "estimated_failure_probability": model_output.get(
+                "estimated_failure_probability"
+            ),
+            "notes": model_output.get("notes", []),
+            # Report Layer maintained fields
+            "risk_history": None,
+            # Generated fields
             "anomaly_description": anomaly_description,
             "possible_cause": possible_cause,
-            "fault_knowledge": context_dict["fault_knowledge"],
-            "actions_knowledge": context_dict["actions_knowledge"],
-            "certainty_guidance": context_dict["certainty_guidance"],
-        },
-    )
-    recommended_action: Optional[Any] = None
-    for attempt in range(1, MAX_RETRIES + 1):
-        try:
-            response3 = call_ollama(prompt3)
-            parsed3 = extract_json(response3)
-            if (
-                parsed3 is not None
-                and "recommended_action" in parsed3
-            ):
-                recommended_action = parsed3["recommended_action"]
-                break
-        except (
-            requests.Timeout, requests.ConnectionError
-        ) as exc:
-            logger.warning(
-                "Layer 3 attempt %d/%d failed (%s): %s",
-                attempt, MAX_RETRIES, type(exc).__name__, exc,
-            )
-        else:
-            if recommended_action is None:
-                logger.warning(
-                    "Layer 3 attempt %d/%d: JSON parse failed",
-                    attempt, MAX_RETRIES,
-                )
-        if recommended_action is None and attempt < MAX_RETRIES:
-            time.sleep(2)
+            "recommended_action": recommended_action,
+            "report_generation_success": True,
+        }
+        return result
 
-    if recommended_action is None:
-        raise RuntimeError(
-            f"Layer 3 failed after {MAX_RETRIES} retries"
+    except Exception as exc:
+        logger.error(
+            "generate_report pipeline failed — returning empty "
+            "fallback report. Error: %s",
+            exc,
+            exc_info=True,
         )
-
-    # Step 5: Assemble output
-    return {
-        # Pass-through fields
-        "timestamp": model_output.get("timestamp", ""),
-        "risk_score": model_output.get("risk_score", 0.0),
-        "risk_level": model_output.get("risk_level"),
-        "component": model_output.get("component", ""),
-        "prediction_confidence": model_output.get(
-            "prediction_confidence", 0.0
-        ),
-        "key_signals": model_output.get("key_signals", []),
-        "estimated_cycles_to_failure": model_output.get(
-            "estimated_cycles_to_failure"
-        ),
-        "estimated_failure_probability": model_output.get(
-            "estimated_failure_probability"
-        ),
-        "notes": model_output.get("notes", []),
-        # Report Layer maintained fields
-        "risk_history": None,
-        # Generated fields
-        "anomaly_description": anomaly_description,
-        "possible_cause": possible_cause,
-        "recommended_action": recommended_action,
-        "report_generation_success": True,
-    }
+        fallback = _build_empty_report(model_output)
+        fallback["report_generation_success"] = False
+        return fallback
