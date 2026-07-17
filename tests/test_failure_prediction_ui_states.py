@@ -72,7 +72,7 @@ def test_failure_prediction_icon_differs_from_trend_icon():
 
     assert 'show_icon_heading("Risk Score Trend"' in app_text
     assert re.search(r'lucide_icon\(\s*"trending-up",\s*size=24', app_text)
-    assert 'lucide_icon("alert-triangle", size=22' in app_text
+    assert re.search(r'lucide_icon\(\s*"alert-triangle",\s*size=24', app_text)
 
 
 def test_light_and_dark_theme_tokens_support_failure_prediction_card():
