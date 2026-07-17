@@ -30,13 +30,18 @@ def load_dashboard_app_module():
 
 def test_failure_prediction_has_value_and_null_states():
     """Test dashboard data covers has-value and null UI states."""
-    data = load_dashboard_data("dashboard/tests/ui_required_data.json")
+    # Load mock data directly (bypasses real pipeline) so the exact
+    # values from ui_required_data.json are used for formatting checks.
+    from dashboard.data_loader import load_report_data, convert_to_component_dict
+    mock = convert_to_component_dict(
+        load_report_data("dashboard/tests/ui_required_data.json")
+    )
 
     cooling_text, cooling_has_value = format_failure_prediction_text(
-        data["cooling_system_stress"]
+        mock["cooling_system_stress"]
     )
     intake_text, intake_has_value = format_failure_prediction_text(
-        data["air_intake_maf_anomaly"]
+        mock["air_intake_maf_anomaly"]
     )
 
     expected_text = (
@@ -51,10 +56,13 @@ def test_failure_prediction_has_value_and_null_states():
 
 def test_data_quality_notes_visible_and_hidden_states():
     """Test notes list displays only when non-empty."""
-    data = load_dashboard_data("dashboard/tests/ui_required_data.json")
+    from dashboard.data_loader import load_report_data, convert_to_component_dict
+    mock = convert_to_component_dict(
+        load_report_data("dashboard/tests/ui_required_data.json")
+    )
 
-    cooling_notes = get_data_quality_notes(data["cooling_system_stress"])
-    intake_notes = get_data_quality_notes(data["air_intake_maf_anomaly"])
+    cooling_notes = get_data_quality_notes(mock["cooling_system_stress"])
+    intake_notes = get_data_quality_notes(mock["air_intake_maf_anomaly"])
 
     assert cooling_notes == [
         (

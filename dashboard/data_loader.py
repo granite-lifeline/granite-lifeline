@@ -276,12 +276,25 @@ def load_dashboard_data(
                     anomaly_type,
                 )
 
-    # Preserve any extra components from the mock file that are not in
-    # CONFIRMED_ANOMALY_TYPES (e.g. cooling_system_stress legacy key)
+    # Preserve extra components from the mock file that are not already
+    # covered — but skip legacy alias keys whose canonical counterpart was
+    # already loaded as real data (e.g. don't add "cooling_system_stress"
+    # when "cooling_degradation" was already placed by real data).
+    try:
+        from shared.anomaly_mapping import LEGACY_COMPONENT_ALIASES
+    except ImportError:
+        LEGACY_COMPONENT_ALIASES = {}
+
     for component_key, entry in mock_by_component.items():
-        if component_key not in result:
-            result[component_key] = entry
-            data_source[component_key] = "mock"
+        if component_key in result:
+            continue
+        # If this key is a legacy alias whose canonical form is already
+        # present, skip it to avoid duplicate entries.
+        canonical = LEGACY_COMPONENT_ALIASES.get(component_key)
+        if canonical and canonical in result:
+            continue
+        result[component_key] = entry
+        data_source[component_key] = "mock"
 
     result["_data_source"] = data_source
     return result
