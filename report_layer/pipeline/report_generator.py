@@ -9,7 +9,9 @@ ReportLayerOutput-compatible dict.
 """
 
 import json
+import logging
 import sys
+import time
 from pathlib import Path
 from typing import Dict, Any, Optional
 
@@ -30,6 +32,8 @@ TIMEOUT = 120
 AUDIENCE = "non-technical vehicle owner"
 MAX_RETRIES = 3
 
+logger = logging.getLogger(__name__)
+
 DEFAULT_PROMPT_VALUES = {
     "fault_knowledge": (
         "No retrieved fault knowledge was available for this run."
@@ -49,7 +53,7 @@ DEFAULT_PROMPT_VALUES = {
 # ---------------------------------------------------------------------------
 
 def render_prompt(
-    template: str, values: Dict[str, str]
+    template: str, values: Dict[str, Any]
 ) -> str:
     """Replace prompt placeholders with available values."""
     prompt_values = DEFAULT_PROMPT_VALUES.copy()
@@ -208,7 +212,7 @@ def generate_report(
         3: load_prompt_template(3),
     }
 
-    # Step 3 + 4: Call Ollama for each layer and parse response
+    # Step 3 + 4: Call Ollama for each layer with retry logic
 
     # --- Layer 1: anomaly_description ---
     prompt1 = render_prompt(
@@ -220,13 +224,37 @@ def generate_report(
             "certainty_guidance": context_dict["certainty_guidance"],
         },
     )
-    response1 = call_ollama(prompt1)
-    parsed1 = extract_json(response1)
-    if parsed1 is None or "anomaly_description" not in parsed1:
+    anomaly_description: Optional[str] = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            response1 = call_ollama(prompt1)
+            parsed1 = extract_json(response1)
+            if (
+                parsed1 is not None
+                and "anomaly_description" in parsed1
+            ):
+                anomaly_description = parsed1["anomaly_description"]
+                break
+        except (
+            requests.Timeout, requests.ConnectionError
+        ) as exc:
+            logger.warning(
+                "Layer 1 attempt %d/%d failed (%s): %s",
+                attempt, MAX_RETRIES, type(exc).__name__, exc,
+            )
+        else:
+            if anomaly_description is None:
+                logger.warning(
+                    "Layer 1 attempt %d/%d: JSON parse failed",
+                    attempt, MAX_RETRIES,
+                )
+        if anomaly_description is None and attempt < MAX_RETRIES:
+            time.sleep(2)
+
+    if anomaly_description is None:
         raise RuntimeError(
-            "Layer 1 returned unparseable response"
+            f"Layer 1 failed after {MAX_RETRIES} retries"
         )
-    anomaly_description = parsed1["anomaly_description"]
 
     # --- Layer 2: possible_cause ---
     prompt2 = render_prompt(
@@ -239,13 +267,37 @@ def generate_report(
             "certainty_guidance": context_dict["certainty_guidance"],
         },
     )
-    response2 = call_ollama(prompt2)
-    parsed2 = extract_json(response2)
-    if parsed2 is None or "possible_cause" not in parsed2:
+    possible_cause: Optional[str] = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            response2 = call_ollama(prompt2)
+            parsed2 = extract_json(response2)
+            if (
+                parsed2 is not None
+                and "possible_cause" in parsed2
+            ):
+                possible_cause = parsed2["possible_cause"]
+                break
+        except (
+            requests.Timeout, requests.ConnectionError
+        ) as exc:
+            logger.warning(
+                "Layer 2 attempt %d/%d failed (%s): %s",
+                attempt, MAX_RETRIES, type(exc).__name__, exc,
+            )
+        else:
+            if possible_cause is None:
+                logger.warning(
+                    "Layer 2 attempt %d/%d: JSON parse failed",
+                    attempt, MAX_RETRIES,
+                )
+        if possible_cause is None and attempt < MAX_RETRIES:
+            time.sleep(2)
+
+    if possible_cause is None:
         raise RuntimeError(
-            "Layer 2 returned unparseable response"
+            f"Layer 2 failed after {MAX_RETRIES} retries"
         )
-    possible_cause = parsed2["possible_cause"]
 
     # --- Layer 3: recommended_action ---
     prompt3 = render_prompt(
@@ -260,13 +312,37 @@ def generate_report(
             "certainty_guidance": context_dict["certainty_guidance"],
         },
     )
-    response3 = call_ollama(prompt3)
-    parsed3 = extract_json(response3)
-    if parsed3 is None or "recommended_action" not in parsed3:
+    recommended_action: Optional[Any] = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            response3 = call_ollama(prompt3)
+            parsed3 = extract_json(response3)
+            if (
+                parsed3 is not None
+                and "recommended_action" in parsed3
+            ):
+                recommended_action = parsed3["recommended_action"]
+                break
+        except (
+            requests.Timeout, requests.ConnectionError
+        ) as exc:
+            logger.warning(
+                "Layer 3 attempt %d/%d failed (%s): %s",
+                attempt, MAX_RETRIES, type(exc).__name__, exc,
+            )
+        else:
+            if recommended_action is None:
+                logger.warning(
+                    "Layer 3 attempt %d/%d: JSON parse failed",
+                    attempt, MAX_RETRIES,
+                )
+        if recommended_action is None and attempt < MAX_RETRIES:
+            time.sleep(2)
+
+    if recommended_action is None:
         raise RuntimeError(
-            "Layer 3 returned unparseable response"
+            f"Layer 3 failed after {MAX_RETRIES} retries"
         )
-    recommended_action = parsed3["recommended_action"]
 
     # Step 5: Assemble output
     return {
