@@ -8,12 +8,118 @@ Granite prompt chain with RAG context, and returns a
 ReportLayerOutput-compatible dict.
 """
 
-from typing import Dict, Any
+import json
+import sys
+from pathlib import Path
+from typing import Dict, Any, Optional
 
-from shared.interface_models import ModelLayerOutput
+import requests
 
+# Resolve project root so imports work regardless of CWD
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from shared.interface_models import ModelLayerOutput  # noqa: E402
+from report_layer.pipeline.context_injection import (  # noqa: E402
+    build_context_with_rag,
+)
+
+OLLAMA_API_URL = "http://localhost:11434/api/generate"
+MODEL = "granite4.1:8b"
+TIMEOUT = 120
+AUDIENCE = "non-technical vehicle owner"
 MAX_RETRIES = 3
 
+DEFAULT_PROMPT_VALUES = {
+    "fault_knowledge": (
+        "No retrieved fault knowledge was available for this run."
+    ),
+    "actions_knowledge": (
+        "No retrieved action guidance was available for this run."
+    ),
+    "certainty_guidance": (
+        "Use careful wording and do not present predictions as "
+        "confirmed faults."
+    ),
+}
+
+
+# ---------------------------------------------------------------------------
+# Helper functions (self-contained copies from scenario_evaluation.py)
+# ---------------------------------------------------------------------------
+
+def render_prompt(
+    template: str, values: Dict[str, str]
+) -> str:
+    """Replace prompt placeholders with available values."""
+    prompt_values = DEFAULT_PROMPT_VALUES.copy()
+    prompt_values.update(values)
+    prompt = template
+    for key, value in prompt_values.items():
+        prompt = prompt.replace("{" + key + "}", str(value))
+    return prompt
+
+
+def load_prompt_template(layer: int) -> str:
+    """Load prompt template for the specified layer (1, 2, or 3)."""
+    filename = f"layer{layer}_"
+    if layer == 1:
+        filename += "description.txt"
+    elif layer == 2:
+        filename += "cause.txt"
+    elif layer == 3:
+        filename += "action.txt"
+    else:
+        raise ValueError(f"Invalid layer: {layer}")
+
+    template_path = (
+        PROJECT_ROOT / "report_layer" / "prompts" / filename
+    )
+    with open(template_path, "r") as f:
+        return f.read()
+
+
+def extract_json(
+    response_text: str,
+) -> Optional[Dict[str, Any]]:
+    """Extract JSON from response text with fallback."""
+    try:
+        return json.loads(response_text)
+    except json.JSONDecodeError:
+        pass
+
+    try:
+        start = response_text.find("{")
+        end = response_text.rfind("}") + 1
+        if start != -1 and end > start:
+            json_str = response_text[start:end]
+            return json.loads(json_str)
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    return None
+
+
+def call_ollama(prompt: str) -> str:
+    """Call Ollama API and return response text."""
+    payload = {
+        "model": MODEL,
+        "prompt": prompt,
+        "stream": False,
+    }
+    response = requests.post(
+        OLLAMA_API_URL,
+        json=payload,
+        timeout=TIMEOUT,
+    )
+    response.raise_for_status()
+    result = response.json()
+    return result.get("response", "")
+
+
+# ---------------------------------------------------------------------------
+# Fallback builder
+# ---------------------------------------------------------------------------
 
 def _build_empty_report(
     model_output_dict: Dict[str, Any]
@@ -59,11 +165,17 @@ def _build_empty_report(
     }
 
 
-def generate_report(model_output: Dict[str, Any]) -> Dict[str, Any]:
+# ---------------------------------------------------------------------------
+# Main public function
+# ---------------------------------------------------------------------------
+
+def generate_report(
+    model_output: Dict[str, Any]
+) -> Dict[str, Any]:
     """
     Generate a diagnostic report from Model Layer output.
 
-    Parses and validates the input using ModelLayerOutput, then
+    Runs the full RAG-grounded three-layer Granite prompt chain and
     returns a ReportLayerOutput-compatible dict.
 
     Args:
@@ -72,12 +184,13 @@ def generate_report(model_output: Dict[str, Any]) -> Dict[str, Any]:
 
     Returns:
         ReportLayerOutput-compatible dict with generated diagnostic
-        content.
+        content and a ``report_generation_success`` boolean.
 
     Raises:
         ValueError: If model_output is missing required fields or
             fails Pydantic validation.
     """
+    # Step 0: Validate input
     try:
         validated = ModelLayerOutput(**model_output)
     except Exception as exc:
@@ -85,7 +198,99 @@ def generate_report(model_output: Dict[str, Any]) -> Dict[str, Any]:
             f"Invalid model_output: {exc}"
         ) from exc
 
-    # Pipeline not yet implemented — return empty report as placeholder
-    empty = _build_empty_report(model_output)
-    empty["report_generation_success"] = False
-    return empty
+    # Step 1: Build RAG context
+    context_dict = build_context_with_rag(validated)
+
+    # Step 2: Load prompt templates
+    templates = {
+        1: load_prompt_template(1),
+        2: load_prompt_template(2),
+        3: load_prompt_template(3),
+    }
+
+    # Step 3 + 4: Call Ollama for each layer and parse response
+
+    # --- Layer 1: anomaly_description ---
+    prompt1 = render_prompt(
+        templates[1],
+        {
+            "context": context_dict["context"],
+            "audience": AUDIENCE,
+            "fault_knowledge": context_dict["fault_knowledge"],
+            "certainty_guidance": context_dict["certainty_guidance"],
+        },
+    )
+    response1 = call_ollama(prompt1)
+    parsed1 = extract_json(response1)
+    if parsed1 is None or "anomaly_description" not in parsed1:
+        raise RuntimeError(
+            "Layer 1 returned unparseable response"
+        )
+    anomaly_description = parsed1["anomaly_description"]
+
+    # --- Layer 2: possible_cause ---
+    prompt2 = render_prompt(
+        templates[2],
+        {
+            "context": context_dict["context"],
+            "audience": AUDIENCE,
+            "anomaly_description": anomaly_description,
+            "fault_knowledge": context_dict["fault_knowledge"],
+            "certainty_guidance": context_dict["certainty_guidance"],
+        },
+    )
+    response2 = call_ollama(prompt2)
+    parsed2 = extract_json(response2)
+    if parsed2 is None or "possible_cause" not in parsed2:
+        raise RuntimeError(
+            "Layer 2 returned unparseable response"
+        )
+    possible_cause = parsed2["possible_cause"]
+
+    # --- Layer 3: recommended_action ---
+    prompt3 = render_prompt(
+        templates[3],
+        {
+            "context": context_dict["context"],
+            "audience": AUDIENCE,
+            "anomaly_description": anomaly_description,
+            "possible_cause": possible_cause,
+            "fault_knowledge": context_dict["fault_knowledge"],
+            "actions_knowledge": context_dict["actions_knowledge"],
+            "certainty_guidance": context_dict["certainty_guidance"],
+        },
+    )
+    response3 = call_ollama(prompt3)
+    parsed3 = extract_json(response3)
+    if parsed3 is None or "recommended_action" not in parsed3:
+        raise RuntimeError(
+            "Layer 3 returned unparseable response"
+        )
+    recommended_action = parsed3["recommended_action"]
+
+    # Step 5: Assemble output
+    return {
+        # Pass-through fields
+        "timestamp": model_output.get("timestamp", ""),
+        "risk_score": model_output.get("risk_score", 0.0),
+        "risk_level": model_output.get("risk_level"),
+        "component": model_output.get("component", ""),
+        "prediction_confidence": model_output.get(
+            "prediction_confidence", 0.0
+        ),
+        "key_signals": model_output.get("key_signals", []),
+        "estimated_cycles_to_failure": model_output.get(
+            "estimated_cycles_to_failure"
+        ),
+        "estimated_failure_probability": model_output.get(
+            "estimated_failure_probability"
+        ),
+        "notes": model_output.get("notes", []),
+        # Report Layer maintained fields
+        "risk_history": None,
+        # Generated fields
+        "anomaly_description": anomaly_description,
+        "possible_cause": possible_cause,
+        "recommended_action": recommended_action,
+        "report_generation_success": True,
+    }
