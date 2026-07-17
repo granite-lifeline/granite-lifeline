@@ -78,7 +78,7 @@ Output: three-state per sub-check (`pass` / `triggered` / `not_evaluable`), repo
 
 **Component:** MAF sensor / intake air measurement path  
 
-**Supporting Features:** `maf`, `map`, `rpm`, `intake_temp`, `maf_derived_air_load_raw`, `map_derived_air_load_raw`, `maf_map_cohesion`  
+**Supporting Features:** `maf`, `map`, `rpm`, `intake_temp`, `maf_derived_air_load_raw`, `map_derived_air_load_raw`, `maf_map_cohesion`, `maf_stability`, `map_stability`  
 
 **Proxy Definition:** Triggered when `maf_map_cohesion` remains high. This proxy identifies inconsistency between the MAF-side air-load estimate and the MAP-side air-load estimate, mainly indicating MAF sensor drift, contamination, response delay, or abnormalities in the intake measurement chain.  
 
@@ -123,7 +123,7 @@ Retained from the previous revision ("Expected Pattern"): `maf_map_cohesion` > 0
 
 **Component:** Accelerator pedal position sensors (dual/redundant)   
 
-**Supporting Features:** `accel_pedal_d`, `accel_pedal_e`, `accel_pedal_channel_delta`, `accel_pedal_channel_ratio`, `pedal_slope`  
+**Supporting Features:** `accel_pedal_d`, `accel_pedal_e`, `accel_pedal_channel_delta`, `accel_pedal_channel_ratio`, `pedal_slope`
 
 **Proxy Definition:** The proportional relationship, correlation, or dynamic behavior between pedal channels D/E is inconsistent. This proxies pedal sensor channel drift, contact abnormalities, or redundancy-monitoring failure.  
 
@@ -228,7 +228,7 @@ Retained from the previous revision ("Expected Pattern"): First learn the datase
 
 **Component:** Intake manifold absolute pressure (MAP) sensor / load-signal plausibility
 
-**Supporting Features:** `map`, `maf`, `rpm`, `accel_pedal_mean`, `pedal_slope`, `intake_temp`, `speed_density_maf_residual`, `map_slope`, `map_stability`
+**Supporting Features:** `map`, `maf`, `rpm`, `accel_pedal_mean`, `pedal_slope`, `intake_temp`, `speed_density_maf_residual`, `map_slope`, `map_stability`, `maf_stability`, `maf_derived_air_load_raw`, `map_derived_air_load_raw` 
 
 **Excluded / Diagnostic Context:** `tps` is retained only as raw diagnostic context and is not used as a triggering input for this proxy, because its physical meaning is unreliable in the current KIT Seat Leon dataset (see data-quality note below).
 
