@@ -75,6 +75,51 @@ def test_failure_prediction_icon_differs_from_trend_icon():
     assert re.search(r'lucide_icon\(\s*"alert-triangle",\s*size=24', app_text)
 
 
+def test_failure_prediction_uses_top_summary_banner_layout():
+    """Test new summary banner appears before risk cards."""
+    app_text = Path("dashboard/app.py").read_text(encoding="utf-8")
+
+    incomplete_index = app_text.index("Incomplete Data")
+    heading_index = app_text.index("Failure Prediction</h2>")
+    card_call_index = app_text.index("show_failure_prediction_card")
+    risk_index = app_text.index('show_icon_heading("Risk Score"')
+
+    assert "grid-template-columns: 24px auto 24px" in app_text
+    assert incomplete_index < heading_index
+    assert card_call_index < risk_index
+
+
+def test_failure_prediction_value_state_emphasizes_key_values():
+    """Test value state highlights probability and trip count evenly."""
+    app_text = Path("dashboard/app.py").read_text(encoding="utf-8")
+
+    assert "{failure_percent}%" in app_text
+    assert "{cycles_count} trips" in app_text
+    assert app_text.count("font-size: 16px") >= 2
+    assert "justify-content: center; gap: 8px; flex-wrap: wrap" in app_text
+
+
+def test_failure_prediction_pending_matches_info_notice_style():
+    """Test pending state follows the compact info notice style."""
+    app_text = Path("dashboard/app.py").read_text(encoding="utf-8")
+
+    assert "html.escape(prediction_text)" in app_text
+    assert re.search(r'lucide_icon\(\s*"info",\s*size=20', app_text)
+    assert "border-radius: 12px; padding: 16px 20px" in app_text
+    assert "max-width: 600px" in app_text
+
+
+def test_data_quality_notes_uses_content_card_style():
+    """Test notes render as a content card when notes exist."""
+    app_text = Path("dashboard/app.py").read_text(encoding="utf-8")
+
+    assert "Data Quality Notes</div>" in app_text
+    assert 'info", size=18, color=tokens["accent"]' in app_text
+    assert 'background: {tokens["glass_surface"]}' in app_text
+    assert 'border: 1px solid {tokens["glass_border"]}' in app_text
+    assert 'border-bottom: 2px solid {tokens["border"]}' in app_text
+
+
 def test_light_and_dark_theme_tokens_support_failure_prediction_card():
     """Test light and dark themes both include card styling tokens."""
     app_module = load_dashboard_app_module()
