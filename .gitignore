@@ -1,6 +1,8 @@
 .env
-data/raw/*.csv
+data/raw/**
 !data/raw/.gitkeep
+!data/raw/README.md
+data/processed/**
 !data/processed/.gitkeep
 __pycache__/
 *.py[cod]
