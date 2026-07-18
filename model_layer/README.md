@@ -2,7 +2,7 @@
 
 **Owner:** Model Team
 **Status:** Active Development
-**Last Updated:** 2026-07-17
+**Last Updated:** 2026-07-18
 
 ---
 
@@ -38,15 +38,15 @@ and Q&A.
 - **cooling_degradation**: Elevated or steadily rising coolant temperature
 - **air_intake_maf_anomaly**: MAF/MAP air-load disagreement (dirty filter, vacuum leak, sensor drift)
 - **accelerator_pedal_sensor**: Disagreement between the two redundant pedal-position channels
-- **intake_air_temperature_sensor_or_heat_soak_fault**, **map_load_signal_plausibility_fault**, **idle_speed_control_or_surge_degradation**: Data Layer-defined, registered as 0.0-score placeholders pending scoring logic
+- **intake_air_temperature_sensor_or_heat_soak_fault**, **map_load_signal_plausibility_fault**, **idle_speed_control_or_surge_degradation**: Data Layer-defined (theory delivered in `data_layer/proxy_failure/proxy_support.md` §4–6); registered as 0.0-score placeholders pending scoring logic. Their synthetic injection scenarios are already implemented and swept (see Story 7 below)
 
 ---
 
 ## Current Implementation Status
 
 Tracked internally as Stories 1–8 (Story 9 is group-report writing, not
-pipeline work, and is omitted here). Two real Jira tickets exist for
-this layer so far: GL-31 and GL-146/GL-153.
+pipeline work, and is omitted here). Story 7 is tracked in Jira as
+GL-234 with per-subtask tickets (GL-235–239, GL-292–298).
 
 ### [COMPLETED]
 
@@ -64,13 +64,13 @@ this layer so far: GL-31 and GL-146/GL-153.
 |-----------|-------|--------|
 | Fine-Tuning on Healthy KIT Data | Story 6 | Data prep done (segment eligibility check, seeded 80/20 train/validation split by trip); fine-tuning script, training run, and zero-shot-vs-fine-tuned comparison table not yet started |
 | Failure Estimation | Story 8 | `trip_id`/cycle-index column agreed with Data Layer; risk-history collection/persistence, batch-mode sweep, trend extrapolation, and probability mapping not yet implemented — `estimated_cycles_to_failure`/`estimated_failure_probability` still emit as `null` |
-| Planted-Fault Evaluation | Story 7 | Injection functions and evaluation runner done; zero-shot sweep recorded in `outputs/synthetic_eval_results.json` (16 validation segments × healthy control + 3 faults: cooling 16/16 detected at risk 1.0, `maf × 0.7` 1/16, `map × 1.25` 7/16 at current thresholds). Precision/recall table, `risk_level` threshold calibration, and the evaluation note remain; sweep to be re-run on the Story 6 fine-tuned model |
+| Planted-Fault Evaluation | Story 7 | Injection functions for all six anomaly types and the evaluation runner are done; zero-shot sweep recorded in `outputs/synthetic_eval_results.json` (16 validation segments × healthy control + 6 fault scenarios, plus an idle-targeted window pair). Implemented-type results: cooling 16/16 detected at risk 1.0, `maf × 0.7` 1/16, `map × 1.25` 7/16 at current thresholds. The three pending-type scenarios (frozen `intake_temp`, frozen `map`, idle rpm offset+oscillation) are recorded as a pre-scoring baseline — they cannot fire until their scoring logic lands. Precision/recall table, `risk_level` threshold calibration, pending-type scoring, and the evaluation note remain; sweep to be re-run after scoring lands and again on the Story 6 fine-tuned model |
 
 ### [PLANNED]
 
 | Component | Priority | Description |
 |-----------|----------|-------------|
-| Pending Anomaly Type Scoring | P1 | Score the 3 placeholder types once Data Layer's theory write-up for their key signals lands |
+| Pending Anomaly Type Scoring | P1 | Score the 3 placeholder types from the Data Layer's delivered decision rules (`proxy_failure/proxy_support.md` §4–6 Stage 3); their synthetic scenarios are already in the evaluation sweep. Note: the rules reference `intake_temp_stability`/`map_stability`, which are not delivered columns — compute in-window rolling stds or request them from the Data Layer |
 | CI Integration | P1 | `model_layer/ttm-related/tests/` is not yet wired into CI (CI currently only runs root `tests/test_interface.py`) |
 | `AnomalyType` Enum Drift Fix | P2 | `shared/interface_models.py`'s enum still has the old short name `intake_air_temperature_sensor_fault` and hasn't dropped `electronic_throttle_tracking_fault` — see Known Issues |
 
@@ -131,11 +131,11 @@ model_layer/
     ├── src/model/
     │   ├── data_simulator.py               # OBDDataSimulator — synthetic fault sequences for offline testing
     │   ├── download_ttm.py                 # One-off script to cache the TTM checkpoint from Hugging Face
-    │   ├── fault_injection.py              # Story 7 synthetic fault perturbations (raw signals + derived-feature propagation)
+    │   ├── fault_injection.py              # Story 7 synthetic fault perturbations, all six anomaly types (raw signals + derived-feature propagation)
     │   ├── input_validation.py             # Two-tier range validation + Group 1 required-column contract
     │   ├── kit_residual_detector.py        # Main pipeline: CSV → TTM forecast → residuals → risk scoring → JSON
     │   ├── prepare_finetune_split.py       # Story 6 data prep: eligibility check + seeded train/val split manifest
-    │   ├── run_synthetic_evaluation.py     # Story 7 sweep: validation segments × (healthy + 3 faults) → results JSON
+    │   ├── run_synthetic_evaluation.py     # Story 7 sweep: validation segments × (healthy + 6 faults, incl. idle-targeted window pair) → results JSON
     │   └── validate_output.py              # Validates output JSON against docs/INTERFACE.md
     └── tests/
         ├── group1_fixtures.py               # Shared pytest fixtures — mock Group 1 feature_dataset.csv builder
@@ -238,13 +238,15 @@ python model_layer/ttm-related/src/model/validate_output.py \
 
 ### 5. Planted-Fault Injection & Evaluation Runner (`fault_injection.py`, `run_synthetic_evaluation.py`)
 
-**Purpose:** Story 7 evaluation — plant known faults in healthy segments and record whether the detector names them.
+**Purpose:** Story 7 evaluation — plant known faults in healthy segments and record whether the detector names them. Covers all six anomaly types.
 
-**Scenarios** (per the Data Layer's `proxy_failure/proxy_support.md` Stage 4 designs): `inject_cooling_fault()` = `coolant_temp + 15°C` sustained offset → `cooling_degradation`; `inject_intake_maf_fault("low_maf")` = `maf × 0.7` gain drift → `air_intake_maf_anomaly`; `inject_intake_maf_fault("map_bias")` = `map × 1.25` — a cohesion-attribution test outside the Stage 4 MAF design (which injects on `maf` only), expected label still `air_intake_maf_anomaly`.
+**Implemented-type scenarios** (per the Data Layer's `proxy_failure/proxy_support.md` Stage 4 designs): `inject_cooling_fault()` = `coolant_temp + 15°C` sustained offset → `cooling_degradation`; `inject_intake_maf_fault("low_maf")` = `maf × 0.7` gain drift → `air_intake_maf_anomaly`; `inject_intake_maf_fault("map_bias")` = `map × 1.25` — a cohesion-attribution test outside the Stage 4 MAF design (which injects on `maf` only), expected label still `air_intake_maf_anomaly`.
 
-**Design:** perturbations are applied to the raw signals and propagated into the engineered columns that are exact functions of them — verified on the delivered dataset: `maf_derived_air_load_raw = 60·maf/rpm`, `map_derived_air_load_raw = map·rpm/(intake_temp + 273.15)`, `maf_map_cohesion = |z(maf_load) − z(map_load)|` with the z-parameters from `data_layer/feature_engineering/feature_baselines.json`. A frame with a faulty `maf` but healthy cohesion could never come out of the Data Layer pipeline.
+**Pending-type scenarios** (per `proxy_support.md` §4–6 Stage 4 TBD-1): `inject_intake_air_temp_fault()` = `intake_temp` frozen at fault onset → `intake_air_temperature_sensor_or_heat_soak_fault`; `inject_map_plausibility_fault()` = `map` frozen at onset (stuck signal; also suppresses any pedal-step response in the window) → `map_load_signal_plausibility_fault`; `inject_idle_speed_fault()` = `rpm + 250` offset plus a 100 rpm sine at 0.125 Hz, applied to `idle_flag == 1` rows only → `idle_speed_control_or_surge_degradation`.
 
-**Runner:** sweeps the Story 6 validation split (17 segments; one skipped — never reaches `post_warmup`) × 4 conditions on the zero-shot model. Each segment is evaluated on its first 512+96 window starting at the first `post_warmup` row (the proxy conditions are defined post-warm-up; cold-start windows saturate cooling risk even on healthy data), with fault onset at the context/future boundary so the fault is unseen in the TTM context.
+**Design:** perturbations are applied to the raw signals and propagated into the engineered columns that are exact functions of them — verified on the delivered dataset (reconstruction error ≤ 5e-7): `maf_derived_air_load_raw = 60·maf/rpm`, `map_derived_air_load_raw = map·rpm/(intake_temp + 273.15)`, `maf_map_cohesion = |z(maf_load) − z(map_load)|` with the z-parameters from `data_layer/feature_engineering/feature_baselines.json`, `intake_ambient_delta = intake_temp − ambient_temp`, slopes as per-segment `diff/dt_seconds`, `speed_density_maf_residual` from the linear regression published in `feature_baselines.json` (`models.speed_density_model`, inputs clipped to its winsorize bounds), and `idle_rpm_stability` as a 30-sample rolling std of rpm restricted to idle rows. Recomputed columns keep the delivered NaN mask. A frame with a faulty `maf` but healthy cohesion could never come out of the Data Layer pipeline.
+
+**Runner:** sweeps the Story 6 validation split (17 segments; one skipped — never reaches `post_warmup`) × healthy control + 6 fault scenarios on the zero-shot model. Each segment is evaluated on its first 512+96 window starting at the first `post_warmup` row (the proxy conditions are defined post-warm-up; cold-start windows saturate cooling risk even on healthy data), with fault onset at the context/future boundary so the fault is unseen in the TTM context. The idle scenario is the exception: its injection only touches idle rows, so it runs (with a paired `healthy_idle_window` control) on the first window whose future rows hold ≥ 10 idle rows — 15/16 segments qualify; the rest get a per-scenario skip record. Each record carries `window_start_row`, `future_idle_rows`, and `future_sustained_flow_rows` for the analysis half.
 
 ```bash
 # From the repository root
@@ -252,7 +254,7 @@ python model_layer/ttm-related/src/model/run_synthetic_evaluation.py \
     [--segments validation|all] [--output outputs/synthetic_eval_results.json]
 ```
 
-**Current results** (zero-shot, pre-calibration): cooling 16/16 at risk 1.0 (High); `maf × 0.7` 1/16 and `map × 1.25` 7/16 — the ~0.8 cohesion shift stays below the current 2.6 trigger floor, which is the direct input to the pending threshold-calibration work; healthy controls mean risk 0.29 (5/16 read Medium).
+**Current results** (zero-shot, pre-calibration): cooling 16/16 at risk 1.0 (High); `maf × 0.7` 1/16 and `map × 1.25` 7/16 — the ~0.8 cohesion shift stays below the current 2.6 trigger floor, which is the direct input to the pending threshold-calibration work; healthy controls mean risk 0.29 (5/16 read Medium). The three pending-type scenarios record 0 detections by construction — their types still score 0.0 in `calculate_risk` — so this sweep is the pre-scoring baseline to re-run once their scoring logic lands.
 
 ### 6. Fine-Tune Data Prep (`ttm-related/src/model/prepare_finetune_split.py`)
 
@@ -268,12 +270,12 @@ Includes: per-type signal-deviation tables and physical logic; a Data Health Val
 
 ### 8. Test Suite (`ttm-related/tests/`)
 
-87 tests across 7 modules:
+104 tests across 7 modules:
 
 | File | Coverage |
 |------|----------|
 | `test_basic.py` | Import smoke test, data-simulator smoke test, TTM model-loading smoke test |
-| `test_fault_injection.py` | Injection offsets/gains from fault onset only, cohesion recomputation math, NaN policy preservation, no input mutation, injected values survive plausibility repair, runner helpers (post-warmup trim, manifest segment selection) |
+| `test_fault_injection.py` | All six injectors: offsets/gains/frozen values from fault onset only, propagation math (cohesion, slopes, air loads, speed-density residual, idle rpm stability), idle-rows-only application, NaN policy preservation, no input mutation, injected values survive plausibility repair, runner helpers (post-warmup trim, manifest segment selection, idle-window search) |
 | `test_group1_consumption.py` | CSV loading/consumption, segment selection across multi-segment/multi-trip frames, segment-safe windowing, bad trip/segment-id handling |
 | `test_input_validation.py` | Range validation (repair, rejection, all-NaN, plausible-vs-healthy guard), pedal fallback, `build_interface_json` shape |
 | `test_model_input_contract.py` | All 41 required columns present, model signals numeric/non-null, engineered features within contract ranges, sufficient rows for the 512+96 window |
@@ -400,10 +402,10 @@ All generated outputs must satisfy:
 - Produce a zero-shot-vs-fine-tuned residual comparison table on held-out trips
 
 **2. Planted-Fault Evaluation — analysis half** (Story 7, P0)
-- Compute the precision/recall table from `outputs/synthetic_eval_results.json`
+- Compute the precision/recall table from `outputs/synthetic_eval_results.json`, extended to all six anomaly types once their scoring lands
 - Calibrate final `risk_level` thresholds (the recorded intake under-detection is the calibration input)
 - Write the evaluation note stating the synthetic-only and single-vehicle-calibration limitations explicitly
-- Re-run the sweep once the Story 6 fine-tuned artifact lands
+- Re-run the sweep once the pending-type scoring lands, and again once the Story 6 fine-tuned artifact lands
 
 **3. Failure Estimation** (Story 8, P1)
 - Implement risk-score-history collection/persistence (`{trip_id, window_id, timestamp, risk_score}`)
@@ -413,7 +415,8 @@ All generated outputs must satisfy:
 - Refresh the committed sample output and validator with real (non-null) values
 
 **4. Pending Anomaly Types** (P1)
-- Score `intake_air_temperature_sensor_or_heat_soak_fault`, `map_load_signal_plausibility_fault`, `idle_speed_control_or_surge_degradation` once Data Layer's theory write-up for their key signals lands
+- Score `intake_air_temperature_sensor_or_heat_soak_fault`, `map_load_signal_plausibility_fault`, `idle_speed_control_or_surge_degradation` from the Data Layer's delivered decision rules (`proxy_failure/proxy_support.md` §4–6 Stage 3); their synthetic scenarios are already implemented and swept as the pre-scoring baseline
+- The Stage 3 rules reference `intake_temp_stability`/`map_stability`, which are not delivered columns — compute in-window rolling stds from raw `intake_temp`/`map` (analogous to `coolant_stability`) or request the columns from the Data Layer
 
 **5. CI Integration** (P1)
 - Wire `model_layer/ttm-related/tests/` into CI (currently only `tests/test_interface.py` runs)
