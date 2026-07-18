@@ -152,11 +152,11 @@ Output: three-state per sub-check (`pass` / `triggered` / `not_evaluable`), repo
 
 **Failure-mode enumeration.**
 
-| #  | Symptom                                                          | Statistic (feature)                                                                                                                                  | Enable window                             | DTC label |
-| -- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | --------- |
-| S1 | MAF drift/contamination — persistent bias vs. parallel estimate | `maf_map_cohesion` sustained above tolerance AND `speed_density_maf_residual`sustained above tolerance                                         | `steady_driving`                        | P0101     |
-| S2 | MAF under-read at high load (classic contamination signature)    | `maf_derived_air_load_raw` - `map_derived_air_load_raw` Negative residuals indicate MAF anomalies. (positive residuals point to MAP anomalies) | `high_load`                             | P0101     |
-| S3 | Stuck/low MAF signal                                             | `maf_stability` < baseline AND `map_stability` > baseline **TBD: feature not yet implemented**                                           | `engine_on` with changing load context | P0102     |
+| #  | Symptom | Statistic (feature) | Enable window | DTC label |
+| -- | ------- | ------------------- | ------------- | --------- |
+| S1 | MAF drift/contamination — persistent bias vs. parallel estimate | `maf_map_cohesion` sustained above tolerance AND `speed_density_maf_residual`sustained above tolerance | `steady_driving` | P0101 |
+| S2 | MAF under-read at high load (classic contamination signature) | `maf_derived_air_load_raw` - `map_derived_air_load_raw` Negative residuals indicate MAF anomalies. (positive residuals point to MAP anomalies) | `high_load` | P0101 |
+| S3 | Stuck/low MAF signal | `maf_stability` < baseline AND `map_stability` > baseline **TBD: feature not yet implemented** | `engine_on` with changing load context | P0102 |
 
 #### Stage 2 — Literature Anchoring (TBD)
 
@@ -309,12 +309,12 @@ Retained from the previous revision ("Expected Pattern"): First learn the datase
 
 **Failure-mode enumeration.**
 
-| #              | Symptom                                                                                     | Statistic (feature)                                                                  | Enable window                                                | DTC label                                                    |
-| -------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| S1             | MAP unresponsive to demand step                                                             | `abs(map_slope)` near zero within response window after `pedal_slope` step event | pedal step events, per`operating_state`                    | P0106                                                        |
-| S2             | Steady-state MAP/MAF cross-inconsistency                                                    | `speed_density_maf_residual` outside per-state tolerance                           | `steady_driving`                                           | P0106                                                        |
+| # | Symptom | Statistic (feature)| Enable window | DTC label |
+| - | ------- | ------------------ | ------------- | --------- |
+| S1 | MAP unresponsive to demand step                                                             | `abs(map_slope)` near zero within response window after `pedal_slope` step event | pedal step events, per`operating_state`                    | P0106                                                        |
+| S2 | Steady-state MAP/MAF cross-inconsistency                                                    | `speed_density_maf_residual` outside per-state tolerance                           | `steady_driving`                                           | P0106                                                        |
 | S2_Arbitration | If MAP_F1 concurrent trigger: MAP fault;  Elif signed_residual large negative: MAF fault | `maf_derived_air_load_raw - map_derived_air_load_raw`                              | on F2 trigger                                                | P0106 (shared evidence with 3.2 — arbitration rule applies) |
-| S3             | Stuck MAP signal                                                                            | `map_stability <` baseline AND `maf_stability` > baseline                       | engine-on, not in idle state, with other signals fluctuating | P0106                                                        |
+| S3 | Stuck MAP signal                                                                            | `map_stability <` baseline AND `maf_stability` > baseline                       | engine-on, not in idle state, with other signals fluctuating | P0106                                                        |
 
 #### Stage 2 — Literature Anchoring
 
