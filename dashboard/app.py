@@ -8,6 +8,7 @@ to detailed diagnostic reports.
 from __future__ import annotations
 
 import base64
+import html
 import math
 import os
 import time
@@ -20,6 +21,10 @@ from anomaly_display import (
     LEGACY_COMPONENT_ALIASES,
 )
 from data_loader import load_dashboard_data
+from failure_prediction import (
+    format_failure_prediction_text,
+    get_data_quality_notes,
+)
 
 SIGNAL_DISPLAY_NAMES = {
     "coolant_temp": "Coolant Temperature",
@@ -203,7 +208,7 @@ def make_overview_placeholder(component_key: str) -> dict:
 
 
 def get_overview_components() -> list:
-    """Return real reports plus UI-only placeholders for all 7 types."""
+    """Return real reports plus UI-only placeholders for all 6 types."""
     real_components = {}
 
     for raw_key, component_data in MOCK_DATA.items():
@@ -400,7 +405,6 @@ COMPONENT_ICONS = {
     "intake_air_temperature_sensor_or_heat_soak_fault": "thermometer",
     "air_intake_maf_anomaly": "wind",
     "map_load_signal_plausibility_fault": "gauge",
-    "electronic_throttle_tracking_fault": "sliders",
     "accelerator_pedal_sensor": "zap",
     "idle_speed_control_or_surge_degradation": "trending-up",
 }
@@ -539,6 +543,132 @@ def show_icon_heading(
         f'{confidence_badge_html}</div>'
     )
     st.markdown(heading_html, unsafe_allow_html=True)
+
+
+def show_failure_prediction_card(component_data: dict, tokens: dict):
+    """Display failure prediction as a top summary banner."""
+    prediction_text, has_value = format_failure_prediction_text(component_data)
+    notes = get_data_quality_notes(component_data)
+    text_color = tokens["text"] if has_value else tokens["text_secondary"]
+    border_color = (
+        hex_to_rgba(tokens["accent"], 0.35)
+        if has_value else tokens["glass_border"]
+    )
+    info_icon = lucide_icon("info", size=18, color=tokens["accent"])
+    note_items = "".join(
+        '<div style="display: flex; gap: 8px; margin-top: 8px;">'
+        f'<span style="color: {tokens["accent"]}; '
+        'font-size: 13px; line-height: 1.45;">•</span>'
+        f'<span style="color: {tokens["text"]}; '
+        'font-size: 13px; line-height: 1.45;">'
+        f'{html.escape(note)}</span></div>'
+        for note in notes
+    )
+    notes_panel = ""
+    if notes:
+        notes_panel = (
+            f'<div style="flex: 1; min-width: 260px; '
+            f'background: {tokens["glass_surface"]}; '
+            f'border: 1px solid {tokens["glass_border"]}; '
+            'border-radius: 16px; padding: 14px 16px 13px 16px; '
+            f'box-shadow: 0 8px 24px {tokens["shadow"]}, '
+            'inset 0 1px 0 rgba(255, 255, 255, 0.10);">'
+            '<div style="display: flex; align-items: center; '
+            'justify-content: center; gap: 8px; '
+            f'color: {tokens["text"]}; font-size: 14px; '
+            'font-weight: 700; padding-bottom: 8px; '
+            f'border-bottom: 2px solid {tokens["border"]};">'
+            f'{info_icon}Data Quality Notes</div>'
+            f'<div style="margin-top: 4px;">{note_items}</div></div>'
+        )
+
+    if has_value:
+        failure_probability = component_data.get(
+            "estimated_failure_probability"
+        )
+        cycles_to_failure = component_data.get("estimated_cycles_to_failure")
+        failure_percent = int(round(float(failure_probability) * 100))
+        cycles_count = int(cycles_to_failure)
+        prediction_html = (
+            '<div style="display: flex; align-items: baseline; '
+            'justify-content: center; gap: 8px; flex-wrap: wrap; '
+            'text-align: center;">'
+            f'<span style="color: {tokens["accent"]}; '
+            f'font-family: {FONT_MONO}; font-size: 16px; '
+            f'font-weight: 800;">{failure_percent}%</span>'
+            f'<span style="color: {tokens["text"]}; font-size: 15px; '
+            'line-height: 1.45;">probability of failure within the next'
+            '</span>'
+            f'<span style="color: {tokens["text"]}; '
+            'font-size: 16px; font-weight: 800; line-height: 1.45;">'
+            f'{cycles_count} trips</span></div>'
+        )
+    else:
+        pending_icon = lucide_icon(
+            "info", size=20, color=tokens["text_secondary"]
+        )
+        prediction_html = (
+            '<div style="display: flex; justify-content: center; '
+            'width: 100%;">'
+            f'<div style="background: '
+            f'{hex_to_rgba(tokens["text_secondary"], 0.08)}; '
+            f'border: 1px solid '
+            f'{hex_to_rgba(tokens["text_secondary"], 0.20)}; '
+            'border-radius: 12px; padding: 16px 20px; '
+            'display: flex; align-items: center; gap: 12px; '
+            'max-width: 600px;">'
+            '<div style="display: flex; align-items: center; '
+            f'flex-shrink: 0;">{pending_icon}</div>'
+            f'<div style="color: {text_color}; font-size: 14px; '
+            f'line-height: 1.5;">{html.escape(prediction_text)}</div>'
+            '</div></div>'
+        )
+
+    card_html = (
+        f'<div style="background: {tokens["glass_surface"]}; '
+        'backdrop-filter: blur(24px) saturate(160%); '
+        '-webkit-backdrop-filter: blur(24px) saturate(160%); '
+        f'border: 1px solid {border_color}; border-radius: 18px; '
+        'padding: 18px 20px; margin: 0 auto 28px auto; '
+        f'box-shadow: 0 8px 28px {tokens["shadow"]}, '
+        'inset 0 1px 0 rgba(255, 255, 255, 0.10); '
+        'max-width: 1120px;">'
+        '<div style="display: flex; align-items: stretch; '
+        'justify-content: space-between; gap: 18px; flex-wrap: wrap;">'
+        '<div style="flex: 1.25; min-width: 280px; display: flex; '
+        'align-items: center; justify-content: center;">'
+        f'<div style="min-width: 0; width: 100%;">{prediction_html}</div>'
+        '</div>'
+        f'{notes_panel}</div></div>'
+    )
+    st.markdown(card_html, unsafe_allow_html=True)
+
+
+def show_data_quality_notes_area(component_data: dict, tokens: dict):
+    """Display data quality notes under the failure prediction card."""
+    notes = get_data_quality_notes(component_data)
+    if not notes:
+        return
+
+    note_items = "".join(
+        f'<div style="color: {tokens["text_secondary"]}; '
+        f'font-size: 13px; line-height: 1.5; margin-top: 6px;">'
+        f'{html.escape(note)}</div>'
+        for note in notes
+    )
+    info_icon = lucide_icon("info", size=16, color=tokens["text_secondary"])
+
+    notes_html = (
+        '<div style="max-width: 760px; margin: 10px auto 0 auto; '
+        'padding: 0 4px;">'
+        '<div style="display: flex; align-items: center; '
+        'justify-content: center; gap: 7px; '
+        f'color: {tokens["text_secondary"]}; font-size: 13px; '
+        'font-weight: 700; margin-bottom: 2px;">'
+        f'{info_icon}Data Quality Notes</div>'
+        f'<div style="text-align: center;">{note_items}</div></div>'
+    )
+    st.markdown(notes_html, unsafe_allow_html=True)
 
 
 def apply_theme(dark_mode: bool):
@@ -1375,6 +1505,26 @@ def render_component_detail(
         </div>
         """
         st.markdown(info_panel_html, unsafe_allow_html=True)
+
+    prediction_has_value = format_failure_prediction_text(component_data)[1]
+    failure_icon_color = (
+        tokens["accent"] if prediction_has_value else tokens["text_secondary"]
+    )
+    failure_heading_icon = lucide_icon(
+        "alert-triangle", size=24, color=failure_icon_color
+    )
+    failure_heading_html = (
+        '<div style="display: flex; align-items: center; '
+        'justify-content: center; margin-bottom: 16px;">'
+        '<div style="display: grid; grid-template-columns: 24px auto 24px; '
+        'align-items: center; column-gap: 20px;">'
+        f'<div style="display: flex;">{failure_heading_icon}</div>'
+        '<h2 style="margin: 0;">Failure Prediction</h2>'
+        '<div style="width: 24px;"></div>'
+        '</div></div>'
+    )
+    st.markdown(failure_heading_html, unsafe_allow_html=True)
+    show_failure_prediction_card(component_data, tokens)
 
     # Extract trend from risk_history (already retrieved above)
     trend = [entry["risk_score"] for entry in risk_history]

@@ -2,12 +2,18 @@
 Tests for dashboard data loader.
 """
 
+import json
+from pathlib import Path
+
 import pytest
 from dashboard.data_loader import (
     load_report_data,
     convert_to_component_dict,
     load_dashboard_data
 )
+
+
+DASHBOARD_TEST_DATA_DIR = Path("dashboard/tests")
 
 
 def test_load_report_data_success():
@@ -80,6 +86,8 @@ def test_load_dashboard_data():
     assert "anomaly_description" in cooling
     assert "possible_cause" in cooling
     assert "recommended_action" in cooling
+    assert cooling["estimated_failure_probability"] == 0.72
+    assert cooling["estimated_cycles_to_failure"] == 15
 
 
 def test_report_data_interface_compliance():
@@ -96,7 +104,10 @@ def test_report_data_interface_compliance():
         "risk_history",
         "anomaly_description",
         "possible_cause",
-        "recommended_action"
+        "recommended_action",
+        "estimated_cycles_to_failure",
+        "estimated_failure_probability",
+        "notes",
     ]
 
     for component_data in data.values():
@@ -118,3 +129,48 @@ def test_report_data_interface_compliance():
 
         # Verify recommended_action is a list
         assert isinstance(component_data["recommended_action"], list)
+
+        # Verify future Failure Prediction UI fields are passed through
+        assert "estimated_cycles_to_failure" in component_data
+        assert "estimated_failure_probability" in component_data
+        assert isinstance(component_data["notes"], list)
+
+
+def test_all_dashboard_test_data_has_failure_prediction_fields():
+    """Test all dashboard UI fixtures include failure prediction fields."""
+    required_fields = [
+        "estimated_cycles_to_failure",
+        "estimated_failure_probability",
+        "notes",
+    ]
+
+    for path in DASHBOARD_TEST_DATA_DIR.glob("ui_*.json"):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        for report in data:
+            for field in required_fields:
+                assert field in report, f"{path} missing {field}"
+            assert isinstance(report["notes"], list), \
+                f"{path} notes must be a list"
+
+
+def test_dashboard_test_data_covers_failure_prediction_states():
+    """Test fixtures cover value, null, and notes display states."""
+    reports = []
+    for path in DASHBOARD_TEST_DATA_DIR.glob("ui_*.json"):
+        reports.extend(json.loads(path.read_text(encoding="utf-8")))
+
+    has_value_state = any(
+        report.get("estimated_failure_probability") is not None
+        and report.get("estimated_cycles_to_failure") is not None
+        for report in reports
+    )
+    has_null_state = any(
+        report.get("estimated_failure_probability") is None
+        or report.get("estimated_cycles_to_failure") is None
+        for report in reports
+    )
+    has_notes_state = any(report.get("notes") for report in reports)
+
+    assert has_value_state
+    assert has_null_state
+    assert has_notes_state

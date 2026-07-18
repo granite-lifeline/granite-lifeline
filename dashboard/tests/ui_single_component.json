@@ -10,13 +10,19 @@
         "feature": "coolant_temp",
         "value": 99.0,
         "unit": "°C",
-        "reference_range": [90.0, 95.0]
+        "reference_range": [
+          90.0,
+          95.0
+        ]
       },
       {
         "feature": "coolant_slope",
         "value": 2.5,
         "unit": "°C/min",
-        "reference_range": [0.0, 2.0]
+        "reference_range": [
+          0.0,
+          2.0
+        ]
       }
     ],
     "risk_history": [
@@ -34,7 +40,7 @@
       },
       {
         "timestamp": "2026-06-16T08:00:00Z",
-        "risk_score": 0.60
+        "risk_score": 0.6
       },
       {
         "timestamp": "2026-06-16T12:00:00Z",
@@ -47,6 +53,11 @@
       "Monitor the coolant level regularly.",
       "Schedule a cooling system inspection.",
       "Avoid prolonged heavy driving."
+    ],
+    "estimated_cycles_to_failure": 18,
+    "estimated_failure_probability": 0.64,
+    "notes": [
+      "Single-component fixture includes example failure prediction values."
     ]
   }
 ]

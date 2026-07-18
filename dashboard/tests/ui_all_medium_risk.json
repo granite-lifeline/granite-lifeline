@@ -10,13 +10,16 @@
         "feature": "coolant_temp",
         "value": 98.0,
         "unit": "°C",
-        "reference_range": [90.0, 95.0]
+        "reference_range": [
+          90.0,
+          95.0
+        ]
       }
     ],
     "risk_history": [
       {
         "timestamp": "2026-06-16T08:00:00Z",
-        "risk_score": 0.50
+        "risk_score": 0.5
       },
       {
         "timestamp": "2026-06-16T12:00:00Z",
@@ -29,8 +32,8 @@
       "Monitor the coolant level.",
       "Schedule a routine inspection."
     ],
-    "estimated_cycles_to_failure": null,
-    "estimated_failure_probability": null,
+    "estimated_cycles_to_failure": 22,
+    "estimated_failure_probability": 0.52,
     "notes": []
   },
   {
@@ -44,7 +47,10 @@
         "feature": "maf",
         "value": 24.0,
         "unit": "g/s",
-        "reference_range": [10.0, 22.0]
+        "reference_range": [
+          10.0,
+          22.0
+        ]
       }
     ],
     "risk_history": [
@@ -63,22 +69,27 @@
       "Check the air filter.",
       "Monitor for changes."
     ],
-    "estimated_cycles_to_failure": null,
-    "estimated_failure_probability": null,
-    "notes": []
+    "estimated_cycles_to_failure": 26,
+    "estimated_failure_probability": 0.48,
+    "notes": [
+      "Airflow estimate is based on a short recent trend window."
+    ]
   },
   {
     "timestamp": "2026-06-16T10:00:00Z",
     "risk_score": 0.52,
     "risk_level": "Medium",
     "component": "fuel_system_pressure",
-    "prediction_confidence": 0.70,
+    "prediction_confidence": 0.7,
     "key_signals": [
       {
         "feature": "fuel_pressure",
         "value": 320.0,
         "unit": "kPa",
-        "reference_range": [280.0, 310.0]
+        "reference_range": [
+          280.0,
+          310.0
+        ]
       }
     ],
     "risk_history": [

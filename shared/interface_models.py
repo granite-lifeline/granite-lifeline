@@ -1,6 +1,6 @@
 """
 Pydantic models for Granite Lifeline cross-layer data contracts.
-Based on INTERFACE.md v0.6 (updated 2026-07-08).
+Based on INTERFACE.md v0.9 (updated 2026-07-14).
 
 This is an early-stage version with basic validation only.
 Stricter validation will be added once all layers confirm field details.
@@ -14,7 +14,7 @@ AnomalyType = Literal[
     "cooling_degradation",
     "air_intake_maf_anomaly",
     "accelerator_pedal_sensor",
-    "intake_air_temperature_sensor_fault",
+    "intake_air_temperature_sensor_or_heat_soak_fault",
     "map_load_signal_plausibility_fault",
     "idle_speed_control_or_surge_degradation"
 ]
