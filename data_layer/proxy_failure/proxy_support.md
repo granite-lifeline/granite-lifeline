@@ -13,7 +13,7 @@ For each executable proxy this document retains:
 * Calibration, candidate-selection, sensitivity, and rejection audit
 * Empirical falsifiability (Stage 4)
 
-The formal component, support-signal contract, definition, final rules, guards, coverage summary, key evidence, and limitations are maintained in [`proxy_failure_definition.md`](proxy_failure_definition.md). Section 6 and the feature-layer reconciliation remain here by design.
+The formal component, support-signal contract, definition, final rules, guards, coverage summary, key evidence, and limitations are maintained in [`proxy_failure_definition.md`](proxy_failure_definition.md).  
 
 ## Shared Conventions
 
@@ -33,8 +33,9 @@ The following sub-checks were evaluated through the pre-registered data-analysis
 | `2-S3a` — Stuck MAF | Documented infeasibility | The healthy corpus contains no joint opportunity with both material context change and a 60-s exactly flat MAF signal. A zero-trigger rule would therefore be structurally inert rather than validated. | Do not execute; the 60-s rolling-range statistic may remain in offline research only. |
 | `3-S2` — Single-channel pedal freeze | Documented infeasibility | Short persistence produced healthy triggers or inadequate duration margin; longer persistence reduced opportunity coverage to 7/66 trips in one direction and 3/66 in the other. | Do not execute; both directions have no P2138 verdict. |
 | `3-S3` — Pedal channel-noise burst | Downgraded | Healthy 5-s and 10-s high-`delta_std_10s` episodes remained under both quiet gates despite 66/66 opportunity coverage, so no standalone noise threshold could be frozen. | Do not execute for verdict use; offline descriptive corroboration only. |
+| `4-S4` — Post-high-load IAT heat-soak observation | Removed from the failure definition | The observation has no corresponding DTC, does not isolate an IAT sensor fault, and lacks a frozen persistence rule. S1/S2/S3 already cover the executable IAT failure definition. | Research observation only; no runtime computation, verdict, engineering flag, or DTC. |
 
-These are frozen negative findings for the current cycle, not unfinished implementation tasks. Reintroducing any of them requires new evidence and a new pre-registered calibration/freeze decision.
+These are final non-execution decisions for the current cycle, not unfinished implementation tasks. Reintroducing any item requires a new scope decision and, where a detector is proposed, new evidence plus a pre-registered calibration/freeze decision.
 
 
 ## 1. cooling_degradation
@@ -95,6 +96,7 @@ S4 retains its provisional values from the previous revision ("Expected Pattern"
 
 - **S1 Slow warm-up (P0128) — FROZEN.** 
   - *Rule:* at a qualified cold start, assign a warm-up time budget. If `coolant_temp` reaches `T_target` before the budget expires → `pass`. If the budget expires with sufficient heat input and `coolant_temp` still below `T_target` → `triggered` (direction low, P0128). Everything else → `not_evaluable`. One decision per start; no per-sample thresholding.
+  - *Right-censor handling:* if the target is not reached and the continuous episode ends before budget expiry, record `time_to_target_79c_is_right_censored = true` and the available follow-up duration; return `not_evaluable`, never `triggered`.
   - *Frozen parameters:* `T_target = 79°C`, from `T_reg_est − 11°C` [13], where `T_reg_est = 90°C` = median of per-trip post-warm-up plateau medians over the 66 healthy trips, computed in `experiments/cooling_s1/` and corroborated by the row-level baseline median of 90.00°C in the model team's healthy-baseline table (the map thermostat's commanded setpoint is not observable — stated substitution — project-wide policy: reference levels unobservable in the signal set are baseline-derived). The budget formula is a project-designed discretization of the model-based expected-warm-up reference [10][14], adopted after two simpler estimators failed (full derivation record: `experiments/cooling_s1/`). Budget = Σ over ECT bands (<30 / 30–50 / 50–65 / 65–79°C) of ΔT ÷ healthy warm-up rate for that band (per-trip median → across-trip P25), × safety factor 1.30, computed per ambient bin (≤5°C / >5°C), capped at 30 min. Resulting budgets: 16.5–26.9 min (cold bin), 8.3–18.2 min (warm bin).
   - *Eligibility (at start; any failure → `not_evaluable`):* engine start observed in the log (RPM off→on transition); start `coolant_temp` ≤ 50°C and < `T_target`; `ambient_temp` at start ≥ −7°C [13]; ECT/ambient/MAF present. A 6-hour cold soak is **not** required — that is S4's precondition, not S1's.
   - *Asymmetry:* starts without cold-soak evidence may `trigger` but never `pass` — residual engine heat could explain a fast warm-up, so an early pass on such a start is uninformative; these are reported as "no anomaly observed".
@@ -126,6 +128,7 @@ S4 retains its provisional values from the previous revision ("Expected Pattern"
 - **S4 Cold-start ECT plausibility — executable v1** (low-confidence P0116 flag; S1's sensor-trust guard). Supersedes the `cold_soak_candidate_flag`-gated form: that flag requires ECT ≈ AAT inside its own enable condition, so a faulty ECT could never be flagged (circular gating). The flag stays in the feature layer but no longer enables S4.
   - *Eligibility (all at segment first row; any failure → `not_evaluable`):* `segment_gap ≥ 6 h`; first-row RPM < 50 with an RPM off→on transition observed later in the segment; ECT/IAT/AAT present, none imputed or suspicious. **IAT is the cold-soak witness:** `|IAT − AAT| ≤ 7°C`, else `not_evaluable` — a long gap with warm sensors cannot distinguish "vehicle ran during the gap" from a fault.
   - *Verdict:* `|ECT − AAT| > 15°C` → ECT cold-start plausibility candidate (direction inconsistent, low-confidence P0116 support). ≤ 15°C → `pass`.
+  - *Output constraint:* this is support/confidence evidence and a sensor-trust guard for 1-S1; it must never independently emit a P0116 DTC.
   - *Calibration basis (both thresholds provisional):* strict healthy baseline = **18 events** (observed engine start — the same event set underpinning S1). `|IAT−AAT|` healthy max 5°C → witness 7°C; `|ECT−AAT|` healthy max 11°C → verdict 15°C; zero healthy candidates at these values. Looser eligibility without the observed-start requirement produced 5 false candidates (all logs starting mid-run) — the strict form is mandatory. Architecture precedent: [15]'s exponential soak-decay start estimate with start-up tolerance; [2] for soak-duration methodology.
   - *Mirror:* section 4's F2 uses ECT as the witness to judge IAT — structural mirror only, thresholds calibrated separately. Both checks read raw three-sensor deltas, so there is no circular dependency; both sensors far from AAT → both checks `not_evaluable`.
   - *Maturity:* implementable low-confidence research-grade P0116 plausibility candidate. It cannot isolate the ECT fault, nor prove a true cold soak: `segment_gap` is a logging gap, not verified engine-off time; IAT can return to ambient faster than coolant; AAT faults and common-mode faults are not excluded.
@@ -194,6 +197,7 @@ Output: three-state per sub-check (`pass` / `triggered` / `not_evaluable`), repo
   - *Rule:* `maf == 0.0` at every consecutive valid engine-on sample with `rpm ≥ 500`, sustained ≥ 10 s → `triggered` (P0102 candidate). A firing engine cannot draw zero air; the 500-rpm floor excludes cranking ambiguity.
   - *Calibration evidence:* 193 healthy zero-MAF samples / 150 runs in the quality domain (known cleaning quirk), longest healthy run at rpm ≥ 500 = 3 s → 7 s margin; zero healthy triggers; 5-s persistence rejected by the margin floor (2 s); no healthy zero-run overlaps the `maf_had_hard_invalid_source` flag.
 - **Routing (mirror of section 5):** 5-S2 band evidence (or a 2-S2 trigger) + MAP-side witnesses (5-S1/5-S3) normal → attribute MAF, report under this section (P0101/P0102); a MAP-side witness abnormal → attribute MAP, report under section 5 (P0106); evidence present but neither side evaluable → F4 (P006A, no isolation). With the cohesion band downgraded, F4 has no standalone calibrated trigger of its own and can only be reached through the routes above.
+- **IAT confidence wiring:** when 4-S2 cold-start IAT plausibility support is active, cap `confidence_tier` at `low` for IAT-dependent 2-S2 residual evidence. Do not alter 2-S3b, which uses only raw MAF and RPM.
 - Output: three-state per sub-check (`2-S1` descriptive, `2-S2`, `2-S3a` non-executable, `2-S3b`), `decision_margin` per episode, see Shared Conventions.
 
 - Previous provisional text (historical): `maf_map_cohesion` > 0.25-0.30 for 5-10 s as an initial proxy hint; or steady-state standardized deviation exceeding 25-30%. Retired per the metric unification above.
@@ -283,6 +287,8 @@ All modes map to P2138; sub-check identity and severity tier carry the different
 
 [Authoritative definition and final rules](proxy_failure_definition.md#4-intake_air_temperature_sensor_fault)
 
+**Removed research item:** `4-S4` is retained below only as a historical research observation. It is not an IAT sensor-fault sub-check, is not part of the runtime pipeline, and produces no engineering flag, verdict, or DTC.
+
 ### Judgment Method
 
 #### Stage 1 — Observability Derivation
@@ -298,7 +304,7 @@ All modes map to P2138; sub-check identity and severity tier carry the different
 | S1 | Stuck/skewed IAT — no thermal response | `intake_temp_stability` near zero while flow context changes | sustained window **with changing flow context** | P0111 |
 | S2 | IAT implausible at cold start | `intake_ambient_delta` at segment start, qualified by observed-start + ECT-witness eligibility (v1; mirrors section 1 S4) | cold-soak segment start | P0111 (confidence modifier, not standalone trigger) |
 | S3 | IAT out of physical range | raw bounds on `intake_temp` vs. J1979 PID 0x0F physical range (−40…215°C) [19] | any sample | P0112 (low) / P0113 (high) |
-| S4 | Abnormal heat-soak profile | `intake_temp` vs. project-derived idle-window reference | post-high-load idle/low-speed window | secondary engineering flag, no code |
+| S4 | Post-high-load heat-soak observation | `intake_temp` vs. project-derived idle-window reference | post-high-load idle/low-speed window | non-executed research observation; no runtime output or code |
 
 #### Stage 2 — Literature Anchoring
 
@@ -311,24 +317,24 @@ All modes map to P2138; sub-check identity and severity tier carry the different
 
 #### Stage 3 — Calibration and Selection Audit
 
-*(S1 frozen from the pre-registered census; S2 executable v1; S3 range rule closed; S4 provisional engineering flag)*
+*(S1 frozen from the pre-registered census; S2 executable v1; S3 range rule closed; S4 retained only as a non-executed research observation)*
 
 - **S2 Cold-start IAT plausibility — executable v1** (low-confidence P0111 support; structural mirror of section 1's S4). Supersedes the `cold_soak_candidate_flag`-gated form: that flag requires IAT ≈ AAT inside its own enable condition, so a faulty IAT could never be flagged (circular gating). The flag stays in the feature layer but no longer enables S2.
   - *Eligibility (segment first row; any failure → `not_evaluable`):* `segment_gap ≥ 6 h` [2]; first-row RPM < 50 with an off→on transition observed later in the segment; ECT/IAT/AAT present, none imputed or suspicious. **ECT is the cold-soak witness:** `|ECT − AAT| ≤ 15°C`, else `not_evaluable` — a long gap with warm sensors cannot distinguish "vehicle ran during the gap" from a fault.
   - *Verdict:* `|IAT − AAT| > 7°C` → IAT cold-start plausibility candidate (direction inconsistent, low-confidence P0111 support); ≤ 7°C → `pass`.
   - *Calibration basis (both thresholds provisional):* the same 18-event strict baseline as section 1's S4 — healthy `|IAT−AAT|` max 5°C → verdict 7°C (zero healthy candidates); healthy `|ECT−AAT|` max 11°C → witness 15°C. Thresholds are per-sensor, not numerically mirrored; both sensors far from AAT → both mirror checks `not_evaluable`.
-  - *Consumers:* confidence modifier for co-occurring IAT anomalies (S1/S4 of this section) via `condition_confidence` tiering — never a standalone P0111 trigger. Cross-failure note: `intake_temp` feeds the speed-density estimates of sections 2 and 5; an S2 candidate should down-weight their confidence (wiring to be added in those sections' passes).
+  - *Consumers:* confidence modifier for co-occurring IAT anomalies — never a standalone P0111 trigger. Because `intake_temp` feeds the speed-density residual used by sections 2 and 5, an active S2 candidate caps `confidence_tier` at `low` for 2-S2 and 5-S2. It does not alter 2-S3b, 5-S1, or 5-S3.
   - *Note:* [2] documents the cold-soak framework for ECT (P0116) checks, not IAT specifically — cited for methodology only.
 
 - **S1 Stuck/no-response IAT — FROZEN (hard-stuck only; P0111 candidate).** Supersedes the "sustained airflow" form.
-  - *Rule:* engine on; IAT/speed/MAF/RPM valid, none imputed or suspicious; context change within a 120-s window is material — `speed_std ≥ 12.4 km/h` OR `maf_std ≥ 8.5 g/s` (healthy-baseline quantiles of 120-s window variation; **TBD: record exact quantile definition and trip weighting**, values in `experiments/intake_s1/`). If `intake_temp_stability ≤ 0.1°C` is then sustained for 120 s → `triggered` (P0111 stuck-IAT candidate). Minimum evaluable window 240 s; `pass` = at least one evaluable context-change opportunity with no trigger; otherwise `not_evaluable`.
+  - *Rule:* engine on; IAT/speed/MAF/RPM valid, none imputed or suspicious; context change within a 120-s window is material — `speed_std ≥ 12.4 km/h` OR `maf_std ≥ 8.5 g/s`. These are trip-equal weighted q50 values over valid 120-s endpoints from the fixed 66-trip cohort, with each trip contributing total weight one (`experiments/intake_s1/iat_s1_census_preregistration.json`; reproduced in `outputs/iat_s1_summary.json`). If `intake_temp_stability ≤ 0.1°C` is then sustained for 120 s → `triggered` (P0111 stuck-IAT candidate). Minimum evaluable window 240 s; `pass` = at least one evaluable context-change opportunity with no trigger; otherwise `not_evaluable`.
   - *Calibration evidence (pre-registered census, `experiments/intake_s1/`):* zero healthy triggers; longest healthy flat episode under material context change 29 s → 91 s headroom against the 120-s requirement; robust to relaxing stability to 0.25°C (longest 47 s, still zero). Context opportunities: 306 episodes across 66/66 trips.
   - *Integer-resolution caveat:* IAT is 1°C-quantized at 1 Hz — 61.8% of adjacent samples are unchanged and the longest raw constant-value run is 149 s. All of it lies outside the enable gate (steady cruise), which is exactly why the context-change gate is mandatory (cf. the frozen-ECT deferral in section 1).
   - *Scope statement:* detects **hard-stuck / no-response only**. Slow drift and mild skew are not observable without a reference model; cold-start offset is partially covered by S2. This narrows the proxy definition's "signal drift" claim — recorded as a capability limit, not a TBD.
   - *No in-sample tuning occurred* under the pre-registered grid ordering (one-line confirmation of the recorded ordering pending from the experiment workstream); no LOTO required.
   - *Maturity:* research-grade P0111 stuck-candidate; detection capability awaits Stage 4 frozen-IAT injection. `tps` remains excluded as an airflow proxy (unreliable in this dataset).
 
-- *Post-high-load heat-soak check (dataset-derived, no direct DTC support):* Rather than during high-load driving itself, elevated `intake_temp` is more physically expected to appear in an idle or low-speed window that follows a period of high load — a classic heat-soak pattern in which residual engine-bay heat conducts into the stationary intake path once ram-air cooling stops. This project's own baseline is consistent with that mechanism: within `post_warmup__idle` windows, `intake_temp` reaches a P99 of approximately 63°C, noticeably higher than the P99 seen during `post_warmup__high_load` driving itself (~45°C) [own baseline, not literature-sourced]. `intake_temp` sustained above this project-derived idle-window reference for an extended duration is treated as a secondary engineering flag rather than a standardized threshold, since no SAE/OEM DTC defines a fixed physical high-temperature limit for IAT under normal (non-circuit-fault) conditions; this threshold should be re-validated as more trip data accumulates rather than treated as fixed. **Status: provisional engineering flag (S4), frozen as-is — no DTC, lowest confidence tier.**
+- *Post-high-load heat-soak observation (dataset-derived, no direct DTC support):* Rather than during high-load driving itself, elevated `intake_temp` is more physically expected to appear in an idle or low-speed window that follows a period of high load — a classic heat-soak pattern in which residual engine-bay heat conducts into the stationary intake path once ram-air cooling stops. This project's own baseline is consistent with that mechanism: within `post_warmup__idle` windows, `intake_temp` reaches a P99 of approximately 63°C, noticeably higher than the P99 seen during `post_warmup__high_load` driving itself (~45°C) [own baseline, not literature-sourced]. This is retained solely as a research observation: it has no corresponding DTC, does not isolate an IAT sensor fault, and never had a frozen persistence requirement. **Status: non-executed; no runtime computation, engineering flag, verdict, or DTC.**
 
 - Output: three-state per sub-check, see Shared Conventions. S3 range rule (TBD closed): any sample of `intake_temp` outside −40…215°C [19] → `triggered` (direction low → P0112, high → P0113); evaluated continuously; `not_evaluable` only when the signal is missing.
 
@@ -401,6 +407,7 @@ All modes map to P2138; sub-check identity and severity tier carry the different
 *Superseded (2026-07-18):* the pre-census descriptive forms of the three checks — per-state `pedal_slope`/`map_slope` tolerances with their P99 anchors, per-state residual bands, and `map_stability` low-variance thresholds with their P05 anchors — are superseded by the frozen census-derived rules above and were removed from this section to keep a single executable specification. The anchors and full text survive in the census planning record (`experiments/map_census/` pre-registrations) and git history; they must not be read as rules.
 
 - **Arbitration rule (shared evidence with section 2):** see section 2 Stage 3 — S2 evidence is attributed to MAP only when S1 or S3 also triggers; otherwise it flows to section 2's attribution logic.
+- **IAT confidence wiring:** when 4-S2 cold-start IAT plausibility support is active, cap `confidence_tier` at `low` for IAT-dependent 5-S2 residual evidence. Do not alter 5-S1 or 5-S3.
 - Output: three-state per sub-check, see Shared Conventions.
 
 *Data-quality note:* `tps` in this dataset is saturated near 83.1-83.5% across nearly all operating states (idle, high load, and steady driving alike). A simple `100 - tps` inversion does not recover a physically meaningful throttle-opening signal, and `tps` does not correlate with `accel_pedal_mean`, `map`, `maf`, or `rpm` in the expected physical direction. Conversely, `map` shows a more physically plausible response to `pedal_slope` changes than to `tps`, supporting the choice of pedal demand as the substitute trigger signal. `tps` is therefore treated as unreliable for step-detection purposes in this failure and retained only as raw diagnostic context, not as a triggering input.
@@ -425,33 +432,6 @@ All modes map to P2138; sub-check identity and severity tier carry the different
 **Consequences:** the `anomaly_type` enum entry for idle is to be retired or marked non-executable (interface change, model-layer team). Revival requires any one of: a commanded-target PID, an idle-rich corpus, or the AU/EET nominal-idle data sheet for this engine.
 
 ---
-
-## Pending Work — Feature-Layer Reconciliation
-
-The per-section Supporting-Features lines were Stage-1 hypotheses; as of 2026-07-18 they have been reconciled to the frozen rules (consumed vs. descriptive vs. legacy, marked per section). **For implementation, the single authoritative list below remains the source of truth.** All five sections' Decision Rules are now frozen; this list is complete for the current freeze cycle.
-
-Features to generate (consumed by the frozen/executable rules of sections 1–5):
-
-1. `engine_start_observed` / `engine_start_episode_id` — RPM off→on crossing (RPM < 50 → ≥ 50) within a segment; all episode-scoped features key on this, not on `segment_id` (a segment can contain multiple starts).
-2. `elapsed_since_engine_start` — seconds since the observed start event (never derived from `thermal_state`).
-3. `ect_start`, `aat_start`, `iat_start` — episode-start values (eligibility of 1-S1, 1-S4, 4-S2).
-4. `time_to_target_79c` — time from engine start to first ECT ≥ T_target, with right-censoring recorded (1-S1).
-5. `maf_integral_180s` — trailing 180-s MAF integral, reset per engine-start episode, not per segment (heat-input guard, 1-S1).
-6. `ect_rate_180s` — (ECT[t] − ECT[t−180 s]) / 3, °C/min (1-S3).
-7. `ect_exceedance_run_s` — running duration of `coolant_temp` at or above a given threshold (persistence for 1-S2/1-S3).
-8. `speed_std_120s`, `maf_std_120s` — 120-s rolling standard deviations (context-change gate, 4-S1).
-9. `intake_temp_stability` — rolling standard deviation of `intake_temp`, window per the census definition (verdict input, 4-S1).
-10. `decision_margin` — per-decision output field (budget − time_to_target for 1-S1; analogous margins for duration-gated checks).
-11. `pedal_step_event` family (5-S1) — event table keyed by (trip, event id): detection = positive `pedal_slope` ≥ per-state trip-equal P95 (idle `9.2` / steady_driving `11.4` / acceleration `18.6` / high_load `26.5` %/s), 2-s deduplication, validity requires contiguous valid t0−1…t0+2; `step_response = max |map − map(t0−1)|` over t+0…t+2; `no_response_flag` vs. per (state × magnitude-bin) P01 (steady_driving bin_lo excluded, non-separable); rolling no-response count over the trip's last 4 valid events (trigger at ≥ 3).
-12. `steady_state_mask` (5-S2 frozen definition; also consumed descriptively by 2-S1) — `pedal_slope == 0` AND |`rpm_slope`| ≤ 9 rpm/s, sustained ≥ 10 s.
-13. `residual_band_run_s` — same-side out-of-band run lengths of `speed_density_maf_residual`: 5-S2 `steady_driving` band [`−4.04`, `+16.71`] g/s, trigger ≥ 30 s; 2-S2 `post_warmup__high_load` low side < `−18.495` g/s, trigger ≥ 10 s.
-14. `rpm_std_120s`, `accel_pedal_mean_std_120s` — complete the 120-s context family for the 5-S3 gate (reuses `speed_std_120s` from item 8; q50 thresholds rpm `241` / speed `12.4` km/h / pedal `9.9` %).
-15. `map_range_60s` — 60-s rolling max − min of `map` (5-S3 verdict input; exact-constant convention; **supersedes `map_stability` as verdict statistic**).
-16. `zero_maf_run_s` — run length of `maf == 0.0` at `rpm ≥ 500` (2-S3b, trigger ≥ 10 s).
-17. `pedal_lowmotion_mask`, `pedal_mapping_residual`, `channel_delta_extreme_run_s` (3-S1a/b) — mask = |`pedal_slope`| ≤ `2.4` pp/s sustained ≥ 3 s (registered nonzero-P50 fallback); residual `r = accel_pedal_e − (0.997273·accel_pedal_d + 0.383103)`, band [`−1.8350`, `+1.3777`] pp, same-side masked run ≥ 30 s; extreme tier `accel_pedal_channel_delta ≥ 65` pp sustained 2 s.
-18. `delta_std_10s` under per-channel quiet gates (gate_D `3.5` / gate_E `3.1` pp/s, full-window containment) — **descriptive corroborator only** (3-S3 downgraded), not a verdict input.
-
-Existing features retained as consumed: `segment_gap_seconds`, `coolant_ambient_delta`, `intake_ambient_delta`, `thermal_state`, `operating_state`, `condition_confidence`, and the imputed/suspicious data-quality flags (`maf_had_hard_invalid_source` reporting-only, per 2-S3b).
 
 Legacy / demoted (stay in the feature layer, no longer verdict or enable inputs): `cold_soak_candidate_flag` (circular gating — see 1-S4 / 4-S2); `map_stability`, `map_slope` (superseded by items 15 and 11); `accel_pedal_channel_ratio` (distribution-unstable, descriptive); `maf_map_cohesion` with `maf_derived_air_load_raw` / `map_derived_air_load_raw` (2-S1 downgraded — descriptive, F4 corroboration); `coolant_slope`, `coolant_stability` (superseded by items 6–7); the 60-s MAF rolling range (defined by the 2-S3a census, unconsumed — kept as the settled `maf_stability` spec for any future re-registration).
 

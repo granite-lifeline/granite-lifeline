@@ -20,7 +20,7 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 
 **Component:** Cooling system (radiator / water pump / thermostat / coolant circulation).
 
-**Support signals:** `coolant_temp`, `ambient_temp`, `intake_temp`, `rpm`, `maf`, `coolant_ambient_delta`, `intake_ambient_delta`, `segment_gap_seconds`, engine-start episode fields, `time_to_target_79c`, `maf_integral_180s`, `ect_rate_180s`, `ect_exceedance_run_s`, and `decision_margin`.
+**Support signals:** `coolant_temp`, `ambient_temp`, `intake_temp`, `rpm`, `maf`, `coolant_ambient_delta`, `intake_ambient_delta`, `segment_gap_seconds`, engine-start episode fields, `time_to_target_79c`, `time_to_target_79c_is_right_censored`, `time_to_target_79c_censor_time_s`, `maf_integral_180s`, `ect_rate_180s`, `ect_exceedance_run_s`, and `decision_margin`.
 
 **Definition:** Detect abnormal coolant thermal behavior: slow warm-up, sustained overheating, a level-conditioned rising-temperature precursor, or cold-start ECT implausibility. The judgment form follows coolant-model and regulatory monitoring precedents; project thresholds are baseline-calibrated except for explicitly identified regulatory guard forms [1–8].
 
@@ -31,6 +31,7 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 - At a qualified observed engine start, set `T_target = 79°C` (`T_reg_est = 90°C`, minus the 11°C regulatory form [4]) and assign the frozen ambient-bin/ECT-band warm-up budget: 16.5–26.9 min for ambient ≤5°C and 8.3–18.2 min for ambient >5°C, capped at 30 min.
 - Reaching `T_target` before budget expiry is `pass` only when cold-soak evidence is sufficient. Budget expiry below `T_target`, with sufficient heat input, is `triggered` (low, P0128). Otherwise return `not_evaluable`.
 - Eligibility: observed RPM off→on start; start ECT ≤50°C and below target; start ambient ≥−7°C; ECT, ambient, and MAF present. At expiry, trailing 180-s MAF integral must be at least approximately 2800 g. A start ECT plausibility flag from 1-S4 forces `not_evaluable_due_to_ect_plausibility`.
+- Right-censor guard: if ECT has not reached 79°C and the continuous observation ends before the assigned budget expires, return `not_evaluable`; record the censor flag and available follow-up duration rather than treating the truncated episode as a failure.
 - Coverage and key evidence: 20/51 qualified starts reached a decision point (39.2%); healthy in-sample false positives 0/20. The threshold/reference level was stable across the recorded validation; synthetic smoke tests are calibration evidence only, not real-fault recall evidence.
 - Limitations: provisional research-grade candidate; real-fault recall is unknown; thermostat failure is indicated, not isolated. Short logs and the heat-input guard materially limit coverage.
 
@@ -53,7 +54,7 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 - At the segment first row, require `segment_gap ≥ 6 h`, first-row RPM <50 followed by an observed off→on transition, valid non-imputed/non-suspicious ECT/IAT/AAT, and IAT witness `|IAT − AAT| ≤ 7°C`. Otherwise `not_evaluable`.
 - `|ECT − AAT| > 15°C` is a low-confidence inconsistent-direction P0116 support candidate; ≤15°C is `pass`.
 - Coverage and key evidence: calibrated on 18 strict observed-start events; healthy maxima were 5°C for `|IAT−AAT|` and 11°C for `|ECT−AAT|`, with zero healthy candidates at the selected thresholds.
-- Limitations: cannot isolate ECT, verify a true cold soak, or exclude AAT/common-mode faults. It is a support flag and a sensor-trust guard for 1-S1.
+- Limitations: cannot isolate ECT, verify a true cold soak, or exclude AAT/common-mode faults. It is low-confidence support evidence and a sensor-trust guard for 1-S1; it must never independently emit a P0116 DTC.
 
 ## 2. air_intake_maf_anomaly
 
@@ -85,6 +86,7 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 - A MAP-side witness abnormal → attribute to MAP/P0106.
 - Evidence present but neither side evaluable → F4/P006A without isolation.
 - Residual sign alone never determines attribution.
+- When 4-S2 cold-start IAT plausibility support is active, cap the confidence of IAT-dependent 2-S2 residual evidence at `low`; 2-S3b is unaffected because it does not use IAT.
 
 ## 3. accelerator_pedal_sensor
 
@@ -120,13 +122,13 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 
 **Support signals:** `intake_temp`, `ambient_temp`, `coolant_temp`, `speed`, `rpm`, `maf`, `operating_state`, `intake_ambient_delta`, `intake_temp_stability`, `segment_gap_seconds`, `condition_confidence`, `speed_std_120s`, `maf_std_120s`, and quality flags.
 
-**Definition:** Detect an IAT signal that is hard-stuck despite material flow-context change, implausible against cold-start references, or outside its physical PID range. The post-load heat-soak check remains a lowest-confidence engineering flag [1–4,12,13].
+**Definition:** Detect an IAT signal that is hard-stuck despite material flow-context change, implausible against cold-start references, or outside its physical PID range [1–4,12,13].
 
 ### Final rules
 
 #### 4-S1 — Stuck/no-response IAT (frozen; hard-stuck P0111 candidate)
 
-- Require engine on and valid, non-imputed, non-suspicious IAT/speed/MAF/RPM. Material change in a 120-s context window is `speed_std ≥ 12.4 km/h` OR `maf_std ≥ 8.5 g/s`.
+- Require engine on and valid, non-imputed, non-suspicious IAT/speed/MAF/RPM. Material change in a 120-s context window is `speed_std ≥ 12.4 km/h` OR `maf_std ≥ 8.5 g/s`; both thresholds are trip-equal weighted q50 values over valid 120-s endpoints from the fixed 66-trip cohort, with each trip contributing total weight one.
 - Under that gate, `intake_temp_stability ≤ 0.1°C` sustained for ≥120 s is `triggered`. Minimum evaluable window: 240 s. `pass` requires at least one eligible context-change opportunity without a trigger; otherwise `not_evaluable`.
 - Coverage and key evidence: context opportunities in 66/66 trips; zero healthy triggers; longest healthy flat episode under material context 29 s, leaving 91 s headroom. The result remained trigger-free at a 0.25°C sensitivity check.
 - Limitations: detects hard-stuck/no-response only, not slow drift or mild skew. Detection capability awaits frozen-IAT injection. IAT is 1°C-quantized, so the context gate is mandatory.
@@ -136,16 +138,11 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 - At the segment first row, require `segment_gap ≥ 6 h`, first-row RPM <50 followed by an observed off→on transition, valid non-imputed/non-suspicious ECT/IAT/AAT, and ECT witness `|ECT − AAT| ≤ 15°C`. Otherwise `not_evaluable`.
 - `|IAT − AAT| > 7°C` is low-confidence inconsistent-direction P0111 support; ≤7°C is `pass`.
 - Coverage and key evidence: 18 strict observed-start events; healthy maxima 5°C (`|IAT−AAT|`) and 11°C (`|ECT−AAT|`), with zero healthy candidates.
-- Limitations: confidence modifier only, never a standalone P0111 trigger; both sensors far from AAT make the mirrored checks `not_evaluable`.
+- Limitations: confidence modifier only, never a standalone P0111 trigger; both sensors far from AAT make the mirrored checks `not_evaluable`. When active, it caps confidence at `low` for IAT-dependent residual evidence in 2-S2 and 5-S2, without changing 2-S3b, 5-S1, or 5-S3.
 
 #### 4-S3 — Physical range (closed rule; P0112/P0113)
 
 - Any valid `intake_temp` outside −40…215°C is `triggered`: low → P0112; high → P0113 [13]. Missing signal returns `not_evaluable`.
-
-#### 4-S4 — Post-high-load heat soak (provisional engineering flag; no DTC)
-
-- Sustained IAT above the project-derived post-warm-up idle reference (approximately 63°C P99) is a lowest-confidence engineering flag only.
-- Limitation: no standardized fixed high-temperature DTC threshold; re-validation is required as data grows.
 
 ## 5. map_load_signal_plausibility_fault
 
@@ -184,6 +181,7 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 #### Routing and data-quality guard
 
 - 5-S2 evidence is attributed to MAP only when 5-S1 or 5-S3 also triggers; otherwise it follows the MAF-side arbitration in section 2.
+- When 4-S2 cold-start IAT plausibility support is active, cap the confidence of IAT-dependent 5-S2 residual evidence at `low`; 5-S1 and 5-S3 are unaffected because they do not consume IAT.
 - `tps` is excluded as a trigger because it is saturated near 83.1–83.5% and lacks the expected physical relationships in this dataset. Pedal demand is the frozen substitute.
 
 ## Reference
