@@ -108,7 +108,7 @@ class TestOverviewPageComponents:
 # ---------------------------------------------------------------------------
 
 class TestDetailPageRealData:
-    """GL-133: Detail Page renders correctly for cooling_degradation real data."""
+    """GL-133: Detail Page renders correctly for cooling_degradation."""
 
     def _cooling(self) -> dict:
         data = _get_data()
@@ -130,7 +130,8 @@ class TestDetailPageRealData:
         cooling = data[cooling_key]
         # kit_residual_sample.json has risk_score 1.0
         assert cooling["risk_score"] == 1.0, (
-            f"Expected risk_score=1.0 from real file, got {cooling['risk_score']}"
+            "Expected risk_score=1.0 from real file, "
+            f"got {cooling['risk_score']}"
         )
 
     def test_cooling_key_signals_present(self):
@@ -152,7 +153,7 @@ class TestDetailPageRealData:
             assert len(signal["reference_range"]) == 2
 
     def test_cooling_report_panel_fields_present(self):
-        """Diagnostic report panel fields are present (may be empty for fallback)."""
+        """Report panel fields present (may be empty for fallback)."""
         cooling = self._cooling()
         assert cooling is not None
         for field in ("anomaly_description", "possible_cause",
@@ -165,7 +166,7 @@ class TestDetailPageRealData:
         assert isinstance(cooling["recommended_action"], list)
 
     def test_real_pipeline_report_generation_success(self):
-        """When real pipeline runs, report_generation_success should be True."""
+        """Real pipeline sets report_generation_success to True."""
         data = _get_data()
         source = data.get("_data_source", {})
         cooling_key = (
@@ -193,7 +194,8 @@ class TestDetailPageRealData:
             "possible_cause should be non-empty when pipeline succeeds"
         )
         assert len(cooling["recommended_action"]) >= 1, (
-            "recommended_action should have at least one item when pipeline succeeds"
+            "recommended_action should have at least "
+            "one item when pipeline succeeds"
         )
 
 

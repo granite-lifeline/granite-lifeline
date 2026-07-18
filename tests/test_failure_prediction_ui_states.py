@@ -5,7 +5,6 @@ import re
 import sys
 from pathlib import Path
 
-from dashboard.data_loader import load_dashboard_data
 from dashboard.failure_prediction import (
     PENDING_FAILURE_PREDICTION_TEXT,
     format_failure_prediction_text,
@@ -32,7 +31,9 @@ def test_failure_prediction_has_value_and_null_states():
     """Test dashboard data covers has-value and null UI states."""
     # Load mock data directly (bypasses real pipeline) so the exact
     # values from ui_required_data.json are used for formatting checks.
-    from dashboard.data_loader import load_report_data, convert_to_component_dict
+    from dashboard.data_loader import (
+        load_report_data, convert_to_component_dict
+    )
     mock = convert_to_component_dict(
         load_report_data("dashboard/tests/ui_required_data.json")
     )
@@ -56,7 +57,9 @@ def test_failure_prediction_has_value_and_null_states():
 
 def test_data_quality_notes_visible_and_hidden_states():
     """Test notes list displays only when non-empty."""
-    from dashboard.data_loader import load_report_data, convert_to_component_dict
+    from dashboard.data_loader import (
+        load_report_data, convert_to_component_dict
+    )
     mock = convert_to_component_dict(
         load_report_data("dashboard/tests/ui_required_data.json")
     )
