@@ -138,7 +138,7 @@ Output: three-state per sub-check (`pass` / `triggered` / `not_evaluable`), repo
 
 **Component:** MAF sensor / intake air measurement path  
 
-**Supporting Features:** `maf`, `map`, `rpm`, `intake_temp`, `maf_derived_air_load_raw`, `map_derived_air_load_raw`, `maf_map_cohesion`  
+**Supporting Features:** `maf`, `map`, `rpm`, `intake_temp`, `speed_density_maf_residual`, `maf_derived_air_load_raw`, `map_derived_air_load_raw`, `maf_map_cohesion`, `maf_stability`, `map_stability`  
 
 **Proxy Definition:** Triggered when `maf_map_cohesion` remains high. This proxy identifies inconsistency between the MAF-side air-load estimate and the MAP-side air-load estimate, mainly indicating MAF sensor drift, contamination, response delay, or abnormalities in the intake measurement chain.  
 
@@ -152,19 +152,18 @@ Output: three-state per sub-check (`pass` / `triggered` / `not_evaluable`), repo
 
 **Failure-mode enumeration.**
 
-| # | Symptom | Statistic (feature) | Enable window | DTC label |
-|---|---|---|---|---|
-| S1 | MAF drift/contamination — persistent bias vs. parallel estimate | `maf_map_cohesion` sustained above tolerance | steady-state, per `operating_state` | P0101 |
-| S2 | MAF under-read at high load (classic contamination signature) | signed residual of `maf_derived_air_load_raw` vs. `map_derived_air_load_raw` at high load | `high_load_transient` / `high_speed_cruise` | P0101 |
-| S3 | Stuck/low MAF signal | `maf_stability` (rolling std, analogous to `map_stability`) — **TBD: feature not yet implemented (see feature backlog)** | engine-on with changing load context | P0102 |
-| F4 | Unattributable MAF–MAP disagreement | `maf_map_cohesion` high, section 5 MAP-dedicated checks inconclusive | steady-state | P006A (air-metering chain inconsistency, no isolation) |
+| #  | Symptom                                                          | Statistic (feature)                                                                                                                                  | Enable window                             | DTC label |
+| -- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | --------- |
+| S1 | MAF drift/contamination — persistent bias vs. parallel estimate | `maf_map_cohesion` sustained above tolerance AND `speed_density_maf_residual`sustained above tolerance                                         | `steady_driving`                        | P0101     |
+| S2 | MAF under-read at high load (classic contamination signature)    | `maf_derived_air_load_raw` - `map_derived_air_load_raw` Negative residuals indicate MAF anomalies. (positive residuals point to MAP anomalies) | `high_load`                             | P0101     |
+| S3 | Stuck/low MAF signal                                             | `maf_stability` < baseline AND `map_stability` > baseline **TBD: feature not yet implemented**                                           | `engine_on` with changing load context | P0102     |
 
 #### Stage 2 — Literature Anchoring (TBD)
 
-- Bosch Automotive Handbook [4] (existing source, retained).
-- Model-based MAF/MAP cross-check architecture: same references as section 5 ([5][6]) — the throttle-model input is not available here (unreliable `tps`), so this proxy uses the two-estimator reduced form. **TBD: confirm citation scope.**
-- CARB Title 13 CCR §1968.2 (e)(15.1.1)(A) [13] *(pre-2006 numbering (e)(16); renumbered in the OAL 2006 text)* — comprehensive component monitoring requirement: all input components that affect emissions must be monitored. MAF is an input component covered under this requirement.
-- CARB Title 13 CCR §1968.2 (e)(15.2.1)(A) [13] — defines the required diagnostic scope: "The OBD II system shall detect malfunctions of input components caused by a lack of circuit continuity, out of range values, and, where feasible, rationality faults." Rationality fault verification must detect "inappropriately high nor inappropriately low" sensor output (two-sided diagnostics). This provides the regulatory basis for S1 (MAF drift — cross-sensor rationality) and S3 (stuck/low MAF signal — out-of-range).
+- Bosch Automotive Handbook [4] — **Borrowed: physical basis only** (two-estimator redundancy and air-mass measurement principles; existing source, retained).
+- Nyberg & Nielsen [5], intake-system fault-isolation patent [6] — **Borrowed: model-based cross-check architecture** (MAF/MAP two-estimator reduced form; the throttle-model input (tps) is not available in this dataset, so this proxy uses only the two-estimator consistency check, not the full throttle-model implementation).
+- CARB Title 13 CCR §1968.2 (e)(15.1.1)(A) [13] (pre-2006 numbering (e)(16); renumbered in the OAL 2006 text) — **Borrowed: mandate** (comprehensive component monitoring requirement; MAF is an input component covered under this requirement).
+- CARB Title 13 CCR §1968.2 (e)(15.2.1)(A) [13] — **Borrowed: rationality fault diagnostic requirement** (defines the required diagnostic scope — circuit continuity, out-of-range, and rationality faults with "inappropriately high nor inappropriately low" two-sided verification; provides the regulatory basis for S1 (MAF drift — cross-sensor rationality) and S3 (stuck/low MAF signal — out-of-range)).
 
 #### Stage 3 — Decision Rules (provisional)
 
@@ -197,21 +196,23 @@ Retained from the previous revision ("Expected Pattern"): `maf_map_cohesion` > 0
 
 **Failure-mode enumeration.**
 
-| # | Symptom | Statistic (feature) | Enable window | DTC label |
-|---|---|---|---|---|
-| S1 | Channel relation drift — ratio/offset bias | residual of learned mapping `accel_pedal_e = a·accel_pedal_d + b`; `accel_pedal_channel_delta`, `accel_pedal_channel_ratio` | engine-on, both channels valid | P2138 |
-| S2 | One channel frozen while the other moves | per-channel variance asymmetry over rolling window; `pedal_slope` on one channel with zero slope on the other | engine-on, active pedal motion | P2138 |
-| S3 | Correlation collapse / noise burst | rolling correlation below bound; residual spike count | engine-on | P2138 |
+| #   | Symptom                                                              | Statistic (feature)                                                                             | Enable window                                                                                                                 | DTC label |
+| --- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------- |
+| S1a | Channel relation drift — ratio/offset bias                          | `accel_pedal_channel_delta` >= max  AND `accel_pedal_channel_ratio out of threshold range` | `steady_driving`, `acceleration`, <br />The specific judgment threshold range varies under different working conditions | P2138     |
+| S1b | Channel relation drift — extreme delta under all working conditions | `accel_pedal_channel_delta >= max`                                                            | any                                                                                                                           | P2138     |
+| S2  | One channel frozen while the other moves                             | compare delta of`accel_pedal_d` and `accel_pedal_d`                                        | engine-on, active pedal motion                                                                                                | P2138     |
+| S3  | Correlation collapse / noise burst                                   | `accel_pedal_channel_delta`rolling std                                                                    | engine-on                                                                                                                     | P2138     |
+
 
 All modes map to P2138; sub-check identity and severity tier carry the differentiation in the output schema.
 
-#### Stage 2 — Literature Anchoring (TBD)
+#### Stage 2 — Literature Anchoring
 
-- SAE J2012 [1] — DTC definition (existing source, retained).
-- Bosch Automotive Handbook [4] — ETC dual-sensor redundancy design. **TBD: page reference.**
-- CARB Title 13 CCR §1968.2 (e)(15.1.1)(A) [13] *(pre-2006 numbering (e)(16); renumbered in the OAL 2006 text)* — comprehensive component monitoring: pedal position sensor is an input component covered under this requirement (listed as part of the throttle control system input chain).
-- CARB Title 13 CCR §1968.2 (e)(15.2.1)(A) [13] — rationality fault diagnostic requirement. Dual-channel accelerator pedal sensors are a direct application: channel correlation is a standard rationality check where each channel verifies the other's plausibility.
-- ISO 26262-5:2018 [12] — provides the functional-safety framework for hardware-level design and diagnostic mechanisms in automotive E/E systems. It supports the use of redundant sensing and consistency monitoring as safety mechanisms, although the specific dual-channel accelerator pedal implementation is an OEM design choice.
+- SAE J2012 [1] — **Borrowed: DTC identities only** (P2138 pedal position sensor range/performance; the standard gives the DTC name, not the detection criteria).
+- Bosch Automotive Handbook [4] — **Borrowed: ETC dual-sensor redundancy design** (p. 706; describes the dual-potentiometer architecture used in electronic throttle control systems).
+- CARB Title 13 CCR §1968.2 (e)(15.1.1)(A) [13] (pre-2006 numbering (e)(16); renumbered in the OAL 2006 text) — **Borrowed: mandate** (comprehensive component monitoring; pedal position sensor is an input component covered under this requirement, listed as part of the throttle control system input chain).
+- CARB Title 13 CCR §1968.2 (e)(15.2.1)(A) [13] — **Borrowed: rationality fault diagnostic requirement** (dual-channel accelerator pedal sensors are a direct application — channel correlation is a standard rationality check where each channel verifies the other's plausibility).
+- ISO 26262-5:2018 [12] — **Borrowed: functional-safety framework for redundant sensing** (provides the safety-mechanism design rationale for dual-channel consistency monitoring as an automotive E/E systems diagnostic mechanism; the specific implementation is an OEM design choice).
 
 
 #### Stage 3 — Decision Rules (provisional)
@@ -308,21 +309,21 @@ Retained from the previous revision ("Expected Pattern"): First learn the datase
 
 **Failure-mode enumeration.**
 
-| # | Symptom | Statistic (feature) | Enable window | DTC label |
-|---|---|---|---|---|
-| S1 | MAP unresponsive to demand step | `abs(map_slope)` near zero within response window after `pedal_slope` step event | pedal step events, per `operating_state` | P0106 |
-| S2 | Steady-state MAP/MAF cross-inconsistency | `speed_density_maf_residual` outside per-state tolerance | steady-state windows | P0106 (shared evidence with section 2 — arbitration rule applies) |
-| S3 | Stuck MAP signal | `map_stability` below per-state low-variance bound while context changes | sustained engine-on window | P0106 |
+| #              | Symptom                                                                                     | Statistic (feature)                                                                  | Enable window                                                | DTC label                                                    |
+| -------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| S1             | MAP unresponsive to demand step                                                             | `abs(map_slope)` near zero within response window after `pedal_slope` step event | pedal step events, per`operating_state`                    | P0106                                                        |
+| S2             | Steady-state MAP/MAF cross-inconsistency                                                    | `speed_density_maf_residual` outside per-state tolerance                           | `steady_driving`                                           | P0106                                                        |
+| S2_Arbitration | If MAP_F1 concurrent trigger: MAP fault;  Elif signed_residual large negative: MAF fault | `maf_derived_air_load_raw - map_derived_air_load_raw`                              | on F2 trigger                                                | P0106 (shared evidence with 3.2 — arbitration rule applies) |
+| S3             | Stuck MAP signal                                                                            | `map_stability <` baseline AND `maf_stability` > baseline                       | engine-on, not in idle state, with other signals fluctuating | P0106                                                        |
 
 #### Stage 2 — Literature Anchoring
 
-- Bosch Automotive Handbook [4] — MAP as load-monitoring method (existing source, retained).
-- Nyberg & Nielsen [5], intake-system fault-isolation patent [6] — model-based cross-check architecture. Their specific implementations use throttle position as a model input; this project's substitution of pedal demand for that input is not directly validated by those sources and should be treated as this project's own dataset-driven adaptation (existing note, retained).
-- CARB Title 13 CCR §1968.2 (e)(15.1.1)(A) [13] *(pre-2006 numbering (e)(16); renumbered in the OAL 2006 text)* — comprehensive component monitoring: MAP sensor is an input component covered under this requirement.
-- CARB Title 13 CCR §1968.2 (e)(15.2.1)(A) [13] — rationality fault diagnostic requirement. MAP rationality is explicitly demonstrated through two-sided verification: the signal must be neither "inappropriately high" (sensor stuck high vs. pedal demand) nor "inappropriately low" (sensor stuck low, or frozen at ambient) — directly supporting the step-response check (S1), the cross-estimator check (S2), and the stuck-signal check (S3).
-- CARB Title 13 CCR §1968.2 (e)(15.3.1)(A) [13] — continuous monitoring for range; (e)(15.3.1)(B) — rationality per manufacturer-defined conditions.
-- Note on substituting pedal demand for throttle position: The regulation at (e)(15.2.1)(A) states rationality checks shall be performed "to the extent feasible" and "where feasible." The specific rationality check method is not prescribed — the regulation requires the outcome (two-sided verification), not the means. This project's substitution of the unreliable tps signal with the validated pedal-demand signal is consistent with this regulatory framework.
-
+- Bosch Automotive Handbook [4] — **Borrowed: physical basis only** (MAP as load-monitoring method, pp. 897, 912, 914, 919, 928; existing source, retained).
+- Nyberg & Nielsen [5], intake-system fault-isolation patent [6] — **Borrowed: model-based cross-check architecture** (their specific implementations use throttle position as a model input; this project's substitution of pedal demand for that input is not directly validated by those sources and should be treated as this project's own dataset-driven adaptation; existing note, retained).
+- CARB Title 13 CCR §1968.2 (e)(15.1.1)(A) [13] (pre-2006 numbering (e)(16); renumbered in the OAL 2006 text) — **Borrowed: mandate** (comprehensive component monitoring; MAP sensor is an input component covered under this requirement).
+- CARB Title 13 CCR §1968.2 (e)(15.2.1)(A) [13] — **Borrowed: rationality fault diagnostic requirement** (MAP rationality explicitly demonstrated through two-sided verification — the signal must be neither "inappropriately high" (sensor stuck high vs. pedal demand) nor "inappropriately low" (sensor stuck low, or frozen at ambient); directly supports the step-response check (S1), the cross-estimator check (S2), and the stuck-signal check (S3)).
+- CARB Title 13 CCR §1968.2 (e)(15.3.1)(A) [13] — **Borrowed: continuous monitoring for range**; (e)(15.3.1)(B) — **rationality per manufacturer-defined conditions**.
+- Note on substituting pedal demand for throttle position: The regulation at (e)(15.2.1)(A) states rationality checks shall be performed "to the extent feasible" and "where feasible." The specific rationality check method is not prescribed — the regulation requires the outcome (two-sided verification), not the means. This project's substitution of the unreliable `tps` signal with the validated pedal-demand signal is consistent with this regulatory framework.
 
 
 #### Stage 3 — Decision Rules
