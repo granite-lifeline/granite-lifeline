@@ -1,25 +1,27 @@
 {
   "manifest_type": "calibration_registry_release_manifest",
-  "manifest_version": "1.0.0",
+  "manifest_version": "1.1.0",
   "calibration_version": "calibration.v1",
   "status": "frozen",
-  "created_at_utc": "2026-07-19T00:41:05Z",
+  "created_at_utc": "2026-07-19T15:03:07Z",
   "hash_algorithm": "SHA-256",
   "registry": {
     "path": "data_layer/calibration/calibration_registry.v1.json",
-    "sha256": "b892ae2a52faf6f48fd67c2377ce5668b01c0fae7a68b2e9365107b8608139f0",
+    "sha256": "856998172dc71565b879be97d4a9e737b5ca7c969923bf44b4aec2efa44d2f10",
+    "registry_schema_version": "1.0.1",
     "immutable": true
   },
   "feature_contract": {
     "path": "data_layer/contracts/feature_manifest.v1.json",
+    "manifest_version": "1.2.0",
     "schema_version": "feature_schema.v1",
-    "sha256": "f08cdb8033b5f4a9058f58465f3d0f7b26d5f43e2b0a22566ba223d55864fd76"
+    "sha256": "7513e2805ae043f7e57e9cf1c54bb5f5e950bb3bafbf5fcf7898553a0d5072bd"
   },
   "authoritative_documents": [
     {
       "id": "feature_schema",
       "path": "data_layer/feature_engineering/feature_schema.md",
-      "sha256": "261726e3e762a9a4baa4f73e9e1cdce0a93b8b026418eaf934162472b27d831d"
+      "sha256": "5e32bbafb2219f986d68679c2ee28173535bf600f74c79655f0f9918fd7b60ca"
     },
     {
       "id": "proxy_definition",
@@ -170,6 +172,9 @@
     "all_registry_source_ids_resolve": true,
     "all_source_checksums_recorded": true,
     "feature_manifest_has_24_unique_ordered_features": true,
+    "cross_contract_lint_passed": true,
+    "categorical_field_identity_aligned": true,
+    "numeric_calibration_changed": false,
     "online_fit_paths_forbidden": true,
     "separate_sha256_sidecar_required": false,
     "registry_checksum_embedded_in_this_manifest": true

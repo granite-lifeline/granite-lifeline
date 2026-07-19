@@ -1,0 +1,5 @@
+# Keep release-checksummed Data Layer contracts byte-stable across platforms.
+data_layer/calibration/*.json text eol=lf
+data_layer/contracts/*.json text eol=lf
+data_layer/feature_engineering/*.md text eol=lf
+data_layer/proxy_failure/*.md text eol=lf

@@ -23,14 +23,13 @@ class TestAnomalyType:
     """Tests for the shared anomaly type names."""
 
     def test_anomaly_type_has_six_current_names(self):
-        """Test AnomalyType matches the current six-type interface enum."""
+        """Test AnomalyType matches the current five-type interface enum."""
         expected_types = {
             "cooling_degradation",
             "air_intake_maf_anomaly",
             "accelerator_pedal_sensor",
-            "intake_air_temperature_sensor_or_heat_soak_fault",
+            "intake_air_temperature_sensor_fault",
             "map_load_signal_plausibility_fault",
-            "idle_speed_control_or_surge_degradation",
         }
 
         actual_types = set(AnomalyType.__args__)

@@ -1,10 +1,83 @@
 {
   "manifest_type": "production_feature_contract",
-  "manifest_version": "1.1.0",
+  "manifest_version": "1.2.0",
   "schema_version": "feature_schema.v1",
   "status": "frozen",
-  "frozen_at_utc": "2026-07-19T09:45:32Z",
+  "frozen_at_utc": "2026-07-19T14:55:30Z",
   "authoritative_contract": "data_layer/feature_engineering/feature_schema.md",
+  "runtime_layout_contract": {
+    "run_dir_pattern": "data/processed/runs/<run_id>",
+    "shared_run_layout_required": true,
+    "stage_must_receive_run_layout_explicitly": true,
+    "implicit_latest_run_discovery_forbidden": true,
+    "run_artifact_path_base": "run_dir",
+    "repository_artifact_path_base": "repo_root",
+    "manifest_path_format": "POSIX",
+    "runtime_output_must_remain_under_run_dir": true,
+    "runtime_write_forbidden_roots": [
+      "data_layer source directories",
+      "data_layer/contracts",
+      "data_layer/calibration"
+    ]
+  },
+  "upstream_input_contract": {
+    "input_count": 2,
+    "authoritative_inputs": [
+      {
+        "id": "operating_condition_enriched",
+        "run_relative_path": "operating_conditions/operating_condition_enriched.csv",
+        "owns": [
+          "sample_keys",
+          "cleaned_canonical_signals",
+          "dt_seconds",
+          "operating_condition_fields"
+        ]
+      },
+      {
+        "id": "cleaning_quality",
+        "run_relative_path": "cleaning/cleaning_quality.csv",
+        "owns": [
+          "per_signal_quality_flags",
+          "aggregate_quality_state",
+          "cleaning_provenance"
+        ]
+      }
+    ],
+    "join_keys": [
+      "timestamp",
+      "trip_id",
+      "segment_id",
+      "row_in_segment"
+    ],
+    "timestamp_normalization": "UTC",
+    "one_to_one_key_equality_required": true,
+    "input_sha256_required": true,
+    "source_dataset_identity_required": true,
+    "signal_value_authority": "operating_condition_enriched",
+    "quality_authority": "cleaning_quality",
+    "additional_script_00_authorities_forbidden": true
+  },
+  "stage_manifest_contract": {
+    "manifest_required_for_every_functional_stage": true,
+    "required_metadata": [
+      "schema_version",
+      "source_dataset_identity",
+      "script_version",
+      "creation_time_utc",
+      "ordered_input_artifacts",
+      "ordered_output_artifacts",
+      "artifact_sha256",
+      "calibration_version_or_not_applicable"
+    ],
+    "feature_stage_manifests": {
+      "00": "features/00_input_contract/input_contract_manifest.json",
+      "10": "features/10_atomic/atomic_features_manifest.json",
+      "20": "features/20_engine_start/engine_start_context_manifest.json",
+      "30": "features/30_windows/window_features_manifest.json",
+      "40": "features/40_calibrated/calibrated_features_manifest.json",
+      "41": "features/41_production/production_feature_manifest.json"
+    }
+  },
   "table": {
     "name": "production_features",
     "format": "csv",

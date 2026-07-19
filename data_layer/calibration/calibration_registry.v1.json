@@ -1,10 +1,18 @@
 {
   "registry_type": "frozen_calibration_registry",
   "calibration_version": "calibration.v1",
-  "registry_schema_version": "1.0.0",
+  "registry_schema_version": "1.0.1",
   "status": "frozen",
-  "frozen_at_utc": "2026-07-19T00:41:05Z",
+  "frozen_at_utc": "2026-07-19T15:01:23Z",
   "immutable": true,
+  "contract_corrections": [
+    {
+      "applied_at_utc": "2026-07-19T15:01:23Z",
+      "scope": "categorical field identity only",
+      "numeric_calibration_changed": false,
+      "description": "Aligned 2-S2 and 5-S1/5-S2 operating-state values with the contracted thermal_state__child_state representation before release-bundle integrity acceptance."
+    }
+  ],
   "online_policy": {
     "read_only": true,
     "fit_allowed": false,
@@ -253,7 +261,7 @@
       "direction": "low",
       "guards": {
         "thermal_state": "post_warmup",
-        "operating_state": "high_load",
+        "operating_state": "post_warmup__high_load",
         "condition_confidence": "high",
         "quality_valid": true
       },
@@ -370,24 +378,24 @@
       "response_offsets_seconds": [0, 1, 2],
       "response_formula": "max(abs(map[t] - map[t0-1])) over response offsets",
       "state_parameters": {
-        "idle": {
+        "post_warmup__idle": {
           "pedal_step_threshold": {"operator": ">=", "value": 9.2, "unit": "percentage_point/s"},
           "magnitude_split": {"operator_for_high_bin": ">=", "value": 12.337656147083981, "unit": "percentage_point/s"},
           "no_response_threshold_kpa": {"bin_lo": 8.0, "bin_hi": 4.0}
         },
-        "steady_driving": {
+        "post_warmup__steady_driving": {
           "pedal_step_threshold": {"operator": ">=", "value": 11.4, "unit": "percentage_point/s"},
           "magnitude_split": {"operator_for_high_bin": ">=", "value": 15.907275785122629, "unit": "percentage_point/s"},
           "no_response_threshold_kpa": {"bin_lo": null, "bin_hi": 3.0},
           "bin_lo_result": "not_evaluable",
           "bin_lo_reason": "resolution_nonseparable"
         },
-        "acceleration": {
+        "post_warmup__acceleration": {
           "pedal_step_threshold": {"operator": ">=", "value": 18.6, "unit": "percentage_point/s"},
           "magnitude_split": {"operator_for_high_bin": ">=", "value": 24.5, "unit": "percentage_point/s"},
           "no_response_threshold_kpa": {"bin_lo": 4.0, "bin_hi": 9.0}
         },
-        "high_load": {
+        "post_warmup__high_load": {
           "pedal_step_threshold": {"operator": ">=", "value": 26.5, "unit": "percentage_point/s"},
           "magnitude_split": {"operator_for_high_bin": ">=", "value": 33.75, "unit": "percentage_point/s"},
           "no_response_threshold_kpa": {"bin_lo": 13.432, "bin_hi": 1.0}
@@ -402,7 +410,7 @@
       "dtc_emitted": false,
       "guards": {
         "thermal_state": "post_warmup",
-        "operating_state": "steady_driving",
+        "operating_state": "post_warmup__steady_driving",
         "pedal_slope_abs": {"operator": "==", "value": 0.0, "unit": "percentage_point/s"},
         "rpm_slope_abs": {"operator": "<=", "value": 9.0, "unit": "rpm/s"},
         "steady_mask_persistence": {"operator": ">=", "value": 10, "unit": "s"}
@@ -412,7 +420,7 @@
         "high": {"operator": ">", "raw_value": 16.70561, "display_value": 16.71, "unit": "g/s"}
       },
       "same_side_persistence": {"operator": ">=", "value": 30, "unit": "s"},
-      "excluded_operating_states": ["idle", "acceleration", "high_load"],
+      "excluded_operating_states": ["post_warmup__idle", "post_warmup__acceleration", "post_warmup__high_load"],
       "routing_reference": "maf_map_arbitration",
       "source_ids": ["map_s2_prereg", "map_s2_bands", "map_s2_summary", "proxy_definition", "proxy_support"]
     },

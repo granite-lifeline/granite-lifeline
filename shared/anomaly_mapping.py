@@ -7,7 +7,6 @@ GROUND_KNOWLEDGE_ANOMALY_TYPES = [
     "air_intake_maf_anomaly",
     "map_load_signal_plausibility_fault",
     "accelerator_pedal_sensor",
-    "idle_speed_control_or_surge_degradation",
 ]
 
 # GL-127 naming alignment table.
@@ -43,12 +42,6 @@ ANOMALY_TYPE_MAPPING_TABLE = [
         "interface_name": "accelerator_pedal_sensor",
         "grounded_knowledge_key": "accelerator_pedal_sensor",
         "dashboard_key": "accelerator_pedal_sensor",
-        "legacy_alias": None,
-    },
-    {
-        "interface_name": "idle_speed_control_or_surge_degradation",
-        "grounded_knowledge_key": "idle_speed_control_or_surge_degradation",
-        "dashboard_key": "idle_speed_control_or_surge_degradation",
         "legacy_alias": None,
     },
 ]

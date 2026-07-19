@@ -14,7 +14,7 @@ AnomalyType = Literal[
     "cooling_degradation",
     "air_intake_maf_anomaly",
     "accelerator_pedal_sensor",
-    "intake_air_temperature_sensor_or_heat_soak_fault",
+    "intake_air_temperature_sensor_fault",
     "map_load_signal_plausibility_fault",
     "idle_speed_control_or_surge_degradation"
 ]
