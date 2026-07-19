@@ -2,16 +2,17 @@
 
 ## Purpose and Scope
 
-This is the authoritative, implementation-facing definition of the executable proxy failures for the current freeze cycle(**07-18**). It contains only the component, consumed support signals, proxy definition, final decision rules, required guards, coverage, key calibration evidence, and known limitations.
+This is the authoritative, implementation-facing definition of the executable proxy failures for the current freeze cycle (**2026-07-19 contract revision**). It contains only the component, consumed support signals, proxy definition, final decision rules, required guards, coverage, key calibration evidence, and known limitations.
 
 Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap details, rejected branches, superseded forms, and the open fault-injection program are maintained in [`proxy_support.md`](proxy_support.md). Each proxy below links to its corresponding audit section.
 
 ## Shared Conventions
 
-- Every executable sub-check reports `pass` / `triggered` / `not_evaluable` as `proxy_id + sub_check_id + direction + DTC label`, aggregated to proxy level.
-- Guard, data-quality, opportunity, and calibration-domain failures produce `not_evaluable`, never a normal or abnormal verdict.
+- Every runtime row records `proxy_id`, `sub_check_id`, `direction`, `decision_role`, `result_state`, `decision_reason`, `decision_margin`, `dtc_candidate_label`, and `dtc_emitted`, plus routing, confidence, and provenance where applicable. `decision_role` is one of `verdict`, `pending_precursor`, `support`, or `arbitration_evidence`; `result_state` is one of `pass`, `triggered`, `not_evaluable`, or `pending` as permitted by that role.
+- `dtc_candidate_label` identifies the relevant diagnostic family but does not authorize emission. Support and arbitration-evidence rows always set `dtc_emitted = false`; final routing alone determines whether a permitted verdict row emits a DTC.
+- Guard, data-quality, opportunity, and calibration-domain failures produce `result_state = not_evaluable` with an explicit `decision_reason`, never a normal or abnormal result.
 - Duration-gated checks record `decision_margin`; at 1 Hz with integer-quantized signals, margins within approximately ±5 s are resolution-borderline.
-- Only frozen or explicitly executable rules produce verdicts. `pending`, downgraded, descriptive, provisional-support, and documented-infeasibility results do not independently produce a DTC-level verdict.
+- Only frozen or explicitly executable rules produce runtime rows. `pending` precursors, support, and arbitration evidence may execute but do not independently emit a DTC. Downgraded, descriptive, removed, and documented-infeasible designs produce no runtime rows; `not_evaluable` must not be used to represent a design that is not executed.
 - Frozen calibration values are applied from the calibration registry. They are not re-fitted on user-uploaded data.
 
 ## 1. cooling_degradation
@@ -28,9 +29,10 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 
 #### 1-S1 — Slow warm-up (frozen; P0128)
 
-- At a qualified observed engine start, set `T_target = 79°C` (`T_reg_est = 90°C`, minus the 11°C regulatory form [4]) and assign the frozen ambient-bin/ECT-band warm-up budget: 16.5–26.9 min for ambient ≤5°C and 8.3–18.2 min for ambient >5°C, capped at 30 min.
-- Reaching `T_target` before budget expiry is `pass` only when cold-soak evidence is sufficient. Budget expiry below `T_target`, with sufficient heat input, is `triggered` (low, P0128). Otherwise return `not_evaluable`.
-- Eligibility: observed RPM off→on start; start ECT ≤50°C and below target; start ambient ≥−7°C; ECT, ambient, and MAF present. At expiry, trailing 180-s MAF integral must be at least approximately 2800 g. A start ECT plausibility flag from 1-S4 forces `not_evaluable_due_to_ect_plausibility`.
+- At a qualified observed RPM `<50` to `>=50` crossing, use crossing-row `ect_start` and `aat_start`, set `T_target = 79°C` (`T_reg_est = 90°C`, minus the 11°C regulatory form [4]), and assign the frozen ambient-bin/ECT-band warm-up budget: 16.5–26.9 min for ambient ≤5°C and 8.3–18.2 min for ambient >5°C. A computed budget above the maximum deployable budget of 30 min is outside the calibration/deployment domain and returns `not_evaluable`; it must not be clipped to 30 min.
+- Reaching `T_target` before budget expiry is `pass` only when 1-S4 is evaluable and `pass`. Budget expiry below `T_target`, with sufficient heat input and all 1-S1 guards satisfied, is `triggered` (low, P0128). Otherwise return `not_evaluable` with an explicit reason.
+- Eligibility: observed within-continuity-block RPM off→on start; `ect_start ≤ 50°C` and below target; `aat_start ≥ −7°C`; ECT, ambient, and MAF present and quality-valid. At expiry, the trapezoidal `maf_integral_180s` over 181 valid 1 Hz endpoints / 180 intervals must satisfy the frozen raw registry comparison `> 2800.6549999999997 g` (display value approximately 2800 g).
+- Sensor-trust/asymmetry wiring: if 1-S4 is `pass`, 1-S1 may return its normal three states. If 1-S4 support is `triggered`, 1-S1 returns `not_evaluable` with `decision_reason = ect_plausibility`. If 1-S4 is `not_evaluable` solely because cold-soak/predecessor evidence is unavailable, 1-S1 may `triggered` or return `not_evaluable` but may never `pass`. Any failure of 1-S1's own required-signal, quality, guard, or calibration-domain conditions always returns `not_evaluable`, regardless of 1-S4.
 - Right-censor guard: if ECT has not reached 79°C and the continuous observation ends before the assigned budget expires, return `not_evaluable`; record the censor flag and available follow-up duration rather than treating the truncated episode as a failure.
 - Coverage and key evidence: 20/51 qualified starts reached a decision point (39.2%); healthy in-sample false positives 0/20. The threshold/reference level was stable across the recorded validation; synthetic smoke tests are calibration evidence only, not real-fault recall evidence.
 - Limitations: provisional research-grade candidate; real-fault recall is unknown; thermostat failure is indicated, not isolated. Short logs and the heat-input guard materially limit coverage.
@@ -45,14 +47,14 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 
 #### 1-S3 — Rising without plateau (frozen pending precursor; no independent DTC)
 
-- In a qualified post-warm-up window, 180-s ECT rate ≥0.5°C/min while `coolant_temp ≥ 100°C`, sustained ≥180 s, emits `pending` only. P0217 is confirmed only by 1-S2. Minimum evaluable window: 360 s.
+- With `decision_role = pending_precursor`, a qualified post-warm-up window with 180-s ECT rate ≥0.5°C/min while `coolant_temp ≥ 100°C`, sustained ≥180 s, returns `pending` only. P0217 is confirmed only by 1-S2. Minimum evaluable window: 360 s.
 - Coverage and key evidence: 54/66 trips (81.8%); zero healthy precursor triggers; nearest healthy episode 87 s, leaving 93 s headroom.
 - Limitations: slope alone cannot separate regulation loss from legitimate map-thermostat mode changes. Real lead time and short-injection behavior remain unverified.
 
 #### 1-S4 — Cold-start ECT plausibility (executable v1; low-confidence P0116 support)
 
-- At the segment first row, require `segment_gap ≥ 6 h`, first-row RPM <50 followed by an observed off→on transition, valid non-imputed/non-suspicious ECT/IAT/AAT, and IAT witness `|IAT − AAT| ≤ 7°C`. Otherwise `not_evaluable`.
-- `|ECT − AAT| > 15°C` is a low-confidence inconsistent-direction P0116 support candidate; ≤15°C is `pass`.
+- With `decision_role = support`, evaluate ECT/IAT/AAT at the canonical segment first row. Require `segment_gap ≥ 6 h`, first-row RPM <50 followed by an observed off→on transition in the same segment and continuity block, valid non-imputed/non-suspicious ECT/IAT/AAT, and IAT witness `|IAT − AAT| ≤ 7°C`. Otherwise return `not_evaluable` with a reason.
+- `|ECT − AAT| > 15°C` returns support `result_state = triggered`, `dtc_candidate_label = P0116`, and `dtc_emitted = false`; ≤15°C returns `pass`.
 - Coverage and key evidence: calibrated on 18 strict observed-start events; healthy maxima were 5°C for `|IAT−AAT|` and 11°C for `|ECT−AAT|`, with zero healthy candidates at the selected thresholds.
 - Limitations: cannot isolate ECT, verify a true cold soak, or exclude AAT/common-mode faults. It is low-confidence support evidence and a sensor-trust guard for 1-S1; it must never independently emit a P0116 DTC.
 
@@ -82,9 +84,10 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 
 #### Routing
 
-- Shared residual evidence with 5-S1/5-S3 normal → attribute to MAF.
-- A MAP-side witness abnormal → attribute to MAP/P0106.
-- Evidence present but neither side evaluable → F4/P006A without isolation.
+- 2-S3b bypasses residual arbitration and remains a direct P0102 path because it consumes only raw MAF and RPM.
+- For 2-S2 or 5-S2 residual evidence, 5-S1/5-S3 normal and evaluable → attribute to MAF/P0101.
+- Either MAP-side witness abnormal → attribute to MAP/P0106.
+- Residual evidence present but the required witnesses not evaluable → F4/P006A without isolation.
 - Residual sign alone never determines attribution.
 - When 4-S2 cold-start IAT plausibility support is active, cap the confidence of IAT-dependent 2-S2 residual evidence at `low`; 2-S3b is unaffected because it does not use IAT.
 
@@ -135,10 +138,10 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 
 #### 4-S2 — Cold-start IAT plausibility (executable v1; low-confidence P0111 support)
 
-- At the segment first row, require `segment_gap ≥ 6 h`, first-row RPM <50 followed by an observed off→on transition, valid non-imputed/non-suspicious ECT/IAT/AAT, and ECT witness `|ECT − AAT| ≤ 15°C`. Otherwise `not_evaluable`.
-- `|IAT − AAT| > 7°C` is low-confidence inconsistent-direction P0111 support; ≤7°C is `pass`.
+- With `decision_role = support`, evaluate ECT/IAT/AAT at the canonical segment first row. Require `segment_gap ≥ 6 h`, first-row RPM <50 followed by an observed off→on transition in the same segment and continuity block, valid non-imputed/non-suspicious ECT/IAT/AAT, and ECT witness `|ECT − AAT| ≤ 15°C`. Otherwise return `not_evaluable` with a reason.
+- `|IAT − AAT| > 7°C` returns support `result_state = triggered`, `dtc_candidate_label = P0111`, and `dtc_emitted = false`; ≤7°C returns `pass`.
 - Coverage and key evidence: 18 strict observed-start events; healthy maxima 5°C (`|IAT−AAT|`) and 11°C (`|ECT−AAT|`), with zero healthy candidates.
-- Limitations: confidence modifier only, never a standalone P0111 trigger; both sensors far from AAT make the mirrored checks `not_evaluable`. When active, it caps confidence at `low` for IAT-dependent residual evidence in 2-S2 and 5-S2, without changing 2-S3b, 5-S1, or 5-S3.
+- Limitations: confidence modifier only, never a standalone P0111 DTC; both sensors far from AAT make the mirrored checks `not_evaluable`. When activated at the qualified observed start, its confidence cap applies prospectively from that start through the end of the current continuity segment and never retroactively. A later episode in the same segment cannot clear the cap; a continuity break clears it. The cap affects only IAT-dependent residual evidence in 2-S2 and 5-S2, without changing 2-S3b, 5-S1, or 5-S3.
 
 #### 4-S3 — Physical range (closed rule; P0112/P0113)
 
@@ -158,7 +161,7 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 
 #### 5-S1 — Step response (frozen; hard no-response P0106)
 
-- Detect positive `pedal_slope` steps at per-state trip-equal P95: idle 9.2, steady-driving 11.4, acceleration 18.6, and high-load 26.5 %/s. A valid event requires contiguous valid samples t0−1…t0+2.
+- Require `thermal_state == post_warmup`, `condition_confidence == high`, and quality-valid MAP, RPM, `accel_pedal_d`, and `accel_pedal_e`. Within that domain, detect positive `pedal_slope` steps at per-state trip-equal P95: idle 9.2, steady-driving 11.4, acceleration 18.6, and high-load 26.5 %/s. A valid event requires contiguous quality-valid samples t0−1…t0+2.
 - Response is the maximum `|map − map(t0−1)|` over t0…t0+2. No-response thresholds by state × magnitude bin are: idle 8.0/4.0 kPa; steady-driving high bin 3.0; acceleration 4.0/9.0; high-load 13.4/1.0. Steady-driving low-bin events are non-separable and `not_evaluable`.
 - At least 3 no-responses among the trip's most recent 4 valid events is `triggered`; `decision_margin = count − 3`.
 - Coverage and key evidence: 56/66 trips (84.8%); zero healthy 3-of-4 triggers; 942 valid events from 1176 detected; event-weighted no-response rate 0.955%, only 0.045 percentage points below the registered 1% criterion.
@@ -166,7 +169,7 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 
 #### 5-S2 — Steady-state residual (partial freeze; shared arbitration evidence)
 
-- Require `pedal_slope == 0` and `|rpm_slope| ≤ 9 rpm/s` for ≥10 s. Only in post-warm-up `steady_driving`, a same-side `speed_density_maf_residual` outside [`−4.04`, `+16.71`] g/s for ≥30 s emits shared evidence.
+- With `decision_role = arbitration_evidence`, require `pedal_slope == 0` and `|rpm_slope| ≤ 9 rpm/s` for ≥10 s. Only in post-warm-up `steady_driving`, a same-side `speed_density_maf_residual` outside [`−4.04`, `+16.71`] g/s for ≥30 s returns `result_state = triggered` shared evidence with `dtc_emitted = false`.
 - Idle, acceleration, and high-load are `not_evaluable`. The evidence produces no code by itself and follows section 2 routing.
 - Coverage and key evidence: 44/66 trips; zero healthy 30-s episodes; low/high persistence margins 19/12 s.
 - Limitation: the pedal gate degenerates to exact flatness; disclosed and frozen without post-result repair.
