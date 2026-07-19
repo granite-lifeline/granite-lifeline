@@ -1,0 +1,459 @@
+{
+  "registry_type": "frozen_calibration_registry",
+  "calibration_version": "calibration.v1",
+  "registry_schema_version": "1.0.0",
+  "status": "frozen",
+  "frozen_at_utc": "2026-07-19T00:41:05Z",
+  "immutable": true,
+  "online_policy": {
+    "read_only": true,
+    "fit_allowed": false,
+    "quantile_selection_allowed": false,
+    "candidate_search_allowed": false,
+    "loto_allowed": false,
+    "bootstrap_allowed": false
+  },
+  "shared_constants": {
+    "nominal_sampling_hz": 1,
+    "engine_on_rpm": {
+      "operator": ">=",
+      "value": 50.0,
+      "unit": "rpm"
+    }
+  },
+  "feature_transforms": {
+    "speed_density_maf": {
+      "output_feature": "speed_density_maf_residual",
+      "model_type": "linear_regression",
+      "target": "maf",
+      "expected_maf_formula": "intercept + sum(coefficient[input] * clipped_input[input])",
+      "residual_formula": "maf - expected_maf",
+      "hidden_intermediate": {
+        "name": "map_derived_air_load_raw",
+        "formula": "rpm * map / (intake_temp + 273.15)",
+        "unit": "rpm*kPa/K"
+      },
+      "ordered_input_features": [
+        "map_derived_air_load_raw",
+        "map",
+        "rpm",
+        "intake_temp"
+      ],
+      "coefficients": {
+        "map_derived_air_load_raw": 0.023778032668470294,
+        "map": 0.14127609145896305,
+        "rpm": 0.00006690047685838753,
+        "intake_temp": 0.07101467711912292
+      },
+      "intercept": -14.688826051927967,
+      "prediction_clipping_bounds": {
+        "map_derived_air_load_raw": {
+          "lower": 293.93209175000004,
+          "upper": 1516.36693525,
+          "unit": "rpm*kPa/K"
+        },
+        "map": {
+          "lower": 94.0,
+          "upper": 203.0,
+          "unit": "kPa"
+        },
+        "rpm": {
+          "lower": 877.0,
+          "upper": 2205.0,
+          "unit": "rpm"
+        },
+        "intake_temp": {
+          "lower": -8.0,
+          "upper": 40.0,
+          "unit": "degC"
+        }
+      },
+      "training_target_winsor_bounds": {
+        "maf": {
+          "lower": 7.83,
+          "upper": 57.19,
+          "unit": "g/s"
+        }
+      },
+      "training_scope": "steady_driving_high_confidence_engine_running",
+      "training_row_count": 88376,
+      "prediction_missing_policy": "null when MAF or any model input is not quality-valid",
+      "source_ids": ["feature_baselines", "deterministic_feature_builder"]
+    },
+    "pedal_mapping": {
+      "output_feature": "pedal_mapping_residual",
+      "formula": "accel_pedal_e - (a * accel_pedal_d + b)",
+      "a": 0.9972730218680453,
+      "b": 0.38310321634880656,
+      "input_unit": "percent",
+      "output_unit": "percentage_point",
+      "prediction_clipping": "none",
+      "prediction_missing_policy": "null unless both pedal channels are quality-valid",
+      "source_ids": ["pedal_s1_prereg", "pedal_s1_summary"]
+    }
+  },
+  "proxy_rules": {
+    "1-S1": {
+      "decision_role": "verdict",
+      "dtc_candidate_label": "P0128",
+      "target_temperature": {
+        "operator": ">=",
+        "value": 79.0,
+        "unit": "degC"
+      },
+      "target_derivation": {
+        "thermostat_regulating_estimate_c": 90.0,
+        "regulatory_offset_c": 11.0
+      },
+      "start_guards": {
+        "observed_crossing_required": true,
+        "ect_start_max_c": {
+          "operator": "<=",
+          "value": 50.0
+        },
+        "ect_start_below_target_required": true,
+        "aat_start_min_c": {
+          "operator": ">=",
+          "value": -7.0
+        },
+        "required_quality_valid_signals": ["coolant_temp", "ambient_temp", "maf"]
+      },
+      "warmup_budget": {
+        "formula": "sum(partial_band_delta_c / selected_rate_c_per_min) * safety_factor",
+        "ambient_split": {
+          "operator": "<=",
+          "value": 5.0,
+          "unit": "degC",
+          "low_label": "<=5",
+          "high_label": ">5"
+        },
+        "temperature_band_upper_edges_c": [30.0, 50.0, 65.0, 79.0],
+        "selected_rate_lookup_c_per_min": {
+          "<=5": {
+            "<30": 6.0,
+            "30-50": 3.3333333333333335,
+            "50-65": 2.583333333333333,
+            "65-79": 3.3333333333333335
+          },
+          ">5": {
+            "<30": 5.5,
+            "30-50": 5.0,
+            "50-65": 4.583333333333334,
+            "65-79": 4.791666666666667
+          }
+        },
+        "rate_quantile": 0.25,
+        "weighting": "trip_equal_median_rate_per_trip_then_cross_trip_quantile",
+        "safety_factor": 1.3,
+        "maximum_deployable_budget": {
+          "operator": "<=",
+          "value": 30.0,
+          "unit": "min",
+          "overflow_result": "not_evaluable",
+          "clipping_forbidden": true
+        }
+      },
+      "heat_input_guard": {
+        "feature": "maf_integral_180s",
+        "operator": ">",
+        "raw_value": 2800.6549999999997,
+        "display_value": "approximately 2800 g",
+        "unit": "g",
+        "window": {
+          "span_seconds": 180,
+          "endpoint_count": 181,
+          "interval_count": 180,
+          "integration": "trapezoidal"
+        }
+      },
+      "right_censoring": {
+        "trigger_before_budget_expiry_forbidden": true,
+        "truncated_before_budget_result": "not_evaluable"
+      },
+      "sensor_trust_wiring": {
+        "support_check": "1-S4",
+        "pass_requires_support_pass": true,
+        "support_trigger_result": "not_evaluable",
+        "support_trigger_reason": "ect_plausibility",
+        "support_not_evaluable_cold_soak_only_allows_trigger": true,
+        "support_not_evaluable_cold_soak_only_allows_pass": false
+      },
+      "source_ids": ["cooling_s1_summary", "fixed_66_trip_cohort", "proxy_definition", "proxy_support"]
+    },
+    "1-S2": {
+      "decision_role": "verdict",
+      "dtc_candidate_label": "P0217",
+      "guards": {
+        "engine_on_required": true,
+        "thermal_state": "post_warmup",
+        "required_quality_valid_signals": ["coolant_temp", "ambient_temp"],
+        "ambient_at_window_start_max_c": {
+          "operator": "<=",
+          "value": 25.0
+        }
+      },
+      "tiers": [
+        {
+          "name": "high",
+          "temperature": {"operator": ">=", "value": 105.0, "unit": "degC"},
+          "persistence": {"operator": ">=", "value": 180, "unit": "s"}
+        },
+        {
+          "name": "critical_provisional",
+          "temperature": {"operator": ">=", "value": 110.0, "unit": "degC"},
+          "persistence": {"operator": ">=", "value": 30, "unit": "s"}
+        }
+      ],
+      "minimum_evaluable_seconds": 180,
+      "source_ids": ["cooling_s2_prereg", "cooling_s2_summary", "proxy_definition", "proxy_support"]
+    },
+    "1-S3": {
+      "decision_role": "pending_precursor",
+      "dtc_candidate_label": "P0217",
+      "dtc_emitted": false,
+      "guards": {
+        "thermal_state": "post_warmup"
+      },
+      "rate": {
+        "feature": "ect_rate_180s",
+        "operator": ">=",
+        "value": 0.5,
+        "unit": "degC/min"
+      },
+      "level": {
+        "feature": "coolant_temp",
+        "operator": ">=",
+        "value": 100.0,
+        "unit": "degC"
+      },
+      "persistence": {"operator": ">=", "value": 180, "unit": "s"},
+      "minimum_evaluable_seconds": 360,
+      "active_result_state": "pending",
+      "triggered_state_forbidden": true,
+      "source_ids": ["cooling_s3_prereg", "cooling_s3_summary", "proxy_definition", "proxy_support"]
+    },
+    "1-S4": {
+      "decision_role": "support",
+      "dtc_candidate_label": "P0116",
+      "dtc_emitted": false,
+      "evaluation_row": "canonical_segment_first_row",
+      "guards": {
+        "segment_gap_seconds": {"operator": ">=", "value": 21600, "unit": "s"},
+        "first_row_rpm": {"operator": "<", "value": 50.0, "unit": "rpm"},
+        "later_observed_start_same_segment_and_continuity_block": true,
+        "required_quality_valid_signals": ["coolant_temp", "intake_temp", "ambient_temp"],
+        "iat_witness_abs_delta_c": {"operator": "<=", "value": 7.0}
+      },
+      "ect_abs_delta_c": {"operator": ">", "value": 15.0},
+      "source_ids": ["cooling_s1_summary", "proxy_definition", "proxy_support"]
+    },
+    "2-S2": {
+      "decision_role": "verdict",
+      "dtc_candidate_label": "P0101",
+      "direction": "low",
+      "guards": {
+        "thermal_state": "post_warmup",
+        "operating_state": "high_load",
+        "condition_confidence": "high",
+        "quality_valid": true
+      },
+      "residual": {
+        "feature": "speed_density_maf_residual",
+        "operator": "<",
+        "raw_value": -18.49488820957814,
+        "display_value": -18.495,
+        "unit": "g/s"
+      },
+      "persistence": {"operator": ">=", "value": 10, "unit": "s"},
+      "routing_reference": "maf_map_arbitration",
+      "source_ids": ["maf_s2_prereg", "maf_s2_summary", "proxy_definition", "proxy_support"]
+    },
+    "2-S3b": {
+      "decision_role": "verdict",
+      "dtc_candidate_label": "P0102",
+      "direction": "low",
+      "maf": {"operator": "==", "value": 0.0, "unit": "g/s"},
+      "rpm": {"operator": ">=", "value": 500.0, "unit": "rpm"},
+      "persistence": {"operator": ">=", "value": 10, "unit": "s"},
+      "bypass_residual_arbitration": true,
+      "source_ids": ["maf_s3_prereg", "maf_s3_summary", "proxy_definition", "proxy_support"]
+    },
+    "3-S1a": {
+      "decision_role": "verdict",
+      "dtc_candidate_label": "P2138",
+      "guards": {
+        "engine_on_required": true,
+        "quality_valid_pedal_channels": true,
+        "pedal_slope_abs": {"operator": "<=", "value": 2.4, "unit": "percentage_point/s"},
+        "mask_persistence": {"operator": ">=", "value": 3, "unit": "s"}
+      },
+      "residual_feature": "pedal_mapping_residual",
+      "residual_band": {
+        "low": {"operator": "<", "raw_value": -1.8350339123652364, "display_value": -1.8350, "unit": "percentage_point"},
+        "high": {"operator": ">", "raw_value": 1.3777108815013193, "display_value": 1.3777, "unit": "percentage_point"}
+      },
+      "same_side_persistence": {"operator": ">=", "value": 30, "unit": "s"},
+      "source_ids": ["pedal_s1_prereg", "pedal_s1_summary", "proxy_definition", "proxy_support"]
+    },
+    "3-S1b": {
+      "decision_role": "verdict",
+      "dtc_candidate_label": "P2138",
+      "maturity": "provisional_specificity_only",
+      "channel_delta": {"operator": ">=", "value": 65.0, "unit": "percentage_point"},
+      "persistence": {"operator": ">=", "value": 2, "unit": "s"},
+      "source_ids": ["pedal_s1_prereg", "pedal_s1_summary", "proxy_definition", "proxy_support"]
+    },
+    "4-S1": {
+      "decision_role": "verdict",
+      "dtc_candidate_label": "P0111",
+      "guards": {
+        "engine_on_required": true,
+        "required_quality_valid_signals": ["intake_temp", "speed", "maf", "rpm"]
+      },
+      "context_window_samples": 120,
+      "context_enable_form": "OR",
+      "context_thresholds": {
+        "speed_std_120s": {"operator": ">=", "raw_value": 12.39399769675226, "display_value": 12.4, "unit": "km/h"},
+        "maf_std_120s": {"operator": ">=", "raw_value": 8.529069247626124, "display_value": 8.5, "unit": "g/s"}
+      },
+      "context_threshold_provenance": {
+        "quantile": 0.5,
+        "weighting": "trip_equal",
+        "cohort_trip_count": 66,
+        "endpoint_definition": "valid 120-s endpoints"
+      },
+      "stability": {"feature": "intake_temp_stability", "operator": "<=", "value": 0.1, "unit": "degC"},
+      "persistence": {"operator": ">=", "value": 120, "unit": "s"},
+      "minimum_evaluable_seconds": 240,
+      "source_ids": ["iat_s1_prereg", "iat_s1_summary", "fixed_66_trip_cohort", "proxy_definition", "proxy_support"]
+    },
+    "4-S2": {
+      "decision_role": "support",
+      "dtc_candidate_label": "P0111",
+      "dtc_emitted": false,
+      "evaluation_row": "canonical_segment_first_row",
+      "guards": {
+        "segment_gap_seconds": {"operator": ">=", "value": 21600, "unit": "s"},
+        "first_row_rpm": {"operator": "<", "value": 50.0, "unit": "rpm"},
+        "later_observed_start_same_segment_and_continuity_block": true,
+        "required_quality_valid_signals": ["coolant_temp", "intake_temp", "ambient_temp"],
+        "ect_witness_abs_delta_c": {"operator": "<=", "value": 15.0}
+      },
+      "iat_abs_delta_c": {"operator": ">", "value": 7.0},
+      "confidence_cap": {
+        "tier": "low",
+        "affected_checks": ["2-S2", "5-S2"],
+        "unaffected_checks": ["2-S3b", "5-S1", "5-S3"],
+        "effective_from": "qualified_observed_start_confirmation",
+        "effective_until": "continuity_segment_end",
+        "retroactive": false,
+        "later_episode_can_clear": false
+      },
+      "source_ids": ["cooling_s1_summary", "proxy_definition", "proxy_support"]
+    },
+    "4-S3": {
+      "decision_role": "verdict",
+      "required_signal": "intake_temp",
+      "low": {"operator": "<", "value": -40.0, "unit": "degC", "dtc_candidate_label": "P0112"},
+      "high": {"operator": ">", "value": 215.0, "unit": "degC", "dtc_candidate_label": "P0113"},
+      "source_ids": ["proxy_definition", "proxy_support"]
+    },
+    "5-S1": {
+      "decision_role": "verdict",
+      "dtc_candidate_label": "P0106",
+      "guards": {
+        "thermal_state": "post_warmup",
+        "condition_confidence": "high",
+        "required_quality_valid_signals": ["map", "rpm", "accel_pedal_d", "accel_pedal_e"]
+      },
+      "event_offsets_seconds": [-1, 0, 1, 2],
+      "response_offsets_seconds": [0, 1, 2],
+      "response_formula": "max(abs(map[t] - map[t0-1])) over response offsets",
+      "state_parameters": {
+        "idle": {
+          "pedal_step_threshold": {"operator": ">=", "value": 9.2, "unit": "percentage_point/s"},
+          "magnitude_split": {"operator_for_high_bin": ">=", "value": 12.337656147083981, "unit": "percentage_point/s"},
+          "no_response_threshold_kpa": {"bin_lo": 8.0, "bin_hi": 4.0}
+        },
+        "steady_driving": {
+          "pedal_step_threshold": {"operator": ">=", "value": 11.4, "unit": "percentage_point/s"},
+          "magnitude_split": {"operator_for_high_bin": ">=", "value": 15.907275785122629, "unit": "percentage_point/s"},
+          "no_response_threshold_kpa": {"bin_lo": null, "bin_hi": 3.0},
+          "bin_lo_result": "not_evaluable",
+          "bin_lo_reason": "resolution_nonseparable"
+        },
+        "acceleration": {
+          "pedal_step_threshold": {"operator": ">=", "value": 18.6, "unit": "percentage_point/s"},
+          "magnitude_split": {"operator_for_high_bin": ">=", "value": 24.5, "unit": "percentage_point/s"},
+          "no_response_threshold_kpa": {"bin_lo": 4.0, "bin_hi": 9.0}
+        },
+        "high_load": {
+          "pedal_step_threshold": {"operator": ">=", "value": 26.5, "unit": "percentage_point/s"},
+          "magnitude_split": {"operator_for_high_bin": ">=", "value": 33.75, "unit": "percentage_point/s"},
+          "no_response_threshold_kpa": {"bin_lo": 13.432, "bin_hi": 1.0}
+        }
+      },
+      "no_response_operator": "<",
+      "m_of_n": {"m": 3, "n": 4, "scope": "trip_most_recent_valid_events"},
+      "source_ids": ["map_s1_prereg", "map_s1_thresholds", "map_s1_summary", "proxy_definition", "proxy_support"]
+    },
+    "5-S2": {
+      "decision_role": "arbitration_evidence",
+      "dtc_emitted": false,
+      "guards": {
+        "thermal_state": "post_warmup",
+        "operating_state": "steady_driving",
+        "pedal_slope_abs": {"operator": "==", "value": 0.0, "unit": "percentage_point/s"},
+        "rpm_slope_abs": {"operator": "<=", "value": 9.0, "unit": "rpm/s"},
+        "steady_mask_persistence": {"operator": ">=", "value": 10, "unit": "s"}
+      },
+      "residual_band": {
+        "low": {"operator": "<", "raw_value": -4.035288957675326, "display_value": -4.04, "unit": "g/s"},
+        "high": {"operator": ">", "raw_value": 16.70561, "display_value": 16.71, "unit": "g/s"}
+      },
+      "same_side_persistence": {"operator": ">=", "value": 30, "unit": "s"},
+      "excluded_operating_states": ["idle", "acceleration", "high_load"],
+      "routing_reference": "maf_map_arbitration",
+      "source_ids": ["map_s2_prereg", "map_s2_bands", "map_s2_summary", "proxy_definition", "proxy_support"]
+    },
+    "5-S3": {
+      "decision_role": "verdict",
+      "dtc_candidate_label": "P0106",
+      "guards": {
+        "engine_on_required": true,
+        "required_quality_valid_signals": ["map", "rpm", "speed", "accel_pedal_d", "accel_pedal_e"]
+      },
+      "context_window_samples": 120,
+      "context_enable_form": "OR",
+      "context_thresholds": {
+        "rpm_std_120s": {"operator": ">=", "raw_value": 240.9756341791328, "display_value": 241.0, "unit": "rpm"},
+        "speed_std_120s": {"operator": ">=", "raw_value": 12.393928357576476, "display_value": 12.4, "unit": "km/h"},
+        "accel_pedal_mean_std_120s": {"operator": ">=", "raw_value": 9.872351211737215, "display_value": 9.9, "unit": "percent"}
+      },
+      "context_threshold_provenance": {
+        "quantile": 0.5,
+        "weighting": "trip_equal",
+        "cohort_trip_count": 66,
+        "endpoint_definition": "valid 120-s endpoints"
+      },
+      "flatness": {"feature": "map_range_60s", "operator": "==", "value": 0.0, "unit": "kPa"},
+      "persistence": {"operator": ">=", "value": 120, "unit": "s"},
+      "minimum_evaluable_seconds": 240,
+      "source_ids": ["map_s3_prereg", "map_s3_context", "map_s3_summary", "fixed_66_trip_cohort", "proxy_definition", "proxy_support"]
+    }
+  },
+  "routing": {
+    "maf_map_arbitration": {
+      "direct_bypass": {
+        "2-S3b": "P0102"
+      },
+      "residual_evidence_checks": ["2-S2", "5-S2"],
+      "map_witnesses": ["5-S1", "5-S3"],
+      "map_witness_abnormal": {"attribution": "MAP", "dtc": "P0106"},
+      "map_witnesses_normal_and_evaluable": {"attribution": "MAF", "dtc": "P0101"},
+      "required_witnesses_not_evaluable": {"attribution": "unisolated", "dtc": "P006A"},
+      "residual_sign_attribution_forbidden": true
+    }
+  },
+  "excluded_runtime_designs": ["2-S1", "2-S3a", "3-S2", "3-S3", "4-S4", "failure-6"]
+}
