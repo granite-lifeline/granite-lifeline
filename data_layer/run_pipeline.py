@@ -1,0 +1,256 @@
+"""Single public entry point for the online Data Layer pipeline."""
+
+from __future__ import annotations
+
+import argparse
+import copy
+import importlib.util
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from types import ModuleType
+from typing import Any
+
+from data_layer.data_cleaning.src import data_cleaning
+from data_layer.data_cleaning.src.cleaning_core import load_config
+from data_layer.data_cleaning.src.quality_audit import run_quality_audit
+from data_layer.operating_condition_statistics.src.operating_condition_analysis import (
+    run_operating_condition_analysis,
+)
+from data_layer.pipeline_data.manifests import (
+    ArtifactDescriptor,
+    build_stage_manifest,
+    compute_source_dataset_identity,
+    validate_stage_manifest,
+    verify_manifest_artifacts,
+    write_json_atomic,
+)
+from data_layer.pipeline_data.paths import RunLayout, repo_relative_posix
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_CONFIG = REPO_ROOT / "data_layer/data_cleaning/src/cleaning_config.yaml"
+FEATURE_STAGE_FILES = (
+    ("00", "00_input_contract_validator.py", "run_input_contract_validation"),
+    ("10", "10_atomic_feature_builder.py", "run_atomic_feature_builder"),
+    ("20", "20_engine_start_context_builder.py", "run_engine_start_context_builder"),
+    ("30", "30_window_feature_builder.py", "run_window_feature_builder"),
+    ("40", "40_calibrated_feature_builder.py", "run_calibrated_feature_builder"),
+    ("41", "41_production_feature_assembler.py", "run_production_feature_assembler"),
+)
+
+
+class DataPipelineError(RuntimeError):
+    """Raised when the public online pipeline cannot complete its contract."""
+
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace(
+        "+00:00", "Z"
+    )
+
+
+def _load_stage_module(filename: str) -> ModuleType:
+    path = REPO_ROOT / "data_layer/feature_engineering/src" / filename
+    name = f"data_layer_public_{filename.removesuffix('.py')}"
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise DataPipelineError(f"Cannot load feature stage: {path}.")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _run_descriptor(
+    path: Path, *, artifact_id: str, layout: RunLayout
+) -> ArtifactDescriptor:
+    return ArtifactDescriptor.from_file(
+        path,
+        artifact_id=artifact_id,
+        manifest_path=layout.run_relative_posix(path),
+        path_base="run_dir",
+    )
+
+
+def _repo_descriptor(
+    path: Path, *, artifact_id: str, layout: RunLayout
+) -> ArtifactDescriptor:
+    return ArtifactDescriptor.from_file(
+        path,
+        artifact_id=artifact_id,
+        manifest_path=repo_relative_posix(path, repo_root=layout.repo_root),
+        path_base="repo_root",
+    )
+
+
+def _write_upstream_manifests(
+    layout: RunLayout,
+    *,
+    config_path: Path,
+    cleaning_summary: dict[str, Any],
+    operating_summary: dict[str, Any],
+    creation_time_utc: str,
+) -> None:
+    cleaning_outputs = [
+        _run_descriptor(layout.cleaned_dataset, artifact_id="cleaned_dataset", layout=layout),
+        _run_descriptor(layout.cleaning_enriched, artifact_id="cleaning_enriched", layout=layout),
+        _run_descriptor(layout.cleaning_quality, artifact_id="cleaning_quality", layout=layout),
+        _run_descriptor(layout.cleaning_report, artifact_id="cleaning_report", layout=layout),
+    ]
+    source_identity = compute_source_dataset_identity(cleaning_outputs)
+    cleaning_manifest = build_stage_manifest(
+        stage_id="cleaning",
+        schema_version="feature_schema.v1",
+        script_version="1.0.0",
+        source_dataset_identity=source_identity,
+        input_artifacts=[
+            _repo_descriptor(config_path, artifact_id="cleaning_config", layout=layout)
+        ],
+        output_artifacts=cleaning_outputs,
+        calibration_version=None,
+        creation_time_utc=creation_time_utc,
+    )
+    cleaning_manifest["run_summary"] = cleaning_summary
+    validate_stage_manifest(cleaning_manifest)
+    write_json_atomic(layout.cleaning_stage_manifest, cleaning_manifest)
+
+    operating_outputs = [
+        _run_descriptor(
+            layout.operating_condition_enriched,
+            artifact_id="operating_condition_enriched",
+            layout=layout,
+        ),
+        _run_descriptor(
+            layout.operating_condition_counts,
+            artifact_id="operating_condition_counts_overall",
+            layout=layout,
+        ),
+        _run_descriptor(
+            layout.operating_condition_signal_summary,
+            artifact_id="operating_condition_signal_summary",
+            layout=layout,
+        ),
+        _run_descriptor(
+            layout.operating_condition_rules,
+            artifact_id="operating_condition_rules",
+            layout=layout,
+        ),
+    ]
+    operating_manifest = build_stage_manifest(
+        stage_id="operating_conditions",
+        schema_version="feature_schema.v1",
+        script_version="1.0.0",
+        source_dataset_identity=source_identity,
+        input_artifacts=[
+            _run_descriptor(
+                layout.cleaning_stage_manifest,
+                artifact_id="cleaning_stage_manifest",
+                layout=layout,
+            ),
+            _run_descriptor(
+                layout.cleaned_dataset, artifact_id="cleaned_dataset", layout=layout
+            ),
+        ],
+        output_artifacts=operating_outputs,
+        calibration_version=None,
+        creation_time_utc=creation_time_utc,
+    )
+    operating_manifest["run_summary"] = operating_summary
+    validate_stage_manifest(operating_manifest)
+    write_json_atomic(layout.operating_conditions_manifest, operating_manifest)
+
+
+def run_data_pipeline(
+    layout: RunLayout,
+    *,
+    config_path: str | Path = DEFAULT_CONFIG,
+    input_dir: str | Path | None = None,
+    creation_time_utc: str | None = None,
+) -> dict[str, Any]:
+    """Run cleaning -> operating conditions -> 00/10/20/30/40/41."""
+
+    timestamp = creation_time_utc or _utc_now()
+    config_target = Path(config_path).expanduser().resolve()
+    config = copy.deepcopy(load_config(config_target))
+    if input_dir is not None:
+        config["input"]["directory"] = str(Path(input_dir).expanduser().resolve())
+    layout.create_directories()
+    _, cleaning_summary = data_cleaning.run_cleaning(config, layout)
+    _, quality_summary = run_quality_audit(config, layout)
+    cleaning_summary = {**cleaning_summary, "quality_audit": quality_summary}
+    _, operating_summary = run_operating_condition_analysis(
+        layout, config_path=config_target
+    )
+    _write_upstream_manifests(
+        layout,
+        config_path=config_target,
+        cleaning_summary=cleaning_summary,
+        operating_summary=operating_summary,
+        creation_time_utc=timestamp,
+    )
+
+    stage_results: dict[str, Any] = {}
+    for stage, filename, function_name in FEATURE_STAGE_FILES:
+        module = _load_stage_module(filename)
+        function = getattr(module, function_name)
+        stage_results[stage] = function(layout, creation_time_utc=timestamp)
+
+    manifest_paths = [
+        layout.cleaning_stage_manifest,
+        layout.operating_conditions_manifest,
+        layout.input_contract_manifest,
+        layout.atomic_features_manifest,
+        layout.engine_start_context_manifest,
+        layout.window_features_manifest,
+        layout.calibrated_features_manifest,
+        layout.production_feature_manifest,
+    ]
+    for path in manifest_paths:
+        if not path.is_file():
+            raise DataPipelineError(f"Required stage manifest was not produced: {path}.")
+        verify_manifest_artifacts(
+            json.loads(path.read_text(encoding="utf-8")),
+            run_dir=layout.run_dir,
+            repo_root=layout.repo_root,
+        )
+    return {
+        "run_id": layout.run_id,
+        "run_dir": layout.run_relative_posix(layout.run_dir / ".") or ".",
+        "production_features": layout.run_relative_posix(layout.production_features),
+        "production_manifest": layout.run_relative_posix(
+            layout.production_feature_manifest
+        ),
+        "stage_manifests": [layout.run_relative_posix(path) for path in manifest_paths],
+        "feature_stage_ids": list(stage_results),
+    }
+
+
+def build_argument_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Run the complete online Data Layer pipeline for one explicit run ID."
+    )
+    parser.add_argument("--run-id", help="Explicit run identifier; never 'latest'.")
+    parser.add_argument("--input-dir", help="Optional raw KIT CSV input directory override.")
+    parser.add_argument("--config", default=str(DEFAULT_CONFIG))
+    return parser
+
+
+def main() -> int:
+    args = build_argument_parser().parse_args()
+    run_id = args.run_id or datetime.now(timezone.utc).strftime("run_%Y%m%dT%H%M%SZ")
+    try:
+        layout = RunLayout.for_run_id(run_id, repo_root=REPO_ROOT)
+        summary = run_data_pipeline(
+            layout, config_path=args.config, input_dir=args.input_dir
+        )
+    except (DataPipelineError, OSError, KeyError, TypeError, ValueError) as exc:
+        print(json.dumps({"error": str(exc)}, ensure_ascii=False, indent=2))
+        return 1
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
