@@ -194,7 +194,7 @@ def _validate_release_bundle(
 ) -> None:
     if (
         release.get("manifest_type") != "calibration_registry_release_manifest"
-        or release.get("manifest_version") != "1.1.0"
+        or release.get("manifest_version") != "1.2.0"
         or release.get("calibration_version") != CALIBRATION_VERSION
         or release.get("status") != "frozen"
         or release.get("hash_algorithm") != "SHA-256"

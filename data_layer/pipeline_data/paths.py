@@ -147,6 +147,10 @@ class RunLayout:
         return self.cleaning_dir / "cleaning_report.json"
 
     @property
+    def cleaning_stage_manifest(self) -> Path:
+        return self.cleaning_dir / "cleaning_stage_manifest.json"
+
+    @property
     def operating_conditions_dir(self) -> Path:
         return self.run_dir / "operating_conditions"
 
@@ -174,6 +178,10 @@ class RunLayout:
     @property
     def operating_condition_rules(self) -> Path:
         return self.operating_conditions_dir / "operating_condition_rules.csv"
+
+    @property
+    def operating_conditions_manifest(self) -> Path:
+        return self.operating_conditions_dir / "operating_conditions_manifest.json"
 
     @property
     def features_dir(self) -> Path:

@@ -309,6 +309,19 @@ After UTC timestamp normalization, both inputs must have the same non-null, uniq
 
 Every functional stage writes a manifest beside its outputs. Run-artifact paths in manifests are POSIX paths relative to `run_dir`; source, contract, calibration, and script paths are POSIX paths relative to the repository root. Dataset identity is checksum-based and must not depend on a developer-specific absolute path. Runtime outputs must never be written into `data_layer` source directories, `data_layer/contracts`, or `data_layer/calibration`. No separate calibration `.sha256` sidecar is required; the registry checksum remains embedded in the calibration release manifest. Legacy `feature_dataset.csv` golden snapshots are not production contracts and are not created or retained by this pipeline.
 
+The required online stage manifests are fixed at these run-relative paths:
+
+| Stage | Manifest path under `run_dir` |
+|---:|---|
+| 00 | `features/00_input_contract/input_contract_manifest.json` |
+| 10 | `features/10_atomic/atomic_features_manifest.json` |
+| 20 | `features/20_engine_start/engine_start_context_manifest.json` |
+| 30 | `features/30_windows/window_features_manifest.json` |
+| 40 | `features/40_calibrated/calibrated_features_manifest.json` |
+| 41 | `features/41_production/production_feature_manifest.json` |
+
+The public Data Layer entry point accepts an explicit `run_id` (or an explicitly supplied `run_dir` derived from that ID), constructs exactly one `RunLayout`, and passes that same object through cleaning, operating-condition analysis, and stages 00, 10, 20, 30, 40, and 41. It must not discover a `latest` run, inspect modification times to choose inputs, or substitute files from another run. Scripts 90 and 91 are offline/admin tools and are never called by this entry point.
+
 ## 3. Process
 
 ### 3.1 Script inventory
