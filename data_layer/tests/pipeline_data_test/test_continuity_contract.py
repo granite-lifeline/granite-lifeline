@@ -47,7 +47,8 @@ def test_gap_segment_and_trip_boundaries_create_new_blocks() -> None:
     result = build_continuity_blocks(frame)
 
     assert result.block_id.tolist() == [1, 1, 2, 3, 4]
-    assert result.continues_previous.tolist() == [False, True, False, False, False]
+    assert result.continues_previous.tolist() == [
+        False, True, False, False, False]
     assert result.break_reason.tolist() == [
         "dataset_start",
         "continuous",
@@ -142,7 +143,9 @@ def test_quality_admission_accepts_explicit_string_booleans() -> None:
 def test_quality_admission_rejects_missing_or_malformed_contract() -> None:
     frame = pd.DataFrame({"rpm": [800.0], "rpm_is_imputed": ["maybe"]})
 
-    with pytest.raises(ContinuityContractError, match="missing required columns"):
+    with pytest.raises(
+        ContinuityContractError, match="missing required columns"
+    ):
         build_quality_valid_mask(frame, ["rpm"])
     with pytest.raises(ContinuityContractError, match="without duplicates"):
         build_quality_valid_mask(frame, ["rpm", "rpm"])
@@ -153,7 +156,15 @@ def test_strict_sample_window_restarts_after_invalid_boundary() -> None:
 
     admitted = strict_window_mask(blocks, 3)
 
-    assert admitted.tolist() == [False, False, True, False, False, False, True, True]
+    assert admitted.tolist() == [
+        False,
+        False,
+        True,
+        False,
+        False,
+        False,
+        True,
+        True]
 
 
 def test_elapsed_span_requires_both_endpoints_in_same_block() -> None:

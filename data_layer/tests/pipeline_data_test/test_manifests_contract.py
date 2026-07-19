@@ -63,11 +63,14 @@ def test_json_loader_rejects_non_object_root(tmp_path: Path) -> None:
     target = tmp_path / "array.json"
     target.write_text("[]", encoding="utf-8")
 
-    with pytest.raises(ManifestValidationError, match="root must be an object"):
+    with pytest.raises(
+        ManifestValidationError, match="root must be an object"
+    ):
         load_json_object(target)
 
 
-def test_dataset_identity_ignores_input_order_and_local_paths(tmp_path: Path) -> None:
+def test_dataset_identity_ignores_input_order_and_local_paths(
+        tmp_path: Path) -> None:
     first = tmp_path / "first.csv"
     second = tmp_path / "second.csv"
     first.write_text("first", encoding="utf-8")
@@ -90,9 +93,9 @@ def test_dataset_identity_ignores_input_order_and_local_paths(tmp_path: Path) ->
         size_bytes=a.size_bytes,
     )
 
-    assert compute_source_dataset_identity([a, b]) == compute_source_dataset_identity(
-        [b, relocated]
-    )
+    left = compute_source_dataset_identity([a, b])
+    right = compute_source_dataset_identity([b, relocated])
+    assert left == right
 
 
 def test_dataset_identity_requires_at_least_one_artifact() -> None:
@@ -156,7 +159,8 @@ def test_stage_manifest_build_validate_and_verify(tmp_path: Path) -> None:
 
     output_path.write_text("changed\n", encoding="utf-8")
     with pytest.raises(ManifestValidationError, match="checksum mismatch"):
-        verify_manifest_artifacts(manifest, run_dir=run_dir, repo_root=tmp_path)
+        verify_manifest_artifacts(
+            manifest, run_dir=run_dir, repo_root=tmp_path)
 
 
 @pytest.mark.parametrize(
@@ -231,22 +235,29 @@ def test_validation_only_stage_may_have_no_non_manifest_output(
 def test_ordered_feature_contract_rejects_order_and_dtype_changes() -> None:
     feature_manifest = {
         "sample_keys": [
-            {"name": "timestamp", "dtype": "datetime64[ns, UTC]", "unit": "UTC", "nullable": False}
+            {"name": "timestamp",
+             "dtype": "datetime64[ns, UTC]",
+             "unit": "UTC",
+             "nullable": False}
         ],
         "context_fields": [
-            {"name": "dt_seconds", "dtype": "float64", "unit": "s", "nullable": False}
+            {"name": "dt_seconds", "dtype": "float64",
+                "unit": "s", "nullable": False}
         ],
         "features": [
-            {"name": "engine_on_flag", "dtype": "boolean", "unit": "boolean", "nullable": True}
+            {"name": "engine_on_flag", "dtype": "boolean",
+                "unit": "boolean", "nullable": True}
         ],
         "provenance_columns": [
-            {"name": "schema_version", "dtype": "string", "nullable": False, "constant_value": "feature_schema.v1"}
+            {"name": "schema_version", "dtype": "string",
+                "nullable": False, "constant_value": "feature_schema.v1"}
         ],
         "total_column_count": 4,
     }
     expected = ordered_column_contract_from_feature_manifest(feature_manifest)
 
-    validate_ordered_column_contract([dict(field) for field in expected], expected)
+    validate_ordered_column_contract(
+        [dict(field) for field in expected], expected)
     reordered = [dict(field) for field in expected]
     reordered[1], reordered[2] = reordered[2], reordered[1]
     with pytest.raises(ManifestValidationError, match="name mismatch"):

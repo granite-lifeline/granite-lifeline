@@ -16,13 +16,16 @@ def test_run_layout_uses_the_frozen_directory_contract(tmp_path: Path) -> None:
     assert layout.run_dir == (
         tmp_path / "data" / "processed" / "runs" / "run_20260719_001"
     ).resolve()
-    assert layout.cleaning_quality == layout.run_dir / "cleaning/cleaning_quality.csv"
+    assert layout.cleaning_quality == (
+        layout.run_dir / "cleaning/cleaning_quality.csv"
+    )
     assert layout.operating_condition_enriched == (
         layout.run_dir
         / "operating_conditions/operating_condition_enriched.csv"
     )
     assert layout.input_contract_manifest == (
-        layout.run_dir / "features/00_input_contract/input_contract_manifest.json"
+        layout.run_dir
+        / "features/00_input_contract/input_contract_manifest.json"
     )
     assert layout.production_features == (
         layout.run_dir / "features/41_production/production_features.csv"
@@ -42,7 +45,8 @@ def test_directory_creation_is_explicit_and_complete(tmp_path: Path) -> None:
     assert all(path.is_dir() for path in layout.stage_directories)
 
 
-@pytest.mark.parametrize("run_id", ["latest", "current", "../escape", "bad/name", ""])
+@pytest.mark.parametrize("run_id",
+                         ["latest", "current", "../escape", "bad/name", ""])
 def test_invalid_or_implicit_run_ids_are_rejected(
     tmp_path: Path, run_id: str
 ) -> None:
@@ -73,6 +77,10 @@ def test_repo_relative_paths_are_portable_and_external_paths_fail(
     target = resolve_repo_path("data/raw/example.csv", repo_root=tmp_path)
 
     assert target == (tmp_path / "data/raw/example.csv").resolve()
-    assert repo_relative_posix(target, repo_root=tmp_path) == "data/raw/example.csv"
+    assert repo_relative_posix(
+        target, repo_root=tmp_path) == "data/raw/example.csv"
     with pytest.raises(PathContractError):
-        repo_relative_posix(tmp_path.parent / "external.csv", repo_root=tmp_path)
+        repo_relative_posix(
+            tmp_path.parent /
+            "external.csv",
+            repo_root=tmp_path)

@@ -18,5 +18,6 @@ report_layer/rag/chroma_db/
 .idea/
 .venv/
 venv/
+.pytest_cache/
 .DS_Store
 .claude

@@ -41,7 +41,7 @@ def sha256_file(path: str | Path, *, chunk_size: int = 1024 * 1024) -> str:
 
 
 def canonical_json_bytes(value: Any) -> bytes:
-    """Serialize JSON deterministically for identities and regression checks."""
+    """Serialize JSON deterministically for identity/regression checks."""
 
     try:
         text = json.dumps(
@@ -52,7 +52,8 @@ def canonical_json_bytes(value: Any) -> bytes:
             allow_nan=False,
         )
     except (TypeError, ValueError) as exc:
-        raise ManifestValidationError(f"Value is not canonical JSON: {exc}") from exc
+        raise ManifestValidationError(
+            f"Value is not canonical JSON: {exc}") from exc
     return text.encode("utf-8")
 
 
@@ -63,7 +64,8 @@ def load_json_object(path: str | Path) -> dict[str, Any]:
     try:
         value = json.loads(target.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        raise ManifestError(f"Cannot load JSON object from {target}: {exc}") from exc
+        raise ManifestError(
+            f"Cannot load JSON object from {target}: {exc}") from exc
     if not isinstance(value, dict):
         raise ManifestValidationError(f"JSON root must be an object: {target}")
     return value
@@ -103,7 +105,8 @@ def write_json_atomic(path: str | Path, value: Mapping[str, Any]) -> Path:
     except (OSError, TypeError, ValueError) as exc:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
-        raise ManifestError(f"Cannot atomically write {target}: {exc}") from exc
+        raise ManifestError(
+            f"Cannot atomically write {target}: {exc}") from exc
     return target
 
 
@@ -119,7 +122,8 @@ def _validate_manifest_path(path: str) -> None:
         or any(part in {"", ".", ".."} for part in pure.parts)
     ):
         raise ManifestValidationError(
-            f"Manifest path must be a normalized relative POSIX path: {path!r}."
+            f"Manifest path must be a normalized relative POSIX "
+            f"path: {path!r}."
         )
 
 
@@ -135,7 +139,8 @@ class ArtifactDescriptor:
 
     def __post_init__(self) -> None:
         if not self.artifact_id or not isinstance(self.artifact_id, str):
-            raise ManifestValidationError("artifact_id must be a non-empty string.")
+            raise ManifestValidationError(
+                "artifact_id must be a non-empty string.")
         _validate_manifest_path(self.path)
         if self.path_base not in _PATH_BASES:
             raise ManifestValidationError(
@@ -144,7 +149,8 @@ class ArtifactDescriptor:
         if not _SHA256_PATTERN.fullmatch(self.sha256):
             raise ManifestValidationError(f"Invalid SHA-256: {self.sha256!r}.")
         if not isinstance(self.size_bytes, int) or self.size_bytes < 0:
-            raise ManifestValidationError("size_bytes must be a non-negative int.")
+            raise ManifestValidationError(
+                "size_bytes must be a non-negative int.")
 
     @classmethod
     def from_file(
@@ -191,7 +197,8 @@ class ArtifactDescriptor:
         }
 
 
-def _as_descriptor(value: ArtifactDescriptor | Mapping[str, Any]) -> ArtifactDescriptor:
+def _as_descriptor(value: ArtifactDescriptor |
+                   Mapping[str, Any]) -> ArtifactDescriptor:
     if isinstance(value, ArtifactDescriptor):
         return value
     return ArtifactDescriptor.from_mapping(value)
@@ -202,7 +209,8 @@ def compute_source_dataset_identity(
 ) -> str:
     """Build an order-independent identity from logical IDs and checksums.
 
-    Local absolute paths and file modification times are intentionally excluded.
+    Local absolute paths and file modification times are
+    intentionally excluded.
     """
 
     descriptors = [_as_descriptor(value) for value in artifacts]
@@ -217,7 +225,10 @@ def compute_source_dataset_identity(
     if len({item["artifact_id"] for item in identities}) != len(identities):
         raise ManifestValidationError("Dataset artifact IDs must be unique.")
     digest = hashlib.sha256(
-        canonical_json_bytes(sorted(identities, key=lambda item: item["artifact_id"]))
+        canonical_json_bytes(
+            sorted(
+                identities,
+                key=lambda item: item["artifact_id"]))
     ).hexdigest()
     return f"sha256:{digest}"
 
@@ -247,7 +258,8 @@ def build_stage_manifest(
     all_artifacts = inputs + outputs
     paths = [item.path for item in all_artifacts]
     if len(paths) != len(set(paths)):
-        raise ManifestValidationError("Artifact paths must be unique in a manifest.")
+        raise ManifestValidationError(
+            "Artifact paths must be unique in a manifest.")
     manifest = {
         "manifest_type": "data_layer_stage_output",
         "manifest_version": manifest_version,
@@ -267,7 +279,8 @@ def build_stage_manifest(
 
 def _validate_utc_timestamp(value: Any) -> None:
     if not isinstance(value, str) or not value.endswith("Z"):
-        raise ManifestValidationError("creation_time_utc must be an ISO 8601 UTC string.")
+        raise ManifestValidationError(
+            "creation_time_utc must be an ISO 8601 UTC string.")
     try:
         datetime.fromisoformat(value[:-1] + "+00:00")
     except ValueError as exc:
@@ -302,21 +315,29 @@ def validate_stage_manifest(
         raise ManifestValidationError(f"Missing manifest fields: {missing}.")
     if manifest["manifest_type"] != "data_layer_stage_output":
         raise ManifestValidationError("Unexpected manifest_type.")
-    if not isinstance(manifest["stage_id"], str) or not _STAGE_ID_PATTERN.fullmatch(
-        manifest["stage_id"]
+    stage_id = manifest["stage_id"]
+    if not isinstance(stage_id, str) or not _STAGE_ID_PATTERN.fullmatch(
+        stage_id
     ):
-        raise ManifestValidationError(f"Invalid stage_id: {manifest['stage_id']!r}.")
+        raise ManifestValidationError(
+            f"Invalid stage_id: {stage_id!r}.")
     for key in ("manifest_version", "schema_version", "script_version"):
         if not isinstance(manifest[key], str) or not manifest[key]:
             raise ManifestValidationError(f"{key} must be a non-empty string.")
-    if not _DATASET_ID_PATTERN.fullmatch(str(manifest["source_dataset_identity"])):
+    if not _DATASET_ID_PATTERN.fullmatch(
+            str(manifest["source_dataset_identity"])):
         raise ManifestValidationError("Invalid source_dataset_identity.")
     _validate_utc_timestamp(manifest["creation_time_utc"])
     calibration = manifest["calibration_version"]
     if not isinstance(calibration, str) or not calibration:
-        raise ManifestValidationError("calibration_version must be a non-empty string.")
-    if expected_schema_version and manifest["schema_version"] != expected_schema_version:
-        raise ManifestValidationError("schema_version does not match the expected contract.")
+        raise ManifestValidationError(
+            "calibration_version must be a non-empty string.")
+    if (
+        expected_schema_version
+        and manifest["schema_version"] != expected_schema_version
+    ):
+        raise ManifestValidationError(
+            "schema_version does not match the expected contract.")
     if (
         expected_calibration_version
         and calibration != expected_calibration_version
@@ -330,16 +351,20 @@ def validate_stage_manifest(
         values = manifest[key]
         if not isinstance(values, list):
             raise ManifestValidationError(f"{key} must be a list.")
-        descriptors.extend(ArtifactDescriptor.from_mapping(value) for value in values)
+        descriptors.extend(ArtifactDescriptor.from_mapping(value)
+                           for value in values)
     ids = [item.artifact_id for item in descriptors]
     paths = [item.path for item in descriptors]
     if len(ids) != len(set(ids)):
-        raise ManifestValidationError("Artifact IDs must be unique in a manifest.")
+        raise ManifestValidationError(
+            "Artifact IDs must be unique in a manifest.")
     if len(paths) != len(set(paths)):
-        raise ManifestValidationError("Artifact paths must be unique in a manifest.")
+        raise ManifestValidationError(
+            "Artifact paths must be unique in a manifest.")
     expected_hashes = {item.path: item.sha256 for item in descriptors}
     if manifest["artifact_sha256"] != expected_hashes:
-        raise ManifestValidationError("artifact_sha256 does not match artifact records.")
+        raise ManifestValidationError(
+            "artifact_sha256 does not match artifact records.")
 
 
 def verify_manifest_artifacts(
@@ -367,13 +392,15 @@ def verify_manifest_artifacts(
                     f"Artifact escapes {item.path_base}: {item.path}."
                 ) from exc
             if not target.is_file():
-                raise ManifestValidationError(f"Artifact is missing: {item.path}.")
+                raise ManifestValidationError(
+                    f"Artifact is missing: {item.path}.")
             if sha256_file(target) != item.sha256:
                 raise ManifestValidationError(
                     f"Artifact checksum mismatch: {item.path}."
                 )
             if target.stat().st_size != item.size_bytes:
-                raise ManifestValidationError(f"Artifact size mismatch: {item.path}.")
+                raise ManifestValidationError(
+                    f"Artifact size mismatch: {item.path}.")
 
 
 def ordered_column_contract_from_feature_manifest(
@@ -394,12 +421,14 @@ def ordered_column_contract_from_feature_manifest(
         ) from exc
     fields = tuple(dict(field) for section in sections for field in section)
     if feature_manifest.get("total_column_count") != len(fields):
-        raise ManifestValidationError("total_column_count does not match ordered fields.")
+        raise ManifestValidationError(
+            "total_column_count does not match ordered fields.")
     names = [field.get("name") for field in fields]
     if any(not isinstance(name, str) or not name for name in names):
         raise ManifestValidationError("Every ordered field must have a name.")
     if len(names) != len(set(names)):
-        raise ManifestValidationError("Ordered feature columns must be unique.")
+        raise ManifestValidationError(
+            "Ordered feature columns must be unique.")
     return fields
 
 
@@ -407,7 +436,8 @@ def validate_ordered_column_contract(
     actual_fields: Sequence[Mapping[str, Any]],
     expected_fields: Sequence[Mapping[str, Any]],
 ) -> None:
-    """Validate exact field order and all declared type/unit/nullability metadata."""
+    """Validate field order and declared type/unit/nullability
+    metadata."""
 
     if len(actual_fields) != len(expected_fields):
         raise ManifestValidationError(
@@ -427,13 +457,16 @@ def validate_ordered_column_contract(
             if actual.get(attribute) != expected[attribute]:
                 raise ManifestValidationError(
                     f"Column {position} {attribute} mismatch for "
-                    f"{expected.get('name')!r}: expected {expected[attribute]!r}, "
+                    f"{expected.get('name')!r}: expected "
+                    f"{expected[attribute]!r}, "
                     f"received {actual.get(attribute)!r}."
                 )
         for attribute in optional_when_declared:
-            if attribute in expected and actual.get(attribute) != expected[attribute]:
+            if attribute in expected and actual.get(
+                    attribute) != expected[attribute]:
                 raise ManifestValidationError(
                     f"Column {position} {attribute} mismatch for "
-                    f"{expected.get('name')!r}: expected {expected[attribute]!r}, "
+                    f"{expected.get('name')!r}: expected "
+                    f"{expected[attribute]!r}, "
                     f"received {actual.get(attribute)!r}."
                 )

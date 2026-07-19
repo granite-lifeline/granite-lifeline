@@ -90,7 +90,9 @@ def _quality_flag_is_false(series: pd.Series, *, label: str) -> pd.Series:
     ).astype("boolean")
     unknown = series.notna() & normalized.isna()
     if unknown.any():
-        examples = series.loc[unknown].astype(str).drop_duplicates().head(3).tolist()
+        examples = (
+            series.loc[unknown].astype(str).drop_duplicates().head(3).tolist()
+        )
         raise ContinuityContractError(
             f"{label} contains non-boolean values: {examples}."
         )
@@ -186,8 +188,10 @@ def build_continuity_blocks(
     same_trip = frame[trip_column].eq(frame[trip_column].shift())
     same_segment = frame[segment_column].eq(frame[segment_column].shift())
     row_consecutive = row_numbers.sub(row_numbers.shift()).eq(1)
-    time_consecutive = timestamps.sub(timestamps.shift()).dt.total_seconds().eq(
-        float(expected_interval_seconds)
+    time_consecutive = (
+        timestamps.sub(timestamps.shift())
+        .dt.total_seconds()
+        .eq(float(expected_interval_seconds))
     )
     previous_valid = valid.shift(fill_value=False)
 
@@ -214,7 +218,11 @@ def build_continuity_blocks(
         valid_start & previous_exists & same_trip & ~same_segment
     ] = "segment_boundary"
     reason.loc[
-        valid_start & previous_exists & same_trip & same_segment & ~previous_valid
+        valid_start
+        & previous_exists
+        & same_trip
+        & same_segment
+        & ~previous_valid
     ] = "previous_sample_invalid"
     reason.loc[
         valid_start
@@ -247,8 +255,13 @@ def strict_window_mask(
     """Admit windows ending at rows with exactly N valid block endpoints."""
 
     if not isinstance(window_samples, int) or window_samples <= 0:
-        raise ContinuityContractError("window_samples must be a positive integer.")
-    positions = block_ids.groupby(block_ids, dropna=True, sort=False).cumcount()
+        raise ContinuityContractError(
+            "window_samples must be "
+            "a positive integer."
+        )
+    positions = (
+        block_ids.groupby(block_ids, dropna=True, sort=False).cumcount()
+    )
     admitted = block_ids.notna() & positions.add(1).ge(window_samples)
     admitted.name = f"strict_window_{window_samples}_samples"
     return admitted.astype(bool)
@@ -272,7 +285,9 @@ def strict_elapsed_span_mask(
     parsed = pd.to_datetime(timestamps, utc=True, errors="coerce")
     if parsed.isna().any():
         raise ContinuityContractError("timestamps contain invalid values.")
-    same_block = block_ids.notna() & block_ids.eq(block_ids.shift(span_seconds))
+    same_block = (
+        block_ids.notna() & block_ids.eq(block_ids.shift(span_seconds))
+    )
     elapsed = parsed.sub(parsed.shift(span_seconds)).dt.total_seconds()
     admitted = (same_block & elapsed.eq(float(span_seconds))).fillna(False)
     admitted.name = f"strict_elapsed_span_{span_seconds}_seconds"

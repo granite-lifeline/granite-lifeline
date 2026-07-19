@@ -727,7 +727,7 @@ def run_operating_condition_analysis(
 
 def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Generate operating-condition outputs for one Data Layer run."
+        description="Operating-condition outputs for one Data Layer run."
     )
     parser.add_argument(
         "--run-dir",

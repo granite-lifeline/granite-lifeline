@@ -105,7 +105,7 @@ class RunLayout:
         *,
         repo_root: str | Path = REPO_ROOT,
     ) -> "RunLayout":
-        """Build a layout for an explicit run identifier without creating it."""
+        """Build a layout for an explicit run id without creating it."""
 
         root = _resolved(repo_root)
         return cls(root, root / "data" / "processed" / "runs" / run_id)
@@ -117,7 +117,7 @@ class RunLayout:
         *,
         repo_root: str | Path = REPO_ROOT,
     ) -> "RunLayout":
-        """Build a layout from an explicit absolute or repo-relative run path."""
+        """Build a layout from an absolute or repo-relative run path."""
 
         root = _resolved(repo_root)
         return cls(root, resolve_repo_path(run_dir, repo_root=root))
@@ -152,15 +152,24 @@ class RunLayout:
 
     @property
     def operating_condition_enriched(self) -> Path:
-        return self.operating_conditions_dir / "operating_condition_enriched.csv"
+        return (
+            self.operating_conditions_dir
+            / "operating_condition_enriched.csv"
+        )
 
     @property
     def operating_condition_counts(self) -> Path:
-        return self.operating_conditions_dir / "operating_condition_counts_overall.csv"
+        return (
+            self.operating_conditions_dir
+            / "operating_condition_counts_overall.csv"
+        )
 
     @property
     def operating_condition_signal_summary(self) -> Path:
-        return self.operating_conditions_dir / "operating_condition_signal_summary.csv"
+        return (
+            self.operating_conditions_dir
+            / "operating_condition_signal_summary.csv"
+        )
 
     @property
     def operating_condition_rules(self) -> Path:
@@ -264,7 +273,12 @@ class RunLayout:
 
     @property
     def feature_contract(self) -> Path:
-        return self.repo_root / "data_layer" / "contracts" / "feature_manifest.v1.json"
+        return (
+            self.repo_root
+            / "data_layer"
+            / "contracts"
+            / "feature_manifest.v1.json"
+        )
 
     @property
     def calibration_registry(self) -> Path:
@@ -302,7 +316,7 @@ class RunLayout:
         )
 
     def create_directories(self) -> None:
-        """Explicitly create the run root and all contracted stage directories."""
+        """Create the run root and all contracted stage directories."""
 
         for directory in self.stage_directories:
             directory.mkdir(parents=True, exist_ok=True)

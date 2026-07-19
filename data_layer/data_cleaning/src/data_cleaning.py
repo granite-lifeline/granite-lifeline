@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import argparse
 import logging
-from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -22,7 +21,9 @@ try:  # Package import for tests and shared Data Layer entry points.
         clean_dataset_enriched,
         load_config,
     )
-    from .project_paths import CONFIG_PATH, REPO_ROOT, RunLayout, build_run_layout
+    from .project_paths import (
+        CONFIG_PATH, REPO_ROOT, RunLayout, build_run_layout
+    )
 except ImportError:  # Direct execution: python data_cleaning.py ...
     from cleaning_core import (
         LOGGER,
@@ -31,7 +32,9 @@ except ImportError:  # Direct execution: python data_cleaning.py ...
         clean_dataset_enriched,
         load_config,
     )
-    from project_paths import CONFIG_PATH, REPO_ROOT, RunLayout, build_run_layout
+    from project_paths import (
+        CONFIG_PATH, REPO_ROOT, RunLayout, build_run_layout
+    )
 
 
 def run_cleaning(

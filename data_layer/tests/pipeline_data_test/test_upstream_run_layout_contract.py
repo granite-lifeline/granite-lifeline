@@ -12,7 +12,7 @@ from data_layer.data_cleaning.src.cleaning_core import (
     load_config,
 )
 from data_layer.data_cleaning.src.quality_audit import run_quality_audit
-from data_layer.operating_condition_statistics.src.operating_condition_analysis import (
+from data_layer.operating_condition_statistics.src.operating_condition_analysis import (  # noqa: E501
     CONFIG_PATH,
     run_operating_condition_analysis,
 )
