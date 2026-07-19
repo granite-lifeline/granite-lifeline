@@ -1,0 +1,182 @@
+{
+  "manifest_type": "calibration_registry_release_manifest",
+  "manifest_version": "1.1.0",
+  "calibration_version": "calibration.v1",
+  "status": "frozen",
+  "created_at_utc": "2026-07-19T15:03:07Z",
+  "hash_algorithm": "SHA-256",
+  "registry": {
+    "path": "data_layer/calibration/calibration_registry.v1.json",
+    "sha256": "856998172dc71565b879be97d4a9e737b5ca7c969923bf44b4aec2efa44d2f10",
+    "registry_schema_version": "1.0.1",
+    "immutable": true
+  },
+  "feature_contract": {
+    "path": "data_layer/contracts/feature_manifest.v1.json",
+    "manifest_version": "1.2.0",
+    "schema_version": "feature_schema.v1",
+    "sha256": "7513e2805ae043f7e57e9cf1c54bb5f5e950bb3bafbf5fcf7898553a0d5072bd"
+  },
+  "authoritative_documents": [
+    {
+      "id": "feature_schema",
+      "path": "data_layer/feature_engineering/feature_schema.md",
+      "sha256": "5e32bbafb2219f986d68679c2ee28173535bf600f74c79655f0f9918fd7b60ca"
+    },
+    {
+      "id": "proxy_definition",
+      "path": "data_layer/proxy_failure/proxy_failure_definition.md",
+      "sha256": "0001ec59c5a998f0ecc660d80a420d91c63518341b110e64006ea482ea05aa0e"
+    },
+    {
+      "id": "proxy_support",
+      "path": "data_layer/proxy_failure/proxy_support.md",
+      "sha256": "7dcf939b4f9d5a7cf056b7d81f0adcd96a04ecb4ccd0410fccee4f0d6788af0f"
+    }
+  ],
+  "evidence_root_note": "Paths beginning with 'feature engineering/' or 'experiments/' are logical paths in the approved calibration evidence archive. Runtime production does not require that archive; script 90 requires an explicitly supplied evidence root and verifies these checksums.",
+  "cohort": {
+    "identity": "fixed healthy 66-trip cohort",
+    "path": "experiments/cooling_s1/outputs/experiment_b_rate_windows.csv",
+    "sha256": "11483ddcb2520820722c85e232c62fb2f7f04eaa2b14403df6af29636820ab91",
+    "weighting_convention": "trip-equal where declared by each pre-registration"
+  },
+  "source_artifacts": [
+    {
+      "id": "feature_baselines",
+      "path": "feature engineering/feature_baselines.json",
+      "sha256": "5a62d428cbe6ffc435cff2e2957e8b2ce497edddc27f50257903dbb1c68c3653"
+    },
+    {
+      "id": "deterministic_feature_builder",
+      "path": "feature engineering/deterministic_feature_builder.py",
+      "sha256": "5b5624ad7262ef424fcc4c337624c515d452d6faf194fed5bb52b9351214c536"
+    },
+    {
+      "id": "cooling_s1_summary",
+      "path": "experiments/cooling_s1/outputs/experiment_summary.json",
+      "sha256": "7a16ee16b99dc2f46f773e8c372d97f2232e16635b97f0efb78df63f948e851c"
+    },
+    {
+      "id": "fixed_66_trip_cohort",
+      "path": "experiments/cooling_s1/outputs/experiment_b_rate_windows.csv",
+      "sha256": "11483ddcb2520820722c85e232c62fb2f7f04eaa2b14403df6af29636820ab91"
+    },
+    {
+      "id": "cooling_s2_prereg",
+      "path": "experiments/cooling_s2/s2_census_preregistration.json",
+      "sha256": "6a2d1ca6f652b7e2f7000c653d8f5f4fe6ab7b7363ce591fe0923186a63354db"
+    },
+    {
+      "id": "cooling_s2_summary",
+      "path": "experiments/cooling_s2/outputs/s2_summary.json",
+      "sha256": "1fdff5d8b6a3050541b1d98a3d1ffc383bebfa07f53b45a7d67f9e5754a2fce7"
+    },
+    {
+      "id": "cooling_s3_prereg",
+      "path": "experiments/cooling_s3/s3_census_preregistration.json",
+      "sha256": "1a7d389746f7bdae75683450fe8a31e56fcaf3dd7adcd117d3c0b16b705a0634"
+    },
+    {
+      "id": "cooling_s3_summary",
+      "path": "experiments/cooling_s3/outputs/s3_summary.json",
+      "sha256": "c8ac695ea11989ae182e62b18ce9aa7e44dee8dd5d3d86698db6f6383e5975e3"
+    },
+    {
+      "id": "iat_s1_prereg",
+      "path": "experiments/intake_s1/iat_s1_census_preregistration.json",
+      "sha256": "88542d5a394539474388e915fdca697eb0414c921527d3057a6b40714c9df8e2"
+    },
+    {
+      "id": "iat_s1_summary",
+      "path": "experiments/intake_s1/outputs/iat_s1_summary.json",
+      "sha256": "d94ffd0f74c9b3bcbc4b62b778da177520d61baddec52d7473abf02f96766dfb"
+    },
+    {
+      "id": "maf_s2_prereg",
+      "path": "experiments/maf_census/maf_s2_underread_census_preregistration.json",
+      "sha256": "51e2238c538986190c0475dc334726de30696aedb93efab7e9a1215b87e6bec5"
+    },
+    {
+      "id": "maf_s2_summary",
+      "path": "experiments/maf_census/outputs/maf_s2_summary.json",
+      "sha256": "60454f82aa663c6accb4de2220ae76a5e9657ec1be2aff08af588fbf41e6a3a4"
+    },
+    {
+      "id": "maf_s3_prereg",
+      "path": "experiments/maf_census/maf_s3_stuck_census_preregistration.json",
+      "sha256": "09f2395a6140a544af5e0162289c2d4a5e00a4647d66c09545b98061139219c4"
+    },
+    {
+      "id": "maf_s3_summary",
+      "path": "experiments/maf_census/outputs/maf_s3_summary.json",
+      "sha256": "4d7f7cece5185ed929d9a9c0133e924c812854614659528529ba056f6c39ca4a"
+    },
+    {
+      "id": "map_s1_prereg",
+      "path": "experiments/map_census/map_s1_step_census_preregistration.json",
+      "sha256": "908316dbca714f8619987d8e6def463058e9de8f8877c14650e301e8172d3c8c"
+    },
+    {
+      "id": "map_s1_thresholds",
+      "path": "experiments/map_census/outputs/map_s1_step_thresholds.csv",
+      "sha256": "f77d1fb24c4b2de210001da870910ebbf08826898341f39c1fc66279e08584f3"
+    },
+    {
+      "id": "map_s1_summary",
+      "path": "experiments/map_census/outputs/map_s1_summary.json",
+      "sha256": "128299ed1095db94a5e48507fc44af4c5ace78286a4682f0e1c88b53f4bd1ec9"
+    },
+    {
+      "id": "map_s2_prereg",
+      "path": "experiments/map_census/map_s2_residual_census_preregistration.json",
+      "sha256": "c8369014ae11f02de03538d4dc21f434f6545e9d0e1ced3afd5d2eb42512be85"
+    },
+    {
+      "id": "map_s2_bands",
+      "path": "experiments/map_census/outputs/map_s2_band_edges.csv",
+      "sha256": "763065c005b2c86c373a7fad3b283dd5bc39a71e63a1e9fc8ad092342a5775dd"
+    },
+    {
+      "id": "map_s2_summary",
+      "path": "experiments/map_census/outputs/map_s2_summary.json",
+      "sha256": "88163269601259f3f33ec239907e583f26322cef7e568da9b309684bba8c6ab0"
+    },
+    {
+      "id": "map_s3_prereg",
+      "path": "experiments/map_census/map_s3_stuck_census_preregistration.json",
+      "sha256": "af711a89264e5c78e932ae990d527276d463584ff3759007cc67da0bc4028ee9"
+    },
+    {
+      "id": "map_s3_context",
+      "path": "experiments/map_census/outputs/map_s3_context_distribution.csv",
+      "sha256": "e74c5acd90580f06cad588a61c374c5293285993f8e51368879a32077ea61f10"
+    },
+    {
+      "id": "map_s3_summary",
+      "path": "experiments/map_census/outputs/map_s3_summary.json",
+      "sha256": "df79f1d5dc82fbfed2a594c67c03c90c86d3c830e418c72274ff38fae6835dbe"
+    },
+    {
+      "id": "pedal_s1_prereg",
+      "path": "experiments/pedal_census/pedal_s1_relation_census_preregistration.json",
+      "sha256": "8ebbbc014eae926ada1fce7ec3794e25c55a9e3903858eb1cecbc7a9bd879e80"
+    },
+    {
+      "id": "pedal_s1_summary",
+      "path": "experiments/pedal_census/outputs/pedal_s1_summary.json",
+      "sha256": "1ca5353221c49e2347f09bb44d0562218d1cec35de0c0a0e388b709a4a6d4b97"
+    }
+  ],
+  "release_checks": {
+    "all_registry_source_ids_resolve": true,
+    "all_source_checksums_recorded": true,
+    "feature_manifest_has_24_unique_ordered_features": true,
+    "cross_contract_lint_passed": true,
+    "categorical_field_identity_aligned": true,
+    "numeric_calibration_changed": false,
+    "online_fit_paths_forbidden": true,
+    "separate_sha256_sidecar_required": false,
+    "registry_checksum_embedded_in_this_manifest": true
+  }
+}
