@@ -16,5 +16,7 @@ report_layer/rag/vector_store/*
 report_layer/rag/chroma_db/
 .vscode/
 .idea/
+.venv/
+venv/
 .DS_Store
 .claude

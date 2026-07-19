@@ -1,6 +1,11 @@
 """
 Pydantic models for Granite Lifeline cross-layer data contracts.
-Based on INTERFACE.md v0.9 (updated 2026-07-14).
+Based on INTERFACE.md v1.0 (updated 2026-07-19).
+
+DataLayerOutput now follows the versioned production_features.csv contract:
+4 sample keys + 16 A-class context/raw fields + 24 B-class production features
++ 2 provenance fields (46 columns total; production feature count remains 24).
+Internal-only proxy label fields (INTERFACE.md 1.4) are kept optional.
 
 This is an early-stage version with basic validation only.
 Stricter validation will be added once all layers confirm field details.
@@ -15,8 +20,7 @@ AnomalyType = Literal[
     "air_intake_maf_anomaly",
     "accelerator_pedal_sensor",
     "intake_air_temperature_sensor_fault",
-    "map_load_signal_plausibility_fault",
-    "idle_speed_control_or_surge_degradation"
+    "map_load_signal_plausibility_fault"
 ]
 
 
@@ -35,23 +39,29 @@ class RiskHistoryEntry(BaseModel):
 
 
 class DataLayerOutput(BaseModel):
-    """Output from Data Layer, consumed by Model Layer."""
+    """Output from Data Layer, consumed by Model Layer.
 
-    # Key / time
+    Follows the production_features.csv contract (INTERFACE.md v1.0):
+    46 ordered columns = 4 sample keys + 16 A-class context/raw fields
+    + 24 B-class production features + 2 provenance fields.
+    Nullable columns are typed Optional but remain required keys.
+    """
+
+    # Sample keys (4)
     timestamp: str = Field(...)
     trip_id: str = Field(...)
     segment_id: str = Field(...)
     row_in_segment: int = Field(...)
-    dt_seconds: Optional[float] = Field(...)
 
-    # Operating condition
+    # A-class context/raw (16): operating condition (A1/A4)
+    dt_seconds: Optional[float] = Field(...)
     thermal_state: str = Field(...)
     child_state: str = Field(...)
     operating_state: str = Field(...)
     condition_confidence: str = Field(...)
     condition_quality_flags: str = Field(...)
 
-    # Raw signals
+    # A-class context/raw (16): cleaned raw signals (A2)
     coolant_temp: Optional[float] = Field(...)
     map: Optional[float] = Field(...)
     rpm: Optional[float] = Field(...)
@@ -63,31 +73,43 @@ class DataLayerOutput(BaseModel):
     accel_pedal_d: Optional[float] = Field(...)
     accel_pedal_e: Optional[float] = Field(...)
 
-    # Engineered features
-    coolant_slope: Optional[float] = Field(...)
+    # B-class production features (24): sample-level atomic (B1a)
+    segment_gap_seconds: Optional[float] = Field(...)
+    engine_on_flag: Optional[bool] = Field(...)
     coolant_ambient_delta: Optional[float] = Field(...)
-    coolant_stability: Optional[float] = Field(...)
     intake_ambient_delta: Optional[float] = Field(...)
-    intake_temp_slope: Optional[float] = Field(...)
-    maf_derived_air_load_raw: Optional[float] = Field(...)
-    map_derived_air_load_raw: Optional[float] = Field(...)
-    maf_map_cohesion: Optional[float] = Field(...)
-    speed_density_maf_residual: Optional[float] = Field(...)
-    map_slope: Optional[float] = Field(...)
     accel_pedal_mean: Optional[float] = Field(...)
     accel_pedal_channel_delta: Optional[float] = Field(...)
-    accel_pedal_channel_ratio: Optional[float] = Field(...)
     pedal_slope: Optional[float] = Field(...)
-    engine_on_flag: Optional[float] = Field(...)
     rpm_slope: Optional[float] = Field(...)
-    idle_flag: Optional[float] = Field(...)
-    idle_rpm_stability: Optional[float] = Field(...)
-    segment_gap_seconds: Optional[float] = Field(...)
-    cold_soak_candidate_flag: Optional[float] = Field(...)
-    intake_temp_stability: Optional[float] = Field(...)
-    map_stability: Optional[float] = Field(...)
 
-    # Proxy labels (internal to Model Layer, marked Optional as TBD)
+    # B-class production features (24): frozen-calibration transforms (B1b)
+    speed_density_maf_residual: Optional[float] = Field(...)
+    pedal_mapping_residual: Optional[float] = Field(...)
+
+    # B-class production features (24): engine-start context (B2)
+    engine_start_observed: Optional[bool] = Field(...)
+    engine_start_episode_id: Optional[str] = Field(...)
+    elapsed_since_engine_start: Optional[float] = Field(...)
+    ect_start: Optional[float] = Field(...)
+    aat_start: Optional[float] = Field(...)
+    iat_start: Optional[float] = Field(...)
+
+    # B-class production features (24): window-level (B3)
+    maf_integral_180s: Optional[float] = Field(...)
+    ect_rate_180s: Optional[float] = Field(...)
+    intake_temp_stability: Optional[float] = Field(...)
+    speed_std_120s: Optional[float] = Field(...)
+    maf_std_120s: Optional[float] = Field(...)
+    rpm_std_120s: Optional[float] = Field(...)
+    accel_pedal_mean_std_120s: Optional[float] = Field(...)
+    map_range_60s: Optional[float] = Field(...)
+
+    # Provenance (2)
+    schema_version: str = Field(...)
+    calibration_version: str = Field(...)
+
+    # Proxy labels (internal to Model Layer only)
     failure_label: Optional[str] = None
     risk_class: Optional[str] = None
     condition_ratio: Optional[float] = None
