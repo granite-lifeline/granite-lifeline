@@ -46,6 +46,12 @@ except Exception as e:
     st.error(f"Failed to load report data from {test_data_file}: {e}")
     REPORT_DATA = {}
 
+# GL-132: Extract _data_source metadata before building MOCK_DATA.
+# Maps component_key → "real" | "mock".
+DATA_SOURCE: dict = {}
+if isinstance(REPORT_DATA, dict):
+    DATA_SOURCE = REPORT_DATA.pop("_data_source", {})
+
 # Fallback MOCK_DATA for development (kept for reference)
 MOCK_DATA_FALLBACK = {
     "cooling_system_stress": {
@@ -187,6 +193,10 @@ MOCK_DATA_FALLBACK = {
 # Use REPORT_DATA if available, otherwise use fallback
 # Note: Empty dict {} or empty list [] from REPORT_DATA should be respected
 MOCK_DATA = REPORT_DATA if REPORT_DATA is not None else MOCK_DATA_FALLBACK
+# If DATA_SOURCE has no entries (e.g. error path), treat all components
+# as mock so the warning banner appears.
+if not DATA_SOURCE and MOCK_DATA:
+    DATA_SOURCE = {k: "mock" for k in MOCK_DATA}
 
 RISK_PRIORITY = {"High": 0, "Medium": 1, "Low": 2, "Unknown": 3}
 
@@ -970,6 +980,57 @@ def show_footer(dark_mode: bool):
     st.markdown(footer_html, unsafe_allow_html=True)
 
 
+def show_mock_data_warning(tokens: dict):
+    """
+    GL-132: Display a warning banner when any component is using mock data.
+
+    Shows which anomaly types are falling back to mock data so users
+    know they are not viewing real pipeline output.  Hidden when all
+    components use real data.
+    """
+    mock_components = [
+        key for key, source in DATA_SOURCE.items() if source == "mock"
+    ]
+    if not mock_components:
+        return
+
+    from anomaly_display import COMPONENT_DISPLAY_NAMES
+    display_names = [
+        COMPONENT_DISPLAY_NAMES.get(c, c) for c in mock_components
+    ]
+    names_str = ", ".join(display_names)
+    warn_icon = lucide_icon(
+        "alert-triangle", size=18, color=tokens["risk_medium"]
+    )
+    warning_html = (
+        f'<div style="'
+        f'background: {hex_to_rgba(tokens["risk_medium"], 0.10)};'
+        f'border: 1px solid {hex_to_rgba(tokens["risk_medium"], 0.35)};'
+        f'backdrop-filter: blur(16px);'
+        f'-webkit-backdrop-filter: blur(16px);'
+        f'border-radius: 12px;'
+        f'padding: 12px 16px;'
+        f'margin: 12px auto 4px auto;'
+        f'max-width: 860px;'
+        f'display: flex;'
+        f'align-items: flex-start;'
+        f'gap: 12px;'
+        f'box-shadow: 0 4px 16px {tokens["shadow"]};'
+        f'">'
+        f'<span style="flex-shrink:0;margin-top:1px;">{warn_icon}</span>'
+        f'<span style="color:{tokens["text"]};'
+        f'font-size:14px;line-height:1.5;">'
+        f'<strong style="color:{tokens["risk_medium"]};">'
+        f'Mock data active</strong> — '
+        f'Real pipeline output is not yet available for: '
+        f'<em>{names_str}</em>. '
+        f'These cards show placeholder values from the test dataset.'
+        f'</span>'
+        f'</div>'
+    )
+    st.markdown(warning_html, unsafe_allow_html=True)
+
+
 def show_overview_page():
     """Display the Overview Page with component health summary."""
     dark_mode = st.session_state.get("dark_mode", False)
@@ -1122,6 +1183,9 @@ def show_overview_page():
         """
         st.markdown(info_html, unsafe_allow_html=True)
         return
+
+    # GL-132: Show mock-data fallback warning banner if applicable.
+    show_mock_data_warning(tokens)
 
     has_high_risk = any(
         comp.get("risk_level") == "High" for comp in MOCK_DATA.values()
