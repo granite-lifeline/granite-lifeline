@@ -22,7 +22,8 @@ SCRIPT_PATH = (
     REPO_ROOT
     / "data_layer/feature_engineering/src/00_input_contract_validator.py"
 )
-SPEC = importlib.util.spec_from_file_location("script_00_under_test", SCRIPT_PATH)
+SPEC = importlib.util.spec_from_file_location(
+    "script_00_under_test", SCRIPT_PATH)
 assert SPEC is not None and SPEC.loader is not None
 SCRIPT_00 = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = SCRIPT_00
@@ -109,7 +110,9 @@ def _layout_with_inputs(tmp_path: Path) -> RunLayout:
     layout.cleaning_dir.mkdir(parents=True)
     layout.feature_contract.parent.mkdir(parents=True)
     layout.feature_contract.write_bytes(
-        (REPO_ROOT / "data_layer/contracts/feature_manifest.v1.json").read_bytes()
+        (
+            REPO_ROOT / "data_layer/contracts/feature_manifest.v1.json"
+        ).read_bytes()
     )
     operating = _operating_fixture()
     quality = _quality_fixture(operating)
@@ -199,7 +202,8 @@ def test_manifest_records_only_two_data_authorities_and_portable_hashes(
 
 def test_missing_required_column_is_rejected(tmp_path: Path) -> None:
     layout = _layout_with_inputs(tmp_path)
-    frame = pd.read_csv(layout.operating_condition_enriched).drop(columns=["rpm"])
+    frame = pd.read_csv(
+        layout.operating_condition_enriched).drop(columns=["rpm"])
     frame.to_csv(layout.operating_condition_enriched, index=False)
 
     with pytest.raises(SCRIPT_00.InputContractError, match="missing required"):
@@ -263,7 +267,9 @@ def test_gap_and_non_one_based_rows_are_rejected(tmp_path: Path) -> None:
     quality.loc[0, "row_in_segment"] = 0
     operating.to_csv(layout.operating_condition_enriched, index=False)
     quality.to_csv(layout.cleaning_quality, index=False)
-    with pytest.raises(SCRIPT_00.InputContractError, match="positive integers"):
+    with pytest.raises(
+        SCRIPT_00.InputContractError, match="positive integers"
+    ):
         _validate(layout)
 
 
@@ -293,5 +299,7 @@ def test_frozen_unit_contract_drift_is_rejected(tmp_path: Path) -> None:
     )
     rpm["unit"] = "revolutions_per_second"
 
-    with pytest.raises(SCRIPT_00.InputContractError, match="contract has drifted"):
+    with pytest.raises(
+        SCRIPT_00.InputContractError, match="contract has drifted"
+    ):
         SCRIPT_00.validate_authoritative_inputs(layout, contract)

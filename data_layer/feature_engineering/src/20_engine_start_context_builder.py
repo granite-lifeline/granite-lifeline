@@ -65,28 +65,44 @@ EPISODE_COLUMNS = [
     "iat_start",
 ]
 EPISODE_CONTRACT = [
-    {"name": "trip_id", "dtype": "string", "unit": "identifier", "nullable": False},
+    {
+        "name": "trip_id",
+        "dtype": "string",
+        "unit": "identifier",
+        "nullable": False,
+    },
     {
         "name": "engine_start_episode_id",
         "dtype": "string",
         "unit": "identifier",
         "nullable": False,
     },
-    {"name": "segment_id", "dtype": "string", "unit": "identifier", "nullable": False},
+    {"name": "segment_id", "dtype": "string",
+        "unit": "identifier", "nullable": False},
     {
         "name": "continuity_block_id",
         "dtype": "int64",
         "unit": "identifier",
         "nullable": False,
     },
-    {"name": "start_timestamp", "dtype": "string", "unit": "UTC", "nullable": False},
+    {
+        "name": "start_timestamp",
+        "dtype": "string",
+        "unit": "UTC",
+        "nullable": False,
+    },
     {
         "name": "start_row_in_segment",
         "dtype": "int64",
         "unit": "1-based row index",
         "nullable": False,
     },
-    {"name": "end_timestamp", "dtype": "string", "unit": "UTC", "nullable": False},
+    {
+        "name": "end_timestamp",
+        "dtype": "string",
+        "unit": "UTC",
+        "nullable": False,
+    },
     {
         "name": "end_row_in_segment",
         "dtype": "int64",
@@ -111,9 +127,18 @@ EPISODE_CONTRACT = [
         "unit": "categorical",
         "nullable": False,
     },
-    {"name": "ect_start", "dtype": "float64", "unit": "degC", "nullable": True},
-    {"name": "aat_start", "dtype": "float64", "unit": "degC", "nullable": True},
-    {"name": "iat_start", "dtype": "float64", "unit": "degC", "nullable": True},
+    {
+        "name": "ect_start", "dtype": "float64", "unit": "degC",
+        "nullable": True,
+    },
+    {
+        "name": "aat_start", "dtype": "float64", "unit": "degC",
+        "nullable": True,
+    },
+    {
+        "name": "iat_start", "dtype": "float64", "unit": "degC",
+        "nullable": True,
+    },
 ]
 QUALITY_SUFFIXES = (
     "is_imputed",
@@ -141,10 +166,12 @@ def _ordered_key_sha256(keys: pd.DataFrame) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def _require_columns(frame: pd.DataFrame, columns: list[str], *, label: str) -> None:
+def _require_columns(frame: pd.DataFrame,
+                     columns: list[str], *, label: str) -> None:
     missing = [column for column in columns if column not in frame.columns]
     if missing:
-        raise EngineStartError(f"{label} is missing required columns: {missing}.")
+        raise EngineStartError(
+            f"{label} is missing required columns: {missing}.")
 
 
 def _validate_b2_contract(contract: dict[str, Any]) -> list[dict[str, Any]]:
@@ -152,12 +179,17 @@ def _validate_b2_contract(contract: dict[str, Any]) -> list[dict[str, Any]]:
         raise EngineStartError("Script 20 requires feature_schema.v1.")
     features = contract.get("features")
     if not isinstance(features, list) or len(features) < 16:
-        raise EngineStartError("Feature contract does not contain six B2 fields.")
+        raise EngineStartError(
+            "Feature contract does not contain six B2 fields.")
     b2 = features[10:16]
     if [item.get("name") for item in b2] != B2_COLUMNS:
         raise EngineStartError("B2 feature name/order contract has drifted.")
-    expected_types = ["boolean", "string", "float64", "float64", "float64", "float64"]
-    for offset, (item, expected_type) in enumerate(zip(b2, expected_types), start=11):
+    expected_types = [
+        "boolean", "string", "float64", "float64", "float64", "float64",
+    ]
+    for offset, (item, expected_type) in enumerate(
+        zip(b2, expected_types), start=11
+    ):
         if (
             item.get("position") != offset
             or item.get("class") != "B2"
@@ -165,7 +197,8 @@ def _validate_b2_contract(contract: dict[str, Any]) -> list[dict[str, Any]]:
             or item.get("owner_script") != "20_engine_start_context_builder.py"
             or item.get("nullable") is not True
         ):
-            raise EngineStartError(f"B2 contract has drifted at position {offset}.")
+            raise EngineStartError(
+                f"B2 contract has drifted at position {offset}.")
     return [dict(item) for item in b2]
 
 
@@ -228,14 +261,16 @@ def load_engine_start_inputs(run_layout: RunLayout) -> EngineStartInputs:
     ]:
         raise EngineStartError("Stage 00/10 source dataset identities differ.")
 
-    stage_00_inputs = _descriptor_map(input_manifest, "ordered_input_artifacts")
+    stage_00_inputs = _descriptor_map(
+        input_manifest, "ordered_input_artifacts")
     if set(stage_00_inputs) != {
         "feature_contract",
         "operating_condition_enriched",
         "cleaning_quality",
     }:
         raise EngineStartError("Stage 00 authoritative inputs have drifted.")
-    stage_10_outputs = _descriptor_map(atomic_manifest, "ordered_output_artifacts")
+    stage_10_outputs = _descriptor_map(
+        atomic_manifest, "ordered_output_artifacts")
     if set(stage_10_outputs) != {"atomic_features"}:
         raise EngineStartError("Stage 10 must have exactly one atomic output.")
 
@@ -376,7 +411,8 @@ def build_engine_start_context(
         "aat_start": "ambient_temp",
         "iat_start": "intake_temp",
     }
-    timestamps = pd.to_datetime(canonical["timestamp"], utc=True, errors="raise")
+    timestamps = pd.to_datetime(
+        canonical["timestamp"], utc=True, errors="raise")
     trip_counters: dict[str, int] = {}
     records: list[dict[str, Any]] = []
     active: dict[str, Any] | None = None
@@ -473,9 +509,11 @@ def build_engine_start_context(
         context[column] = episode_ids.map(mapping).astype("float64")
 
     if list(context.columns) != [*KEY_COLUMNS, *B2_COLUMNS]:
-        raise EngineStartError("Engine-start sample output column order is invalid.")
+        raise EngineStartError(
+            "Engine-start sample output column order is invalid.")
     if not context[KEY_COLUMNS].equals(canonical[KEY_COLUMNS]):
-        raise EngineStartError("Engine-start sample keys changed unexpectedly.")
+        raise EngineStartError(
+            "Engine-start sample keys changed unexpectedly.")
     observed_episode_ids = context.loc[
         context["engine_start_observed"].eq(True),
         "engine_start_episode_id",
@@ -506,7 +544,8 @@ def _write_csv_atomic(path: Path, frame: pd.DataFrame) -> None:
     except (OSError, TypeError, ValueError) as exc:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
-        raise EngineStartError(f"Cannot write engine-start CSV: {exc}") from exc
+        raise EngineStartError(
+            f"Cannot write engine-start CSV: {exc}") from exc
 
 
 def _descriptor(
@@ -559,7 +598,8 @@ def run_engine_start_context_builder(
     atomic_descriptor = _descriptor(
         run_layout.atomic_features,
         artifact_id="atomic_features",
-        manifest_path=run_layout.run_relative_posix(run_layout.atomic_features),
+        manifest_path=run_layout.run_relative_posix(
+            run_layout.atomic_features),
         path_base="run_dir",
     )
     context_descriptor = _descriptor(
@@ -608,7 +648,8 @@ def run_engine_start_context_builder(
                 context[KEY_COLUMNS]
             ),
             "null_counts": {
-                column: int(context[column].isna().sum()) for column in B2_COLUMNS
+                column: int(context[column].isna().sum())
+                for column in B2_COLUMNS
             },
         },
         "episode_table": {
@@ -618,7 +659,8 @@ def run_engine_start_context_builder(
             "ordered_columns": EPISODE_COLUMNS,
             "row_count": int(len(episodes)),
             "termination_reason_counts": (
-                episodes["termination_reason"].value_counts().sort_index().to_dict()
+                episodes["termination_reason"].value_counts(
+                ).sort_index().to_dict()
                 if not episodes.empty
                 else {}
             ),
@@ -652,7 +694,8 @@ def main() -> int:
             args.run_dir,
             repo_root=PROJECT_ROOT,
         )
-        context, episodes, manifest = run_engine_start_context_builder(run_layout)
+        context, episodes, manifest = run_engine_start_context_builder(
+            run_layout)
     except (
         EngineStartError,
         ManifestError,

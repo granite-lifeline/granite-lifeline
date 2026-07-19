@@ -30,7 +30,7 @@ def _contains_key(frame: pd.DataFrame, key: dict) -> pd.Series:
     return mask
 
 
-def test_tracked_production_fixture_matches_frozen_script_41_contract() -> None:
+def test_tracked_fixture_matches_frozen_script_41_contract() -> None:
     frame = pd.read_csv(CSV_PATH, low_memory=False)
     fixture_manifest = load_json_object(MANIFEST_PATH)
     contract = load_json_object(
@@ -46,7 +46,8 @@ def test_tracked_production_fixture_matches_frozen_script_41_contract() -> None:
     assert 1 <= len(frame) <= 300
     assert CSV_PATH.stat().st_size < 500_000
     assert fixture_manifest["row_count"] == len(frame)
-    assert fixture_manifest["fixture_artifact"]["sha256"] == sha256_file(CSV_PATH)
+    assert fixture_manifest["fixture_artifact"]["sha256"] == sha256_file(
+        CSV_PATH)
     assert fixture_manifest["schema_version"] == "feature_schema.v1"
     assert fixture_manifest["calibration_version"] == "calibration.v1"
     normalized = fixture_41.SCRIPT_41._normalize_and_validate_dtypes(
@@ -54,16 +55,18 @@ def test_tracked_production_fixture_matches_frozen_script_41_contract() -> None:
     )
     assert not normalized[KEYS].duplicated().any()
     assert normalized[KEYS].equals(
-        normalized.sort_values(KEYS, kind="stable").reset_index(drop=True)[KEYS]
+        normalized.sort_values(
+            KEYS, kind="stable").reset_index(drop=True)[KEYS]
     )
 
 
-def test_fixture_covers_required_null_episode_boundary_and_quality_cases() -> None:
+def test_fixture_covers_null_episode_boundary_and_quality_cases() -> None:
     frame = pd.read_csv(CSV_PATH, low_memory=False)
     manifest = load_json_object(MANIFEST_PATH)
     coverage = manifest["coverage"]
     episode = coverage["complete_engine_start_episode"]
-    episode_rows = frame[frame["engine_start_episode_id"].eq(episode["episode_id"])]
+    episode_rows = frame[frame["engine_start_episode_id"].eq(
+        episode["episode_id"])]
 
     assert episode["episode_id"] == generator.EPISODE_ID
     assert episode["termination_reason"] == "continuity_break"

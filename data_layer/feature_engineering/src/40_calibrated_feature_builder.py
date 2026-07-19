@@ -21,7 +21,9 @@ PROJECT_ROOT = SCRIPT_PATH.parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from data_layer.pipeline_data.continuity import build_quality_valid_mask  # noqa: E402
+from data_layer.pipeline_data.continuity import (  # noqa: E402
+    build_quality_valid_mask,
+)
 from data_layer.pipeline_data.manifests import (  # noqa: E402
     ArtifactDescriptor,
     ManifestError,
@@ -33,7 +35,10 @@ from data_layer.pipeline_data.manifests import (  # noqa: E402
     verify_manifest_artifacts,
     write_json_atomic,
 )
-from data_layer.pipeline_data.paths import RunLayout, repo_relative_posix  # noqa: E402
+from data_layer.pipeline_data.paths import (  # noqa: E402
+    RunLayout,
+    repo_relative_posix,
+)
 
 
 SCRIPT_VERSION = "1.0.0"
@@ -69,10 +74,12 @@ def _ordered_key_sha256(keys: pd.DataFrame) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def _require_columns(frame: pd.DataFrame, columns: list[str], *, label: str) -> None:
+def _require_columns(frame: pd.DataFrame,
+                     columns: list[str], *, label: str) -> None:
     missing = [column for column in columns if column not in frame.columns]
     if missing:
-        raise CalibratedFeatureError(f"{label} is missing required columns: {missing}.")
+        raise CalibratedFeatureError(
+            f"{label} is missing required columns: {missing}.")
 
 
 def _validate_b1b_contract(contract: dict[str, Any]) -> list[dict[str, Any]]:
@@ -80,15 +87,19 @@ def _validate_b1b_contract(contract: dict[str, Any]) -> list[dict[str, Any]]:
         raise CalibratedFeatureError("Script 40 requires feature_schema.v1.")
     features = contract.get("features")
     if not isinstance(features, list) or len(features) < 10:
-        raise CalibratedFeatureError("Feature contract does not contain two B1b fields.")
+        raise CalibratedFeatureError(
+            "Feature contract does not contain two B1b fields.")
     b1b = features[8:10]
     expected_units = ["g/s", "percentage_point"]
     expected_references = [
-        "data_layer/calibration/calibration_registry.v1.json#/feature_transforms/speed_density_maf",
-        "data_layer/calibration/calibration_registry.v1.json#/feature_transforms/pedal_mapping",
+        "data_layer/calibration/calibration_registry.v1.json"
+        "#/feature_transforms/speed_density_maf",
+        "data_layer/calibration/calibration_registry.v1.json"
+        "#/feature_transforms/pedal_mapping",
     ]
     if [item.get("name") for item in b1b] != B1B_COLUMNS:
-        raise CalibratedFeatureError("B1b feature name/order contract has drifted.")
+        raise CalibratedFeatureError(
+            "B1b feature name/order contract has drifted.")
     for position, (item, unit, reference) in enumerate(
         zip(b1b, expected_units, expected_references), start=9
     ):
@@ -124,7 +135,8 @@ def _validate_registry(registry: dict[str, Any]) -> dict[str, dict[str, Any]]:
         or registry.get("status") != "frozen"
         or registry.get("immutable") is not True
     ):
-        raise CalibratedFeatureError("Frozen registry identity/status has drifted.")
+        raise CalibratedFeatureError(
+            "Frozen registry identity/status has drifted.")
     expected_policy = {
         "read_only": True,
         "fit_allowed": False,
@@ -134,12 +146,14 @@ def _validate_registry(registry: dict[str, Any]) -> dict[str, dict[str, Any]]:
         "bootstrap_allowed": False,
     }
     if registry.get("online_policy") != expected_policy:
-        raise CalibratedFeatureError("Frozen registry online policy has drifted.")
+        raise CalibratedFeatureError(
+            "Frozen registry online policy has drifted.")
     transforms = registry.get("feature_transforms")
     if not isinstance(transforms, dict) or list(transforms)[:2] != [
         "speed_density_maf", "pedal_mapping"
     ]:
-        raise CalibratedFeatureError("Required frozen transforms are missing or reordered.")
+        raise CalibratedFeatureError(
+            "Required frozen transforms are missing or reordered.")
     speed = transforms["speed_density_maf"]
     pedal = transforms["pedal_mapping"]
     if (
@@ -151,20 +165,24 @@ def _validate_registry(registry: dict[str, Any]) -> dict[str, dict[str, Any]]:
         or speed.get("prediction_missing_policy")
         != "null when MAF or any model input is not quality-valid"
     ):
-        raise CalibratedFeatureError("Speed-density transform contract has drifted.")
+        raise CalibratedFeatureError(
+            "Speed-density transform contract has drifted.")
     hidden = speed.get("hidden_intermediate", {})
     if (
         hidden.get("name") != "map_derived_air_load_raw"
         or hidden.get("formula") != "rpm * map / (intake_temp + 273.15)"
     ):
-        raise CalibratedFeatureError("Speed-density hidden formula has drifted.")
+        raise CalibratedFeatureError(
+            "Speed-density hidden formula has drifted.")
     inputs = speed["ordered_input_features"]
     coefficients = speed.get("coefficients")
     bounds = speed.get("prediction_clipping_bounds")
     if not isinstance(coefficients, dict) or list(coefficients) != inputs:
-        raise CalibratedFeatureError("Speed-density coefficient order has drifted.")
+        raise CalibratedFeatureError(
+            "Speed-density coefficient order has drifted.")
     if not isinstance(bounds, dict) or list(bounds) != inputs:
-        raise CalibratedFeatureError("Speed-density clipping-bound order has drifted.")
+        raise CalibratedFeatureError(
+            "Speed-density clipping-bound order has drifted.")
     _finite_number(speed.get("intercept"), label="speed-density intercept")
     for name in inputs:
         _finite_number(coefficients[name], label=f"coefficient {name}")
@@ -172,7 +190,8 @@ def _validate_registry(registry: dict[str, Any]) -> dict[str, dict[str, Any]]:
         lower = _finite_number(bound.get("lower"), label=f"{name} lower bound")
         upper = _finite_number(bound.get("upper"), label=f"{name} upper bound")
         if lower > upper:
-            raise CalibratedFeatureError(f"Invalid clipping bounds for {name}.")
+            raise CalibratedFeatureError(
+                f"Invalid clipping bounds for {name}.")
     if (
         pedal.get("output_feature") != B1B_COLUMNS[1]
         or pedal.get("formula") != "accel_pedal_e - (a * accel_pedal_d + b)"
@@ -199,38 +218,49 @@ def _validate_release_bundle(
         or release.get("status") != "frozen"
         or release.get("hash_algorithm") != "SHA-256"
     ):
-        raise CalibratedFeatureError("Calibration release manifest identity has drifted.")
+        raise CalibratedFeatureError(
+            "Calibration release manifest identity has drifted.")
     registry_record = release.get("registry", {})
     contract_record = release.get("feature_contract", {})
+    expected_registry_path = repo_relative_posix(
+        run_layout.calibration_registry, repo_root=run_layout.repo_root
+    )
+    expected_registry_sha256 = sha256_file(run_layout.calibration_registry)
     if (
-        registry_record.get("path")
-        != repo_relative_posix(run_layout.calibration_registry, repo_root=run_layout.repo_root)
-        or registry_record.get("sha256") != sha256_file(run_layout.calibration_registry)
+        registry_record.get("path") != expected_registry_path
+        or registry_record.get("sha256") != expected_registry_sha256
         or registry_record.get("registry_schema_version")
         != registry.get("registry_schema_version")
         or registry_record.get("immutable") is not True
     ):
-        raise CalibratedFeatureError("Frozen registry checksum/release binding has drifted.")
+        raise CalibratedFeatureError(
+            "Frozen registry checksum/release binding has drifted.")
+    expected_contract_path = repo_relative_posix(
+        run_layout.feature_contract, repo_root=run_layout.repo_root
+    )
+    expected_contract_sha256 = sha256_file(run_layout.feature_contract)
     if (
-        contract_record.get("path")
-        != repo_relative_posix(run_layout.feature_contract, repo_root=run_layout.repo_root)
-        or contract_record.get("sha256") != sha256_file(run_layout.feature_contract)
+        contract_record.get("path") != expected_contract_path
+        or contract_record.get("sha256") != expected_contract_sha256
         or contract_record.get("manifest_version")
         != feature_contract.get("manifest_version")
         or contract_record.get("schema_version")
         != feature_contract.get("schema_version")
     ):
-        raise CalibratedFeatureError("Feature contract checksum/release binding has drifted.")
+        raise CalibratedFeatureError(
+            "Feature contract checksum/release binding has drifted.")
     checks = release.get("release_checks", {})
     if (
         checks.get("cross_contract_lint_passed") is not True
         or checks.get("online_fit_paths_forbidden") is not True
         or checks.get("numeric_calibration_changed") is not False
     ):
-        raise CalibratedFeatureError("Calibration release checks are not acceptable.")
+        raise CalibratedFeatureError(
+            "Calibration release checks are not acceptable.")
 
 
-def _descriptor_map(manifest: dict[str, Any], key: str) -> dict[str, ArtifactDescriptor]:
+def _descriptor_map(manifest: dict[str, Any],
+                    key: str) -> dict[str, ArtifactDescriptor]:
     return {
         item["artifact_id"]: ArtifactDescriptor.from_mapping(item)
         for item in manifest[key]
@@ -251,18 +281,23 @@ def load_calibrated_inputs(run_layout: RunLayout) -> CalibratedInputs:
         if manifest.get("stage_id") != stage:
             raise CalibratedFeatureError(f"Expected stage {stage} manifest.")
         verify_manifest_artifacts(
-            manifest, run_dir=run_layout.run_dir, repo_root=run_layout.repo_root
+            manifest,
+            run_dir=run_layout.run_dir,
+            repo_root=run_layout.repo_root,
         )
     if atomic_manifest["source_dataset_identity"] != input_manifest[
         "source_dataset_identity"
     ]:
-        raise CalibratedFeatureError("Stage 00/10 source dataset identities differ.")
+        raise CalibratedFeatureError(
+            "Stage 00/10 source dataset identities differ.")
 
-    stage_00_inputs = _descriptor_map(input_manifest, "ordered_input_artifacts")
+    stage_00_inputs = _descriptor_map(
+        input_manifest, "ordered_input_artifacts")
     if set(stage_00_inputs) != {
         "feature_contract", "operating_condition_enriched", "cleaning_quality"
     }:
-        raise CalibratedFeatureError("Stage 00 authoritative inputs have drifted.")
+        raise CalibratedFeatureError(
+            "Stage 00 authoritative inputs have drifted.")
     if set(_descriptor_map(atomic_manifest, "ordered_output_artifacts")) != {
         "atomic_features"
     }:
@@ -284,20 +319,26 @@ def load_calibrated_inputs(run_layout: RunLayout) -> CalibratedInputs:
         isinstance(value, list)
         for value in (canonical_columns, quality_columns, atomic_columns)
     ):
-        raise CalibratedFeatureError("Upstream ordered-column metadata is missing.")
+        raise CalibratedFeatureError(
+            "Upstream ordered-column metadata is missing.")
     try:
-        operating = pd.read_csv(run_layout.operating_condition_enriched, low_memory=False)
+        operating = pd.read_csv(
+            run_layout.operating_condition_enriched, low_memory=False)
         quality = pd.read_csv(run_layout.cleaning_quality, low_memory=False)
         atomic = pd.read_csv(run_layout.atomic_features, low_memory=False)
     except (OSError, UnicodeError, pd.errors.ParserError) as exc:
-        raise CalibratedFeatureError(f"Cannot read Script 40 inputs: {exc}") from exc
+        raise CalibratedFeatureError(
+            f"Cannot read Script 40 inputs: {exc}") from exc
     _require_columns(operating, canonical_columns, label="canonical input")
     _require_columns(quality, quality_columns, label="quality input")
     if list(atomic.columns) != atomic_columns:
         raise CalibratedFeatureError("Atomic CSV column order has drifted.")
 
     key_union = operating[KEY_COLUMNS].merge(
-        quality[KEY_COLUMNS], on=KEY_COLUMNS, how="outer", validate="one_to_one",
+        quality[KEY_COLUMNS],
+        on=KEY_COLUMNS,
+        how="outer",
+        validate="one_to_one",
         indicator=True,
     )
     if not key_union["_merge"].eq("both").all():
@@ -307,18 +348,26 @@ def load_calibrated_inputs(run_layout: RunLayout) -> CalibratedInputs:
     ).reset_index(drop=True)
     expected_key_hash = summary_00.get("ordered_sample_keys_sha256")
     if _ordered_key_sha256(ordered_keys) != expected_key_hash:
-        raise CalibratedFeatureError("Stage 00 ordered key identity has drifted.")
+        raise CalibratedFeatureError(
+            "Stage 00 ordered key identity has drifted.")
 
-    def align(frame: pd.DataFrame, columns: list[str], label: str) -> pd.DataFrame:
+    def align(frame: pd.DataFrame,
+              columns: list[str], label: str) -> pd.DataFrame:
         aligned = ordered_keys.merge(
-            frame[columns], on=KEY_COLUMNS, how="left", validate="one_to_one", sort=False
+            frame[columns],
+            on=KEY_COLUMNS,
+            how="left",
+            validate="one_to_one",
+            sort=False,
         )
         if _ordered_key_sha256(aligned[KEY_COLUMNS]) != expected_key_hash:
-            raise CalibratedFeatureError(f"{label} ordered key identity has drifted.")
+            raise CalibratedFeatureError(
+                f"{label} ordered key identity has drifted.")
         return aligned
 
     if atomic_contract.get("ordered_sample_keys_sha256") != expected_key_hash:
-        raise CalibratedFeatureError("Stage 10 manifest key identity has drifted.")
+        raise CalibratedFeatureError(
+            "Stage 10 manifest key identity has drifted.")
     return CalibratedInputs(
         canonical=align(operating, canonical_columns, "Canonical"),
         quality=align(quality, quality_columns, "Quality"),
@@ -331,7 +380,8 @@ def load_calibrated_inputs(run_layout: RunLayout) -> CalibratedInputs:
     )
 
 
-def _quality_valid_mask(inputs: CalibratedInputs, signals: list[str]) -> pd.Series:
+def _quality_valid_mask(inputs: CalibratedInputs,
+                        signals: list[str]) -> pd.Series:
     columns: dict[str, pd.Series] = {}
     for signal in signals:
         columns[signal] = inputs.canonical[signal]
@@ -342,7 +392,10 @@ def _quality_valid_mask(inputs: CalibratedInputs, signals: list[str]) -> pd.Seri
 
 
 def build_calibrated_features(inputs: CalibratedInputs) -> pd.DataFrame:
-    """Apply frozen numeric parameters; no fitting path exists in this stage."""
+    """Apply frozen numeric parameters.
+
+    No fitting path exists in this stage.
+    """
 
     _validate_b1b_contract(inputs.feature_contract)
     transforms = _validate_registry(inputs.registry)
@@ -352,7 +405,8 @@ def build_calibrated_features(inputs: CalibratedInputs) -> pd.DataFrame:
     speed = transforms["speed_density_maf"]
     required = ["maf", "map", "rpm", "intake_temp"]
     speed_valid = _quality_valid_mask(inputs, required)
-    numeric = {name: pd.to_numeric(canonical[name], errors="coerce") for name in required}
+    numeric = {name: pd.to_numeric(
+        canonical[name], errors="coerce") for name in required}
     denominator = numeric["intake_temp"] + 273.15
     raw_load = numeric["rpm"] * numeric["map"] / denominator
     finite_raw = raw_load.map(math.isfinite)
@@ -388,7 +442,8 @@ def build_calibrated_features(inputs: CalibratedInputs) -> pd.DataFrame:
     ).where(pedal_valid)
     output = output[[*KEY_COLUMNS, *B1B_COLUMNS]]
     if not output[KEY_COLUMNS].equals(canonical[KEY_COLUMNS]):
-        raise CalibratedFeatureError("Calibrated feature keys changed unexpectedly.")
+        raise CalibratedFeatureError(
+            "Calibrated feature keys changed unexpectedly.")
     return output
 
 
@@ -408,7 +463,8 @@ def _write_csv_atomic(path: Path, frame: pd.DataFrame) -> None:
     except (OSError, TypeError, ValueError) as exc:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
-        raise CalibratedFeatureError(f"Cannot write calibrated-feature CSV: {exc}") from exc
+        raise CalibratedFeatureError(
+            f"Cannot write calibrated-feature CSV: {exc}") from exc
 
 
 def _run_descriptor(
@@ -425,7 +481,8 @@ def _repo_descriptor(
 ) -> ArtifactDescriptor:
     return ArtifactDescriptor.from_file(
         path, artifact_id=artifact_id,
-        manifest_path=repo_relative_posix(path, repo_root=run_layout.repo_root),
+        manifest_path=repo_relative_posix(
+            path, repo_root=run_layout.repo_root),
         path_base="repo_root",
     )
 
@@ -492,7 +549,9 @@ def run_calibrated_feature_builder(
     manifest["calibration_contract"] = {
         "registry_schema_version": inputs.registry["registry_schema_version"],
         "registry_sha256": sha256_file(run_layout.calibration_registry),
-        "release_manifest_version": inputs.release_manifest["manifest_version"],
+        "release_manifest_version": (
+            inputs.release_manifest["manifest_version"]
+        ),
         "application_mode": "predict_only",
         "fit_allowed": False,
         "hidden_intermediates_emitted": False,
@@ -531,7 +590,8 @@ def build_argument_parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = build_argument_parser().parse_args()
     try:
-        run_layout = RunLayout.from_run_dir(args.run_dir, repo_root=PROJECT_ROOT)
+        run_layout = RunLayout.from_run_dir(
+            args.run_dir, repo_root=PROJECT_ROOT)
         output, manifest = run_calibrated_feature_builder(run_layout)
     except (
         CalibratedFeatureError, ManifestError, ManifestValidationError,

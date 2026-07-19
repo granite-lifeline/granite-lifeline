@@ -26,9 +26,11 @@ from data_layer.tests.feature_engineering_test import (
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCRIPT_PATH = (
-    REPO_ROOT / "data_layer/feature_engineering/src/41_production_feature_assembler.py"
+    REPO_ROOT
+    / "data_layer/feature_engineering/src/41_production_feature_assembler.py"
 )
-SPEC = importlib.util.spec_from_file_location("script_41_under_test", SCRIPT_PATH)
+SPEC = importlib.util.spec_from_file_location(
+    "script_41_under_test", SCRIPT_PATH)
 assert SPEC is not None and SPEC.loader is not None
 SCRIPT_41 = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = SCRIPT_41
@@ -42,7 +44,9 @@ def _production_layout(tmp_path: Path):
     )
     layout.calibration_registry.parent.mkdir(parents=True)
     layout.calibration_registry.write_bytes(
-        (REPO_ROOT / "data_layer/calibration/calibration_registry.v1.json").read_bytes()
+        (
+            REPO_ROOT / "data_layer/calibration/calibration_registry.v1.json"
+        ).read_bytes()
     )
     layout.calibration_release_manifest.write_bytes(
         (
@@ -63,7 +67,9 @@ def _production_layout(tmp_path: Path):
     return layout
 
 
-def test_exact_46_column_order_pass_through_and_provenance(tmp_path: Path) -> None:
+def test_exact_46_column_order_pass_through_and_provenance(
+    tmp_path: Path,
+) -> None:
     layout = _production_layout(tmp_path)
     inputs = SCRIPT_41.load_production_inputs(layout)
     output = SCRIPT_41.build_production_features(inputs)
@@ -93,12 +99,15 @@ def test_shuffled_one_to_one_inputs_restore_identical_global_order(
     expected = SCRIPT_41.build_production_features(inputs)
     shuffled = dataclasses.replace(
         inputs,
-        atomic=inputs.atomic.sample(frac=1, random_state=1).reset_index(drop=True),
-        calibrated=inputs.calibrated.sample(frac=1, random_state=2).reset_index(drop=True),
+        atomic=inputs.atomic.sample(
+            frac=1, random_state=1).reset_index(drop=True),
+        calibrated=inputs.calibrated.sample(
+            frac=1, random_state=2).reset_index(drop=True),
         engine_start_context=inputs.engine_start_context.sample(
             frac=1, random_state=3
         ).reset_index(drop=True),
-        windows=inputs.windows.sample(frac=1, random_state=4).reset_index(drop=True),
+        windows=inputs.windows.sample(
+            frac=1, random_state=4).reset_index(drop=True),
         engine_start_episodes=inputs.engine_start_episodes.sample(
             frac=1, random_state=5
         ).reset_index(drop=True),
@@ -109,7 +118,9 @@ def test_shuffled_one_to_one_inputs_restore_identical_global_order(
     pd.testing.assert_frame_equal(actual, expected)
 
 
-def test_unexpected_columns_and_invalid_dtype_are_rejected(tmp_path: Path) -> None:
+def test_unexpected_columns_and_invalid_dtype_are_rejected(
+    tmp_path: Path,
+) -> None:
     layout = _production_layout(tmp_path)
     inputs = SCRIPT_41.load_production_inputs(layout)
     atomic_extra = inputs.atomic.assign(research_diagnostic=1.0)
@@ -123,19 +134,25 @@ def test_unexpected_columns_and_invalid_dtype_are_rejected(tmp_path: Path) -> No
     bad_values = atomic_bad.pop("engine_on_flag").astype("object")
     bad_values.iloc[0] = "maybe"
     atomic_bad.insert(boolean_position, "engine_on_flag", bad_values)
-    with pytest.raises(SCRIPT_41.ProductionAssemblyError, match="invalid boolean"):
+    with pytest.raises(
+        SCRIPT_41.ProductionAssemblyError, match="invalid boolean"
+    ):
         SCRIPT_41.build_production_features(
             dataclasses.replace(inputs, atomic=atomic_bad)
         )
 
 
-def test_episode_foreign_key_and_start_mapping_are_revalidated(tmp_path: Path) -> None:
+def test_episode_foreign_key_and_start_mapping_are_revalidated(
+    tmp_path: Path,
+) -> None:
     layout = _production_layout(tmp_path)
     inputs = SCRIPT_41.load_production_inputs(layout)
     context = inputs.engine_start_context.copy()
     first_reference = context["engine_start_episode_id"].first_valid_index()
     assert first_reference is not None
-    context.loc[first_reference, "engine_start_episode_id"] = "trip_0001_start_999"
+    context.loc[
+        first_reference, "engine_start_episode_id"
+    ] = "trip_0001_start_999"
 
     with pytest.raises(SCRIPT_41.ProductionAssemblyError, match="orphan"):
         SCRIPT_41.build_production_features(
@@ -143,7 +160,9 @@ def test_episode_foreign_key_and_start_mapping_are_revalidated(tmp_path: Path) -
         )
 
 
-def test_manifest_records_strict_schema_and_all_direct_inputs(tmp_path: Path) -> None:
+def test_manifest_records_strict_schema_and_all_direct_inputs(
+    tmp_path: Path,
+) -> None:
     layout = _production_layout(tmp_path)
     output, manifest = SCRIPT_41.run_production_feature_assembler(
         layout, creation_time_utc="2026-07-19T12:05:00Z"
@@ -184,7 +203,9 @@ def test_manifest_records_strict_schema_and_all_direct_inputs(tmp_path: Path) ->
     )
 
 
-def test_upstream_checksum_and_contract_drift_are_rejected(tmp_path: Path) -> None:
+def test_upstream_checksum_and_contract_drift_are_rejected(
+    tmp_path: Path,
+) -> None:
     layout = _production_layout(tmp_path)
     with layout.window_features.open("a", encoding="utf-8") as handle:
         handle.write("\n")
@@ -193,5 +214,7 @@ def test_upstream_checksum_and_contract_drift_are_rejected(tmp_path: Path) -> No
 
     contract = load_json_object(layout.feature_contract)
     contract["total_column_count"] = 45
-    with pytest.raises(SCRIPT_41.ProductionAssemblyError, match="identity has drifted"):
+    with pytest.raises(
+        SCRIPT_41.ProductionAssemblyError, match="identity has drifted"
+    ):
         SCRIPT_41._feature_groups(contract)

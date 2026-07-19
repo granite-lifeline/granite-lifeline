@@ -20,11 +20,11 @@ PROJECT_ROOT = SCRIPT_PATH.parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from data_layer.pipeline_data.continuity import (
+from data_layer.pipeline_data.continuity import (  # noqa: E402
     build_continuity_blocks,
     build_quality_valid_mask,
 )
-from data_layer.pipeline_data.manifests import (
+from data_layer.pipeline_data.manifests import (  # noqa: E402
     ArtifactDescriptor,
     ManifestError,
     ManifestValidationError,
@@ -35,7 +35,7 @@ from data_layer.pipeline_data.manifests import (
     verify_manifest_artifacts,
     write_json_atomic,
 )
-from data_layer.pipeline_data.paths import RunLayout
+from data_layer.pipeline_data.paths import RunLayout  # noqa: E402
 
 
 SCRIPT_VERSION = "1.0.0"
@@ -85,7 +85,8 @@ def _require_columns(
 ) -> None:
     missing = [column for column in columns if column not in frame.columns]
     if missing:
-        raise AtomicFeatureError(f"{label} is missing required columns: {missing}.")
+        raise AtomicFeatureError(
+            f"{label} is missing required columns: {missing}.")
 
 
 def _validate_atomic_feature_contract(
@@ -95,10 +96,13 @@ def _validate_atomic_feature_contract(
         raise AtomicFeatureError("Script 10 requires feature_schema.v1.")
     features = feature_contract.get("features")
     if not isinstance(features, list) or len(features) < 8:
-        raise AtomicFeatureError("Feature contract does not contain eight B1a fields.")
+        raise AtomicFeatureError(
+            "Feature contract does not contain eight B1a fields.")
     atomic_contract = features[:8]
-    if [item.get("name") for item in atomic_contract] != ATOMIC_FEATURE_COLUMNS:
-        raise AtomicFeatureError("B1a feature name/order contract has drifted.")
+    atomic_names = [item.get("name") for item in atomic_contract]
+    if atomic_names != ATOMIC_FEATURE_COLUMNS:
+        raise AtomicFeatureError(
+            "B1a feature name/order contract has drifted.")
     for position, item in enumerate(atomic_contract, start=1):
         if (
             item.get("position") != position
@@ -137,8 +141,8 @@ def _stage_00_data_descriptors(
         "cleaning_quality",
     ]:
         raise AtomicFeatureError(
-            "Script 00 manifest must reference the frozen contract and exactly "
-            "two authoritative data inputs."
+            "Script 00 manifest must reference the frozen contract and "
+            "exactly two authoritative data inputs."
         )
     contract, operating, quality = descriptors
     if (
@@ -150,7 +154,8 @@ def _stage_00_data_descriptors(
         or quality.path_base != "run_dir"
         or quality.path != "cleaning/cleaning_quality.csv"
     ):
-        raise AtomicFeatureError("Script 00 manifest artifact paths have drifted.")
+        raise AtomicFeatureError(
+            "Script 00 manifest artifact paths have drifted.")
     return contract, operating, quality
 
 
@@ -164,7 +169,8 @@ def load_atomic_inputs(run_layout: RunLayout) -> AtomicInputs:
         expected_calibration_version="not_applicable",
     )
     if input_manifest.get("stage_id") != "00":
-        raise AtomicFeatureError("Expected a stage 00 input-contract manifest.")
+        raise AtomicFeatureError(
+            "Expected a stage 00 input-contract manifest.")
     verify_manifest_artifacts(
         input_manifest,
         run_dir=run_layout.run_dir,
@@ -177,19 +183,22 @@ def load_atomic_inputs(run_layout: RunLayout) -> AtomicInputs:
         [operating_descriptor, quality_descriptor]
     )
     if input_manifest.get("source_dataset_identity") != expected_identity:
-        raise AtomicFeatureError("Script 00 source dataset identity has drifted.")
+        raise AtomicFeatureError(
+            "Script 00 source dataset identity has drifted.")
 
     feature_contract = load_json_object(run_layout.feature_contract)
     _validate_atomic_feature_contract(feature_contract)
     summary = input_manifest.get("validation_summary")
     if not isinstance(summary, dict):
-        raise AtomicFeatureError("Script 00 manifest lacks validation_summary.")
+        raise AtomicFeatureError(
+            "Script 00 manifest lacks validation_summary.")
     canonical_columns = summary.get("canonical_column_order")
     quality_columns = summary.get("quality_column_order")
     if not isinstance(canonical_columns, list) or not isinstance(
         quality_columns, list
     ):
-        raise AtomicFeatureError("Script 00 validated column orders are missing.")
+        raise AtomicFeatureError(
+            "Script 00 validated column orders are missing.")
 
     try:
         operating = pd.read_csv(
@@ -197,7 +206,8 @@ def load_atomic_inputs(run_layout: RunLayout) -> AtomicInputs:
         )
         quality = pd.read_csv(run_layout.cleaning_quality, low_memory=False)
     except (OSError, UnicodeError, pd.errors.ParserError) as exc:
-        raise AtomicFeatureError(f"Cannot read Script 10 inputs: {exc}") from exc
+        raise AtomicFeatureError(
+            f"Cannot read Script 10 inputs: {exc}") from exc
     _require_columns(operating, canonical_columns, label="canonical input")
     _require_columns(quality, quality_columns, label="quality input")
 
@@ -209,7 +219,8 @@ def load_atomic_inputs(run_layout: RunLayout) -> AtomicInputs:
         indicator=True,
     )
     if not keys["_merge"].eq("both").all():
-        raise AtomicFeatureError("Script 00 authoritative key sets no longer match.")
+        raise AtomicFeatureError(
+            "Script 00 authoritative key sets no longer match.")
     ordered_keys = keys[KEY_COLUMNS].sort_values(
         KEY_COLUMNS, kind="stable"
     ).reset_index(drop=True)
@@ -293,7 +304,9 @@ def build_atomic_features(inputs: AtomicInputs) -> pd.DataFrame:
 
     rpm_valid = _signal_valid_mask(canonical, quality, ["rpm"])
     engine_on = pd.Series(pd.NA, index=canonical.index, dtype="boolean")
-    engine_on.loc[rpm_valid] = canonical.loc[rpm_valid, "rpm"].ge(50).to_numpy()
+    engine_on.loc[rpm_valid] = (
+        canonical.loc[rpm_valid, "rpm"].ge(50).to_numpy()
+    )
     output["engine_on_flag"] = engine_on
 
     coolant_valid = _signal_valid_mask(
@@ -321,7 +334,8 @@ def build_atomic_features(inputs: AtomicInputs) -> pd.DataFrame:
         canonical["accel_pedal_d"] - canonical["accel_pedal_e"]
     ).abs().where(pedal_valid)
 
-    timestamps = pd.to_datetime(canonical["timestamp"], utc=True, errors="raise")
+    timestamps = pd.to_datetime(
+        canonical["timestamp"], utc=True, errors="raise")
     elapsed = timestamps.diff().dt.total_seconds()
     pedal_continuity = build_continuity_blocks(
         canonical,
@@ -342,7 +356,8 @@ def build_atomic_features(inputs: AtomicInputs) -> pd.DataFrame:
     if list(output.columns) != expected_columns:
         raise AtomicFeatureError("Atomic output column order is invalid.")
     if not output[KEY_COLUMNS].equals(canonical[KEY_COLUMNS]):
-        raise AtomicFeatureError("Atomic output sample keys changed unexpectedly.")
+        raise AtomicFeatureError(
+            "Atomic output sample keys changed unexpectedly.")
     return output
 
 
@@ -367,7 +382,8 @@ def _write_csv_atomic(path: Path, frame: pd.DataFrame) -> None:
     except (OSError, TypeError, ValueError) as exc:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
-        raise AtomicFeatureError(f"Cannot write atomic feature CSV: {exc}") from exc
+        raise AtomicFeatureError(
+            f"Cannot write atomic feature CSV: {exc}") from exc
 
 
 def _descriptor(
@@ -393,7 +409,8 @@ def run_atomic_feature_builder(
     """Build atomic features and their adjacent stage manifest."""
 
     inputs = load_atomic_inputs(run_layout)
-    atomic_contract = _validate_atomic_feature_contract(inputs.feature_contract)
+    atomic_contract = _validate_atomic_feature_contract(
+        inputs.feature_contract)
     output = build_atomic_features(inputs)
     _write_csv_atomic(run_layout.atomic_features, output)
 
@@ -412,7 +429,8 @@ def run_atomic_feature_builder(
     output_descriptor = _descriptor(
         run_layout.atomic_features,
         artifact_id="atomic_features",
-        manifest_path=run_layout.run_relative_posix(run_layout.atomic_features),
+        manifest_path=run_layout.run_relative_posix(
+            run_layout.atomic_features),
         path_base="run_dir",
     )
     manifest = build_stage_manifest(

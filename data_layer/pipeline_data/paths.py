@@ -181,7 +181,10 @@ class RunLayout:
 
     @property
     def operating_conditions_manifest(self) -> Path:
-        return self.operating_conditions_dir / "operating_conditions_manifest.json"
+        return (
+            self.operating_conditions_dir
+            / "operating_conditions_manifest.json"
+        )
 
     @property
     def features_dir(self) -> Path:

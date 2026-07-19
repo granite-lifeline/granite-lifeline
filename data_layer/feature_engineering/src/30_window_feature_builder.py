@@ -80,10 +80,12 @@ def _ordered_key_sha256(keys: pd.DataFrame) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def _require_columns(frame: pd.DataFrame, columns: list[str], *, label: str) -> None:
+def _require_columns(frame: pd.DataFrame,
+                     columns: list[str], *, label: str) -> None:
     missing = [column for column in columns if column not in frame.columns]
     if missing:
-        raise WindowFeatureError(f"{label} is missing required columns: {missing}.")
+        raise WindowFeatureError(
+            f"{label} is missing required columns: {missing}.")
 
 
 def _validate_b3_contract(contract: dict[str, Any]) -> list[dict[str, Any]]:
@@ -91,7 +93,8 @@ def _validate_b3_contract(contract: dict[str, Any]) -> list[dict[str, Any]]:
         raise WindowFeatureError("Script 30 requires feature_schema.v1.")
     features = contract.get("features")
     if not isinstance(features, list) or len(features) < 24:
-        raise WindowFeatureError("Feature contract does not contain eight B3 fields.")
+        raise WindowFeatureError(
+            "Feature contract does not contain eight B3 fields.")
     b3 = features[16:24]
     if [item.get("name") for item in b3] != B3_COLUMNS:
         raise WindowFeatureError("B3 feature name/order contract has drifted.")
@@ -107,7 +110,8 @@ def _validate_b3_contract(contract: dict[str, Any]) -> list[dict[str, Any]]:
             or item.get("nullable") is not True
             or item.get("owner_script") != "30_window_feature_builder.py"
         ):
-            raise WindowFeatureError(f"B3 contract has drifted at position {position}.")
+            raise WindowFeatureError(
+                f"B3 contract has drifted at position {position}.")
     first, second, *sample_windows = b3
     if first.get("window_contract") != {
         "span_seconds": 180,
@@ -131,17 +135,20 @@ def _validate_b3_contract(contract: dict[str, Any]) -> list[dict[str, Any]]:
     for item, samples in zip(sample_windows, expected_samples):
         if item.get("window_sample_count") != samples:
             raise WindowFeatureError(
-                f"Window sample-count contract has drifted for {item.get('name')}."
+                "Window sample-count contract has drifted for "
+                f"{item.get('name')}."
             )
     for item in sample_windows[:5]:
         if item.get("ddof") != 1:
             raise WindowFeatureError(
-                f"Sample-standard-deviation contract has drifted for {item['name']}."
+                "Sample-standard-deviation contract has drifted for "
+                f"{item['name']}."
             )
     return [dict(item) for item in b3]
 
 
-def _descriptor_map(manifest: dict[str, Any], key: str) -> dict[str, ArtifactDescriptor]:
+def _descriptor_map(manifest: dict[str, Any],
+                    key: str) -> dict[str, ArtifactDescriptor]:
     return {
         item["artifact_id"]: ArtifactDescriptor.from_mapping(item)
         for item in manifest[key]
@@ -168,22 +175,26 @@ def load_window_inputs(run_layout: RunLayout) -> WindowInputs:
 
     input_manifest = load_json_object(run_layout.input_contract_manifest)
     atomic_manifest = load_json_object(run_layout.atomic_features_manifest)
-    engine_manifest = load_json_object(run_layout.engine_start_context_manifest)
+    engine_manifest = load_json_object(
+        run_layout.engine_start_context_manifest)
     for manifest, stage in (
         (input_manifest, "00"),
         (atomic_manifest, "10"),
         (engine_manifest, "20"),
     ):
-        _validate_upstream_manifest(manifest, stage_id=stage, run_layout=run_layout)
+        _validate_upstream_manifest(
+            manifest, stage_id=stage, run_layout=run_layout)
     identities = {
         input_manifest["source_dataset_identity"],
         atomic_manifest["source_dataset_identity"],
         engine_manifest["source_dataset_identity"],
     }
     if len(identities) != 1:
-        raise WindowFeatureError("Stage 00/10/20 source dataset identities differ.")
+        raise WindowFeatureError(
+            "Stage 00/10/20 source dataset identities differ.")
 
-    stage_00_inputs = _descriptor_map(input_manifest, "ordered_input_artifacts")
+    stage_00_inputs = _descriptor_map(
+        input_manifest, "ordered_input_artifacts")
     if set(stage_00_inputs) != {
         "feature_contract", "operating_condition_enriched", "cleaning_quality"
     }:
@@ -201,33 +212,43 @@ def load_window_inputs(run_layout: RunLayout) -> WindowInputs:
     _validate_b3_contract(feature_contract)
     summary_00 = input_manifest.get("validation_summary", {})
     atomic_contract = atomic_manifest.get("output_contract", {})
-    engine_contract = engine_manifest.get("output_contract", {}).get("sample_table", {})
+    engine_contract = engine_manifest.get(
+        "output_contract", {}).get("sample_table", {})
     canonical_columns = summary_00.get("canonical_column_order")
     quality_columns = summary_00.get("quality_column_order")
     atomic_columns = atomic_contract.get("ordered_columns")
     engine_columns = engine_contract.get("ordered_columns")
+    ordered_column_sources = (
+        canonical_columns, quality_columns, atomic_columns, engine_columns,
+    )
     if not all(
-        isinstance(value, list)
-        for value in (canonical_columns, quality_columns, atomic_columns, engine_columns)
+        isinstance(value, list) for value in ordered_column_sources
     ):
-        raise WindowFeatureError("Upstream ordered-column metadata is missing.")
+        raise WindowFeatureError(
+            "Upstream ordered-column metadata is missing.")
 
     try:
-        operating = pd.read_csv(run_layout.operating_condition_enriched, low_memory=False)
+        operating = pd.read_csv(
+            run_layout.operating_condition_enriched, low_memory=False)
         quality = pd.read_csv(run_layout.cleaning_quality, low_memory=False)
         atomic = pd.read_csv(run_layout.atomic_features, low_memory=False)
         engine = pd.read_csv(run_layout.engine_start_context, low_memory=False)
     except (OSError, UnicodeError, pd.errors.ParserError) as exc:
-        raise WindowFeatureError(f"Cannot read Script 30 inputs: {exc}") from exc
+        raise WindowFeatureError(
+            f"Cannot read Script 30 inputs: {exc}") from exc
     _require_columns(operating, canonical_columns, label="canonical input")
     _require_columns(quality, quality_columns, label="quality input")
     if list(atomic.columns) != atomic_columns:
         raise WindowFeatureError("Atomic CSV column order has drifted.")
     if list(engine.columns) != engine_columns:
-        raise WindowFeatureError("Engine-start context CSV column order has drifted.")
+        raise WindowFeatureError(
+            "Engine-start context CSV column order has drifted.")
 
     key_union = operating[KEY_COLUMNS].merge(
-        quality[KEY_COLUMNS], on=KEY_COLUMNS, how="outer", validate="one_to_one",
+        quality[KEY_COLUMNS],
+        on=KEY_COLUMNS,
+        how="outer",
+        validate="one_to_one",
         indicator=True,
     )
     if not key_union["_merge"].eq("both").all():
@@ -239,12 +260,18 @@ def load_window_inputs(run_layout: RunLayout) -> WindowInputs:
     if _ordered_key_sha256(ordered_keys) != expected_key_hash:
         raise WindowFeatureError("Stage 00 ordered key identity has drifted.")
 
-    def align(frame: pd.DataFrame, columns: list[str], label: str) -> pd.DataFrame:
+    def align(frame: pd.DataFrame,
+              columns: list[str], label: str) -> pd.DataFrame:
         aligned = ordered_keys.merge(
-            frame[columns], on=KEY_COLUMNS, how="left", validate="one_to_one", sort=False
+            frame[columns],
+            on=KEY_COLUMNS,
+            how="left",
+            validate="one_to_one",
+            sort=False,
         )
         if _ordered_key_sha256(aligned[KEY_COLUMNS]) != expected_key_hash:
-            raise WindowFeatureError(f"{label} ordered key identity has drifted.")
+            raise WindowFeatureError(
+                f"{label} ordered key identity has drifted.")
         return aligned
 
     canonical = align(operating, canonical_columns, "Canonical")
@@ -283,15 +310,18 @@ def _rolling_statistic(
 ) -> pd.Series:
     result = pd.Series(float("nan"), index=values.index, dtype="float64")
     admitted = strict_window_mask(block_ids, window_samples)
-    for _, indexes in block_ids.dropna().groupby(block_ids.dropna(), sort=False).groups.items():
+    grouped = block_ids.dropna().groupby(block_ids.dropna(), sort=False)
+    for _, indexes in grouped.groups.items():
         block_values = pd.to_numeric(values.loc[indexes], errors="coerce")
-        rolling = block_values.rolling(window_samples, min_periods=window_samples)
+        rolling = block_values.rolling(
+            window_samples, min_periods=window_samples)
         if statistic == "std":
             calculated = rolling.std(ddof=1)
         elif statistic == "range":
             calculated = rolling.max() - rolling.min()
         else:
-            raise WindowFeatureError(f"Unknown rolling statistic: {statistic}.")
+            raise WindowFeatureError(
+                f"Unknown rolling statistic: {statistic}.")
         result.loc[indexes] = calculated
     return result.where(admitted)
 
@@ -305,14 +335,16 @@ def build_window_features(inputs: WindowInputs) -> pd.DataFrame:
     output = canonical[KEY_COLUMNS].copy()
 
     maf_valid = _signal_valid_mask(inputs, "maf")
-    episode_id = inputs.engine_start_context["engine_start_episode_id"].astype("string")
+    episode_id = inputs.engine_start_context["engine_start_episode_id"].astype(
+        "string")
     maf_episode_blocks = build_continuity_blocks(
         canonical, valid_mask=maf_valid & episode_id.notna()
     ).block_id
     maf_span = strict_elapsed_span_mask(maf_episode_blocks, timestamps, 180)
     maf_span &= episode_id.eq(episode_id.shift(180)).fillna(False)
     maf_values = pd.to_numeric(canonical["maf"], errors="coerce")
-    maf_integral = pd.Series(float("nan"), index=canonical.index, dtype="float64")
+    maf_integral = pd.Series(
+        float("nan"), index=canonical.index, dtype="float64")
     for _, indexes in maf_episode_blocks.dropna().groupby(
         maf_episode_blocks.dropna(), sort=False
     ).groups.items():
@@ -323,7 +355,8 @@ def build_window_features(inputs: WindowInputs) -> pd.DataFrame:
     output["maf_integral_180s"] = maf_integral.where(maf_span)
 
     ect_valid = _signal_valid_mask(inputs, "coolant_temp")
-    ect_blocks = build_continuity_blocks(canonical, valid_mask=ect_valid).block_id
+    ect_blocks = build_continuity_blocks(
+        canonical, valid_mask=ect_valid).block_id
     ect_span = strict_elapsed_span_mask(ect_blocks, timestamps, 180)
     ect = pd.to_numeric(canonical["coolant_temp"], errors="coerce")
     output["ect_rate_180s"] = ((ect - ect.shift(180)) / 3.0).where(ect_span)
@@ -371,10 +404,12 @@ def _write_csv_atomic(path: Path, frame: pd.DataFrame) -> None:
     except (OSError, TypeError, ValueError) as exc:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
-        raise WindowFeatureError(f"Cannot write window-feature CSV: {exc}") from exc
+        raise WindowFeatureError(
+            f"Cannot write window-feature CSV: {exc}") from exc
 
 
-def _descriptor(path: Path, *, artifact_id: str, run_layout: RunLayout) -> ArtifactDescriptor:
+def _descriptor(path: Path, *, artifact_id: str,
+                run_layout: RunLayout) -> ArtifactDescriptor:
     return ArtifactDescriptor.from_file(
         path,
         artifact_id=artifact_id,
@@ -464,7 +499,8 @@ def run_window_feature_builder(
 
 
 def build_argument_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Build strict B3 window features.")
+    parser = argparse.ArgumentParser(
+        description="Build strict B3 window features.")
     parser.add_argument(
         "--run-dir", required=True,
         help="Explicit run directory under data/processed/runs/<run_id>.",
@@ -475,7 +511,8 @@ def build_argument_parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = build_argument_parser().parse_args()
     try:
-        run_layout = RunLayout.from_run_dir(args.run_dir, repo_root=PROJECT_ROOT)
+        run_layout = RunLayout.from_run_dir(
+            args.run_dir, repo_root=PROJECT_ROOT)
         output, manifest = run_window_feature_builder(run_layout)
     except (
         WindowFeatureError, ManifestError, ManifestValidationError,
@@ -484,8 +521,12 @@ def main() -> int:
         print(json.dumps({"error": str(exc)}, ensure_ascii=False, indent=2))
         return 1
     print(json.dumps({
-        "window_features": run_layout.run_relative_posix(run_layout.window_features),
-        "manifest": run_layout.run_relative_posix(run_layout.window_features_manifest),
+        "window_features": run_layout.run_relative_posix(
+            run_layout.window_features
+        ),
+        "manifest": run_layout.run_relative_posix(
+            run_layout.window_features_manifest
+        ),
         "sample_rows": int(len(output)),
         "source_dataset_identity": manifest["source_dataset_identity"],
     }, ensure_ascii=False, indent=2))

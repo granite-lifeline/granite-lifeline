@@ -26,7 +26,8 @@ SCRIPT_PATH = (
     REPO_ROOT
     / "data_layer/feature_engineering/src/20_engine_start_context_builder.py"
 )
-SPEC = importlib.util.spec_from_file_location("script_20_under_test", SCRIPT_PATH)
+SPEC = importlib.util.spec_from_file_location(
+    "script_20_under_test", SCRIPT_PATH)
 assert SPEC is not None and SPEC.loader is not None
 SCRIPT_20 = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = SCRIPT_20
@@ -45,7 +46,9 @@ def _sequence_layout(
     layout.cleaning_dir.mkdir(parents=True)
     layout.feature_contract.parent.mkdir(parents=True)
     layout.feature_contract.write_bytes(
-        (REPO_ROOT / "data_layer/contracts/feature_manifest.v1.json").read_bytes()
+        (
+            REPO_ROOT / "data_layer/contracts/feature_manifest.v1.json"
+        ).read_bytes()
     )
 
     template = fixture_00._operating_fixture().iloc[0]
@@ -113,9 +116,13 @@ def test_multiple_starts_invalid_rpm_and_foreign_key_mapping(
     assert context.loc[7:8, "engine_start_episode_id"].tolist() == [
         "trip_0001_start_002"
     ] * 2
-    assert context.loc[[0, 1, 5, 6, 9, 10, 11], "engine_start_episode_id"].isna().all()
-    assert context.loc[2:4, "elapsed_since_engine_start"].tolist() == [0.0, 1.0, 2.0]
-    assert context.loc[7:8, "elapsed_since_engine_start"].tolist() == [0.0, 1.0]
+    assert context.loc[
+        [0, 1, 5, 6, 9, 10, 11], "engine_start_episode_id"
+    ].isna().all()
+    assert context.loc[2:4, "elapsed_since_engine_start"].tolist() == [
+                                                                 0.0, 1.0, 2.0]
+    assert context.loc[7:8, "elapsed_since_engine_start"].tolist() == [
+                                                                 0.0, 1.0]
 
     assert episodes["engine_start_episode_id"].tolist() == [
         "trip_0001_start_001",
@@ -127,7 +134,8 @@ def test_multiple_starts_invalid_rpm_and_foreign_key_mapping(
     ]
     assert episodes["episode_sample_count"].tolist() == [3, 2]
     assert episodes["episode_duration_seconds"].tolist() == [2.0, 1.0]
-    assert episodes.loc[0, ["ect_start", "aat_start", "iat_start"]].tolist() == [
+    episode_start_columns = ["ect_start", "aat_start", "iat_start"]
+    assert episodes.loc[0, episode_start_columns].tolist() == [
         22.0,
         12.0,
         17.0,
@@ -139,10 +147,13 @@ def test_multiple_starts_invalid_rpm_and_foreign_key_mapping(
         mapped = context["engine_start_episode_id"].map(
             episodes.set_index("engine_start_episode_id")[column]
         )
-        pd.testing.assert_series_equal(context[column], mapped, check_names=False)
+        pd.testing.assert_series_equal(
+            context[column], mapped, check_names=False)
 
 
-def test_segment_boundary_cannot_create_an_observed_start(tmp_path: Path) -> None:
+def test_segment_boundary_cannot_create_an_observed_start(
+    tmp_path: Path,
+) -> None:
     segments = ["trip_0001_seg_001"] * 3 + ["trip_0001_seg_002"] * 3
     layout, _ = _sequence_layout(
         tmp_path,
@@ -180,7 +191,8 @@ def test_context_and_episode_outputs_have_distinct_grains_and_manifest(
         *SCRIPT_20.B2_COLUMNS,
     ]
     assert list(episodes.columns) == SCRIPT_20.EPISODE_COLUMNS
-    assert not episodes.duplicated(["trip_id", "engine_start_episode_id"]).any()
+    assert not episodes.duplicated(
+        ["trip_id", "engine_start_episode_id"]).any()
     assert [
         item["artifact_id"] for item in manifest["ordered_output_artifacts"]
     ] == ["engine_start_context", "engine_start_episodes"]
@@ -210,5 +222,7 @@ def test_b2_contract_drift_is_rejected(tmp_path: Path) -> None:
     contract = load_json_object(layout.feature_contract)
     contract["features"][10]["dtype"] = "float64"
 
-    with pytest.raises(SCRIPT_20.EngineStartError, match="contract has drifted"):
+    with pytest.raises(
+        SCRIPT_20.EngineStartError, match="contract has drifted"
+    ):
         SCRIPT_20._validate_b2_contract(contract)

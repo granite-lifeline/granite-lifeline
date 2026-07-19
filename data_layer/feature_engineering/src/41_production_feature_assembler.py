@@ -21,7 +21,7 @@ PROJECT_ROOT = SCRIPT_PATH.parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from data_layer.pipeline_data.manifests import (
+from data_layer.pipeline_data.manifests import (  # noqa: E402
     ArtifactDescriptor,
     ManifestError,
     ManifestValidationError,
@@ -33,7 +33,7 @@ from data_layer.pipeline_data.manifests import (
     verify_manifest_artifacts,
     write_json_atomic,
 )
-from data_layer.pipeline_data.paths import RunLayout
+from data_layer.pipeline_data.paths import RunLayout  # noqa: E402
 
 
 SCRIPT_VERSION = "1.0.0"
@@ -87,7 +87,8 @@ def _feature_groups(contract: dict[str, Any]) -> dict[str, list[str]]:
         or contract.get("feature_count") != 24
         or contract.get("total_column_count") != 46
     ):
-        raise ProductionAssemblyError("Frozen production contract identity has drifted.")
+        raise ProductionAssemblyError(
+            "Frozen production contract identity has drifted.")
     ordered = ordered_column_contract_from_feature_manifest(contract)
     validate_ordered_column_contract(ordered, ordered)
     keys = [item["name"] for item in contract["sample_keys"]]
@@ -95,17 +96,26 @@ def _feature_groups(contract: dict[str, Any]) -> dict[str, list[str]]:
     features = contract["features"]
     provenance = [item["name"] for item in contract["provenance_columns"]]
     if keys != KEY_COLUMNS or len(context) != 16 or len(features) != 24:
-        raise ProductionAssemblyError("Frozen key/context/feature counts have drifted.")
+        raise ProductionAssemblyError(
+            "Frozen key/context/feature counts have drifted.")
     positions = [item.get("position") for item in features]
     if positions != list(range(1, 25)):
-        raise ProductionAssemblyError("Feature positions must be exactly 1 through 24.")
+        raise ProductionAssemblyError(
+            "Feature positions must be exactly 1 through 24.")
+
+    def _names_for_class(class_label: str) -> list[str]:
+        return [
+            item["name"] for item in features
+            if item.get("class") == class_label
+        ]
+
     groups = {
         "keys": keys,
         "context": context,
-        "atomic": [item["name"] for item in features if item.get("class") == "B1a"],
-        "calibrated": [item["name"] for item in features if item.get("class") == "B1b"],
-        "engine_start": [item["name"] for item in features if item.get("class") == "B2"],
-        "windows": [item["name"] for item in features if item.get("class") == "B3"],
+        "atomic": _names_for_class("B1a"),
+        "calibrated": _names_for_class("B1b"),
+        "engine_start": _names_for_class("B2"),
+        "windows": _names_for_class("B3"),
         "features": [item["name"] for item in features],
         "provenance": provenance,
         "all": [item["name"] for item in ordered],
@@ -113,7 +123,8 @@ def _feature_groups(contract: dict[str, Any]) -> dict[str, list[str]]:
     expected_lengths = {
         "atomic": 8, "calibrated": 2, "engine_start": 6, "windows": 8
     }
-    if any(len(groups[name]) != count for name, count in expected_lengths.items()):
+    if any(len(groups[name]) != count for name,
+           count in expected_lengths.items()):
         raise ProductionAssemblyError("Frozen B-class grouping has drifted.")
     expected_owners = {
         "atomic": "10_atomic_feature_builder.py",
@@ -121,21 +132,31 @@ def _feature_groups(contract: dict[str, Any]) -> dict[str, list[str]]:
         "engine_start": "20_engine_start_context_builder.py",
         "windows": "30_window_feature_builder.py",
     }
-    classes = {"atomic": "B1a", "calibrated": "B1b", "engine_start": "B2", "windows": "B3"}
+    classes = {
+        "atomic": "B1a",
+        "calibrated": "B1b",
+        "engine_start": "B2",
+        "windows": "B3",
+    }
     for group, owner in expected_owners.items():
-        selected = [item for item in features if item.get("class") == classes[group]]
+        selected = [item for item in features if item.get(
+            "class") == classes[group]]
         if any(item.get("owner_script") != owner for item in selected):
-            raise ProductionAssemblyError(f"Frozen owner contract drifted for {group}.")
-    constants = {item["name"]: item.get("constant_value") for item in contract["provenance_columns"]}
+            raise ProductionAssemblyError(
+                f"Frozen owner contract drifted for {group}.")
+    constants = {item["name"]: item.get(
+        "constant_value") for item in contract["provenance_columns"]}
     if constants != {
         "schema_version": SCHEMA_VERSION,
         "calibration_version": CALIBRATION_VERSION,
     }:
-        raise ProductionAssemblyError("Provenance constant contract has drifted.")
+        raise ProductionAssemblyError(
+            "Provenance constant contract has drifted.")
     return groups
 
 
-def _descriptor_map(manifest: dict[str, Any], key: str) -> dict[str, ArtifactDescriptor]:
+def _descriptor_map(manifest: dict[str, Any],
+                    key: str) -> dict[str, ArtifactDescriptor]:
     return {
         item["artifact_id"]: ArtifactDescriptor.from_mapping(item)
         for item in manifest[key]
@@ -152,9 +173,13 @@ def _validate_upstream_manifests(
         "30": run_layout.window_features_manifest,
         "40": run_layout.calibrated_features_manifest,
     }
-    manifests = {stage: load_json_object(path) for stage, path in paths.items()}
+    manifests = {
+        stage: load_json_object(path) for stage, path in paths.items()
+    }
     for stage, manifest in manifests.items():
-        expected_calibration = CALIBRATION_VERSION if stage == "40" else "not_applicable"
+        expected_calibration = (
+            CALIBRATION_VERSION if stage == "40" else "not_applicable"
+        )
         validate_stage_manifest(
             manifest,
             expected_schema_version=SCHEMA_VERSION,
@@ -163,11 +188,17 @@ def _validate_upstream_manifests(
         if manifest.get("stage_id") != stage:
             raise ProductionAssemblyError(f"Expected stage {stage} manifest.")
         verify_manifest_artifacts(
-            manifest, run_dir=run_layout.run_dir, repo_root=run_layout.repo_root
+            manifest,
+            run_dir=run_layout.run_dir,
+            repo_root=run_layout.repo_root,
         )
-    identities = {manifest["source_dataset_identity"] for manifest in manifests.values()}
+    identities = {
+        manifest["source_dataset_identity"]
+        for manifest in manifests.values()
+    }
     if len(identities) != 1:
-        raise ProductionAssemblyError("Stage 00/10/20/30/40 dataset identities differ.")
+        raise ProductionAssemblyError(
+            "Stage 00/10/20/30/40 dataset identities differ.")
     expected_outputs = {
         "10": {"atomic_features"},
         "20": {"engine_start_context", "engine_start_episodes"},
@@ -175,9 +206,11 @@ def _validate_upstream_manifests(
         "40": {"calibrated_features"},
     }
     for stage, expected in expected_outputs.items():
-        actual = set(_descriptor_map(manifests[stage], "ordered_output_artifacts"))
+        actual = set(_descriptor_map(
+            manifests[stage], "ordered_output_artifacts"))
         if actual != expected:
-            raise ProductionAssemblyError(f"Stage {stage} output artifacts have drifted.")
+            raise ProductionAssemblyError(
+                f"Stage {stage} output artifacts have drifted.")
     return manifests
 
 
@@ -198,56 +231,68 @@ def _align_to_keys(
 ) -> pd.DataFrame:
     _require_exact_columns(frame, expected_columns, label=label)
     if frame.duplicated(KEY_COLUMNS).any():
-        raise ProductionAssemblyError(f"{label} contains duplicate sample keys.")
+        raise ProductionAssemblyError(
+            f"{label} contains duplicate sample keys.")
     key_check = ordered_keys.merge(
         frame[KEY_COLUMNS], on=KEY_COLUMNS, how="outer", validate="one_to_one",
         indicator=True,
     )
     if not key_check["_merge"].eq("both").all():
-        raise ProductionAssemblyError(f"{label} sample-key set differs from canonical.")
+        raise ProductionAssemblyError(
+            f"{label} sample-key set differs from canonical.")
     aligned = ordered_keys.merge(
         frame, on=KEY_COLUMNS, how="left", validate="one_to_one", sort=False
     )
     if _ordered_key_sha256(aligned[KEY_COLUMNS]) != expected_key_hash:
-        raise ProductionAssemblyError(f"{label} ordered key identity has drifted.")
+        raise ProductionAssemblyError(
+            f"{label} ordered key identity has drifted.")
     return aligned
 
 
 def load_production_inputs(run_layout: RunLayout) -> ProductionInputs:
-    """Verify all upstream manifests and restore every sample table to one order."""
+    """Verify all upstream manifests and align every sample table to one
+    order."""
 
     manifests = _validate_upstream_manifests(run_layout)
     contract = load_json_object(run_layout.feature_contract)
     groups = _feature_groups(contract)
-    stage_00_inputs = _descriptor_map(manifests["00"], "ordered_input_artifacts")
+    stage_00_inputs = _descriptor_map(
+        manifests["00"], "ordered_input_artifacts")
     if set(stage_00_inputs) != {
         "feature_contract", "operating_condition_enriched", "cleaning_quality"
     }:
-        raise ProductionAssemblyError("Stage 00 authoritative inputs have drifted.")
+        raise ProductionAssemblyError(
+            "Stage 00 authoritative inputs have drifted.")
     summary_00 = manifests["00"].get("validation_summary", {})
     canonical_columns = summary_00.get("canonical_column_order")
     if not isinstance(canonical_columns, list):
-        raise ProductionAssemblyError("Stage 00 canonical column order is missing.")
+        raise ProductionAssemblyError(
+            "Stage 00 canonical column order is missing.")
     for field in groups["context"]:
         if field not in canonical_columns:
-            raise ProductionAssemblyError(f"Canonical input is missing A field {field}.")
+            raise ProductionAssemblyError(
+                f"Canonical input is missing A field {field}.")
 
     canonical_raw = _read_csv(
         run_layout.operating_condition_enriched, label="canonical input"
     )
-    missing_canonical = [column for column in canonical_columns if column not in canonical_raw]
+    missing_canonical = [
+        column for column in canonical_columns if column not in canonical_raw]
     if missing_canonical:
         raise ProductionAssemblyError(
-            f"Canonical input is missing validated columns: {missing_canonical}."
+            "Canonical input is missing validated columns: "
+            f"{missing_canonical}."
         )
     if canonical_raw.duplicated(KEY_COLUMNS).any():
-        raise ProductionAssemblyError("Canonical input contains duplicate sample keys.")
+        raise ProductionAssemblyError(
+            "Canonical input contains duplicate sample keys.")
     ordered_keys = canonical_raw[KEY_COLUMNS].sort_values(
         KEY_COLUMNS, kind="stable"
     ).reset_index(drop=True)
     expected_key_hash = summary_00.get("ordered_sample_keys_sha256")
     if _ordered_key_sha256(ordered_keys) != expected_key_hash:
-        raise ProductionAssemblyError("Stage 00 ordered key identity has drifted.")
+        raise ProductionAssemblyError(
+            "Stage 00 ordered key identity has drifted.")
     canonical = ordered_keys.merge(
         canonical_raw[canonical_columns],
         on=KEY_COLUMNS,
@@ -263,32 +308,41 @@ def load_production_inputs(run_layout: RunLayout) -> ProductionInputs:
         "40": [*KEY_COLUMNS, *groups["calibrated"]],
     }
     for stage in ("10", "30", "40"):
-        declared = manifests[stage].get("output_contract", {}).get("ordered_columns")
+        declared = manifests[stage].get(
+            "output_contract", {}).get("ordered_columns")
         if declared != expected_stage_columns[stage]:
-            raise ProductionAssemblyError(f"Stage {stage} ordered-column contract drifted.")
+            raise ProductionAssemblyError(
+                f"Stage {stage} ordered-column contract drifted.")
         if manifests[stage]["output_contract"].get(
             "ordered_sample_keys_sha256"
         ) != expected_key_hash:
-            raise ProductionAssemblyError(f"Stage {stage} key hash differs from stage 00.")
-    sample_20 = manifests["20"].get("output_contract", {}).get("sample_table", {})
+            raise ProductionAssemblyError(
+                f"Stage {stage} key hash differs from stage 00.")
+    sample_20 = manifests["20"].get(
+        "output_contract", {}).get("sample_table", {})
     if sample_20.get("ordered_columns") != expected_stage_columns["20"]:
-        raise ProductionAssemblyError("Stage 20 sample-column contract drifted.")
+        raise ProductionAssemblyError(
+            "Stage 20 sample-column contract drifted.")
     if sample_20.get("ordered_sample_keys_sha256") != expected_key_hash:
-        raise ProductionAssemblyError("Stage 20 key hash differs from stage 00.")
+        raise ProductionAssemblyError(
+            "Stage 20 key hash differs from stage 00.")
 
     atomic = _align_to_keys(
-        ordered_keys, _read_csv(run_layout.atomic_features, label="atomic features"),
+        ordered_keys, _read_csv(
+            run_layout.atomic_features, label="atomic features"),
         expected_columns=expected_stage_columns["10"],
         expected_key_hash=expected_key_hash, label="atomic features",
     )
     context = _align_to_keys(
         ordered_keys,
-        _read_csv(run_layout.engine_start_context, label="engine-start context"),
+        _read_csv(run_layout.engine_start_context,
+                  label="engine-start context"),
         expected_columns=expected_stage_columns["20"],
         expected_key_hash=expected_key_hash, label="engine-start context",
     )
     windows = _align_to_keys(
-        ordered_keys, _read_csv(run_layout.window_features, label="window features"),
+        ordered_keys, _read_csv(
+            run_layout.window_features, label="window features"),
         expected_columns=expected_stage_columns["30"],
         expected_key_hash=expected_key_hash, label="window features",
     )
@@ -298,13 +352,16 @@ def load_production_inputs(run_layout: RunLayout) -> ProductionInputs:
         expected_columns=expected_stage_columns["40"],
         expected_key_hash=expected_key_hash, label="calibrated features",
     )
-    episodes = _read_csv(run_layout.engine_start_episodes, label="engine-start episodes")
+    episodes = _read_csv(run_layout.engine_start_episodes,
+                         label="engine-start episodes")
     episode_columns = manifests["20"].get("output_contract", {}).get(
         "episode_table", {}
     ).get("ordered_columns")
     if not isinstance(episode_columns, list):
-        raise ProductionAssemblyError("Stage 20 episode-column contract is missing.")
-    _require_exact_columns(episodes, episode_columns, label="engine-start episodes")
+        raise ProductionAssemblyError(
+            "Stage 20 episode-column contract is missing.")
+    _require_exact_columns(episodes, episode_columns,
+                           label="engine-start episodes")
     return ProductionInputs(
         canonical=canonical,
         atomic=atomic,
@@ -322,14 +379,17 @@ def _validate_episode_foreign_keys(inputs: ProductionInputs) -> None:
     episodes = inputs.engine_start_episodes
     episode_key = ["trip_id", "engine_start_episode_id"]
     if episodes.duplicated(episode_key).any():
-        raise ProductionAssemblyError("Engine-start episode primary keys are not unique.")
+        raise ProductionAssemblyError(
+            "Engine-start episode primary keys are not unique.")
     referenced = context.loc[
         context["engine_start_episode_id"].notna(),
-        [*episode_key, "engine_start_observed", "ect_start", "aat_start", "iat_start"],
+        [*episode_key, "engine_start_observed",
+            "ect_start", "aat_start", "iat_start"],
     ]
     if referenced.empty:
         if not episodes.empty:
-            raise ProductionAssemblyError("Unreferenced engine-start episodes exist.")
+            raise ProductionAssemblyError(
+                "Unreferenced engine-start episodes exist.")
         return
     joined = referenced.merge(
         episodes[[*episode_key, "ect_start", "aat_start", "iat_start"]],
@@ -340,23 +400,28 @@ def _validate_episode_foreign_keys(inputs: ProductionInputs) -> None:
         suffixes=("_sample", "_episode"),
     )
     if not joined["_merge"].eq("both").all():
-        raise ProductionAssemblyError("Engine-start context contains orphan episode IDs.")
+        raise ProductionAssemblyError(
+            "Engine-start context contains orphan episode IDs.")
     for column in ("ect_start", "aat_start", "iat_start"):
         left = pd.to_numeric(joined[f"{column}_sample"], errors="coerce")
         right = pd.to_numeric(joined[f"{column}_episode"], errors="coerce")
         equal = left.eq(right) | (left.isna() & right.isna())
         if not equal.all():
-            raise ProductionAssemblyError(f"Episode-mapped {column} values have drifted.")
+            raise ProductionAssemblyError(
+                f"Episode-mapped {column} values have drifted.")
     observed = _parse_boolean(
         context["engine_start_observed"], label="engine_start_observed"
     )
     if context.loc[observed.eq(True), "engine_start_episode_id"].isna().any():
-        raise ProductionAssemblyError("Observed engine starts must reference episodes.")
+        raise ProductionAssemblyError(
+            "Observed engine starts must reference episodes.")
     observed_keys = context.loc[observed.eq(True), episode_key]
     if len(observed_keys) != len(episodes):
-        raise ProductionAssemblyError("Each episode must have exactly one observed start.")
+        raise ProductionAssemblyError(
+            "Each episode must have exactly one observed start.")
     if observed_keys.duplicated(episode_key).any():
-        raise ProductionAssemblyError("An episode has multiple observed start rows.")
+        raise ProductionAssemblyError(
+            "An episode has multiple observed start rows.")
 
 
 def _parse_boolean(series: pd.Series, *, label: str) -> pd.Series:
@@ -371,7 +436,8 @@ def _parse_boolean(series: pd.Series, *, label: str) -> pd.Series:
         )
     )
     if normalized.eq("invalid").any():
-        raise ProductionAssemblyError(f"{label} contains invalid boolean values.")
+        raise ProductionAssemblyError(
+            f"{label} contains invalid boolean values.")
     return normalized.astype("boolean")
 
 
@@ -394,66 +460,89 @@ def _normalize_and_validate_dtypes(
             parsed = pd.to_datetime(text, utc=True, errors="coerce")
             if not valid_format.all() or parsed.isna().any():
                 raise ProductionAssemblyError(
-                    "timestamp must use strict ISO 8601 second-level UTC Z format."
+                    "timestamp must use strict ISO 8601 second-level "
+                    "UTC Z format."
                 )
             normalized[name] = text
         elif dtype == "int64":
             numeric = pd.to_numeric(original, errors="coerce")
             invalid = original.notna() & numeric.isna()
-            if invalid.any() or numeric.isna().any() or not numeric.mod(1).eq(0).all():
-                raise ProductionAssemblyError(f"{name} violates int64 contract.")
+            non_integer = not numeric.mod(1).eq(0).all()
+            if invalid.any() or numeric.isna().any() or non_integer:
+                raise ProductionAssemblyError(
+                    f"{name} violates int64 contract.")
             normalized[name] = numeric.astype("int64")
         elif dtype == "float64":
             numeric = pd.to_numeric(original, errors="coerce")
             if (original.notna() & numeric.isna()).any():
-                raise ProductionAssemblyError(f"{name} contains non-numeric values.")
+                raise ProductionAssemblyError(
+                    f"{name} contains non-numeric values.")
             normalized[name] = numeric.astype("float64")
         elif dtype == "boolean":
             normalized[name] = _parse_boolean(original, label=name)
         elif dtype == "string":
             invalid = original.notna() & ~original.map(
-                lambda value: isinstance(value, str) if not pd.isna(value) else True
+                lambda value: isinstance(
+                    value, str) if not pd.isna(value) else True
             )
             if invalid.any():
-                raise ProductionAssemblyError(f"{name} contains non-string values.")
+                raise ProductionAssemblyError(
+                    f"{name} contains non-string values.")
             normalized[name] = original.astype("string")
         else:
-            raise ProductionAssemblyError(f"Unsupported contracted dtype {dtype} for {name}.")
+            raise ProductionAssemblyError(
+                f"Unsupported contracted dtype {dtype} for {name}.")
         if not nullable and normalized[name].isna().any():
-            raise ProductionAssemblyError(f"Non-nullable column {name} contains nulls.")
+            raise ProductionAssemblyError(
+                f"Non-nullable column {name} contains nulls.")
         allowed = field.get("allowed_values")
         if allowed is not None:
-            unexpected = set(normalized[name].dropna().unique()) - set(allowed)
+            observed = set(normalized[name].dropna().unique())
+            unexpected = observed - set(allowed)
             if unexpected:
                 raise ProductionAssemblyError(
-                    f"{name} contains values outside its frozen domain: {sorted(unexpected)}."
+                    f"{name} contains values outside its frozen domain: "
+                    f"{sorted(unexpected)}."
                 )
         constant = field.get("constant_value")
         if constant is not None and not normalized[name].eq(constant).all():
-            raise ProductionAssemblyError(f"Provenance column {name} is not constant.")
+            raise ProductionAssemblyError(
+                f"Provenance column {name} is not constant.")
     return normalized
 
 
 def _validate_global_order(output: pd.DataFrame) -> None:
-    expected = output.sort_values(KEY_COLUMNS, kind="stable").reset_index(drop=True)
-    if not output[KEY_COLUMNS].reset_index(drop=True).equals(expected[KEY_COLUMNS]):
-        raise ProductionAssemblyError("Production rows are not in frozen global order.")
-    grouped = output.groupby(["trip_id", "segment_id"], sort=False, dropna=False)
+    expected = output.sort_values(
+        KEY_COLUMNS, kind="stable").reset_index(drop=True)
+    actual_keys = output[KEY_COLUMNS].reset_index(drop=True)
+    if not actual_keys.equals(expected[KEY_COLUMNS]):
+        raise ProductionAssemblyError(
+            "Production rows are not in frozen global order.")
+    grouped = output.groupby(
+        ["trip_id", "segment_id"], sort=False, dropna=False
+    )
     for _, frame in grouped:
         rows = frame["row_in_segment"]
-        if not rows.eq(pd.Series(range(1, len(frame) + 1), index=frame.index)).all():
+        expected_rows = pd.Series(
+            range(1, len(frame) + 1), index=frame.index
+        )
+        if not rows.eq(expected_rows).all():
             raise ProductionAssemblyError(
-                "row_in_segment must be 1-based and consecutive within each segment."
+                "row_in_segment must be 1-based and consecutive "
+                "within each segment."
             )
-        timestamps = pd.to_datetime(frame["timestamp"], utc=True, errors="raise")
-        if len(frame) > 1 and not timestamps.diff().iloc[1:].dt.total_seconds().eq(1.0).all():
+        timestamps = pd.to_datetime(
+            frame["timestamp"], utc=True, errors="raise")
+        gaps = timestamps.diff().iloc[1:].dt.total_seconds()
+        if len(frame) > 1 and not gaps.eq(1.0).all():
             raise ProductionAssemblyError(
-                "Timestamps must be strictly consecutive at 1 Hz within each segment."
+                "Timestamps must be strictly consecutive at 1 Hz "
+                "within each segment."
             )
 
 
 def build_production_features(inputs: ProductionInputs) -> pd.DataFrame:
-    """Join all approved fields, restore order, and enforce the 46-column schema."""
+    """Join approved fields, restore order, enforce the 46-column schema."""
 
     groups = _feature_groups(inputs.feature_contract)
     _validate_episode_foreign_keys(inputs)
@@ -467,14 +556,17 @@ def build_production_features(inputs: ProductionInputs) -> pd.DataFrame:
     ]
     for frame, columns in sources:
         _require_exact_columns(
-            frame, [*KEY_COLUMNS, *columns], label=f"upstream {columns[0]} table"
+            frame,
+            [*KEY_COLUMNS, *columns],
+            label=f"upstream {columns[0]} table",
         )
         key_check = ordered_keys.merge(
             frame[KEY_COLUMNS], on=KEY_COLUMNS, how="outer",
             validate="one_to_one", indicator=True,
         )
         if not key_check["_merge"].eq("both").all():
-            raise ProductionAssemblyError("An upstream sample-key set differs.")
+            raise ProductionAssemblyError(
+                "An upstream sample-key set differs.")
         output = output.merge(
             frame[[*KEY_COLUMNS, *columns]],
             on=KEY_COLUMNS,
@@ -487,11 +579,14 @@ def build_production_features(inputs: ProductionInputs) -> pd.DataFrame:
     output = output[groups["all"]]
     _require_exact_columns(output, groups["all"], label="production output")
     if len(output) != len(inputs.canonical):
-        raise ProductionAssemblyError("Production assembly changed the sample row count.")
+        raise ProductionAssemblyError(
+            "Production assembly changed the sample row count.")
     output = _normalize_and_validate_dtypes(output, inputs.feature_contract)
     _validate_global_order(output)
-    if _ordered_key_sha256(output[KEY_COLUMNS]) != _ordered_key_sha256(ordered_keys):
-        raise ProductionAssemblyError("Production sample keys changed unexpectedly.")
+    output_key_hash = _ordered_key_sha256(output[KEY_COLUMNS])
+    if output_key_hash != _ordered_key_sha256(ordered_keys):
+        raise ProductionAssemblyError(
+            "Production sample keys changed unexpectedly.")
     return output
 
 
@@ -511,7 +606,8 @@ def _write_csv_atomic(path: Path, frame: pd.DataFrame) -> None:
     except (OSError, TypeError, ValueError) as exc:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
-        raise ProductionAssemblyError(f"Cannot write production CSV: {exc}") from exc
+        raise ProductionAssemblyError(
+            f"Cannot write production CSV: {exc}") from exc
 
 
 def _descriptor(
@@ -541,14 +637,17 @@ def run_production_feature_assembler(
         "30": run_layout.window_features_manifest,
         "40": run_layout.calibrated_features_manifest,
     }
-    input_artifacts: list[ArtifactDescriptor] = [stage_00_inputs["feature_contract"]]
+    input_artifacts: list[ArtifactDescriptor] = [
+        stage_00_inputs["feature_contract"]]
     input_artifacts.extend(
-        _descriptor(path, artifact_id=f"stage_{stage}_manifest", run_layout=run_layout)
+        _descriptor(
+            path, artifact_id=f"stage_{stage}_manifest", run_layout=run_layout)
         for stage, path in stage_manifest_paths.items()
     )
     input_artifacts.extend([
         stage_00_inputs["operating_condition_enriched"],
-        _descriptor(run_layout.atomic_features, artifact_id="atomic_features", run_layout=run_layout),
+        _descriptor(run_layout.atomic_features,
+                    artifact_id="atomic_features", run_layout=run_layout),
         _descriptor(
             run_layout.engine_start_context,
             artifact_id="engine_start_context",
@@ -559,7 +658,8 @@ def run_production_feature_assembler(
             artifact_id="engine_start_episodes",
             run_layout=run_layout,
         ),
-        _descriptor(run_layout.window_features, artifact_id="window_features", run_layout=run_layout),
+        _descriptor(run_layout.window_features,
+                    artifact_id="window_features", run_layout=run_layout),
         _descriptor(
             run_layout.calibrated_features,
             artifact_id="calibrated_features",
@@ -571,21 +671,26 @@ def run_production_feature_assembler(
         artifact_id="production_features",
         run_layout=run_layout,
     )
+    source_dataset_identity = inputs.manifests["00"]["source_dataset_identity"]
     manifest = build_stage_manifest(
         stage_id=STAGE_ID,
         schema_version=SCHEMA_VERSION,
         script_version=SCRIPT_VERSION,
-        source_dataset_identity=inputs.manifests["00"]["source_dataset_identity"],
+        source_dataset_identity=source_dataset_identity,
         input_artifacts=input_artifacts,
         output_artifacts=[output_descriptor],
         calibration_version=CALIBRATION_VERSION,
         creation_time_utc=creation_time_utc,
     )
-    fields = [dict(item) for item in ordered_column_contract_from_feature_manifest(
-        inputs.feature_contract
-    )]
+    fields = [
+        dict(item)
+        for item in ordered_column_contract_from_feature_manifest(
+            inputs.feature_contract
+        )
+    ]
     validate_ordered_column_contract(fields, fields)
-    segment_sizes = output.groupby(["trip_id", "segment_id"], sort=False).size()
+    segment_sizes = output.groupby(
+        ["trip_id", "segment_id"], sort=False).size()
     manifest["output_contract"] = {
         "table_name": "production_features",
         "grain": "sample",
@@ -596,8 +701,13 @@ def run_production_feature_assembler(
         "feature_count": 24,
         "provenance_column_count": 2,
         "row_count": int(len(output)),
-        "ordered_sample_keys_sha256": _ordered_key_sha256(output[KEY_COLUMNS]),
-        "null_counts": {column: int(output[column].isna().sum()) for column in output.columns},
+        "ordered_sample_keys_sha256": _ordered_key_sha256(
+            output[KEY_COLUMNS]
+        ),
+        "null_counts": {
+            column: int(output[column].isna().sum())
+            for column in output.columns
+        },
         "strict_allowlist_enforced": True,
         "assembler_imputation_performed": False,
         "episode_foreign_keys_validated": True,
@@ -633,7 +743,8 @@ def build_argument_parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = build_argument_parser().parse_args()
     try:
-        run_layout = RunLayout.from_run_dir(args.run_dir, repo_root=PROJECT_ROOT)
+        run_layout = RunLayout.from_run_dir(
+            args.run_dir, repo_root=PROJECT_ROOT)
         output, manifest = run_production_feature_assembler(run_layout)
     except (
         ProductionAssemblyError, ManifestError, ManifestValidationError,

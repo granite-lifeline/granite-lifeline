@@ -15,8 +15,8 @@ from typing import Any
 from data_layer.data_cleaning.src import data_cleaning
 from data_layer.data_cleaning.src.cleaning_core import load_config
 from data_layer.data_cleaning.src.quality_audit import run_quality_audit
-from data_layer.operating_condition_statistics.src.operating_condition_analysis import (
-    run_operating_condition_analysis,
+from data_layer.operating_condition_statistics.src import (
+    operating_condition_analysis,
 )
 from data_layer.pipeline_data.manifests import (
     ArtifactDescriptor,
@@ -30,14 +30,19 @@ from data_layer.pipeline_data.paths import RunLayout, repo_relative_posix
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CONFIG = REPO_ROOT / "data_layer/data_cleaning/src/cleaning_config.yaml"
+DEFAULT_CONFIG = (
+    REPO_ROOT / "data_layer/data_cleaning/src/cleaning_config.yaml"
+)
 FEATURE_STAGE_FILES = (
     ("00", "00_input_contract_validator.py", "run_input_contract_validation"),
     ("10", "10_atomic_feature_builder.py", "run_atomic_feature_builder"),
-    ("20", "20_engine_start_context_builder.py", "run_engine_start_context_builder"),
+    ("20", "20_engine_start_context_builder.py",
+     "run_engine_start_context_builder"),
     ("30", "30_window_feature_builder.py", "run_window_feature_builder"),
-    ("40", "40_calibrated_feature_builder.py", "run_calibrated_feature_builder"),
-    ("41", "41_production_feature_assembler.py", "run_production_feature_assembler"),
+    ("40", "40_calibrated_feature_builder.py",
+     "run_calibrated_feature_builder"),
+    ("41", "41_production_feature_assembler.py",
+     "run_production_feature_assembler"),
 )
 
 
@@ -94,10 +99,14 @@ def _write_upstream_manifests(
     creation_time_utc: str,
 ) -> None:
     cleaning_outputs = [
-        _run_descriptor(layout.cleaned_dataset, artifact_id="cleaned_dataset", layout=layout),
-        _run_descriptor(layout.cleaning_enriched, artifact_id="cleaning_enriched", layout=layout),
-        _run_descriptor(layout.cleaning_quality, artifact_id="cleaning_quality", layout=layout),
-        _run_descriptor(layout.cleaning_report, artifact_id="cleaning_report", layout=layout),
+        _run_descriptor(layout.cleaned_dataset,
+                        artifact_id="cleaned_dataset", layout=layout),
+        _run_descriptor(layout.cleaning_enriched,
+                        artifact_id="cleaning_enriched", layout=layout),
+        _run_descriptor(layout.cleaning_quality,
+                        artifact_id="cleaning_quality", layout=layout),
+        _run_descriptor(layout.cleaning_report,
+                        artifact_id="cleaning_report", layout=layout),
     ]
     source_identity = compute_source_dataset_identity(cleaning_outputs)
     cleaning_manifest = build_stage_manifest(
@@ -106,7 +115,8 @@ def _write_upstream_manifests(
         script_version="1.0.0",
         source_dataset_identity=source_identity,
         input_artifacts=[
-            _repo_descriptor(config_path, artifact_id="cleaning_config", layout=layout)
+            _repo_descriptor(
+                config_path, artifact_id="cleaning_config", layout=layout)
         ],
         output_artifacts=cleaning_outputs,
         calibration_version=None,
@@ -150,7 +160,9 @@ def _write_upstream_manifests(
                 layout=layout,
             ),
             _run_descriptor(
-                layout.cleaned_dataset, artifact_id="cleaned_dataset", layout=layout
+                layout.cleaned_dataset,
+                artifact_id="cleaned_dataset",
+                layout=layout,
             ),
         ],
         output_artifacts=operating_outputs,
@@ -175,13 +187,16 @@ def run_data_pipeline(
     config_target = Path(config_path).expanduser().resolve()
     config = copy.deepcopy(load_config(config_target))
     if input_dir is not None:
-        config["input"]["directory"] = str(Path(input_dir).expanduser().resolve())
+        config["input"]["directory"] = str(
+            Path(input_dir).expanduser().resolve())
     layout.create_directories()
     _, cleaning_summary = data_cleaning.run_cleaning(config, layout)
     _, quality_summary = run_quality_audit(config, layout)
     cleaning_summary = {**cleaning_summary, "quality_audit": quality_summary}
-    _, operating_summary = run_operating_condition_analysis(
-        layout, config_path=config_target
+    _, operating_summary = (
+        operating_condition_analysis.run_operating_condition_analysis(
+            layout, config_path=config_target
+        )
     )
     _write_upstream_manifests(
         layout,
@@ -209,7 +224,8 @@ def run_data_pipeline(
     ]
     for path in manifest_paths:
         if not path.is_file():
-            raise DataPipelineError(f"Required stage manifest was not produced: {path}.")
+            raise DataPipelineError(
+                f"Required stage manifest was not produced: {path}.")
         verify_manifest_artifacts(
             json.loads(path.read_text(encoding="utf-8")),
             run_dir=layout.run_dir,
@@ -218,34 +234,46 @@ def run_data_pipeline(
     return {
         "run_id": layout.run_id,
         "run_dir": layout.run_relative_posix(layout.run_dir / ".") or ".",
-        "production_features": layout.run_relative_posix(layout.production_features),
+        "production_features": layout.run_relative_posix(
+            layout.production_features
+        ),
         "production_manifest": layout.run_relative_posix(
             layout.production_feature_manifest
         ),
-        "stage_manifests": [layout.run_relative_posix(path) for path in manifest_paths],
+        "stage_manifests": [
+            layout.run_relative_posix(path) for path in manifest_paths
+        ],
         "feature_stage_ids": list(stage_results),
     }
 
 
 def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run the complete online Data Layer pipeline for one explicit run ID."
+        description=(
+            "Run the complete online Data Layer pipeline for one "
+            "explicit run ID."
+        )
     )
-    parser.add_argument("--run-id", help="Explicit run identifier; never 'latest'.")
-    parser.add_argument("--input-dir", help="Optional raw KIT CSV input directory override.")
+    parser.add_argument(
+        "--run-id", help="Explicit run identifier; never 'latest'.")
+    parser.add_argument(
+        "--input-dir", help="Optional raw KIT CSV input directory override.")
     parser.add_argument("--config", default=str(DEFAULT_CONFIG))
     return parser
 
 
 def main() -> int:
     args = build_argument_parser().parse_args()
-    run_id = args.run_id or datetime.now(timezone.utc).strftime("run_%Y%m%dT%H%M%SZ")
+    run_id = args.run_id or datetime.now(
+        timezone.utc).strftime("run_%Y%m%dT%H%M%SZ")
     try:
         layout = RunLayout.for_run_id(run_id, repo_root=REPO_ROOT)
         summary = run_data_pipeline(
             layout, config_path=args.config, input_dir=args.input_dir
         )
-    except (DataPipelineError, OSError, KeyError, TypeError, ValueError) as exc:
+    except (
+        DataPipelineError, OSError, KeyError, TypeError, ValueError
+    ) as exc:
         print(json.dumps({"error": str(exc)}, ensure_ascii=False, indent=2))
         return 1
     print(json.dumps(summary, ensure_ascii=False, indent=2))

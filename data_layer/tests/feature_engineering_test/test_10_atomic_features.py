@@ -20,9 +20,11 @@ from data_layer.tests.feature_engineering_test import (
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCRIPT_PATH = (
-    REPO_ROOT / "data_layer/feature_engineering/src/10_atomic_feature_builder.py"
+    REPO_ROOT
+    / "data_layer/feature_engineering/src/10_atomic_feature_builder.py"
 )
-SPEC = importlib.util.spec_from_file_location("script_10_under_test", SCRIPT_PATH)
+SPEC = importlib.util.spec_from_file_location(
+    "script_10_under_test", SCRIPT_PATH)
 assert SPEC is not None and SPEC.loader is not None
 SCRIPT_10 = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = SCRIPT_10
@@ -115,7 +117,8 @@ def test_atomic_output_and_manifest_are_portable_and_complete(
     assert [
         item["artifact_id"] for item in manifest["ordered_output_artifacts"]
     ] == ["atomic_features"]
-    assert manifest["output_contract"]["ordered_columns"] == list(output.columns)
+    assert manifest["output_contract"]["ordered_columns"] == list(
+        output.columns)
     assert len(manifest["output_contract"]["feature_columns"]) == 8
     assert not any(
         item["artifact_id"] == "calibration_registry"
@@ -132,14 +135,18 @@ def test_changed_authoritative_input_fails_script_00_checksum(
     tmp_path: Path,
 ) -> None:
     layout = _prepared_layout(tmp_path)
-    with layout.operating_condition_enriched.open("a", encoding="utf-8") as handle:
+    with layout.operating_condition_enriched.open(
+        "a", encoding="utf-8"
+    ) as handle:
         handle.write("\n")
 
     with pytest.raises(ManifestValidationError, match="checksum mismatch"):
         SCRIPT_10.load_atomic_inputs(layout)
 
 
-def test_wrong_or_incomplete_stage_00_manifest_is_rejected(tmp_path: Path) -> None:
+def test_wrong_or_incomplete_stage_00_manifest_is_rejected(
+    tmp_path: Path,
+) -> None:
     layout = _prepared_layout(tmp_path)
     manifest = load_json_object(layout.input_contract_manifest)
     manifest["stage_id"] = "10"
@@ -149,10 +156,14 @@ def test_wrong_or_incomplete_stage_00_manifest_is_rejected(tmp_path: Path) -> No
         SCRIPT_10.load_atomic_inputs(layout)
 
 
-def test_atomic_contract_name_or_owner_drift_is_rejected(tmp_path: Path) -> None:
+def test_atomic_contract_name_or_owner_drift_is_rejected(
+    tmp_path: Path,
+) -> None:
     layout = _prepared_layout(tmp_path)
     contract = load_json_object(layout.feature_contract)
     contract["features"][0]["owner_script"] = "different_builder.py"
 
-    with pytest.raises(SCRIPT_10.AtomicFeatureError, match="contract has drifted"):
+    with pytest.raises(
+        SCRIPT_10.AtomicFeatureError, match="contract has drifted"
+    ):
         SCRIPT_10._validate_atomic_feature_contract(contract)

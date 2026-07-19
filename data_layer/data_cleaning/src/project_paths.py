@@ -17,7 +17,7 @@ REPO_ROOT = BASE_DIR.parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from data_layer.pipeline_data.paths import (
+from data_layer.pipeline_data.paths import (  # noqa: E402
     RunLayout,
     repo_relative_posix,
 )

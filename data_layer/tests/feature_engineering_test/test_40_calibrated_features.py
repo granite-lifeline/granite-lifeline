@@ -9,7 +9,10 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from data_layer.pipeline_data.manifests import load_json_object, verify_manifest_artifacts
+from data_layer.pipeline_data.manifests import (
+    load_json_object,
+    verify_manifest_artifacts,
+)
 from data_layer.tests.feature_engineering_test import (
     test_20_engine_start_context as fixture_20,
 )
@@ -17,9 +20,11 @@ from data_layer.tests.feature_engineering_test import (
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCRIPT_PATH = (
-    REPO_ROOT / "data_layer/feature_engineering/src/40_calibrated_feature_builder.py"
+    REPO_ROOT
+    / "data_layer/feature_engineering/src/40_calibrated_feature_builder.py"
 )
-SPEC = importlib.util.spec_from_file_location("script_40_under_test", SCRIPT_PATH)
+SPEC = importlib.util.spec_from_file_location(
+    "script_40_under_test", SCRIPT_PATH)
 assert SPEC is not None and SPEC.loader is not None
 SCRIPT_40 = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = SCRIPT_40
@@ -31,7 +36,9 @@ def _calibrated_layout(tmp_path: Path):
     calibration_dir = layout.calibration_registry.parent
     calibration_dir.mkdir(parents=True)
     layout.calibration_registry.write_bytes(
-        (REPO_ROOT / "data_layer/calibration/calibration_registry.v1.json").read_bytes()
+        (
+            REPO_ROOT / "data_layer/calibration/calibration_registry.v1.json"
+        ).read_bytes()
     )
     layout.calibration_release_manifest.write_bytes(
         (
@@ -86,8 +93,10 @@ def test_frozen_formulas_apply_clipping_without_target_winsorization(
     transform = inputs.registry["feature_transforms"]["speed_density_maf"]
 
     for index in (0, 1):
-        expected = _expected_speed_residual(inputs.canonical.loc[index], transform)
-        assert output.loc[index, "speed_density_maf_residual"] == pytest.approx(expected)
+        expected = _expected_speed_residual(
+            inputs.canonical.loc[index], transform)
+        actual = output.loc[index, "speed_density_maf_residual"]
+        assert actual == pytest.approx(expected)
     assert inputs.canonical.loc[1, "maf"] == 100.0
     pedal = inputs.registry["feature_transforms"]["pedal_mapping"]
     assert output.loc[0, "pedal_mapping_residual"] == pytest.approx(
@@ -129,24 +138,34 @@ def test_online_fit_policy_drift_is_rejected(tmp_path: Path) -> None:
     registry = load_json_object(layout.calibration_registry)
     registry["online_policy"]["fit_allowed"] = True
 
-    with pytest.raises(SCRIPT_40.CalibratedFeatureError, match="online policy"):
+    with pytest.raises(
+        SCRIPT_40.CalibratedFeatureError, match="online policy"
+    ):
         SCRIPT_40._validate_registry(registry)
     assert not hasattr(SCRIPT_40, "fit")
 
 
-def test_output_manifest_is_calibration_bound_and_sample_grain(tmp_path: Path) -> None:
+def test_output_manifest_is_calibration_bound_and_sample_grain(
+    tmp_path: Path,
+) -> None:
     layout = _calibrated_layout(tmp_path)
     output, manifest = SCRIPT_40.run_calibrated_feature_builder(
         layout, creation_time_utc="2026-07-19T12:04:00Z"
     )
 
-    assert list(output.columns) == [*SCRIPT_40.KEY_COLUMNS, *SCRIPT_40.B1B_COLUMNS]
+    assert list(output.columns) == [
+        *SCRIPT_40.KEY_COLUMNS, *SCRIPT_40.B1B_COLUMNS
+    ]
+    calibration_contract = manifest["calibration_contract"]
     assert manifest["calibration_version"] == "calibration.v1"
-    assert manifest["calibration_contract"]["application_mode"] == "predict_only"
-    assert manifest["calibration_contract"]["fit_allowed"] is False
-    assert manifest["calibration_contract"]["hidden_intermediates_emitted"] is False
+    assert calibration_contract["application_mode"] == "predict_only"
+    assert calibration_contract["fit_allowed"] is False
+    assert calibration_contract["hidden_intermediates_emitted"] is False
     assert manifest["output_contract"]["row_count"] == 3
-    input_ids = [item["artifact_id"] for item in manifest["ordered_input_artifacts"]]
+    input_ids = [
+        item["artifact_id"]
+        for item in manifest["ordered_input_artifacts"]
+    ]
     assert input_ids == [
         "feature_contract",
         "calibration_registry",
@@ -170,5 +189,7 @@ def test_b1b_contract_drift_is_rejected(tmp_path: Path) -> None:
     contract = load_json_object(layout.feature_contract)
     contract["features"][8]["unit"] = "kg/s"
 
-    with pytest.raises(SCRIPT_40.CalibratedFeatureError, match="contract has drifted"):
+    with pytest.raises(
+        SCRIPT_40.CalibratedFeatureError, match="contract has drifted"
+    ):
         SCRIPT_40._validate_b1b_contract(contract)

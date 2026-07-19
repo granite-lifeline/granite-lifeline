@@ -19,8 +19,10 @@ from data_layer.tests.feature_engineering_test import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-SCRIPT_PATH = REPO_ROOT / "data_layer/feature_engineering/src/30_window_feature_builder.py"
-SPEC = importlib.util.spec_from_file_location("script_30_under_test", SCRIPT_PATH)
+SCRIPT_PATH = REPO_ROOT / \
+    "data_layer/feature_engineering/src/30_window_feature_builder.py"
+SPEC = importlib.util.spec_from_file_location(
+    "script_30_under_test", SCRIPT_PATH)
 assert SPEC is not None and SPEC.loader is not None
 SCRIPT_30 = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = SCRIPT_30
@@ -56,11 +58,14 @@ def _run_upstream(layout: RunLayout) -> None:
     )
 
 
-def test_exact_window_lengths_formulas_and_null_prefixes(tmp_path: Path) -> None:
+def test_exact_window_lengths_formulas_and_null_prefixes(
+    tmp_path: Path,
+) -> None:
     layout = _window_layout(tmp_path, 241)
     _run_upstream(layout)
 
-    output = SCRIPT_30.build_window_features(SCRIPT_30.load_window_inputs(layout))
+    output = SCRIPT_30.build_window_features(
+        SCRIPT_30.load_window_inputs(layout))
 
     assert output["maf_integral_180s"].first_valid_index() == 181
     assert output.loc[181, "maf_integral_180s"] == pytest.approx(360.0)
@@ -80,7 +85,9 @@ def test_exact_window_lengths_formulas_and_null_prefixes(tmp_path: Path) -> None
     assert output.loc[59, "map_range_60s"] == pytest.approx(9.0)
 
 
-def test_invalid_quality_breaks_and_restarts_signal_windows(tmp_path: Path) -> None:
+def test_invalid_quality_breaks_and_restarts_signal_windows(
+    tmp_path: Path,
+) -> None:
     layout = _window_layout(tmp_path, 300)
     quality = pd.read_csv(layout.cleaning_quality)
     quality.loc[100, "maf_is_suspicious"] = True
@@ -88,7 +95,8 @@ def test_invalid_quality_breaks_and_restarts_signal_windows(tmp_path: Path) -> N
     quality.to_csv(layout.cleaning_quality, index=False)
     _run_upstream(layout)
 
-    output = SCRIPT_30.build_window_features(SCRIPT_30.load_window_inputs(layout))
+    output = SCRIPT_30.build_window_features(
+        SCRIPT_30.load_window_inputs(layout))
 
     assert pd.isna(output.loc[99, "maf_std_120s"])
     assert output.loc[100:219, "maf_std_120s"].isna().all()
@@ -98,12 +106,15 @@ def test_invalid_quality_breaks_and_restarts_signal_windows(tmp_path: Path) -> N
     assert output.loc[180, "ect_rate_180s"] == pytest.approx(60.0)
 
 
-def test_maf_integral_cannot_cross_engine_start_episode(tmp_path: Path) -> None:
+def test_maf_integral_cannot_cross_engine_start_episode(
+    tmp_path: Path,
+) -> None:
     rpm = [0.0, *([100.0] * 190), 0.0, *([100.0] * 200)]
     layout = _window_layout(tmp_path, len(rpm), rpm=rpm)
     _run_upstream(layout)
 
-    output = SCRIPT_30.build_window_features(SCRIPT_30.load_window_inputs(layout))
+    output = SCRIPT_30.build_window_features(
+        SCRIPT_30.load_window_inputs(layout))
 
     assert output.loc[181, "maf_integral_180s"] == pytest.approx(360.0)
     assert output.loc[191:371, "maf_integral_180s"].isna().all()
@@ -116,7 +127,8 @@ def test_segment_boundary_restarts_all_windows(tmp_path: Path) -> None:
     layout = _window_layout(tmp_path, rows, segments=segments)
     _run_upstream(layout)
 
-    output = SCRIPT_30.build_window_features(SCRIPT_30.load_window_inputs(layout))
+    output = SCRIPT_30.build_window_features(
+        SCRIPT_30.load_window_inputs(layout))
 
     assert output.loc[129, "speed_std_120s"] == pytest.approx(
         pd.Series(range(10, 130), dtype="float64").std(ddof=1)
@@ -129,7 +141,9 @@ def test_segment_boundary_restarts_all_windows(tmp_path: Path) -> None:
     assert output.loc[189, "map_range_60s"] == pytest.approx(9.0)
 
 
-def test_output_grain_manifest_and_upstream_checksum_enforcement(tmp_path: Path) -> None:
+def test_output_grain_manifest_and_upstream_checksum_enforcement(
+    tmp_path: Path,
+) -> None:
     layout = _window_layout(tmp_path, 241)
     _run_upstream(layout)
 
@@ -137,13 +151,15 @@ def test_output_grain_manifest_and_upstream_checksum_enforcement(tmp_path: Path)
         layout, creation_time_utc="2026-07-19T12:03:00Z"
     )
 
-    assert list(output.columns) == [*SCRIPT_30.KEY_COLUMNS, *SCRIPT_30.B3_COLUMNS]
+    assert list(output.columns) == [
+                *SCRIPT_30.KEY_COLUMNS, *SCRIPT_30.B3_COLUMNS]
     assert manifest["calibration_version"] == "not_applicable"
     assert [
         item["artifact_id"] for item in manifest["ordered_output_artifacts"]
     ] == ["window_features"]
     assert manifest["output_contract"]["row_count"] == 241
-    assert manifest["output_contract"]["ordered_columns"] == list(output.columns)
+    assert manifest["output_contract"]["ordered_columns"] == list(
+        output.columns)
     verify_manifest_artifacts(
         manifest, run_dir=layout.run_dir, repo_root=layout.repo_root
     )
@@ -158,10 +174,14 @@ def test_b3_contract_drift_is_rejected(tmp_path: Path) -> None:
     layout = RunLayout.for_run_id("script-30-contract", repo_root=tmp_path)
     layout.feature_contract.parent.mkdir(parents=True)
     layout.feature_contract.write_bytes(
-        (REPO_ROOT / "data_layer/contracts/feature_manifest.v1.json").read_bytes()
+        (
+            REPO_ROOT / "data_layer/contracts/feature_manifest.v1.json"
+        ).read_bytes()
     )
     contract = load_json_object(layout.feature_contract)
     contract["features"][16]["window_contract"]["endpoint_count"] = 180
 
-    with pytest.raises(SCRIPT_30.WindowFeatureError, match="contract has drifted"):
+    with pytest.raises(
+        SCRIPT_30.WindowFeatureError, match="contract has drifted"
+    ):
         SCRIPT_30._validate_b3_contract(contract)

@@ -20,10 +20,10 @@ PROJECT_ROOT = SCRIPT_PATH.parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from data_layer.pipeline_data.continuity import (
+from data_layer.pipeline_data.continuity import (  # noqa: E402
     build_continuity_blocks,
 )
-from data_layer.pipeline_data.manifests import (
+from data_layer.pipeline_data.manifests import (  # noqa: E402
     ArtifactDescriptor,
     ManifestError,
     build_stage_manifest,
@@ -32,7 +32,7 @@ from data_layer.pipeline_data.manifests import (
     validate_stage_manifest,
     write_json_atomic,
 )
-from data_layer.pipeline_data.paths import RunLayout
+from data_layer.pipeline_data.paths import RunLayout  # noqa: E402
 
 
 SCRIPT_VERSION = "1.0.0"
@@ -157,7 +157,8 @@ def _read_csv_strict(path: Path) -> pd.DataFrame:
         with path.open("r", encoding="utf-8-sig", newline="") as handle:
             header = next(csv.reader(handle), None)
     except (OSError, UnicodeError, csv.Error) as exc:
-        raise InputContractError(f"Cannot read CSV header from {path}: {exc}") from exc
+        raise InputContractError(
+            f"Cannot read CSV header from {path}: {exc}") from exc
     if not header:
         raise InputContractError(f"Input CSV has no header: {path}.")
     duplicates = sorted({name for name in header if header.count(name) > 1})
@@ -168,7 +169,8 @@ def _read_csv_strict(path: Path) -> pd.DataFrame:
     try:
         return pd.read_csv(path, low_memory=False)
     except (OSError, UnicodeError, pd.errors.ParserError) as exc:
-        raise InputContractError(f"Cannot parse input CSV {path}: {exc}") from exc
+        raise InputContractError(
+            f"Cannot parse input CSV {path}: {exc}") from exc
 
 
 def _require_columns(
@@ -190,7 +192,8 @@ def _normalize_timestamp(
     input_name: str,
 ) -> tuple[pd.Series, pd.Series]:
     if series.isna().any():
-        raise InputContractError(f"{input_name}.timestamp contains null values.")
+        raise InputContractError(
+            f"{input_name}.timestamp contains null values.")
     text = series.astype("string")
     invalid_format = ~text.str.fullmatch(ISO_8601_UTC_PATTERN)
     if invalid_format.any():
@@ -275,7 +278,9 @@ def _validate_feature_contract(contract: dict[str, Any]) -> None:
         for item in upstream.get("authoritative_inputs", [])
         if isinstance(item, dict)
     ]
-    if upstream.get("input_count") != 2 or received_authorities != expected_authorities:
+    input_count_ok = upstream.get("input_count") == 2
+    authorities_ok = received_authorities == expected_authorities
+    if not input_count_ok or not authorities_ok:
         raise InputContractError(
             "Feature contract must declare exactly the two frozen Script 00 "
             "authoritative inputs in order."
@@ -283,7 +288,8 @@ def _validate_feature_contract(contract: dict[str, Any]) -> None:
     if upstream.get("join_keys") != KEY_COLUMNS:
         raise InputContractError("Feature contract join keys have drifted.")
     if upstream.get("timestamp_normalization") != "UTC":
-        raise InputContractError("Feature contract timestamp normalization is not UTC.")
+        raise InputContractError(
+            "Feature contract timestamp normalization is not UTC.")
     for flag in (
         "one_to_one_key_equality_required",
         "input_sha256_required",
@@ -316,7 +322,8 @@ def _validate_feature_contract(contract: dict[str, Any]) -> None:
     if actual_keys != EXPECTED_KEY_CONTRACT:
         raise InputContractError("Frozen sample-key contract has drifted.")
     if actual_contexts != EXPECTED_CONTEXT_CONTRACT:
-        raise InputContractError("Frozen A-class context/raw contract has drifted.")
+        raise InputContractError(
+            "Frozen A-class context/raw contract has drifted.")
 
 
 def _validate_operating_input(
@@ -345,7 +352,8 @@ def _validate_operating_input(
         or row_numbers.lt(1).any()
     ):
         raise InputContractError(
-            "operating_condition_enriched.row_in_segment must be positive integers."
+            "operating_condition_enriched.row_in_segment must be "
+            "positive integers."
         )
     frame["row_in_segment"] = row_numbers.astype("int64")
 
@@ -356,7 +364,8 @@ def _validate_operating_input(
         nullable=False,
     )
     if not frame["dt_seconds"].eq(1.0).all():
-        raise InputContractError("Canonical 1 Hz input requires dt_seconds == 1.0.")
+        raise InputContractError(
+            "Canonical 1 Hz input requires dt_seconds == 1.0.")
     for signal in SIGNAL_COLUMNS:
         frame[signal] = _coerce_numeric(
             frame,
@@ -380,7 +389,9 @@ def _validate_operating_input(
     }
     for column, values_allowed in allowed.items():
         values = frame[column].astype("string")
-        if values.isna().any() or not set(values.unique()).issubset(values_allowed):
+        has_null = values.isna().any()
+        has_unsupported = not set(values.unique()).issubset(values_allowed)
+        if has_null or has_unsupported:
             raise InputContractError(
                 f"{input_name}.{column} contains null or unsupported values."
             )
@@ -390,7 +401,8 @@ def _validate_operating_input(
     child = frame["child_state"]
     expected_combined = thermal + "__" + child
     valid_operating_state = (
-        frame["operating_state"].astype("string").isin({"engine_off", "unknown"})
+        frame["operating_state"].astype(
+            "string").isin({"engine_off", "unknown"})
         | frame["operating_state"].astype("string").eq(expected_combined)
     )
     if not valid_operating_state.all():
@@ -400,10 +412,13 @@ def _validate_operating_input(
         )
     frame["operating_state"] = frame["operating_state"].astype("string")
 
-    allowed_flags = {"MISSING_ECT", "MISSING_MAF", "MISSING_RPM", "MISSING_SPEED"}
+    allowed_flags = {
+        "MISSING_ECT", "MISSING_MAF", "MISSING_RPM", "MISSING_SPEED",
+    }
     quality_flags = frame["condition_quality_flags"].astype("string")
     invalid_flags = quality_flags.isna() | ~quality_flags.map(
-        lambda value: value == "OK" or set(value.split("|")).issubset(allowed_flags)
+        lambda value: value == "OK" or set(
+            value.split("|")).issubset(allowed_flags)
     )
     if invalid_flags.any():
         raise InputContractError(
@@ -473,18 +488,23 @@ def _validate_quality_input(frame: pd.DataFrame) -> pd.DataFrame:
         )
     for column in ("source_sample_count", "observed_sensor_count"):
         values = pd.to_numeric(frame[column], errors="coerce")
-        if values.isna().any() or values.mod(1).ne(0).any() or values.lt(0).any():
+        is_non_integer = values.mod(1).ne(0).any()
+        is_negative = values.lt(0).any()
+        if values.isna().any() or is_non_integer or is_negative:
             raise InputContractError(
                 f"{input_name}.{column} must be non-negative integers."
             )
         frame[column] = values.astype("int64")
     if frame["observed_sensor_count"].gt(len(SIGNAL_COLUMNS)).any():
         raise InputContractError(
-            "cleaning_quality.observed_sensor_count exceeds the signal contract."
+            "cleaning_quality.observed_sensor_count exceeds the signal "
+            "contract."
         )
 
     aggregate_pairs = {
-        "is_imputed_any": [f"{signal}_is_imputed" for signal in SIGNAL_COLUMNS],
+        "is_imputed_any": [
+            f"{signal}_is_imputed" for signal in SIGNAL_COLUMNS
+        ],
         "is_suspicious_any": [
             f"{signal}_is_suspicious" for signal in SIGNAL_COLUMNS
         ],
@@ -496,7 +516,8 @@ def _validate_quality_input(frame: pd.DataFrame) -> pd.DataFrame:
         expected = frame[detail_columns].any(axis=1)
         if not frame[aggregate].equals(expected):
             raise InputContractError(
-                f"cleaning_quality.{aggregate} disagrees with per-signal flags."
+                f"cleaning_quality.{aggregate} disagrees with "
+                "per-signal flags."
             )
     return frame[QUALITY_COLUMNS]
 
@@ -507,8 +528,8 @@ def _reject_duplicate_keys(frame: pd.DataFrame, *, input_name: str) -> None:
     duplicate = frame.duplicated(KEY_COLUMNS, keep=False)
     if duplicate.any():
         raise InputContractError(
-            f"{input_name} contains {int(duplicate.sum())} rows with duplicate "
-            "sample keys."
+            f"{input_name} contains {int(duplicate.sum())} rows with "
+            "duplicate sample keys."
         )
 
 
@@ -521,8 +542,10 @@ def _validate_trip_and_segment_contract(
     canonical: pd.DataFrame,
     quality: pd.DataFrame,
 ) -> tuple[int, int, int]:
-    trip_to_source = quality.groupby("trip_id", sort=False)["source_file"].nunique()
-    source_to_trip = quality.groupby("source_file", sort=False)["trip_id"].nunique()
+    trip_to_source = quality.groupby("trip_id", sort=False)[
+                                     "source_file"].nunique()
+    source_to_trip = quality.groupby("source_file", sort=False)[
+                                     "trip_id"].nunique()
     if not trip_to_source.eq(1).all() or not source_to_trip.eq(1).all():
         raise InputContractError(
             "Trip/source-file identity must be strictly one-to-one."
@@ -539,9 +562,11 @@ def _validate_trip_and_segment_contract(
         trip_start_timestamp_utc=("timestamp", "min"),
         source_file=("source_file", "first"),
     )
-    extracted = trip_summary["trip_id"].str.extract(TRIP_ID_PATTERN, expand=False)
+    extracted = trip_summary["trip_id"].str.extract(
+        TRIP_ID_PATTERN, expand=False)
     if extracted.isna().any():
-        raise InputContractError("trip_id must use trip_<zero-padded ordinal> format.")
+        raise InputContractError(
+            "trip_id must use trip_<zero-padded ordinal> format.")
     trip_summary["ordinal"] = extracted.astype(int)
     expected_order = trip_summary.sort_values(
         ["trip_start_timestamp_utc", "source_file"], kind="stable"
@@ -549,12 +574,14 @@ def _validate_trip_and_segment_contract(
     expected_ordinals = list(range(1, len(expected_order) + 1))
     if expected_order["ordinal"].tolist() != expected_ordinals:
         raise InputContractError(
-            "trip_id assignment does not match chronological source-file order."
+            "trip_id assignment does not match chronological "
+            "source-file order."
         )
 
     segment_owner_count = canonical.groupby("segment_id")["trip_id"].nunique()
     if not segment_owner_count.eq(1).all():
-        raise InputContractError("A segment_id must belong to exactly one trip_id.")
+        raise InputContractError(
+            "A segment_id must belong to exactly one trip_id.")
     within = canonical.sort_values(
         ["trip_id", "segment_id", "row_in_segment"], kind="stable"
     ).copy()
@@ -600,7 +627,8 @@ def validate_authoritative_inputs(
     quality_raw = _read_csv_strict(run_layout.cleaning_quality)
     operating = _validate_operating_input(operating_raw)
     quality = _validate_quality_input(quality_raw)
-    _reject_duplicate_keys(operating, input_name="operating_condition_enriched")
+    _reject_duplicate_keys(
+        operating, input_name="operating_condition_enriched")
     _reject_duplicate_keys(quality, input_name="cleaning_quality")
 
     comparison = operating[KEY_COLUMNS].merge(
@@ -635,7 +663,8 @@ def validate_authoritative_inputs(
         sort=False,
     )
     if not canonical[KEY_COLUMNS].equals(quality_aligned[KEY_COLUMNS]):
-        raise InputContractError("One-to-one key alignment failed unexpectedly.")
+        raise InputContractError(
+            "One-to-one key alignment failed unexpectedly.")
 
     trip_count, segment_count, continuity_blocks = (
         _validate_trip_and_segment_contract(canonical, quality_aligned)
@@ -698,7 +727,8 @@ def run_input_contract_validation(
     quality_descriptor = _descriptor(
         run_layout.cleaning_quality,
         artifact_id="cleaning_quality",
-        manifest_path=run_layout.run_relative_posix(run_layout.cleaning_quality),
+        manifest_path=run_layout.run_relative_posix(
+            run_layout.cleaning_quality),
         path_base="run_dir",
     )
     source_dataset_identity = compute_source_dataset_identity(

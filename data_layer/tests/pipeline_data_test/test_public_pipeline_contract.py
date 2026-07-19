@@ -10,8 +10,8 @@ from data_layer.data_cleaning.src import data_cleaning
 from data_layer.data_cleaning.src.cleaning_core import load_config
 from data_layer.pipeline_data.manifests import load_json_object, sha256_file
 from data_layer.pipeline_data.paths import RunLayout
-from data_layer.tests.pipeline_data_test.test_upstream_run_layout_contract import (
-    _fixture_enriched,
+from data_layer.tests.pipeline_data_test import (
+    test_upstream_run_layout_contract as fixture_upstream,
 )
 
 
@@ -38,7 +38,7 @@ def test_public_pipeline_runs_all_online_stages_with_one_layout(
 ) -> None:
     config_path = _copy_pipeline_contracts(tmp_path)
     config = load_config(config_path)
-    enriched = _fixture_enriched(config, rows=12)
+    enriched = fixture_upstream._fixture_enriched(config, rows=12)
     enriched["trip_id"] = "trip_0001"
     enriched["segment_id"] = "trip_0001_seg_001"
     layout = RunLayout.for_run_id("public-pipeline-e2e", repo_root=tmp_path)
@@ -67,7 +67,10 @@ def test_public_pipeline_runs_all_online_stages_with_one_layout(
     assert sha256_file(layout.production_features) == first_hash
     assert first["feature_stage_ids"] == ["00", "10", "20", "30", "40", "41"]
     assert len(first["stage_manifests"]) == 8
-    assert all("90" not in item and "91" not in item for item in first["stage_manifests"])
+    assert all(
+        "90" not in item and "91" not in item
+        for item in first["stage_manifests"]
+    )
 
     expected_manifests = [
         (layout.cleaning_stage_manifest, "cleaning"),
@@ -88,7 +91,8 @@ def test_public_pipeline_runs_all_online_stages_with_one_layout(
     assert len(production.columns) == 46
     assert len(production) == len(enriched)
     assert production[keys].equals(
-        production.sort_values(keys, kind="stable").reset_index(drop=True)[keys]
+        production.sort_values(
+            keys, kind="stable").reset_index(drop=True)[keys]
     )
     assert production["schema_version"].eq("feature_schema.v1").all()
     assert production["calibration_version"].eq("calibration.v1").all()
