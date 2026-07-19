@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -13,21 +15,16 @@ BASE_DIR = Path(__file__).resolve().parent
 
 PROJECT_ROOT = BASE_DIR.parents[2]
 
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from data_layer.data_cleaning.src.cleaning_core import (  # noqa: E402
+    UTC_TIMESTAMP_FORMAT,
+)
+from data_layer.pipeline_data.paths import RunLayout  # noqa: E402
+
 CLEANING_DIR = PROJECT_ROOT / "data_layer" / "data_cleaning" / "src"
-PROCESSED_DATA_DIR = PROJECT_ROOT / "data" / "processed"
-
-
-DATA_PATH = PROCESSED_DATA_DIR / "cleaned_dataset.csv"
 CONFIG_PATH = CLEANING_DIR / "cleaning_config.yaml"
-
-ENRICHED_OUTPUT_PATH = BASE_DIR.parents / "operating_condition_enriched.csv"
-COUNTS_OUTPUT_PATH = (
-    BASE_DIR.parents / "operating_condition_counts_overall.csv"
-)
-SIGNAL_SUMMARY_OUTPUT_PATH = (
-    BASE_DIR.parents / "operating_condition_signal_summary.csv"
-)
-RULES_OUTPUT_PATH = BASE_DIR.parents / "operating_condition_rules.csv"
 
 KEY_COLUMNS = ["timestamp", "trip_id", "segment_id", "row_in_segment"]
 CORE_MISSING_COLUMNS = ["coolant_temp", "maf", "rpm", "speed"]
@@ -65,9 +62,9 @@ def load_config(path: Path) -> dict[str, Any]:
         return yaml.safe_load(f)
 
 
-def require_inputs() -> None:
+def require_inputs(data_path: Path, config_path: Path) -> None:
     # Check that inputs exist before running the calculation.
-    missing = [path for path in [DATA_PATH, CONFIG_PATH] if not path.exists()]
+    missing = [path for path in [data_path, config_path] if not path.exists()]
     if missing:
         raise FileNotFoundError(
             "Missing required input files: "
@@ -75,13 +72,15 @@ def require_inputs() -> None:
         )
 
 
-def load_cleaned_data(fields: dict[str, Any]) -> pd.DataFrame:
+def load_cleaned_data(
+    fields: dict[str, Any], data_path: Path
+) -> pd.DataFrame:
     # Read only the columns needed by the state machine and signal statistics.
     expected_signals = [
         signal for signal in fields if signal in SIGNAL_COLUMNS
     ]
     required_columns = [*KEY_COLUMNS, *expected_signals]
-    df = pd.read_csv(DATA_PATH, usecols=lambda col: col in required_columns)
+    df = pd.read_csv(data_path, usecols=lambda col: col in required_columns)
 
     missing_columns = [
         col for col in required_columns if col not in df.columns
@@ -632,9 +631,12 @@ def build_rules() -> pd.DataFrame:
 
 
 def write_outputs(
-    df: pd.DataFrame, fields: dict[str, Any]
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+    df: pd.DataFrame,
+    fields: dict[str, Any],
+    run_layout: RunLayout,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     # Output audit, distribution, signal-statistics, and rules tables.
+    run_layout.operating_conditions_dir.mkdir(parents=True, exist_ok=True)
     output_df = df.sort_values("_original_row_order").copy()
     enriched_columns = [
         *KEY_COLUMNS,
@@ -650,53 +652,120 @@ def write_outputs(
         "condition_quality_flags",
         "condition_confidence",
     ]
-    output_df[enriched_columns].to_csv(
-        ENRICHED_OUTPUT_PATH,
+    enriched_df = output_df[enriched_columns].copy()
+    enriched_df["timestamp"] = enriched_df["timestamp"].dt.strftime(
+        UTC_TIMESTAMP_FORMAT
+    )
+    enriched_df.to_csv(
+        run_layout.operating_condition_enriched,
         index=False,
-        encoding="utf-8-sig",
+        encoding="utf-8",
     )
 
     counts_df = build_counts(output_df)
-    counts_df.to_csv(COUNTS_OUTPUT_PATH, index=False, encoding="utf-8-sig")
+    counts_df.to_csv(
+        run_layout.operating_condition_counts,
+        index=False,
+        encoding="utf-8",
+    )
 
     signal_summary_df = build_signal_summary(output_df, fields)
     signal_summary_df.to_csv(
-        SIGNAL_SUMMARY_OUTPUT_PATH,
+        run_layout.operating_condition_signal_summary,
         index=False,
-        encoding="utf-8-sig",
+        encoding="utf-8",
     )
 
     rules_df = build_rules()
-    rules_df.to_csv(RULES_OUTPUT_PATH, index=False, encoding="utf-8-sig")
-    return counts_df, signal_summary_df
+    rules_df.to_csv(
+        run_layout.operating_condition_rules,
+        index=False,
+        encoding="utf-8",
+    )
+    return enriched_df, counts_df, signal_summary_df, rules_df
 
 
-def main() -> None:
-    require_inputs()
-    config = load_config(CONFIG_PATH)
+def run_operating_condition_analysis(
+    run_layout: RunLayout,
+    *,
+    config_path: Path = CONFIG_PATH,
+) -> tuple[pd.DataFrame, dict[str, Any]]:
+    """Generate all operating-condition outputs inside one explicit run."""
+
+    data_path = run_layout.cleaned_dataset
+    require_inputs(data_path, config_path)
+    config = load_config(config_path)
     fields = config["fields"]
 
-    df = load_cleaned_data(fields)
+    df = load_cleaned_data(fields, data_path)
     df = add_operating_conditions(df)
-    counts_df, signal_summary_df = write_outputs(df, fields)
+    enriched, counts_df, signal_summary_df, rules_df = write_outputs(
+        df, fields, run_layout
+    )
+
+    summary = {
+        "dataset": run_layout.run_relative_posix(data_path),
+        "rows": int(len(enriched)),
+        "enriched_csv": run_layout.run_relative_posix(
+            run_layout.operating_condition_enriched
+        ),
+        "counts_csv": run_layout.run_relative_posix(
+            run_layout.operating_condition_counts
+        ),
+        "signal_summary_csv": run_layout.run_relative_posix(
+            run_layout.operating_condition_signal_summary
+        ),
+        "rules_csv": run_layout.run_relative_posix(
+            run_layout.operating_condition_rules
+        ),
+        "counts_rows": int(len(counts_df)),
+        "signal_summary_rows": int(len(signal_summary_df)),
+        "rules_rows": int(len(rules_df)),
+    }
+    return enriched, summary
+
+
+def build_argument_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Generate operating-condition outputs for one Data Layer run."
+    )
+    parser.add_argument(
+        "--run-dir",
+        required=True,
+        help="Explicit run directory under data/processed/runs/<run_id>.",
+    )
+    parser.add_argument(
+        "--config",
+        default=str(CONFIG_PATH),
+        help="Path to the cleaning/field configuration file.",
+    )
+    return parser
+
+
+def main() -> int:
+    args = build_argument_parser().parse_args()
+    try:
+        run_layout = RunLayout.from_run_dir(
+            args.run_dir,
+            repo_root=PROJECT_ROOT,
+        )
+        _, summary = run_operating_condition_analysis(
+            run_layout,
+            config_path=Path(args.config).expanduser().resolve(),
+        )
+    except (FileNotFoundError, OSError, ValueError, KeyError) as exc:
+        print(json.dumps({"error": str(exc)}, ensure_ascii=False, indent=2))
+        return 1
 
     print(
         json.dumps(
-            {
-                "dataset": str(DATA_PATH),
-                "rows": int(len(df)),
-                "enriched_csv": str(ENRICHED_OUTPUT_PATH),
-                "counts_csv": str(COUNTS_OUTPUT_PATH),
-                "signal_summary_csv": str(SIGNAL_SUMMARY_OUTPUT_PATH),
-                "rules_csv": str(RULES_OUTPUT_PATH),
-                "counts_rows": int(len(counts_df)),
-                "signal_summary_rows": int(len(signal_summary_df)),
-            },
+            summary,
             ensure_ascii=False,
             indent=2,
         )
     )
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

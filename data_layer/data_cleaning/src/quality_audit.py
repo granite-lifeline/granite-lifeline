@@ -10,29 +10,38 @@ from typing import Any
 
 import pandas as pd
 
-from cleaning_core import (
-    LOGGER,
-    TIMESTAMP_FIELD,
-    UTC_TIMESTAMP_FORMAT,
-    CleaningError,
-    build_output_columns,
-    build_quality_output_columns,
-    load_config,
-)
-from project_paths import (
-    CONFIG_PATH,
-    ENRICHED_DATASET,
-    QUALITY_CSV,
-    REPORT_JSON,
-    display_path,
-)
-
-
-def _resolve_optional_path(
-        path: str | Path | None, default_path: Path
-) -> Path:
-    """Resolve a CLI override or fall back to the centralized project path."""
-    return Path(path).expanduser().resolve() if path else default_path
+try:  # Package import for tests and shared Data Layer entry points.
+    from .cleaning_core import (
+        LOGGER,
+        TIMESTAMP_FIELD,
+        UTC_TIMESTAMP_FORMAT,
+        CleaningError,
+        build_output_columns,
+        build_quality_output_columns,
+        load_config,
+    )
+    from .project_paths import (
+        CONFIG_PATH,
+        RunLayout,
+        build_run_layout,
+        display_path,
+    )
+except ImportError:  # Direct execution: python quality_audit.py ...
+    from cleaning_core import (
+        LOGGER,
+        TIMESTAMP_FIELD,
+        UTC_TIMESTAMP_FORMAT,
+        CleaningError,
+        build_output_columns,
+        build_quality_output_columns,
+        load_config,
+    )
+    from project_paths import (
+        CONFIG_PATH,
+        RunLayout,
+        build_run_layout,
+        display_path,
+    )
 
 
 def build_quality_report(
@@ -127,15 +136,13 @@ def build_quality_report(
 
 def run_quality_audit(
     config: dict[str, Any],
-    enriched_csv: str | Path | None = None,
-    quality_csv: str | Path | None = None,
-    report_path: str | Path | None = None,
+    run_layout: RunLayout,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     """Read enriched data, write quality report, and return quality table."""
     output_config = config["output"]
-    enriched_target = _resolve_optional_path(enriched_csv, ENRICHED_DATASET)
-    quality_target = _resolve_optional_path(quality_csv, QUALITY_CSV)
-    report_target = _resolve_optional_path(report_path, REPORT_JSON)
+    enriched_target = run_layout.cleaning_enriched
+    quality_target = run_layout.cleaning_quality
+    report_target = run_layout.cleaning_report
 
     if not enriched_target.exists():
         raise CleaningError(
@@ -183,16 +190,12 @@ def build_argument_parser() -> argparse.ArgumentParser:
         help="Path to the cleaning configuration file.",
     )
     parser.add_argument(
-        "--enriched-input",
-        help="Override the enriched intermediate CSV path.",
-    )
-    parser.add_argument(
-        "--quality-output",
-        help="Override the quality-audit CSV path.",
-    )
-    parser.add_argument(
-        "--report",
-        help="Override the JSON audit report path.",
+        "--run-dir",
+        required=True,
+        help=(
+            "Explicit run directory under data/processed/runs/<run_id>. "
+            "The enriched input and audit outputs stay inside this run."
+        ),
     )
     parser.add_argument(
         "--log-level",
@@ -211,12 +214,8 @@ def main() -> int:
     )
     try:
         config = load_config(args.config)
-        _, report = run_quality_audit(
-            config,
-            enriched_csv=args.enriched_input,
-            quality_csv=args.quality_output,
-            report_path=args.report,
-        )
+        run_layout = build_run_layout(args.run_dir)
+        _, report = run_quality_audit(config, run_layout)
     except (CleaningError, OSError, pd.errors.ParserError, KeyError) as exc:
         LOGGER.error("%s", exc)
         return 1
