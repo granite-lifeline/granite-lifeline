@@ -1,5 +1,15 @@
 """Shared contracts for Data Layer stage paths and manifests."""
 
+from .continuity import (
+    ContinuityContractError,
+    ContinuityResult,
+    build_continuity_blocks,
+    build_quality_valid_mask,
+    build_true_run_ids,
+    strict_elapsed_span_mask,
+    strict_event_neighborhood_mask,
+    strict_window_mask,
+)
 from .manifests import (
     ArtifactDescriptor,
     ManifestError,
@@ -32,6 +42,8 @@ __all__ = [
     "ArtifactDescriptor",
     "CALIBRATION_DIR",
     "CONTRACTS_DIR",
+    "ContinuityContractError",
+    "ContinuityResult",
     "DATA_DIR",
     "ManifestError",
     "ManifestValidationError",
@@ -42,12 +54,18 @@ __all__ = [
     "RUNS_DIR",
     "RunLayout",
     "build_stage_manifest",
+    "build_continuity_blocks",
+    "build_quality_valid_mask",
+    "build_true_run_ids",
     "compute_source_dataset_identity",
     "load_json_object",
     "ordered_column_contract_from_feature_manifest",
     "repo_relative_posix",
     "resolve_repo_path",
     "sha256_file",
+    "strict_elapsed_span_mask",
+    "strict_event_neighborhood_mask",
+    "strict_window_mask",
     "validate_ordered_column_contract",
     "validate_stage_manifest",
     "verify_manifest_artifacts",
