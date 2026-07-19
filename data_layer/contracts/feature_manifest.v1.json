@@ -1,17 +1,50 @@
 {
   "manifest_type": "production_feature_contract",
-  "manifest_version": "1.0.0",
+  "manifest_version": "1.1.0",
   "schema_version": "feature_schema.v1",
   "status": "frozen",
-  "frozen_at_utc": "2026-07-19T00:41:05Z",
+  "frozen_at_utc": "2026-07-19T09:45:32Z",
   "authoritative_contract": "data_layer/feature_engineering/feature_schema.md",
   "table": {
     "name": "production_features",
     "format": "csv",
     "grain": "one row per validated sample",
     "ordered_columns": {
-      "keys_then_features_then_provenance": true,
+      "keys_then_context_then_features_then_provenance": true,
       "unexpected_columns_forbidden": true
+    },
+    "trip_cycle_contract": {
+      "trip_definition": "one discovered raw KIT CSV file equals one trip/drive cycle",
+      "source_file_merge_forbidden": true,
+      "trip_start_timestamp_utc": "minimum valid source timestamp after combining filename date with in-file time, applying the configured source timezone, and converting to UTC",
+      "source_file_order": [
+        "trip_start_timestamp_utc ascending",
+        "source_filename ascending"
+      ],
+      "trip_id_assignment": "1-based ordinal in source_file_order, formatted as trip_<zero-padded ordinal> with minimum width 4",
+      "deterministic_for_fixed_source_dataset_identity": true,
+      "filesystem_discovery_order_must_not_affect_assignment": true,
+      "dataset_membership_change_may_renumber_trips": true
+    },
+    "row_order_contract": {
+      "timestamp_normalization": "UTC",
+      "stable_sort_ascending": [
+        "timestamp",
+        "trip_id",
+        "segment_id",
+        "row_in_segment"
+      ],
+      "timestamp_is_primary_global_chronological_key": true,
+      "remaining_keys_are_deterministic_tie_breakers": true,
+      "within_trip_segment": {
+        "row_in_segment": "1-based and strictly increasing",
+        "timestamp": "strictly increasing at canonical 1 Hz cadence"
+      },
+      "join_order_must_be_explicitly_restored": true,
+      "windows_must_not_cross": [
+        "trip_id",
+        "segment_id"
+      ]
     }
   },
   "sample_keys": [
@@ -25,7 +58,8 @@
       "name": "trip_id",
       "dtype": "string",
       "unit": "identifier",
-      "nullable": false
+      "nullable": false,
+      "definition": "Chronological drive-cycle identifier assigned by table.trip_cycle_contract."
     },
     {
       "name": "segment_id",
@@ -38,6 +72,170 @@
       "dtype": "int64",
       "unit": "1-based row index",
       "nullable": false
+    }
+  ],
+  "context_fields": [
+    {
+      "position": 1,
+      "name": "dt_seconds",
+      "class": "A1",
+      "dtype": "float64",
+      "unit": "s",
+      "nullable": false,
+      "owner_pipeline": "operating_condition_analysis.py",
+      "definition": "Within-segment elapsed seconds emitted by the canonical 1 Hz operating-condition table."
+    },
+    {
+      "position": 2,
+      "name": "thermal_state",
+      "class": "A4",
+      "dtype": "string",
+      "unit": "categorical",
+      "nullable": false,
+      "owner_pipeline": "operating_condition_analysis.py",
+      "allowed_values": ["engine_off", "warmup", "post_warmup", "unknown"]
+    },
+    {
+      "position": 3,
+      "name": "child_state",
+      "class": "A4",
+      "dtype": "string",
+      "unit": "categorical",
+      "nullable": false,
+      "owner_pipeline": "operating_condition_analysis.py",
+      "allowed_values": ["inactive_engine_off", "idle", "high_load", "acceleration", "deceleration", "steady_driving", "unknown"]
+    },
+    {
+      "position": 4,
+      "name": "operating_state",
+      "class": "A4",
+      "dtype": "string",
+      "unit": "categorical",
+      "nullable": false,
+      "owner_pipeline": "operating_condition_analysis.py",
+      "definition": "engine_off, unknown, or the known running thermal_state and child_state joined by a double underscore."
+    },
+    {
+      "position": 5,
+      "name": "condition_confidence",
+      "class": "A4",
+      "dtype": "string",
+      "unit": "categorical",
+      "nullable": false,
+      "owner_pipeline": "operating_condition_analysis.py",
+      "allowed_values": ["high", "medium", "low"]
+    },
+    {
+      "position": 6,
+      "name": "condition_quality_flags",
+      "class": "A4",
+      "dtype": "string",
+      "unit": "categorical_flags",
+      "nullable": false,
+      "owner_pipeline": "operating_condition_analysis.py",
+      "definition": "OK or a pipe-delimited set drawn from MISSING_ECT, MISSING_MAF, MISSING_RPM, and MISSING_SPEED."
+    },
+    {
+      "position": 7,
+      "name": "coolant_temp",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "degC",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    },
+    {
+      "position": 8,
+      "name": "map",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "kPa",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    },
+    {
+      "position": 9,
+      "name": "rpm",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "rpm",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    },
+    {
+      "position": 10,
+      "name": "speed",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "km/h",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    },
+    {
+      "position": 11,
+      "name": "intake_temp",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "degC",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    },
+    {
+      "position": 12,
+      "name": "maf",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "g/s",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    },
+    {
+      "position": 13,
+      "name": "tps",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "percent",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "consumers": ["Model Layer raw channel"],
+      "proxy_verdict_consumer": null,
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    },
+    {
+      "position": 14,
+      "name": "ambient_temp",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "degC",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    },
+    {
+      "position": 15,
+      "name": "accel_pedal_d",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "percent",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    },
+    {
+      "position": 16,
+      "name": "accel_pedal_e",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "percent",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
     }
   ],
   "features": [
@@ -354,11 +552,13 @@
     }
   ],
   "global_null_policy": {
-    "imputation": "forbidden",
+    "assembler_imputation": "forbidden; delivered A-class values are passed through exactly from validated upstream outputs",
     "quality_invalid_source": "null feature",
     "incomplete_window": "null feature",
     "out_of_domain_calibrated_transform": "handled exactly as declared by the frozen registry",
     "missing_required_table_column_key_or_unit": "abort stage as a contract failure"
   },
-  "feature_count": 24
+  "context_field_count": 16,
+  "feature_count": 24,
+  "total_column_count": 46
 }
