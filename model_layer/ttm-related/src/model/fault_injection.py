@@ -1,8 +1,9 @@
 """
 Synthetic fault injection for Story 7 detector evaluation (Lucca).
 
-Perturbs healthy Group 1 `feature_dataset.csv` segments with the
-three agreed scenarios (user_stories.md Story 7):
+Perturbs healthy Group 1 schema v1 `production_features.csv`
+segments with the three Model-Layer-scope scenarios (user_stories.md
+Story 7, 2026-07-20 schema v1 adaptation):
 
 - `inject_cooling_fault`: `coolant_temp + 15 degC` — the Data
   Layer's Stage 4 cooling design, "sustained positive offset above
@@ -23,27 +24,48 @@ three agreed scenarios (user_stories.md Story 7):
 Injection happens at the raw-sensor level and is then propagated
 into the engineered columns that are exact functions of the
 perturbed signal, because Group 1 computes those columns from the
-raw signals — a frame with a faulty `maf` but a healthy
-`maf_map_cohesion` could never come out of their pipeline.
-Verified against the delivered dataset (reconstruction error
-<= 5e-7):
+raw signals — a frame with a faulty `coolant_temp` but an unchanged
+`ect_rate_180s`, or a faulty `maf`/`map` but an unchanged
+`speed_density_maf_residual`, could never come out of their
+pipeline. Schema v1 dropped `maf_map_cohesion`/`coolant_slope`
+entirely (they are not delivered columns any more; see
+`data_layer/contracts/feature_manifest.v1.json`), replaced by:
 
-    maf_derived_air_load_raw = 60 * maf / rpm
-    map_derived_air_load_raw = map * rpm / (intake_temp + 273.15)
-    maf_map_cohesion = |z(maf_load) - z(map_load)|
+    ect_rate_180s
+        = (coolant_temp[t] - coolant_temp[t-180s]) / 3
+          (degC/min; matches Group 1's
+          30_window_feature_builder.py)
+    speed_density_maf_residual
+        = maf - (intercept + sum(coefficient[input]
+          * clipped_input[input]))
+          over inputs [map_derived_air_load_raw, map, rpm,
+          intake_temp], coefficients/intercept/clipping bounds from
+          the frozen data_layer/calibration/calibration_registry.v1.json
+          `feature_transforms.speed_density_maf`.
+          `map_derived_air_load_raw = map * rpm / (intake_temp +
+          273.15)` is a documented "hidden_intermediate" of that
+          transform, not itself a schema v1 column, and is computed
+          inline at recompute time.
 
-with z-score parameters published in feature_baselines.json
-(`standardization_parameters.maf_map_cohesion`). Both intermediates
-are linear in the perturbed signal, so a gain on `maf`/`map` is a
-gain on the corresponding air load, and cohesion is recomputed from
-the scaled loads. Other engineered columns (`coolant_slope`,
-`map_slope`, `speed_density_maf_residual`, ...) are left as
-delivered: the detector does not score them and a constant
-offset/gain barely changes a slope.
+Both recomputes are linear/near-linear in the perturbed signal, so a
+step offset on `coolant_temp` moves `ect_rate_180s` and a gain on
+`maf`/`map` moves `speed_density_maf_residual`, matching what
+`kit_residual_detector.py`'s `calculate_risk()` actually scores on
+schema v1. Recomputed columns keep the delivered NaN mask (policy
+NaNs stay NaN).
 
-The pending-three-types scenarios (user_stories.md Story 7,
-proxy_support.md section 4-6 Stage 4 TBD-1) follow the same
-raw-signal + exact-propagation approach:
+The three pending-type scenarios below (user_stories.md Story 7,
+proxy_support.md section 4-6 Stage 4 TBD-1) are **not** Model-Layer
+scope any more (Group 1's own decision pipeline now owns that DTC
+logic, see the 2026-07-20 Story 7 scope note) and were **not**
+migrated to schema v1 — they are kept only as frozen historical
+reference pending their formal retirement from the active sweep
+(GL-322). They still recompute the retired `maf_map_cohesion`/
+`speed_density_maf_residual`-via-`feature_baselines.json` machinery
+below, and `inject_idle_speed_fault` reads an `idle_flag` column
+that schema v1 never had — none of the three can run against schema
+v1 data, on top of `feature_baselines.json` itself no longer being
+delivered:
 
 - `inject_intake_air_temp_fault`: `intake_temp` frozen at its
   fault-onset value (stuck IAT sensor, F1). Ground truth:
@@ -61,25 +83,27 @@ raw-signal + exact-propagation approach:
   delivered. Ground truth:
   `idle_speed_control_or_surge_degradation`.
 
-Because Ray's pending-type scoring reads the engineered columns
-these signals feed, the same "could never come out of Group 1's
-pipeline" argument applies. Additional propagation formulas
-verified on the delivered dataset (reconstruction error <= 5e-7):
+Additional propagation formulas for the frame above, verified on the
+pre-migration delivered dataset (reconstruction error <= 5e-7):
 
+    maf_derived_air_load_raw = 60 * maf / rpm
+    map_derived_air_load_raw = map * rpm / (intake_temp + 273.15)
+    maf_map_cohesion = |z(maf_load) - z(map_load)|
+        (z-score parameters published in feature_baselines.json
+        `standardization_parameters.maf_map_cohesion`)
     intake_ambient_delta = intake_temp - ambient_temp
     <sig>_slope          = diff(<sig>) / dt_seconds  (per segment)
-    speed_density_maf_residual
+    speed_density_maf_residual (pre-migration form)
         = maf - speed_density_model(map_load, map, rpm, intake_temp)
           (linear regression published in feature_baselines.json
           `models.speed_density_model`; inputs clipped to its
           winsorize_bounds before prediction)
-    idle_rpm_stability
-        = rolling std (30 samples, min_periods=1) of rpm restricted
-          to idle rows, reported on idle rows only
 
-Recomputed columns keep the delivered NaN mask (policy NaNs stay
-NaN), and recomputation on unaffected rows reproduces the
-delivered values to within the error above.
+`map_slope` and `idle_rpm_stability` are not schema v1 columns
+either (`map_range_60s` is the nearest available MAP-stability
+signal); their recompute helpers were dropped from this module, and
+the two lines above are no longer propagated inside
+`inject_map_plausibility_fault`/`inject_idle_speed_fault`.
 """
 
 from __future__ import annotations
@@ -105,10 +129,6 @@ IDLE_OFFSET_RPM = 250.0
 IDLE_OSC_AMPLITUDE_RPM = 100.0
 IDLE_OSC_PERIOD_S = 8.0
 
-# Group 1's idle_rpm_stability window: 30-sample rolling std of rpm
-# restricted to idle rows (reconstruction verified <= 5e-7).
-IDLE_STABILITY_WINDOW_ROWS = 30
-
 KELVIN_OFFSET = 273.15
 
 SPEED_DENSITY_INPUTS = [
@@ -118,10 +138,23 @@ SPEED_DENSITY_INPUTS = [
     "intake_temp",
 ]
 
+# ect_rate_180s = (coolant_temp[t] - coolant_temp[t-180s]) / 3,
+# matching Group 1's 30_window_feature_builder.py at 1 Hz sampling.
+ECT_RATE_WINDOW_ROWS = 180
+ECT_RATE_DIVISOR_MIN = 3.0
+
 # Same repo-root-relative convention as the detector's
-# DEFAULT_INPUT_CSV.
+# DEFAULT_INPUT_CSV. Retained for the pre-migration (non-schema-v1)
+# functions below; feature_baselines.json is no longer delivered.
 DEFAULT_BASELINES_JSON = Path(
     "data_layer/feature_engineering/feature_baselines.json"
+)
+
+# Schema v1's frozen calibration registry — replaces
+# feature_baselines.json as the source of the speed-density
+# regression used by the active scenarios.
+DEFAULT_CALIBRATION_REGISTRY = Path(
+    "data_layer/calibration/calibration_registry.v1.json"
 )
 
 MAF_LOAD = "maf_derived_air_load_raw"
@@ -143,6 +176,34 @@ def load_cohesion_params(
     }
 
 
+def load_speed_density_transform(
+    path: Path = DEFAULT_CALIBRATION_REGISTRY,
+) -> dict[str, object]:
+    """Load the schema v1 speed-density MAF regression from the
+    frozen calibration registry
+    (`feature_transforms.speed_density_maf`): coefficients,
+    intercept, ordered inputs, and the prediction-clipping bounds
+    applied before scoring. `map_derived_air_load_raw` is a
+    documented hidden intermediate (`rpm * map / (intake_temp +
+    273.15)`), not a delivered column — it is computed inline at
+    recompute time, never written to the frame."""
+    with open(path) as handle:
+        registry = json.load(handle)
+    transform = registry["feature_transforms"]["speed_density_maf"]
+    return {
+        "coefficients": dict(transform["coefficients"]),
+        "intercept": float(transform["intercept"]),
+        "ordered_input_features": list(
+            transform["ordered_input_features"]
+        ),
+        "prediction_clipping_bounds": {
+            name: dict(bounds)
+            for name, bounds in
+            transform["prediction_clipping_bounds"].items()
+        },
+    }
+
+
 def inject_cooling_fault(
     df: pd.DataFrame,
     start_row: int = 0,
@@ -151,42 +212,54 @@ def inject_cooling_fault(
     """Sustained positive coolant offset from ``start_row`` on.
 
     Adds ``offset_c`` to `coolant_temp` and, consistently, to
-    `coolant_ambient_delta` (= coolant_temp - ambient_temp).
+    `coolant_ambient_delta` (= coolant_temp - ambient_temp) and
+    `ect_rate_180s` (schema v1's warm-rate signal, replacing the
+    retired `coolant_slope`; consumed by proxy rule 1-S3 and by the
+    detector's cooling score, which gates on `coolant_temp > 85` and
+    scores `ect_rate_180s` against a `[2, 8] degC/min` band).
     Returns a copy; the input frame is not modified.
     """
     injected = df.copy()
     rows = injected.index[start_row:]
+    # Schema v1 delivers coolant_temp as int64 (whole-degree
+    # readings); upcast before adding a fractional offset, or a
+    # non-integer offset_c raises on assignment.
+    injected["coolant_temp"] = injected["coolant_temp"].astype(float)
     injected.loc[rows, "coolant_temp"] += offset_c
     if "coolant_ambient_delta" in injected.columns:
         injected.loc[rows, "coolant_ambient_delta"] += offset_c
+    if "ect_rate_180s" in injected.columns:
+        recompute_ect_rate_180s(injected, rows)
     return injected
 
 
 def inject_intake_maf_fault(
     df: pd.DataFrame,
     variant: str,
-    cohesion_params: dict[str, dict[str, float]],
+    transform: dict[str, object],
     start_row: int = 0,
     gain: float | None = None,
 ) -> pd.DataFrame:
     """Air-intake gain fault from ``start_row`` on.
 
-    ``variant="low_maf"``: `maf` (and its air load) scaled by
-    ``gain`` (default MAF_GAIN = 0.7).
-    ``variant="map_bias"``: `map` (and its air load) scaled by
-    ``gain`` (default MAP_GAIN = 1.25).
+    ``variant="low_maf"``: `maf` scaled by ``gain`` (default
+    MAF_GAIN = 0.7).
+    ``variant="map_bias"``: `map` scaled by ``gain`` (default
+    MAP_GAIN = 1.25).
 
-    `maf_map_cohesion` is recomputed on the affected rows from the
-    scaled air loads with ``cohesion_params`` (see
-    ``load_cohesion_params``). Policy NaNs propagate: a NaN input
-    cell stays NaN in the signal, its air load, and cohesion.
-    Returns a copy; the input frame is not modified.
+    `speed_density_maf_residual` is recomputed on the affected rows
+    per the frozen calibration registry's speed-density regression
+    (``transform``, see ``load_speed_density_transform``) — this
+    replaces the retired `maf_map_cohesion` z-score diagnostic,
+    which is not a schema v1 column. Policy NaNs propagate: a NaN
+    input cell stays NaN in the signal and in the recomputed
+    residual. Returns a copy; the input frame is not modified.
     """
     if variant == "low_maf":
-        signal, load = "maf", MAF_LOAD
+        signal = "maf"
         gain = MAF_GAIN if gain is None else gain
     elif variant == "map_bias":
-        signal, load = "map", MAP_LOAD
+        signal = "map"
         gain = MAP_GAIN if gain is None else gain
     else:
         raise ValueError(
@@ -196,12 +269,13 @@ def inject_intake_maf_fault(
 
     injected = df.copy()
     rows = injected.index[start_row:]
+    # Schema v1 delivers both maf and map as columns that may be
+    # int64 (map's raw readings are whole kPa); upcast before
+    # scaling by a fractional gain, or MAP_GAIN=1.25 raises on
+    # assignment.
+    injected[signal] = injected[signal].astype(float)
     injected.loc[rows, signal] *= gain
-    injected.loc[rows, load] *= gain
-
-    z_maf = zscore(injected.loc[rows, MAF_LOAD], cohesion_params[MAF_LOAD])
-    z_map = zscore(injected.loc[rows, MAP_LOAD], cohesion_params[MAP_LOAD])
-    injected.loc[rows, "maf_map_cohesion"] = (z_maf - z_map).abs()
+    recompute_speed_density_maf_residual(injected, rows, transform)
     return injected
 
 
@@ -257,6 +331,56 @@ def recompute_slope(
     masked_assign(df, rows, target, slope.loc[rows])
 
 
+def recompute_ect_rate_180s(df: pd.DataFrame, rows: pd.Index) -> None:
+    """Recompute `ect_rate_180s` = (coolant_temp[t] -
+    coolant_temp[t-180s]) / 3 on ``rows``, matching Group 1's
+    30_window_feature_builder.py at 1 Hz sampling (a 180-row
+    trailing shift). Rows within the first 180 samples of the
+    segment have no full window and keep their delivered value
+    (masked_assign preserves the delivered NaN there)."""
+    rate = (
+        df["coolant_temp"] - df["coolant_temp"].shift(
+            ECT_RATE_WINDOW_ROWS
+        )
+    ) / ECT_RATE_DIVISOR_MIN
+    masked_assign(df, rows, "ect_rate_180s", rate.loc[rows])
+
+
+def recompute_speed_density_maf_residual(
+    df: pd.DataFrame,
+    rows: pd.Index,
+    transform: dict[str, object],
+) -> None:
+    """Recompute `speed_density_maf_residual` on ``rows`` per the
+    frozen calibration registry: `maf - (intercept +
+    sum(coefficient * clipped_input))`, where
+    `map_derived_air_load_raw` is computed inline as a hidden
+    intermediate (not a schema v1 column) — matches Group 1's
+    40_calibrated_feature_builder.py."""
+    sub = df.loc[rows]
+    raw_load = (
+        sub["map"] * sub["rpm"] / (sub["intake_temp"] + KELVIN_OFFSET)
+    )
+    model_inputs = {
+        "map_derived_air_load_raw": raw_load,
+        "map": sub["map"],
+        "rpm": sub["rpm"],
+        "intake_temp": sub["intake_temp"],
+    }
+    coefficients = transform["coefficients"]
+    bounds = transform["prediction_clipping_bounds"]
+    predicted = pd.Series(
+        float(transform["intercept"]), index=rows, dtype=float
+    )
+    for name in transform["ordered_input_features"]:
+        clipped = model_inputs[name].clip(
+            bounds[name]["lower"], bounds[name]["upper"]
+        )
+        predicted = predicted + coefficients[name] * clipped
+    residual = sub["maf"] - predicted
+    masked_assign(df, rows, "speed_density_maf_residual", residual)
+
+
 def recompute_maf_air_load(df: pd.DataFrame, rows: pd.Index) -> None:
     sub = df.loc[rows]
     masked_assign(df, rows, MAF_LOAD, 60.0 * sub["maf"] / sub["rpm"])
@@ -301,20 +425,6 @@ def recompute_speed_density_residual(
         predicted = predicted + coefficients[name] * clipped
     residual = df.loc[rows, "maf"] - predicted
     masked_assign(df, rows, "speed_density_maf_residual", residual)
-
-
-def recompute_idle_rpm_stability(
-    df: pd.DataFrame, rows: pd.Index
-) -> None:
-    """Rolling std of rpm restricted to idle rows (Group 1's
-    delivered definition), reassigned on ``rows`` only — stability
-    at a row depends on the trailing window, so rows before the
-    fault onset are unaffected."""
-    idle_rpm = df["rpm"].where(df["idle_flag"] == 1)
-    stability = idle_rpm.rolling(
-        IDLE_STABILITY_WINDOW_ROWS, min_periods=1
-    ).std()
-    masked_assign(df, rows, "idle_rpm_stability", stability.loc[rows])
 
 
 def frozen_value_at(df: pd.DataFrame, signal: str, start_row: int):
@@ -378,10 +488,10 @@ def inject_map_plausibility_fault(
     cohesion-attribution scenario.
 
     `map` is held at its ``start_row`` value; NaN cells stay NaN.
-    Propagated: `map_slope` (0 inside the frozen region),
-    `map_derived_air_load_raw`, `maf_map_cohesion`,
-    `speed_density_maf_residual`. Returns a copy; the input frame
-    is not modified.
+    Propagated: `map_derived_air_load_raw`, `maf_map_cohesion`,
+    `speed_density_maf_residual`. (`map_slope` is not a schema v1
+    column and is no longer propagated here.) Returns a copy; the
+    input frame is not modified.
     """
     injected = df.copy()
     rows = injected.index[start_row:]
@@ -389,7 +499,6 @@ def inject_map_plausibility_fault(
 
     values = injected.loc[rows, "map"]
     injected.loc[rows, "map"] = values.where(values.isna(), frozen)
-    recompute_slope(injected, "map", "map_slope", rows)
     recompute_map_air_load(injected, rows)
     recompute_cohesion(injected, rows, cohesion_params)
     recompute_speed_density_residual(injected, rows, sd_model)
@@ -412,11 +521,11 @@ def inject_idle_speed_fault(
     The offset + sine is applied to rows with `idle_flag == 1`
     only: the vehicle is still genuinely idling, so `idle_flag`
     and `operating_state` stay as delivered. Propagated:
-    `rpm_slope`, `idle_rpm_stability`,
-    `maf_derived_air_load_raw` (nonlinear in `rpm` — recomputed),
-    `map_derived_air_load_raw`, `maf_map_cohesion`,
-    `speed_density_maf_residual`. Returns a copy; the input frame
-    is not modified.
+    `rpm_slope`, `maf_derived_air_load_raw` (nonlinear in `rpm` —
+    recomputed), `map_derived_air_load_raw`, `maf_map_cohesion`,
+    `speed_density_maf_residual`. (`idle_rpm_stability` is not a
+    schema v1 column and is no longer propagated here.) Returns a
+    copy; the input frame is not modified.
     """
     injected = df.copy()
     rows = injected.index[start_row:]
@@ -432,7 +541,6 @@ def inject_idle_speed_fault(
     injected.loc[idle_rows, "rpm"] += wave.loc[idle_rows]
 
     recompute_slope(injected, "rpm", "rpm_slope", rows)
-    recompute_idle_rpm_stability(injected, rows)
     recompute_maf_air_load(injected, idle_rows)
     recompute_map_air_load(injected, idle_rows)
     recompute_cohesion(injected, idle_rows, cohesion_params)

@@ -1,11 +1,11 @@
 """
 Zero-shot KIT residual detector using IBM Granite TTM.
 
-Consumes the Data Layer's feature-engineered dataset
-(`data_layer/feature_engineering/feature_dataset.csv`,
-INTERFACE.md Section 1) directly: raw signals and engineered
-features are Group 1's columns, no internal feature computation.
-Pipeline: feature CSV -> segment-safe window -> TTM forecast ->
+Consumes the Data Layer's production feature handoff
+(`production_features.csv`, INTERFACE.md v0.14 / feature_schema.v1)
+directly: raw signals and production features are Data Layer
+columns, no internal feature computation.
+Pipeline: production feature CSV -> segment-safe window -> TTM forecast ->
 residuals -> interface JSON.
 
 Run from the repository root:
@@ -13,13 +13,14 @@ Run from the repository root:
 
 Optionally pass a specific feature CSV and segment:
     .venv/bin/python ttm-related/src/model/kit_residual_detector.py \
-        path/to/feature_dataset.csv --segment-id trip_0001_seg_001
+        path/to/production_features.csv --segment-id trip_0001_seg_001
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -30,25 +31,33 @@ from tsfm_public.toolkit.get_model import get_model
 
 try:
     from model.input_validation import (
-        GROUP1_REQUIRED_COLUMNS,
+        PRODUCTION_FEATURE_REQUIRED_COLUMNS,
         PLAUSIBLE_RANGES,
         validate_required_columns,
         validate_sensor_ranges,
     )
+    from model.risk_history import (
+        DEFAULT_HISTORY_PATH,
+        append_history,
+    )
     from model.validate_output import validate_output
 except ImportError:  # direct script run: src/ not on sys.path
     from input_validation import (
-        GROUP1_REQUIRED_COLUMNS,
+        PRODUCTION_FEATURE_REQUIRED_COLUMNS,
         PLAUSIBLE_RANGES,
         validate_required_columns,
         validate_sensor_ranges,
+    )
+    from risk_history import (
+        DEFAULT_HISTORY_PATH,
+        append_history,
     )
     from validate_output import validate_output
 
 
 MODEL_PATH = "ibm-granite/granite-timeseries-ttm-r2"
 DEFAULT_INPUT_CSV = Path(
-    "data_layer/feature_engineering/feature_dataset.csv"
+    "data_layer/tests/fixtures/production_features.v1.fixture.csv"
 )
 DEFAULT_CONTEXT_LENGTH = 512
 DEFAULT_PREDICTION_LENGTH = 96
@@ -61,7 +70,7 @@ MODEL_SIGNALS = ["rpm", "speed", "coolant_temp", "map", "maf", "tps"]
 
 # Non-numeric identity/condition columns (INTERFACE.md 1.1); every
 # other required Group 1 column must be numeric.
-GROUP1_STRING_COLUMNS = {
+PRODUCTION_FEATURE_STRING_COLUMNS = {
     "timestamp",
     "trip_id",
     "segment_id",
@@ -70,17 +79,20 @@ GROUP1_STRING_COLUMNS = {
     "operating_state",
     "condition_confidence",
     "condition_quality_flags",
+    "engine_start_episode_id",
+    "schema_version",
+    "calibration_version",
 }
-GROUP1_NUMERIC_COLUMNS = [
+PRODUCTION_FEATURE_NUMERIC_COLUMNS = [
     column
-    for column in GROUP1_REQUIRED_COLUMNS
-    if column not in GROUP1_STRING_COLUMNS
+    for column in PRODUCTION_FEATURE_REQUIRED_COLUMNS
+    if column not in PRODUCTION_FEATURE_STRING_COLUMNS
 ]
 
 # Healthy reference ranges. Raw-signal ranges come from the Story 1
 # baseline; ranges for the delivered engineered features (incl. the
 # pending anomaly types' key signals) are healthy 5th-95th
-# percentiles measured on `feature_dataset.csv` (2026-07-13).
+# percentiles measured on delivered Data Layer feature handoffs.
 REFERENCE_RANGES = {
     "coolant_temp": [90, 95],
     "map": [36, 237],
@@ -91,19 +103,16 @@ REFERENCE_RANGES = {
     "accel_pedal_d": [0, 100],
     "accel_pedal_e": [0, 100],
     "accel_pedal_channel_delta": [0, 10],
-    # Healthy coolant plateaus below a 2 degC/min sustained rise
-    # (INTERFACE.md 2.4) = 0.0333 degC/s in the delivered unit.
-    "coolant_slope": [0, 0.0333],
-    "coolant_stability": [0, 2],
-    # Healthy 96-row window medians reach 2.50 (see calculate_risk).
-    "maf_map_cohesion": [0.0, 2.6],
+    "ect_rate_180s": [0, 2],
     "intake_temp": [-3, 41],
     "ambient_temp": [-7, 25],
     "intake_ambient_delta": [0, 20],
-    "map_slope": [-14, 16],
-    "idle_flag": [0, 1],
-    "idle_rpm_stability": [0, 90],
+    "speed_density_maf_residual": [-20, 20],
     "rpm_slope": [-120, 135],
+    "pedal_mapping_residual": [-10, 10],
+    "maf_integral_180s": [0, 2500],
+    "intake_temp_stability": [0, 5],
+    "map_range_60s": [0, 80],
 }
 
 FEATURE_UNITS = {
@@ -116,23 +125,23 @@ FEATURE_UNITS = {
     "accel_pedal_d": "%",
     "accel_pedal_e": "%",
     "accel_pedal_channel_delta": "pp",
-    "coolant_slope": "°C/s",
-    "coolant_stability": "°C",
-    "maf_map_cohesion": "z-score",
+    "ect_rate_180s": "°C/min",
     "intake_temp": "°C",
     "ambient_temp": "°C",
     "intake_ambient_delta": "°C",
-    "map_slope": "kPa/s",
-    "idle_flag": "0/1",
-    "idle_rpm_stability": "RPM",
+    "speed_density_maf_residual": "g/s",
     "rpm_slope": "RPM/s",
+    "pedal_mapping_residual": "pp",
+    "maf_integral_180s": "g",
+    "intake_temp_stability": "°C",
+    "map_range_60s": "kPa",
 }
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Run Group 1's feature_dataset.csv through Granite TTM "
+            "Run Data Layer's production_features.csv through Granite TTM "
             "zero-shot residual detection."
         )
     )
@@ -141,7 +150,7 @@ def parse_args() -> argparse.Namespace:
         nargs="?",
         type=Path,
         help=(
-            "Path to Group 1's feature-engineered CSV "
+            "Path to Data Layer's production-feature CSV "
             "(INTERFACE.md Section 1). Defaults to "
             f"{DEFAULT_INPUT_CSV}."
         ),
@@ -168,27 +177,44 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         help="Optional path to save the interface JSON.",
     )
+    parser.add_argument(
+        "--batch",
+        action="store_true",
+        help=(
+            "Sweep every eligible segment/window in the input "
+            "CSV and emit a summary+windows envelope JSON."
+        ),
+    )
+    parser.add_argument(
+        "--history-file",
+        type=Path,
+        default=DEFAULT_HISTORY_PATH,
+        help=(
+            "Risk-score history CSV appended per inference "
+            f"call. Defaults to {DEFAULT_HISTORY_PATH}."
+        ),
+    )
     return parser.parse_args()
 
 
 def load_group1_features(csv_path: Path) -> pd.DataFrame:
-    """Load and validate Group 1's feature_dataset.csv.
+    """Load and validate Data Layer's production_features.csv.
 
     Raises ValueError naming the offending columns when required
-    columns are missing or numeric columns contain non-numeric
-    values. Policy NaNs (feature_dataset_metadata.json
-    `missing_value_policy`: event-only features, rolling/slope
-    warm-up rows, baseline availability) are by design and pass
-    through untouched.
+    columns are missing, numeric columns contain non-numeric values,
+    or fixed contract values drift. Policy NaNs in B-class features
+    are by design and pass through untouched.
     """
+    if not Path(csv_path).exists():
+        raise ValueError(f"Input CSV not found: {csv_path}")
     raw = pd.read_csv(csv_path)
     validate_required_columns(
-        raw.columns, GROUP1_REQUIRED_COLUMNS, str(csv_path)
+        raw.columns, PRODUCTION_FEATURE_REQUIRED_COLUMNS, str(csv_path)
     )
 
     df = raw.copy()
     non_numeric = []
-    for column in GROUP1_NUMERIC_COLUMNS:
+    for column in PRODUCTION_FEATURE_NUMERIC_COLUMNS:
         coerced = pd.to_numeric(df[column], errors="coerce")
         if (coerced.isna() & df[column].notna()).any():
             non_numeric.append(column)
@@ -205,6 +231,27 @@ def load_group1_features(csv_path: Path) -> pd.DataFrame:
         bad_count = int(df["timestamp"].isna().sum())
         raise ValueError(
             f"Could not parse {bad_count} timestamp values in {csv_path}"
+        )
+    if df["dt_seconds"].isna().any() or not df["dt_seconds"].eq(1.0).all():
+        raise ValueError(
+            "production_features.csv requires non-null dt_seconds == 1.0"
+        )
+    if not df["schema_version"].eq("feature_schema.v1").all():
+        raise ValueError(
+            "production_features.csv schema_version must be feature_schema.v1"
+        )
+    if not df["calibration_version"].eq("calibration.v1").all():
+        raise ValueError(
+            "production_features.csv calibration_version must be "
+            "calibration.v1"
+        )
+    bad_operating = (
+        df["operating_state"].astype(str).str.startswith("post_warmup_")
+        & ~df["operating_state"].astype(str).str.startswith("post_warmup__")
+    )
+    if bad_operating.any():
+        raise ValueError(
+            "operating_state must use the schema v1 double-underscore form"
         )
     return df
 
@@ -280,6 +327,143 @@ def select_context_and_truth(
     context = df.iloc[:context_length].copy()
     future = df.iloc[context_length:required_length].copy()
     return context, future
+
+
+def iter_windows(
+    segment: pd.DataFrame,
+    context_length: int,
+    prediction_length: int,
+):
+    """Yield (index, window) non-overlapping windows in a segment.
+
+    Stride equals the window size (context + forecast) so each
+    row feeds exactly one window and windows never cross segment
+    boundaries (caller passes one segment at a time).
+    """
+    window_rows = context_length + prediction_length
+    for index in range(len(segment) // window_rows):
+        start = index * window_rows
+        yield index, segment.iloc[
+            start:start + window_rows
+        ].reset_index(drop=True)
+
+
+def analyze_window(
+    window: pd.DataFrame,
+    context_length: int,
+    prediction_length: int,
+    model,
+    notes: list[str],
+) -> dict[str, Any]:
+    """Forecast -> residuals -> risk -> interface JSON for one
+    window."""
+    context, future = select_context_and_truth(
+        window, context_length, prediction_length
+    )
+    prediction = run_ttm_forecast(
+        context, context_length, prediction_length, model
+    )
+    residual = calculate_residuals(prediction, future)
+    residual_summary = summarize_residuals(residual)
+    anomaly_type, score, confidence, top_signals, notes = (
+        calculate_risk(residual_summary, future, notes)
+    )
+    return build_interface_json(
+        future=future,
+        residual_summary=residual_summary,
+        anomaly_type=anomaly_type,
+        risk_score=score,
+        confidence=confidence,
+        top_residual_signals=top_signals,
+        notes=notes,
+    )
+
+
+def run_batch(
+    df: pd.DataFrame,
+    context_length: int,
+    prediction_length: int,
+    model,
+    trip_id: str | None = None,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Sweep all eligible segments/windows; return
+    (envelope, history_records).
+
+    Envelope shape proposed to Group 3 (INTERFACE.md v0.10):
+    `summary` is the worst window's interface JSON unchanged;
+    `windows` carries every window's interface JSON plus
+    trip/segment/window identity. Each window JSON is
+    schema-validated before identity fields are merged.
+    """
+    frame = df
+    if trip_id is not None:
+        frame = frame[frame["trip_id"] == trip_id]
+        if frame.empty:
+            raise ValueError(
+                f"trip_id not found in input: {trip_id}"
+            )
+
+    window_entries: list[dict[str, Any]] = []
+    pure_results: list[dict[str, Any]] = []
+    history_records: list[dict[str, Any]] = []
+    for segment_id, segment in frame.groupby(
+        "segment_id", sort=False
+    ):
+        if len(segment) < MIN_SEGMENT_ROWS:
+            continue
+        segment = segment.sort_values(
+            "row_in_segment"
+        ).reset_index(drop=True)
+        segment, notes = prepare_segment(segment)
+        segment_trip = segment["trip_id"].iloc[0]
+        for index, window in iter_windows(
+            segment, context_length, prediction_length
+        ):
+            result = analyze_window(
+                window, context_length, prediction_length,
+                model, notes,
+            )
+            errors = validate_output(result)
+            if errors:
+                raise ValueError(
+                    f"Output validation failed for segment "
+                    f"{segment_id} window {index}: "
+                    + "; ".join(errors)
+                )
+            window_id = f"{segment_id}__w{index:03d}"
+            print(
+                f"{segment_id} w{index:03d} "
+                f"risk={result['risk_score']:.4f} "
+                f"{result['anomaly_type']}"
+            )
+            pure_results.append(result)
+            window_entries.append({
+                "trip_id": segment_trip,
+                "segment_id": segment_id,
+                "window_id": window_id,
+                **result,
+            })
+            history_records.append({
+                "trip_id": segment_trip,
+                "window_id": window_id,
+                "timestamp": result["timestamp"],
+                "risk_score": result["risk_score"],
+            })
+
+    if not window_entries:
+        raise ValueError(
+            f"No segment with >= {MIN_SEGMENT_ROWS} rows found "
+            "(INTERFACE.md 1.5 minimum for TTM windowing)"
+        )
+    worst = max(
+        range(len(pure_results)),
+        key=lambda i: pure_results[i]["risk_score"],
+    )
+    envelope = {
+        "summary": pure_results[worst],
+        "windows": window_entries,
+    }
+    return envelope, history_records
 
 
 def load_model(context_length: int, prediction_length: int):
@@ -397,49 +581,32 @@ def calculate_risk(
     notes = list(notes) if notes else []
     scores = normalized_residual_scores(residual_summary)
 
-    # pandas aggregations skip NaN, so Group 1 policy NaNs
-    # (slope/rolling warm-up rows) do not poison window stats;
-    # finite_or covers the all-NaN-window case.
+    # pandas aggregations skip NaN, so Data Layer policy NaNs do not
+    # poison window stats; finite_or covers the all-NaN-window case.
     coolant_temp = finite_or(float(future["coolant_temp"].max()))
-    coolant_slope = finite_or(float(future["coolant_slope"].mean()))
-    maf_map_cohesion = finite_or(
-        float(future["maf_map_cohesion"].median())
+    ect_rate = finite_or(float(future["ect_rate_180s"].mean()))
+    maf_residual = finite_or(
+        float(future["speed_density_maf_residual"].median())
     )
 
-    # coolant_slope is delivered in degC/s (INTERFACE.md 1.3). A
-    # sustained rise of 2-3 degC/min instead of a post-warm-up
-    # plateau marks cooling degradation (INTERFACE.md 2.4), so the
-    # window MEAN slope is scored between 2 degC/min (0.0333 degC/s)
-    # and 8 degC/min (0.1333 degC/s). The window max would misfire:
-    # the delivered slope is quantised to whole-degree steps, so any
-    # 1 degC tick reads 1.0 degC/s and the max exceeds the floor in
-    # 75% of healthy gated windows. Healthy gated 96-row window
-    # means measured on feature_dataset.csv (2026-07-13):
-    # p95 0.031, p99 0.115, max 0.25 degC/s.
+    # Schema v1 replaces the old coolant_slope/coolant_stability
+    # handoff with B-class ect_rate_180s. It is already in degC/min.
     cooling_score = max(
         scores["coolant_temp"],
         clipped_scale(coolant_temp, low=95.0, high=110.0),
         (
-            clipped_scale(coolant_slope, low=0.0333, high=0.1333)
+            clipped_scale(ect_rate, low=2.0, high=8.0)
             if coolant_temp > 85.0
             else 0.0
         ),
     )
-    # maf_map_cohesion is the Data Layer's z-scored MAF/MAP air-load
-    # disagreement (INTERFACE.md 1.3), ~0 when both sides agree. The
-    # window MEDIAN is scored, not the mean: engine-off rows (rpm=0)
-    # inflate the delivered column past 1e6, so healthy window means
-    # reach 1.5e6 while medians stay bounded. Floor set from healthy
-    # 96-row window medians across all 83 usable segments of
-    # feature_dataset.csv (2026-07-13): mean 0.64, p95 1.62,
-    # p99 2.28, max 2.50 -> floor 2.6 sits just above the healthy
-    # max. (The old 1.8 floor was calibrated on the internal
-    # z-score's window mean, max healthy 1.56 — clearly wrong for
-    # the delivered column, whose healthy p95 alone is 2.24.)
+    # Schema v1 keeps the frozen speed-density residual as the
+    # reusable MAF/MAP disagreement feature; the old maf_map_cohesion
+    # research diagnostic is no longer a production handoff column.
     intake_score = max(
         scores["maf"],
         scores["map"],
-        clipped_scale(maf_map_cohesion, low=2.6, high=4.0),
+        clipped_scale(abs(maf_residual), low=18.0, high=35.0),
     )
 
     # Pedal fault = sustained dual-channel disagreement over the
@@ -463,12 +630,9 @@ def calculate_risk(
         "cooling_degradation": cooling_score,
         "air_intake_maf_anomaly": intake_score,
         "accelerator_pedal_sensor": pedal_score,
-        # Pending — Data Layer defined, Model Layer scoring TBD
-        # (INTERFACE.md 2.3/2.4); key signals are delivered but
-        # scoring is out of Story 5 scope.
-        "intake_air_temperature_sensor_or_heat_soak_fault": 0.0,
+        # Pending — Data Layer defined, Model Layer scoring TBD.
+        "intake_air_temperature_sensor_fault": 0.0,
         "map_load_signal_plausibility_fault": 0.0,
-        "idle_speed_control_or_surge_degradation": 0.0,
     }
     anomaly_type = max(anomaly_scores, key=anomaly_scores.get)
     risk_score = float(anomaly_scores[anomaly_type])
@@ -514,11 +678,13 @@ def window_feature_values(future: pd.DataFrame) -> dict[str, float]:
 
     aggregations = {
         "coolant_temp": lambda: last("coolant_temp"),
-        "coolant_slope": lambda: window("coolant_slope", "mean"),
-        "coolant_stability": lambda: window("coolant_stability", "max"),
+        "ect_rate_180s": lambda: window("ect_rate_180s", "mean"),
+        "maf_integral_180s": lambda: window("maf_integral_180s", "mean"),
         "map": lambda: last("map"),
         "maf": lambda: last("maf"),
-        "maf_map_cohesion": lambda: window("maf_map_cohesion", "median"),
+        "speed_density_maf_residual": lambda: window(
+            "speed_density_maf_residual", "median"
+        ),
         "tps": lambda: last("tps"),
         "rpm": lambda: last("rpm"),
         "speed": lambda: last("speed"),
@@ -527,17 +693,21 @@ def window_feature_values(future: pd.DataFrame) -> dict[str, float]:
         "accel_pedal_channel_delta": lambda: window(
             "accel_pedal_channel_delta", "mean"
         ),
-        # Pending-type key signals (INTERFACE.md 2.4), forwarded by
-        # Group 1 since v0.6.
+        # Pending-type key signals retained in production_features v1.
         "intake_temp": lambda: last("intake_temp"),
         "ambient_temp": lambda: last("ambient_temp"),
         "intake_ambient_delta": lambda: last("intake_ambient_delta"),
-        "map_slope": lambda: window("map_slope", "mean"),
-        "idle_flag": lambda: last("idle_flag"),
-        "idle_rpm_stability": lambda: window(
-            "idle_rpm_stability", "mean"
-        ),
+        "pedal_slope": lambda: window("pedal_slope", "mean"),
         "rpm_slope": lambda: window("rpm_slope", "mean"),
+        "map_range_60s": lambda: window("map_range_60s", "max"),
+        "rpm_std_120s": lambda: window("rpm_std_120s", "mean"),
+        "speed_std_120s": lambda: window("speed_std_120s", "mean"),
+        "accel_pedal_mean_std_120s": lambda: window(
+            "accel_pedal_mean_std_120s", "mean"
+        ),
+        "intake_temp_stability": lambda: window(
+            "intake_temp_stability", "mean"
+        ),
     }
 
     values: dict[str, float] = {}
@@ -563,21 +733,22 @@ def build_interface_json(
 
     priority = {
         "cooling_degradation": [
-            "coolant_temp", "coolant_slope", "coolant_stability",
+            "coolant_temp", "ect_rate_180s", "maf_integral_180s",
         ],
-        "air_intake_maf_anomaly": ["maf", "map", "maf_map_cohesion"],
+        "air_intake_maf_anomaly": [
+            "maf", "map", "speed_density_maf_residual",
+        ],
         "accelerator_pedal_sensor": [
             "accel_pedal_d", "accel_pedal_e",
-            "accel_pedal_channel_delta",
+            "accel_pedal_channel_delta", "pedal_mapping_residual",
         ],
-        "intake_air_temperature_sensor_or_heat_soak_fault": [
-            "intake_temp", "ambient_temp", "intake_ambient_delta"
+        "intake_air_temperature_sensor_fault": [
+            "intake_temp", "ambient_temp", "intake_ambient_delta",
+            "intake_temp_stability",
         ],
         "map_load_signal_plausibility_fault": [
-            "map", "maf", "tps", "map_slope"
-        ],
-        "idle_speed_control_or_surge_degradation": [
-            "rpm", "idle_flag", "idle_rpm_stability", "rpm_slope"
+            "map", "maf", "speed_density_maf_residual", "map_range_60s",
+            "pedal_slope",
         ],
     }[anomaly_type]
 
@@ -631,18 +802,18 @@ def print_residual_summary(
         print(f"{signal:14s} mean={mean_val:10.4f} max={max_val:10.4f}")
 
 
-def main() -> None:
-    args = parse_args()
-    csv_path = args.csv_path or DEFAULT_INPUT_CSV
-
-    print(f"Reading Group 1 feature dataset: {csv_path}")
-    df = load_group1_features(csv_path)
+def run_single(
+    df: pd.DataFrame, args: argparse.Namespace
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Original one-window flow; returns (result, history records)."""
     segment = select_segment(
         df, trip_id=args.trip_id, segment_id=args.segment_id
     )
+    trip_id_value = segment["trip_id"].iloc[0]
+    segment_id = segment["segment_id"].iloc[0]
     print(
-        f"Selected trip={segment['trip_id'].iloc[0]} "
-        f"segment={segment['segment_id'].iloc[0]} "
+        f"Selected trip={trip_id_value} "
+        f"segment={segment_id} "
         f"rows={len(segment)}"
     )
     segment, notes = prepare_segment(segment)
@@ -678,11 +849,45 @@ def main() -> None:
     )
     validation_errors = validate_output(result)
     if validation_errors:
-        print("\nOutput validation failed")
-        print("-" * 44)
-        for error in validation_errors:
-            print(f"- {error}")
-        raise SystemExit(1)
+        raise ValueError(
+            "Output validation failed: "
+            + "; ".join(validation_errors)
+        )
+    history_records = [{
+        "trip_id": trip_id_value,
+        "window_id": f"{segment_id}__w000",
+        "timestamp": result["timestamp"],
+        "risk_score": result["risk_score"],
+    }]
+    return result, history_records
+
+
+def run_detector(args: argparse.Namespace) -> None:
+    csv_path = args.csv_path or DEFAULT_INPUT_CSV
+    print(f"Reading Group 1 feature dataset: {csv_path}")
+    df = load_group1_features(csv_path)
+
+    if args.batch:
+        if args.segment_id is not None:
+            raise ValueError(
+                "--segment-id cannot be combined with --batch "
+                "(use --trip-id to restrict the sweep)"
+            )
+        model = load_model(
+            args.context_length, args.prediction_length
+        )
+        result, history_records = run_batch(
+            df, args.context_length, args.prediction_length,
+            model, trip_id=args.trip_id,
+        )
+    else:
+        result, history_records = run_single(df, args)
+
+    written = append_history(history_records, args.history_file)
+    print(
+        f"\nRisk history: {written} new record(s) -> "
+        f"{args.history_file}"
+    )
 
     print("\nInterface JSON")
     print("-" * 44)
@@ -695,5 +900,21 @@ def main() -> None:
         print(f"\nSaved JSON to {args.output}")
 
 
+def main() -> int:
+    """CLI entry point with dashboard-friendly failures.
+
+    Group 3's dashboard shows stderr to the user, so expected
+    failures must be one clear line and a non-zero exit, never
+    a traceback (Story 8).
+    """
+    args = parse_args()
+    try:
+        run_detector(args)
+    except (ValueError, OSError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

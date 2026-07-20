@@ -1,12 +1,22 @@
 """
 Story 7 tests: synthetic fault injection functions (Lucca).
 
-The injection functions perturb raw signals per the Data Layer's
-Stage 4 designs (proxy_support.md) and propagate the change into
-the exactly-derivable engineered columns the detector scores
-(`maf_map_cohesion` via the air-load intermediates). Cohesion
-z-score parameters are passed explicitly here so the tests do not
-depend on the `data_layer/` delivery being present.
+The two active injectors perturb raw signals per the Data Layer's
+Stage 4 designs (proxy_support.md) and propagate the change into the
+schema v1 engineered columns the detector scores (`ect_rate_180s`,
+`speed_density_maf_residual`). The speed-density transform is passed
+explicitly here (shaped like `load_speed_density_transform()`'s
+return value) so the tests do not depend on the `data_layer/`
+delivery being present; values match the frozen
+`calibration_registry.v1.json` so the test also serves as an
+informal cross-check.
+
+The three pending-type injectors (`inject_intake_air_temp_fault`,
+`inject_map_plausibility_fault`, `inject_idle_speed_fault`) are
+frozen historical code not migrated to schema v1 — see
+fault_injection.py's module docstring and GL-322. Their test classes
+are skipped rather than deleted, so the coverage intent stays
+documented pending their formal retirement.
 
 Run from ttm-related/:  ../.venv/bin/python -m pytest tests/ -v
 """
@@ -24,10 +34,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from model.fault_injection import (  # noqa: E402
     COOLING_OFFSET_C,
+    ECT_RATE_WINDOW_ROWS,
     IDLE_OFFSET_RPM,
     IDLE_OSC_AMPLITUDE_RPM,
     IDLE_OSC_PERIOD_S,
-    IDLE_STABILITY_WINDOW_ROWS,
     KELVIN_OFFSET,
     MAF_GAIN,
     MAP_GAIN,
@@ -42,18 +52,18 @@ from model.input_validation import (  # noqa: E402
 )
 from group1_fixtures import make_group1_frame  # noqa: E402
 
-# Explicit z-score parameters in the shape of
+# Explicit z-score parameters in the shape of the pre-migration
 # feature_baselines.json `standardization_parameters
-# .maf_map_cohesion` (values chosen near the delivered ones).
+# .maf_map_cohesion` — only used by the skipped pending-type tests
+# below, which still exercise the frozen pre-migration formulas.
 COHESION_PARAMS = {
     "maf_derived_air_load_raw": {"mean": 0.81, "std": 0.29},
     "map_derived_air_load_raw": {"mean": 786.3, "std": 296.5},
 }
 
-# Explicit speed-density regression in the shape of
-# feature_baselines.json `models.speed_density_model` (coefficients
-# near the delivered ones; bounds wide enough that fixture values
-# are not clipped, except where a test narrows them on purpose).
+# Pre-migration speed-density regression shape (feature_baselines.json
+# `models.speed_density_model`) — only used by the skipped
+# pending-type tests below.
 SD_MODEL = {
     "coefficients": {
         "map_derived_air_load_raw": 0.0238,
@@ -69,6 +79,31 @@ SD_MODEL = {
         "map": {"lower": 0.0, "upper": 400.0},
         "rpm": {"lower": 0.0, "upper": 8000.0},
         "intake_temp": {"lower": -40.0, "upper": 150.0},
+    },
+}
+
+# Schema v1 speed-density transform, shaped like
+# load_speed_density_transform()'s return value. Values match the
+# frozen calibration_registry.v1.json
+# `feature_transforms.speed_density_maf`.
+SPEED_DENSITY_TRANSFORM = {
+    "coefficients": {
+        "map_derived_air_load_raw": 0.023778032668470294,
+        "map": 0.14127609145896305,
+        "rpm": 0.00006690047685838753,
+        "intake_temp": 0.07101467711912292,
+    },
+    "intercept": -14.688826051927967,
+    "ordered_input_features": [
+        "map_derived_air_load_raw", "map", "rpm", "intake_temp",
+    ],
+    "prediction_clipping_bounds": {
+        "map_derived_air_load_raw": {
+            "lower": 293.93209175000004, "upper": 1516.36693525,
+        },
+        "map": {"lower": 94.0, "upper": 203.0},
+        "rpm": {"lower": 877.0, "upper": 2205.0},
+        "intake_temp": {"lower": -8.0, "upper": 40.0},
     },
 }
 
@@ -114,25 +149,106 @@ def expected_map_load(
     return map_kpa * rpm / (intake_temp + KELVIN_OFFSET)
 
 
+def expected_speed_density_residual_v1(
+    maf: float, map_kpa: float, rpm: float, intake_temp: float
+) -> float:
+    """Mirrors recompute_speed_density_maf_residual() against
+    SPEED_DENSITY_TRANSFORM (schema v1 formula)."""
+    raw_load = expected_map_load(map_kpa, rpm, intake_temp)
+    inputs = {
+        "map_derived_air_load_raw": raw_load,
+        "map": map_kpa,
+        "rpm": rpm,
+        "intake_temp": intake_temp,
+    }
+    coef = SPEED_DENSITY_TRANSFORM["coefficients"]
+    bounds = SPEED_DENSITY_TRANSFORM["prediction_clipping_bounds"]
+    predicted = SPEED_DENSITY_TRANSFORM["intercept"]
+    for name in SPEED_DENSITY_TRANSFORM["ordered_input_features"]:
+        clipped = min(
+            max(inputs[name], bounds[name]["lower"]),
+            bounds[name]["upper"],
+        )
+        predicted += coef[name] * clipped
+    return maf - predicted
+
+
+def assert_recompute_matches(
+    before: pd.Series, after: pd.Series, expected: pd.Series
+) -> None:
+    """Where ``before`` was finite, ``after`` must equal
+    ``expected``; where ``before`` was NaN (delivered policy NaN),
+    ``after`` stays NaN too (masked_assign's preserved mask)."""
+    finite = before.notna()
+    assert np.allclose(after[finite], expected[finite])
+    assert after[~finite].isna().all()
+
+
 class TestInjectCoolingFault:
     def test_offset_applied_from_start_row_only(self):
         frame = make_group1_frame(rows=20)
         result = inject_cooling_fault(frame, start_row=10)
 
-        before = result["coolant_temp"].iloc[:10]
-        after = result["coolant_temp"].iloc[10:]
-        assert (before == 92.0).all()
-        assert (after == 92.0 + COOLING_OFFSET_C).all()
+        before = frame["coolant_temp"]
+        assert (result["coolant_temp"].iloc[:10] == before.iloc[:10]).all()
+        assert np.allclose(
+            result["coolant_temp"].iloc[10:],
+            before.iloc[10:] + COOLING_OFFSET_C,
+        )
 
     def test_coolant_ambient_delta_tracks_offset(self):
         frame = make_group1_frame(rows=8)
         result = inject_cooling_fault(frame, start_row=4)
 
-        assert (result["coolant_ambient_delta"].iloc[:4] == 70.0).all()
-        assert (
-            result["coolant_ambient_delta"].iloc[4:]
-            == 70.0 + COOLING_OFFSET_C
-        ).all()
+        before = frame["coolant_ambient_delta"]
+        pd.testing.assert_series_equal(
+            result["coolant_ambient_delta"].iloc[:4], before.iloc[:4]
+        )
+        assert np.allclose(
+            result["coolant_ambient_delta"].iloc[4:],
+            before.iloc[4:] + COOLING_OFFSET_C,
+        )
+
+    def test_ect_rate_180s_recomputed(self):
+        # make_group1_frame tiles a 186-row fixture, so a window
+        # this long straddles a tile boundary — compare against a
+        # baseline computed directly from this frame's own
+        # (pre-injection) coolant_temp, not the delivered
+        # ect_rate_180s column, which the tiling makes discontinuous
+        # across repeats.
+        frame = make_group1_frame(rows=400)
+        start_row = 200
+        result = inject_cooling_fault(frame, start_row=start_row)
+
+        coolant = frame["coolant_temp"].astype(float)
+        baseline_rate = (
+            coolant - coolant.shift(ECT_RATE_WINDOW_ROWS)
+        ) / 3.0
+        delivered = frame["ect_rate_180s"]
+        after = result["ect_rate_180s"]
+
+        # Pre-onset rows: untouched.
+        pd.testing.assert_series_equal(
+            after.iloc[:start_row], delivered.iloc[:start_row]
+        )
+        # Rows within one window of onset: only the t endpoint is
+        # offset (t-180s falls before start_row), so the rate shifts
+        # by offset_c/3 relative to this frame's own baseline.
+        window_end = start_row + ECT_RATE_WINDOW_ROWS
+        assert_recompute_matches(
+            delivered.iloc[start_row:window_end],
+            after.iloc[start_row:window_end],
+            baseline_rate.iloc[start_row:window_end]
+            + COOLING_OFFSET_C / 3,
+        )
+        # Rows a full window past onset: both (t, t-180s) endpoints
+        # are inside the offset region, so the rate reverts to the
+        # baseline.
+        assert_recompute_matches(
+            delivered.iloc[window_end:],
+            after.iloc[window_end:],
+            baseline_rate.iloc[window_end:],
+        )
 
     def test_other_columns_untouched_and_input_not_mutated(self):
         frame = make_group1_frame(rows=10)
@@ -140,101 +256,133 @@ class TestInjectCoolingFault:
         result = inject_cooling_fault(frame, start_row=0)
 
         pd.testing.assert_frame_equal(frame, original)
-        untouched = result.drop(
-            columns=["coolant_temp", "coolant_ambient_delta"]
-        )
+        touched = [
+            "coolant_temp", "coolant_ambient_delta", "ect_rate_180s",
+        ]
+        untouched = result.drop(columns=touched)
         pd.testing.assert_frame_equal(
-            untouched,
-            original.drop(
-                columns=["coolant_temp", "coolant_ambient_delta"]
-            ),
+            untouched, original.drop(columns=touched)
         )
 
     def test_custom_offset(self):
         frame = make_group1_frame(rows=5)
         result = inject_cooling_fault(frame, offset_c=5.0)
-        assert (result["coolant_temp"] == 97.0).all()
+        assert np.allclose(
+            result["coolant_temp"], frame["coolant_temp"] + 5.0
+        )
 
 
 class TestInjectIntakeMafFault:
-    def test_low_maf_scales_maf_and_air_load(self):
+    def test_low_maf_scales_maf_only(self):
         frame = make_group1_frame(rows=12)
         result = inject_intake_maf_fault(
-            frame, "low_maf", COHESION_PARAMS, start_row=6
+            frame, "low_maf", SPEED_DENSITY_TRANSFORM, start_row=6
         )
 
-        assert (result["maf"].iloc[:6] == 20.0).all()
-        assert np.allclose(result["maf"].iloc[6:], 20.0 * MAF_GAIN)
-        assert (
-            result["maf_derived_air_load_raw"].iloc[:6] == 0.8
-        ).all()
+        before = frame["maf"]
+        assert (result["maf"].iloc[:6] == before.iloc[:6]).all()
         assert np.allclose(
-            result["maf_derived_air_load_raw"].iloc[6:],
-            0.8 * MAF_GAIN,
+            result["maf"].iloc[6:], before.iloc[6:] * MAF_GAIN
         )
         # map side untouched
-        assert (result["map"] == 110.0).all()
-        assert (result["map_derived_air_load_raw"] == 110.0).all()
+        assert (result["map"] == frame["map"]).all()
 
-    def test_low_maf_recomputes_cohesion_on_affected_rows(self):
+    def test_low_maf_recomputes_residual_on_affected_rows(self):
         frame = make_group1_frame(rows=10)
         result = inject_intake_maf_fault(
-            frame, "low_maf", COHESION_PARAMS, start_row=5
+            frame, "low_maf", SPEED_DENSITY_TRANSFORM, start_row=5
         )
 
-        assert (result["maf_map_cohesion"].iloc[:5] == 0.18).all()
-        want = expected_cohesion(0.8 * MAF_GAIN, 110.0)
-        assert np.allclose(result["maf_map_cohesion"].iloc[5:], want)
+        before = frame["speed_density_maf_residual"]
+        after = result["speed_density_maf_residual"]
+        pd.testing.assert_series_equal(
+            after.iloc[:5], before.iloc[:5]
+        )
+        expected = pd.Series(
+            [
+                expected_speed_density_residual_v1(
+                    frame["maf"].iloc[i] * MAF_GAIN,
+                    frame["map"].iloc[i],
+                    frame["rpm"].iloc[i],
+                    frame["intake_temp"].iloc[i],
+                )
+                for i in range(5, 10)
+            ],
+            index=before.index[5:10],
+        )
+        assert_recompute_matches(
+            before.iloc[5:], after.iloc[5:], expected
+        )
 
-    def test_map_bias_scales_map_and_recomputes_cohesion(self):
+    def test_map_bias_scales_map_only_and_recomputes_residual(self):
         frame = make_group1_frame(rows=10)
         result = inject_intake_maf_fault(
-            frame, "map_bias", COHESION_PARAMS, start_row=5
+            frame, "map_bias", SPEED_DENSITY_TRANSFORM, start_row=5
         )
 
-        assert np.allclose(result["map"].iloc[5:], 110.0 * MAP_GAIN)
+        before_map = frame["map"]
         assert np.allclose(
-            result["map_derived_air_load_raw"].iloc[5:],
-            110.0 * MAP_GAIN,
+            result["map"].iloc[5:], before_map.iloc[5:] * MAP_GAIN
         )
         # maf side untouched
-        assert (result["maf"] == 20.0).all()
-        assert (
-            result["maf_derived_air_load_raw"] == 0.8
-        ).all()
-        want = expected_cohesion(0.8, 110.0 * MAP_GAIN)
-        assert np.allclose(result["maf_map_cohesion"].iloc[5:], want)
+        assert (result["maf"] == frame["maf"]).all()
+
+        before = frame["speed_density_maf_residual"]
+        after = result["speed_density_maf_residual"]
+        expected = pd.Series(
+            [
+                expected_speed_density_residual_v1(
+                    frame["maf"].iloc[i],
+                    frame["map"].iloc[i] * MAP_GAIN,
+                    frame["rpm"].iloc[i],
+                    frame["intake_temp"].iloc[i],
+                )
+                for i in range(5, 10)
+            ],
+            index=before.index[5:10],
+        )
+        assert_recompute_matches(
+            before.iloc[5:], after.iloc[5:], expected
+        )
 
     def test_nan_values_stay_nan(self):
         frame = make_group1_frame(rows=6)
         frame.loc[4, "maf"] = np.nan
-        frame.loc[4, "maf_derived_air_load_raw"] = np.nan
-        frame.loc[4, "maf_map_cohesion"] = np.nan
+        frame.loc[4, "speed_density_maf_residual"] = np.nan
 
         result = inject_intake_maf_fault(
-            frame, "low_maf", COHESION_PARAMS, start_row=3
+            frame, "low_maf", SPEED_DENSITY_TRANSFORM, start_row=3
         )
 
         assert np.isnan(result.loc[4, "maf"])
-        assert np.isnan(result.loc[4, "maf_derived_air_load_raw"])
-        assert np.isnan(result.loc[4, "maf_map_cohesion"])
-        # Neighbouring affected rows are still perturbed.
-        assert np.isclose(result.loc[5, "maf"], 20.0 * MAF_GAIN)
+        assert np.isnan(result.loc[4, "speed_density_maf_residual"])
+        # Neighbouring affected row is still perturbed.
+        assert np.isclose(
+            result.loc[5, "maf"], frame.loc[5, "maf"] * MAF_GAIN
+        )
 
     def test_unknown_variant_raises(self):
         frame = make_group1_frame(rows=5)
         with pytest.raises(ValueError, match="variant"):
             inject_intake_maf_fault(
-                frame, "engine_on_fire", COHESION_PARAMS
+                frame, "engine_on_fire", SPEED_DENSITY_TRANSFORM
             )
 
     def test_input_not_mutated(self):
         frame = make_group1_frame(rows=6)
         original = frame.copy()
-        inject_intake_maf_fault(frame, "map_bias", COHESION_PARAMS)
+        inject_intake_maf_fault(
+            frame, "map_bias", SPEED_DENSITY_TRANSFORM
+        )
         pd.testing.assert_frame_equal(frame, original)
 
 
+@pytest.mark.skip(
+    reason=(
+        "frozen historical scenario, not migrated to schema v1 — "
+        "GL-322"
+    )
+)
 class TestInjectIntakeAirTempFault:
     def make_frame(self, rows: int = 12) -> pd.DataFrame:
         frame = make_group1_frame(rows)
@@ -340,13 +488,19 @@ class TestInjectIntakeAirTempFault:
         pd.testing.assert_frame_equal(frame, original)
 
 
+@pytest.mark.skip(
+    reason=(
+        "frozen historical scenario, not migrated to schema v1 — "
+        "GL-322"
+    )
+)
 class TestInjectMapPlausibilityFault:
     def make_frame(self, rows: int = 12) -> pd.DataFrame:
         frame = make_group1_frame(rows)
         frame["map"] = 100.0 + np.arange(rows, dtype=float)
         return frame
 
-    def test_frozen_from_start_row_and_slope(self):
+    def test_frozen_from_start_row(self):
         frame = self.make_frame()
         result = inject_map_plausibility_fault(
             frame, COHESION_PARAMS, SD_MODEL, start_row=5
@@ -356,9 +510,6 @@ class TestInjectMapPlausibilityFault:
             result["map"].iloc[:5], frame["map"].iloc[:5]
         )
         assert (result["map"].iloc[5:] == 105.0).all()
-        assert (result["map_slope"].iloc[:5] == 0.5).all()
-        assert np.isclose(result["map_slope"].iloc[5], 1.0)
-        assert (result["map_slope"].iloc[6:] == 0.0).all()
 
     def test_air_load_cohesion_speed_density_recomputed(self):
         frame = self.make_frame()
@@ -396,6 +547,12 @@ class TestInjectMapPlausibilityFault:
         pd.testing.assert_frame_equal(frame, original)
 
 
+@pytest.mark.skip(
+    reason=(
+        "frozen historical scenario, not migrated to schema v1 — "
+        "GL-322"
+    )
+)
 class TestInjectIdleSpeedFault:
     IDLE_START = 8
     IDLE_END = 16  # exclusive
@@ -440,7 +597,7 @@ class TestInjectIdleSpeedFault:
             result["engine_on_flag"], frame["engine_on_flag"]
         )
 
-    def test_slope_and_stability_recomputed(self):
+    def test_slope_recomputed(self):
         frame = self.make_frame()
         result = inject_idle_speed_fault(
             frame, COHESION_PARAMS, SD_MODEL, start_row=4
@@ -457,16 +614,6 @@ class TestInjectIdleSpeedFault:
             result.loc[first + 1, "rpm_slope"],
             result.loc[first + 1, "rpm"]
             - result.loc[first, "rpm"],
-        )
-        # Stability matches the delivered definition: rolling std
-        # of rpm restricted to idle rows.
-        idle_rpm = result["rpm"].where(result["idle_flag"] == 1)
-        want = idle_rpm.rolling(
-            IDLE_STABILITY_WINDOW_ROWS, min_periods=1
-        ).std()
-        got = result["idle_rpm_stability"].iloc[4:]
-        assert np.allclose(
-            got, want.iloc[4:], equal_nan=True
         )
 
     def test_air_loads_recomputed_on_idle_rows_only(self):
@@ -602,31 +749,6 @@ class TestRunnerHelpers:
             "trip_0002_seg_001",
         ]
 
-    def test_find_idle_window_start(self):
-        from model.run_synthetic_evaluation import (
-            find_idle_window_start,
-        )
-
-        frame = make_group1_frame(rows=30)
-        frame.loc[18:22, "idle_flag"] = 1.0  # 5 idle rows
-
-        # context=10, prediction=5: the first start whose future
-        # rows [start+10, start+15) hold >= 3 idle rows is 6
-        # (future rows 16..20 contain idle rows 18, 19, 20).
-        assert (
-            find_idle_window_start(frame, 10, 5, min_idle_rows=3)
-            == 6
-        )
-        # More idle than the segment ever offers -> no window.
-        assert (
-            find_idle_window_start(frame, 10, 5, min_idle_rows=6)
-            is None
-        )
-        # Segment shorter than one window -> no window.
-        assert (
-            find_idle_window_start(frame.iloc[:10], 10, 5) is None
-        )
-
 
 class TestInjectedValuesStayPlausible:
     """Injected faults must survive the detector's input repair
@@ -635,23 +757,13 @@ class TestInjectedValuesStayPlausible:
 
     def test_no_repairs_on_any_scenario(self):
         frame = make_group1_frame(rows=20)
-        idle_rows = frame.index[8:16]
-        frame.loc[idle_rows, "idle_flag"] = 1.0
-        frame.loc[idle_rows, "rpm"] = 800.0
         scenarios = [
             inject_cooling_fault(frame),
-            inject_intake_maf_fault(frame, "low_maf", COHESION_PARAMS),
             inject_intake_maf_fault(
-                frame, "map_bias", COHESION_PARAMS
+                frame, "low_maf", SPEED_DENSITY_TRANSFORM
             ),
-            inject_intake_air_temp_fault(
-                frame, COHESION_PARAMS, SD_MODEL
-            ),
-            inject_map_plausibility_fault(
-                frame, COHESION_PARAMS, SD_MODEL
-            ),
-            inject_idle_speed_fault(
-                frame, COHESION_PARAMS, SD_MODEL
+            inject_intake_maf_fault(
+                frame, "map_bias", SPEED_DENSITY_TRANSFORM
             ),
         ]
         for injected in scenarios:
