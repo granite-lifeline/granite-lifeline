@@ -549,15 +549,44 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
                 st.session_state["dashboard_mode"] = "dashboard"
                 st.rerun()
 
-    # ── Secondary: demo data link ──
+    # ── Secondary: demo data entry ──
     st.markdown(
-        '<div style="text-align:center;margin-top:20px;"></div>',
+        f'<div style="display:flex;align-items:center;gap:12px;'
+        f'max-width:560px;margin:24px auto 0 auto;">'
+        f'<div style="flex:1;height:1px;background:{tokens["border"]};"></div>'
+        f'<span style="font-size:12px;color:{tokens["text_secondary"]};'
+        f'white-space:nowrap;">or</span>'
+        f'<div style="flex:1;height:1px;background:{tokens["border"]};"></div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
-    _, demo_col, _ = st.columns([3, 2, 3])
+    st.markdown(
+        f"""
+        <style>
+        .st-key-landing_demo_btn button {{
+            background: transparent !important;
+            color: {tokens["text_secondary"]} !important;
+            border: 1px solid {tokens["border"]} !important;
+            border-radius: 10px !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            padding: 9px 0 !important;
+            box-shadow: none !important;
+            transition: border-color 0.15s ease, color 0.15s ease !important;
+        }}
+        .st-key-landing_demo_btn button:hover {{
+            border-color: {tokens["text"]} !important;
+            color: {tokens["text"]} !important;
+            background: transparent !important;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    _, demo_col, _ = st.columns([1, 2, 1])
     with demo_col:
         if st.button(
-            "Or explore with demo data",
+            "Explore with demo data",
             key="landing_demo_btn",
             use_container_width=True,
         ):
@@ -575,8 +604,45 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
     """Full dashboard view with component cards and collapsible re-upload."""
     mock_data = get_mock_data()
 
-    # ── Title row ──
+    # ── Back button + title row ──
+    # Check if user arrived via demo (no validated_df) to show "← Back" label
+    is_demo = "validated_df" not in st.session_state
+    back_icon = lucide_icon("trending-up", size=14, color=tokens["text_secondary"])
+    st.markdown(
+        f"""
+        <style>
+        .st-key-dashboard_back_btn button {{
+            background: transparent !important;
+            color: {tokens["text_secondary"]} !important;
+            border: none !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            padding: 6px 4px !important;
+            box-shadow: none !important;
+            justify-content: flex-start !important;
+            transition: color 0.15s ease !important;
+        }}
+        .st-key-dashboard_back_btn button:hover {{
+            color: {tokens["text"]} !important;
+            background: transparent !important;
+            border: none !important;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
     spacer_col, title_col, theme_col = st.columns([1, 10, 1])
+    with spacer_col:
+        st.markdown(
+            '<div style="height:8px;"></div>', unsafe_allow_html=True
+        )
+        if st.button(
+            "\u2190",
+            key="dashboard_back_btn",
+            help="Back to upload",
+        ):
+            st.session_state["dashboard_mode"] = "landing"
+            st.rerun()
     with title_col:
         with st.container(key="page_title_block"):
             st.title("Vehicle Health Status")
