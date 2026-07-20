@@ -22,7 +22,7 @@ from shared.interface_models import (
 class TestAnomalyType:
     """Tests for the shared anomaly type names."""
 
-    def test_anomaly_type_has_six_current_names(self):
+    def test_anomaly_type_has_five_current_names(self):
         """Test AnomalyType matches the current five-type interface enum."""
         expected_types = {
             "cooling_degradation",
