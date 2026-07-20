@@ -95,7 +95,9 @@ def load_manifest(manifest_path: Path) -> dict[str, Any]:
     return manifest
 
 
-def flatten_segment_ids(split: Mapping[str, Sequence[str]] | Sequence[str]) -> list[str]:
+def flatten_segment_ids(
+    split: Mapping[str, Sequence[str]] | Sequence[str],
+) -> list[str]:
     """Flatten manifest split data into a stable segment id list.
 
     Current manifests store `{trip_id: [segment_id, ...]}` so whole
@@ -190,7 +192,9 @@ def load_split_frames(
     *,
     max_train_segments: int | None = None,
     max_validation_segments: int | None = None,
-) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any], Path, list[str], list[str]]:
+) -> tuple[
+    pd.DataFrame, pd.DataFrame, dict[str, Any], Path, list[str], list[str]
+]:
     """Load Group 1 features and split them according to the manifest."""
     manifest = load_manifest(manifest_path)
     resolved_input = (
@@ -252,7 +256,9 @@ def sample_shapes(dataset: ForecastDFDataset) -> dict[str, list[int]]:
     }
 
 
-def ttm_data_collator(features: Sequence[Mapping[str, Any]]) -> dict[str, torch.Tensor]:
+def ttm_data_collator(
+    features: Sequence[Mapping[str, Any]],
+) -> dict[str, torch.Tensor]:
     """Batch only tensor inputs accepted by TinyTimeMixer.forward().
 
     ForecastDFDataset also returns metadata fields such as timestamp

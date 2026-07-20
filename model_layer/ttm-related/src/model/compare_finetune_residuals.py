@@ -16,7 +16,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
-import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
@@ -240,9 +239,13 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=DEFAULT_FINETUNED_MODEL,
     )
-    parser.add_argument("--output-json", type=Path, default=DEFAULT_OUTPUT_JSON)
+    parser.add_argument(
+        "--output-json", type=Path, default=DEFAULT_OUTPUT_JSON
+    )
     parser.add_argument("--output-md", type=Path, default=DEFAULT_OUTPUT_MD)
-    parser.add_argument("--context-length", type=int, default=DEFAULT_CONTEXT_LENGTH)
+    parser.add_argument(
+        "--context-length", type=int, default=DEFAULT_CONTEXT_LENGTH
+    )
     parser.add_argument(
         "--prediction-length", type=int, default=DEFAULT_PREDICTION_LENGTH
     )
