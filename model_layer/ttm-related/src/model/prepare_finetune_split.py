@@ -70,10 +70,10 @@ CONFIDENCE_COLUMN = "condition_confidence"
 OK_QUALITY_FLAG = "OK"
 HIGH_CONFIDENCE = "high"
 
-_REPO_ROOT = Path(__file__).resolve().parents[3]
+_REPO_ROOT = Path(__file__).resolve().parents[4]
 _TTM_RELATED_DIR = Path(__file__).resolve().parents[2]
 DEFAULT_INPUT = (
-    _REPO_ROOT / "data_layer" / "production_feature_manifest"
+    _TTM_RELATED_DIR / "data" / "production_feature_manifest"
     / "production_features.csv"
 )
 DEFAULT_OUTPUT = (
@@ -258,6 +258,7 @@ def build_manifest(
     )
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "schema_version": "feature_schema.v1",
         "input_file": str(input_file),
         "min_rows": min_rows,
         "train_fraction": train_fraction,

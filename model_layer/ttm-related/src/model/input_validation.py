@@ -6,7 +6,8 @@ limits, deliberately wider than the healthy-baseline REFERENCE_RANGES
 in kit_residual_detector.py. Rejecting inputs at healthy-range bounds
 would blind the detector to the very anomalies it exists to flag
 (01_user_story/failure_type_research.md, "Range consistency caveats").
-Reused by Story 4 data-quality tests and Story 5 Group 1 CSV loading.
+Reused by data-quality tests and the Data Layer production-feature CSV
+loading path.
 """
 
 from __future__ import annotations
@@ -33,13 +34,12 @@ PLAUSIBLE_RANGES: dict[str, list[float]] = {
 # rejected instead of repaired.
 DEFAULT_MAX_BAD_FRACTION = 0.05
 
-# Group 1 `feature_dataset.csv` required columns — INTERFACE.md v0.6
-# Section 1 (keys/conditions + raw signals + engineered features).
-# Section 1.4 proxy labels are TBD and deliberately excluded.
-# Story 4 consumption tests validate against this list; Story 5
-# reuses it when the pipeline switches to Group 1 input.
-GROUP1_REQUIRED_COLUMNS: list[str] = [
-    # 1.1 key, time, and operating-condition fields
+# Data Layer `production_features.csv` required columns —
+# INTERFACE.md v0.13 / feature_schema.v1. The handoff is 46 columns:
+# 4 sample keys + 16 A-class context/raw columns + 24 B-class
+# production features + 2 provenance columns.
+PRODUCTION_FEATURE_REQUIRED_COLUMNS: list[str] = [
+    # sample keys + A-class context/raw fields
     "timestamp",
     "trip_id",
     "segment_id",
@@ -61,29 +61,38 @@ GROUP1_REQUIRED_COLUMNS: list[str] = [
     "ambient_temp",
     "accel_pedal_d",
     "accel_pedal_e",
-    # 1.3 engineered features
-    "coolant_slope",
-    "coolant_ambient_delta",
-    "coolant_stability",
-    "intake_ambient_delta",
-    "intake_temp_slope",
-    "maf_derived_air_load_raw",
-    "map_derived_air_load_raw",
-    "maf_map_cohesion",
-    "speed_density_maf_residual",
-    "map_slope",
-    "accel_pedal_mean",
-    "pedal_throttle_gap",
-    "pedal_to_throttle_delay",
-    "tps_slope",
-    "accel_pedal_channel_delta",
-    "accel_pedal_channel_ratio",
-    "pedal_slope",
+    # B-class production features
+    "segment_gap_seconds",
     "engine_on_flag",
+    "coolant_ambient_delta",
+    "intake_ambient_delta",
+    "accel_pedal_mean",
+    "accel_pedal_channel_delta",
+    "pedal_slope",
     "rpm_slope",
-    "idle_flag",
-    "idle_rpm_stability",
+    "speed_density_maf_residual",
+    "pedal_mapping_residual",
+    "engine_start_observed",
+    "engine_start_episode_id",
+    "elapsed_since_engine_start",
+    "ect_start",
+    "aat_start",
+    "iat_start",
+    "maf_integral_180s",
+    "ect_rate_180s",
+    "intake_temp_stability",
+    "speed_std_120s",
+    "maf_std_120s",
+    "rpm_std_120s",
+    "accel_pedal_mean_std_120s",
+    "map_range_60s",
+    # provenance
+    "schema_version",
+    "calibration_version",
 ]
+
+# Backward-compatible import name used by older Model Layer modules/tests.
+GROUP1_REQUIRED_COLUMNS = PRODUCTION_FEATURE_REQUIRED_COLUMNS
 
 
 @dataclass

@@ -146,15 +146,16 @@ ECT_RATE_DIVISOR_MIN = 3.0
 # Same repo-root-relative convention as the detector's
 # DEFAULT_INPUT_CSV. Retained for the pre-migration (non-schema-v1)
 # functions below; feature_baselines.json is no longer delivered.
-DEFAULT_BASELINES_JSON = Path(
-    "data_layer/feature_engineering/feature_baselines.json"
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+DEFAULT_BASELINES_JSON = (
+    _REPO_ROOT / "data_layer/feature_engineering/feature_baselines.json"
 )
 
 # Schema v1's frozen calibration registry — replaces
 # feature_baselines.json as the source of the speed-density
 # regression used by the active scenarios.
-DEFAULT_CALIBRATION_REGISTRY = Path(
-    "data_layer/calibration/calibration_registry.v1.json"
+DEFAULT_CALIBRATION_REGISTRY = (
+    _REPO_ROOT / "data_layer/calibration/calibration_registry.v1.json"
 )
 
 MAF_LOAD = "maf_derived_air_load_raw"

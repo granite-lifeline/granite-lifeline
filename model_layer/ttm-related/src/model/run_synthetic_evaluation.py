@@ -72,12 +72,11 @@ except ImportError:  # direct script run: src/ not on sys.path
         load_speed_density_transform,
     )
 
-DEFAULT_MANIFEST = Path(
-    "ttm-related/outputs/finetune_split_manifest.json"
+_TTM_RELATED_DIR = Path(__file__).resolve().parents[2]
+DEFAULT_MANIFEST = (
+    _TTM_RELATED_DIR / "outputs" / "finetune_split_manifest.json"
 )
-DEFAULT_OUTPUT = Path(
-    "ttm-related/outputs/synthetic_eval_results.json"
-)
+DEFAULT_OUTPUT = _TTM_RELATED_DIR / "outputs" / "synthetic_eval_results.json"
 
 # Recorded per run for Ray's analysis, not used for window selection.
 SUSTAINED_FLOW_SPEED_KMH = 30.0

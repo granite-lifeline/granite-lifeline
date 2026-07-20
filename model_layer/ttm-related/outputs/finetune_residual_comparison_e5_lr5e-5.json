@@ -1,0 +1,107 @@
+{
+  "generated_at": "2026-07-20T15:48:05.794724+00:00",
+  "model_signals": [
+    "rpm",
+    "speed",
+    "coolant_temp",
+    "map",
+    "maf",
+    "tps"
+  ],
+  "manifest_file": "ttm-related/outputs/finetune_split_manifest.json",
+  "input_file": "ttm-related/data/production_feature_manifest/production_features.csv",
+  "zero_shot_model": "ibm-granite/granite-timeseries-ttm-r2",
+  "fine_tuned_model": "ttm-related/outputs/ttm_finetuned_e5_lr5e-5/model",
+  "validation": {
+    "segments": 12,
+    "rows": 30708,
+    "windows": 250,
+    "trips": 12
+  },
+  "zero_shot": {
+    "overall_mae": 58.00043118254344,
+    "per_signal_mae": {
+      "rpm": 296.2420345052083,
+      "speed": 16.635118774414064,
+      "coolant_temp": 1.162427172978719,
+      "map": 21.631012400309245,
+      "maf": 10.255605051676433,
+      "tps": 2.076389190673828
+    },
+    "valid_points": 144000,
+    "per_signal_valid_points": {
+      "rpm": 24000,
+      "speed": 24000,
+      "coolant_temp": 24000,
+      "map": 24000,
+      "maf": 24000,
+      "tps": 24000
+    }
+  },
+  "fine_tuned": {
+    "overall_mae": 54.96661207008362,
+    "per_signal_mae": {
+      "rpm": 279.1436507161458,
+      "speed": 15.70592041015625,
+      "coolant_temp": 1.158609786351522,
+      "map": 21.66361626180013,
+      "maf": 10.195437510172527,
+      "tps": 1.9324377358754476
+    },
+    "valid_points": 144000,
+    "per_signal_valid_points": {
+      "rpm": 24000,
+      "speed": 24000,
+      "coolant_temp": 24000,
+      "map": 24000,
+      "maf": 24000,
+      "tps": 24000
+    }
+  },
+  "comparison": {
+    "overall": {
+      "zero_shot_mae": 58.00043118254344,
+      "fine_tuned_mae": 54.96661207008362,
+      "improvement_pct": 5.2306837218357005
+    },
+    "per_signal": {
+      "rpm": {
+        "zero_shot_mae": 296.2420345052083,
+        "fine_tuned_mae": 279.1436507161458,
+        "improvement_pct": 5.771761531958384
+      },
+      "speed": {
+        "zero_shot_mae": 16.635118774414064,
+        "fine_tuned_mae": 15.70592041015625,
+        "improvement_pct": 5.585763329126236
+      },
+      "coolant_temp": {
+        "zero_shot_mae": 1.162427172978719,
+        "fine_tuned_mae": 1.158609786351522,
+        "improvement_pct": 0.32839791738651936
+      },
+      "map": {
+        "zero_shot_mae": 21.631012400309245,
+        "fine_tuned_mae": 21.66361626180013,
+        "improvement_pct": -0.15072739494346452
+      },
+      "maf": {
+        "zero_shot_mae": 10.255605051676433,
+        "fine_tuned_mae": 10.195437510172527,
+        "improvement_pct": 0.5866795883883144
+      },
+      "tps": {
+        "zero_shot_mae": 2.076389190673828,
+        "fine_tuned_mae": 1.9324377358754476,
+        "improvement_pct": 6.9327780863502495
+      }
+    },
+    "decision_rule": {
+      "clear_improvement_threshold_pct": 5.0,
+      "minimum_non_worse_signals": 4,
+      "signals_total": 6,
+      "clear_improvement": true,
+      "non_worse_signals": 5
+    }
+  }
+}

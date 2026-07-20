@@ -56,8 +56,10 @@ except ImportError:  # direct script run: src/ not on sys.path
 
 
 MODEL_PATH = "ibm-granite/granite-timeseries-ttm-r2"
-DEFAULT_INPUT_CSV = Path(
-    "data_layer/tests/fixtures/production_features.v1.fixture.csv"
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+DEFAULT_INPUT_CSV = (
+    _REPO_ROOT
+    / "data_layer/tests/fixtures/production_features.v1.fixture.csv"
 )
 DEFAULT_CONTEXT_LENGTH = 512
 DEFAULT_PREDICTION_LENGTH = 96
@@ -207,7 +209,9 @@ def load_group1_features(csv_path: Path) -> pd.DataFrame:
     """
     if not Path(csv_path).exists():
         raise ValueError(f"Input CSV not found: {csv_path}")
-    raw = pd.read_csv(csv_path)
+    # The production handoff contains policy-nullable boolean-like columns;
+    # one-pass inference avoids chunk-wise mixed-dtype warnings on the full CSV.
+    raw = pd.read_csv(csv_path, low_memory=False)
     validate_required_columns(
         raw.columns, PRODUCTION_FEATURE_REQUIRED_COLUMNS, str(csv_path)
     )
