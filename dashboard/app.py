@@ -1305,6 +1305,50 @@ def show_overview_page():
     """
     st.markdown(legend_html, unsafe_allow_html=True)
 
+    # GL-256: CSV upload expander
+    with st.expander("Upload your OBD-II data", expanded=False):
+        st.markdown(
+            f'<div style="'
+            f'background:{tokens["glass_surface"]};'
+            f'border:1px solid {tokens["glass_border"]};'
+            f'border-radius:12px;'
+            f'padding:16px 20px;'
+            f'margin-bottom:12px;'
+            f'backdrop-filter:blur(24px) saturate(160%);'
+            f'-webkit-backdrop-filter:blur(24px) saturate(160%);'
+            f'box-shadow:0 4px 16px {tokens["shadow"]};'
+            f'">',
+            unsafe_allow_html=True,
+        )
+        helper_text = (
+            "Upload a raw OBD-II CSV file recorded from your vehicle. "
+            "The file must contain columns including: Time, "
+            "Engine RPM [RPM], Vehicle Speed Sensor [km/h], "
+            "Engine Coolant Temperature [\u00b0C], and other standard "
+            "OBD-II signals."
+        )
+        st.markdown(
+            f'<p style="'
+            f'color:{tokens["text_secondary"]};'
+            f'font-size:14px;'
+            f'line-height:1.5;'
+            f'margin:0 0 12px 0;'
+            f'">{helper_text}</p>',
+            unsafe_allow_html=True,
+        )
+        uploaded_file = st.file_uploader(
+            "Upload OBD-II CSV file",
+            type=["csv"],
+            key="csv_file_uploader",
+        )
+        submit_clicked = st.button(
+            "Run Analysis",
+            key="csv_submit_btn",
+        )
+        if submit_clicked and uploaded_file is not None:
+            st.session_state["uploaded_csv"] = uploaded_file
+        st.markdown("</div>", unsafe_allow_html=True)
+
     st.markdown("<br>", unsafe_allow_html=True)
 
     sorted_components = get_overview_components()
