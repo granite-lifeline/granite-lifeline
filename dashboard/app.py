@@ -1388,19 +1388,7 @@ def show_overview_page():
 
     # GL-256: CSV upload expander
     with st.expander("Upload your OBD-II data", expanded=False):
-        st.markdown(
-            f'<div style="'
-            f'background:{tokens["glass_surface"]};'
-            f'border:1px solid {tokens["glass_border"]};'
-            f'border-radius:12px;'
-            f'padding:16px 20px;'
-            f'margin-bottom:12px;'
-            f'backdrop-filter:blur(24px) saturate(160%);'
-            f'-webkit-backdrop-filter:blur(24px) saturate(160%);'
-            f'box-shadow:0 4px 16px {tokens["shadow"]};'
-            f'">',
-            unsafe_allow_html=True,
-        )
+        # Helper text — single self-contained markdown block
         helper_text = (
             "Upload a raw OBD-II CSV file recorded from your vehicle. "
             "The file must contain columns including: Time, "
@@ -1413,7 +1401,7 @@ def show_overview_page():
             f'color:{tokens["text_secondary"]};'
             f'font-size:14px;'
             f'line-height:1.5;'
-            f'margin:0 0 12px 0;'
+            f'margin:0 0 16px 0;'
             f'">{helper_text}</p>',
             unsafe_allow_html=True,
         )
@@ -1447,8 +1435,6 @@ def show_overview_page():
                     f'border-radius:12px;'
                     f'padding:16px 20px;'
                     f'margin-top:12px;'
-                    f'backdrop-filter:blur(16px);'
-                    f'-webkit-backdrop-filter:blur(16px);'
                     f'box-shadow:0 4px 16px {tokens["shadow"]};'
                     f'">'
                     f'<strong style="'
@@ -1475,8 +1461,6 @@ def show_overview_page():
                     f'border-radius:12px;'
                     f'padding:16px 20px;'
                     f'margin-top:12px;'
-                    f'backdrop-filter:blur(16px);'
-                    f'-webkit-backdrop-filter:blur(16px);'
                     f'box-shadow:0 4px 16px {tokens["shadow"]};'
                     f'">'
                     f'<strong style="'
@@ -1504,7 +1488,6 @@ def show_overview_page():
                     f"{row_count} rows loaded. "
                     f"Running analysis\u2026"
                 )
-        st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
