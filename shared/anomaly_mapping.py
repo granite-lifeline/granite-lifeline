@@ -1,9 +1,9 @@
 """Shared anomaly type naming tables."""
 
-# The six current anomaly types follow docs/INTERFACE.md v0.9.
+# The five current anomaly types follow docs/INTERFACE.md v1.0.
 GROUND_KNOWLEDGE_ANOMALY_TYPES = [
     "cooling_degradation",
-    "intake_air_temperature_sensor_or_heat_soak_fault",
+    "intake_air_temperature_sensor_fault",
     "air_intake_maf_anomaly",
     "map_load_signal_plausibility_fault",
     "accelerator_pedal_sensor",
@@ -20,10 +20,9 @@ ANOMALY_TYPE_MAPPING_TABLE = [
         "legacy_alias": "cooling_system_stress",
     },
     {
-        "interface_name": "intake_air_temperature_sensor_or_heat_soak_fault",
-        "grounded_knowledge_key":
-            "intake_air_temperature_sensor_or_heat_soak_fault",
-        "dashboard_key": "intake_air_temperature_sensor_or_heat_soak_fault",
+        "interface_name": "intake_air_temperature_sensor_fault",
+        "grounded_knowledge_key": "intake_air_temperature_sensor_fault",
+        "dashboard_key": "intake_air_temperature_sensor_fault",
         "legacy_alias": None,
     },
     {
