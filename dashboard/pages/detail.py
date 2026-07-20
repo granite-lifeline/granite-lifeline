@@ -119,13 +119,12 @@ def _render_failure_prediction(
         f'<div style="background:{tokens["glass_surface"]};'
         'backdrop-filter:blur(24px) saturate(160%);'
         '-webkit-backdrop-filter:blur(24px) saturate(160%);'
-        f'border:1px solid {border_color};border-radius:18px;'
+        f'border:1px solid {border_color};border-radius:16px;'
         'padding:18px 20px;margin:0 auto 28px auto;'
-        f'box-shadow:0 8px 28px {tokens["shadow"]},'
-        'inset 0 1px 0 rgba(255,255,255,0.10);max-width:1120px;">'
-        '<div style="display:flex;align-items:stretch;'
+        f'box-shadow:0 2px 12px {tokens["shadow"]};max-width:1120px;">'
+        '<div style="display:flex;align-items:center;'
         'justify-content:space-between;gap:18px;flex-wrap:wrap;">'
-        '<div style="flex:1.25;min-width:280px;display:flex;'
+        '<div style="flex:1.25;min-width:260px;display:flex;'
         'align-items:center;justify-content:center;">'
         f'<div style="min-width:0;width:100%;">{prediction_html}</div>'
         '</div>'
@@ -264,7 +263,7 @@ def _render_signals(
     tokens: dict,
 ) -> None:
     """Key signals table."""
-    key_signals = component_data.get("key_signals", [])
+    key_signals = component_data.get("key_signals") or []
     if not key_signals:
         info = lucide_icon("info", size=20, color=tokens["text_secondary"])
         st.markdown(
@@ -401,12 +400,11 @@ def _render_report(
                 '-webkit-backdrop-filter:blur(24px) saturate(160%);'
                 f'border:1px solid {tokens["glass_border"]};'
                 'border-radius:16px;padding:16px 18px;margin:0 0 14px 0;'
-                f'box-shadow:0 8px 28px {tokens["shadow"]},'
-                'inset 0 1px 0 rgba(255,255,255,0.10);">'
+                f'box-shadow:0 2px 12px {tokens["shadow"]};">'
                 f'<h3 style="color:{tokens["text"]};margin:0 0 12px 0;'
                 'font-size:15px;font-weight:700;display:flex;'
                 'align-items:center;justify-content:center;gap:9px;'
-                f'padding-bottom:9px;border-bottom:2px solid {tokens["border"]};">'
+                f'padding-bottom:9px;border-bottom:1px solid {tokens["border"]};">'
                 f'{card["icon"]}{card["title"]}</h3>'
                 '<div style="display:flex;justify-content:center;">'
                 f'<p style="margin:0;max-width:90%;font-size:14px;'
@@ -420,21 +418,17 @@ def _render_report(
             "check-square", size=22, color=tokens["accent"]
         )
         st.markdown(
-            f'<div style="position:relative;'
-            f'background:{hex_to_rgba(tokens["accent"],0.10)};'
-            'backdrop-filter:blur(24px) saturate(160%);'
-            '-webkit-backdrop-filter:blur(24px) saturate(160%);'
-            f'border:1px solid {hex_to_rgba(tokens["accent"],0.32)};'
-            'border-radius:16px;padding:22px 26px 22px 30px;'
-            f'box-shadow:0 8px 28px {tokens["shadow"]},'
-            'inset 0 1px 0 rgba(255,255,255,0.10);overflow:hidden;">'
-            f'<div style="position:absolute;left:0;top:0;bottom:0;'
-            f'width:4px;background:{tokens["accent"]};"></div>'
+            f'<div style="'
+            f'background:{hex_to_rgba(tokens["accent"], 0.08)};'
+            f'border:1px solid {hex_to_rgba(tokens["accent"], 0.28)};'
+            f'border-top:3px solid {tokens["accent"]};'
+            'border-radius:16px;padding:22px 24px;'
+            f'box-shadow:0 2px 12px {tokens["shadow"]};">'
             f'<h3 style="color:{tokens["text"]};margin:0 0 16px 0;'
             'font-size:18px;font-weight:700;display:flex;'
             'align-items:center;justify-content:center;gap:10px;'
             f'padding-bottom:12px;'
-            f'border-bottom:2px solid {hex_to_rgba(tokens["accent"],0.25)};">'
+            f'border-bottom:1px solid {hex_to_rgba(tokens["accent"], 0.25)};">'
             f'{action_icon}What You Should Do</h3>'
             f'<div style="font-size:14.5px;line-height:1.7;text-align:center;">'
             f'{action_html}</div></div>',
@@ -471,8 +465,8 @@ def render_component_detail(
                       "possible_cause", "recommended_action"):
             if not component_data.get(field):
                 missing_fields.append(field)
-    risk_history = component_data.get("risk_history", [])
-    key_signals = component_data.get("key_signals", [])
+    risk_history = component_data.get("risk_history") or []
+    key_signals = component_data.get("key_signals") or []
     if not risk_history or len(risk_history) < 2:
         missing_sections.append("Risk Trend data")
     if not key_signals:
@@ -521,7 +515,7 @@ def render_component_detail(
     _render_failure_prediction(component_data, tokens)
 
     # Hero row: gauge + trend
-    trend = [e["risk_score"] for e in risk_history]
+    trend = [e["risk_score"] for e in (component_data.get("risk_history") or [])]
 
     st.markdown(
         f"""
@@ -533,9 +527,8 @@ def render_component_detail(
                 backdrop-filter: blur(24px) saturate(160%) !important;
                 -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
                 border: 1px solid {tokens["glass_border"]} !important;
-                border-radius: 18px !important;
-                box-shadow: 0 8px 28px {tokens["shadow"]},
-                    inset 0 1px 0 rgba(255,255,255,0.10) !important;
+                border-radius: 16px !important;
+                box-shadow: 0 2px 12px {tokens["shadow"]} !important;
                 padding: 20px !important;
             }}
         </style>
@@ -628,7 +621,7 @@ def show_detail_page() -> None:
     tab_css_rules: list[str] = []
     tab_css_rules.append(f"""
         {tab_row_selector} {{
-            gap: 0.45rem !important;
+            gap: 0.35rem !important;
             flex-wrap: nowrap !important;
             align-items: stretch !important;
         }}
@@ -638,15 +631,17 @@ def show_detail_page() -> None:
         }}
         {tab_row_selector} .stButton {{ height: 100% !important; }}
         {tab_row_selector} button {{
-            min-height: 72px !important;
-            font-size: 13px !important;
-            line-height: 1.25 !important;
+            min-height: 52px !important;
+            font-size: 12px !important;
+            line-height: 1.2 !important;
             text-align: center !important;
             white-space: normal !important;
+            padding-top: 6px !important;
+            padding-bottom: 6px !important;
         }}
         {tab_row_selector} button p {{
-            font-size: 13px !important;
-            line-height: 1.25 !important;
+            font-size: 12px !important;
+            line-height: 1.2 !important;
             white-space: normal !important;
             overflow-wrap: anywhere !important;
         }}
