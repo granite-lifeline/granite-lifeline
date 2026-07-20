@@ -197,12 +197,11 @@ def _show_csv_uploader_hint(tokens: dict) -> None:
         unsafe_allow_html=True,
     )
 
+    # Single row: "CSV format requirements" text left, round ? button right
     hdr_left, hdr_right = st.columns([20, 1])
     with hdr_left:
         st.markdown(
-            f'<div style="margin:16px 0 6px 0;display:flex;align-items:center;'
-            f'gap:8px;">'
-            f'{lucide_icon("help-circle", size=14, color=tokens["text_secondary"])}'
+            f'<div style="margin:16px 0 6px 0;">'
             f'<span style="font-size:12px;color:{tokens["text_secondary"]};">'
             'CSV format requirements</span></div>',
             unsafe_allow_html=True,
@@ -485,19 +484,26 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
         unsafe_allow_html=True,
     )
 
-    # ── Upload card ──
-    with st.container(key="landing_upload_card"):
-        # File picker — label shown as the card title
-        uploaded_file = st.file_uploader(
-            "Upload OBD-II CSV File",
-            type=["csv"],
-            key="landing_csv_uploader",
-        )
-        # Format hint inside the card, below the drop-zone
-        _show_csv_uploader_hint(tokens)
-        # Centered Run Analysis button
-        _, btn_col, _ = st.columns([1, 2, 1])
-        with btn_col:
+    # ── Upload card — centered via columns ──
+    _, card_col, _ = st.columns([1, 4, 1])
+    with card_col:
+        with st.container(key="landing_upload_card"):
+            # Card title (no label on file_uploader to avoid "uploadUpload" overlap)
+            st.markdown(
+                f'<p style="font-size:15px;font-weight:600;'
+                f'color:{tokens["text"]};margin:0 0 12px 0;">'
+                'Upload OBD-II CSV File</p>',
+                unsafe_allow_html=True,
+            )
+            uploaded_file = st.file_uploader(
+                "upload",
+                type=["csv"],
+                key="landing_csv_uploader",
+                label_visibility="collapsed",
+            )
+            # Format hint inside the card, below the drop-zone
+            _show_csv_uploader_hint(tokens)
+            # Run Analysis button — full width inside the card col
             submit_clicked = st.button(
                 "Run Analysis",
                 key="landing_run_btn",
