@@ -9,12 +9,15 @@ from __future__ import annotations
 
 import base64
 import html
+import io
 import math
 import os
 import time
 from datetime import datetime
+import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
+from csv_validator import validate_csv_columns, validate_csv_min_rows
 from anomaly_display import (
     COMPONENT_DISPLAY_NAMES,
     GROUND_KNOWLEDGE_ANOMALY_TYPES,
@@ -1347,6 +1350,82 @@ def show_overview_page():
         )
         if submit_clicked and uploaded_file is not None:
             st.session_state["uploaded_csv"] = uploaded_file
+            try:
+                df = pd.read_csv(
+                    io.BytesIO(uploaded_file.getvalue())
+                )
+            except Exception:
+                df = pd.DataFrame()
+            cols_ok, missing_cols = validate_csv_columns(df)
+            rows_ok = validate_csv_min_rows(df)
+            if not cols_ok:
+                missing_items = "".join(
+                    f"<li>{c}</li>" for c in missing_cols
+                )
+                error_html = (
+                    f'<div style="'
+                    f'background:{tokens["danger_bg"]};'
+                    f'border:1px solid {tokens["danger_border"]};'
+                    f'border-radius:12px;'
+                    f'padding:16px 20px;'
+                    f'margin-top:12px;'
+                    f'backdrop-filter:blur(16px);'
+                    f'-webkit-backdrop-filter:blur(16px);'
+                    f'box-shadow:0 4px 16px {tokens["shadow"]};'
+                    f'">'
+                    f'<strong style="'
+                    f'color:{tokens["danger_text"]};'
+                    f'font-size:15px;'
+                    f'">Missing Required Columns</strong>'
+                    f'<ul style="'
+                    f'color:{tokens["danger_text"]};'
+                    f'font-size:14px;'
+                    f'margin:8px 0 0 0;'
+                    f'padding-left:20px;'
+                    f'line-height:1.7;'
+                    f'">'
+                    f'{missing_items}'
+                    f'</ul>'
+                    f'</div>'
+                )
+                st.markdown(error_html, unsafe_allow_html=True)
+            elif not rows_ok:
+                warn_html = (
+                    f'<div style="'
+                    f'background:{tokens["danger_bg"]};'
+                    f'border:1px solid {tokens["danger_border"]};'
+                    f'border-radius:12px;'
+                    f'padding:16px 20px;'
+                    f'margin-top:12px;'
+                    f'backdrop-filter:blur(16px);'
+                    f'-webkit-backdrop-filter:blur(16px);'
+                    f'box-shadow:0 4px 16px {tokens["shadow"]};'
+                    f'">'
+                    f'<strong style="'
+                    f'color:{tokens["danger_text"]};'
+                    f'font-size:15px;'
+                    f'">Insufficient Data</strong>'
+                    f'<p style="'
+                    f'color:{tokens["danger_text"]};'
+                    f'font-size:14px;'
+                    f'margin:8px 0 0 0;'
+                    f'line-height:1.5;'
+                    f'">'
+                    f'Your file contains fewer than 700 rows. '
+                    f'Please upload at least 15 minutes of driving '
+                    f'data recorded at 1Hz.'
+                    f'</p>'
+                    f'</div>'
+                )
+                st.markdown(warn_html, unsafe_allow_html=True)
+            else:
+                st.session_state["validated_df"] = df
+                row_count = len(df)
+                st.success(
+                    f"File validated successfully. "
+                    f"{row_count} rows loaded. "
+                    f"Running analysis\u2026"
+                )
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
