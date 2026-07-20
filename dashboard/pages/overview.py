@@ -23,7 +23,6 @@ from theme import (
 from ui_components import (
     danger_card_html,
     show_footer,
-    show_mock_data_warning,
     warning_banner_html,
 )
 
