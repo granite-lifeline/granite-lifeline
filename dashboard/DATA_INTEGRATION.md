@@ -82,7 +82,7 @@ Each component report must include:
 | estimated_failure_probability | float or null | Probability of component failure (0.0–1.0). Provided by Model Layer. Null if not yet available. |
 | notes | array of strings | Input validation and degradation messages from Model Layer. Empty array if no messages. |
 
-> **Note:** `estimated_cycles_to_failure` and `estimated_failure_probability` are injected into the Granite LLM context by `build_context()` and will appear in the generated diagnostic report when not null. The `notes` field is passed through to the Dashboard for future display and is currently shown as an empty array in all test data files.
+> **Note:** `estimated_cycles_to_failure` and `estimated_failure_probability` are injected into the Granite LLM context by `build_context()` and will appear in the generated diagnostic report when not null. The `notes` field is passed through to the Dashboard and is shown in the detail page only when the list is not empty.
 
 See `docs/INTERFACE.md` Section 3 for complete field definitions.
 

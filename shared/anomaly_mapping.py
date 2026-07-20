@@ -1,20 +1,17 @@
 """Shared anomaly type naming tables."""
 
-# The seven canonical anomaly types are copied from
-# shared/ground_knowledge/grounded_knowledge.yaml proxy_failures.
+# The six current anomaly types follow docs/INTERFACE.md v0.9.
 GROUND_KNOWLEDGE_ANOMALY_TYPES = [
     "cooling_degradation",
     "intake_air_temperature_sensor_or_heat_soak_fault",
     "air_intake_maf_anomaly",
     "map_load_signal_plausibility_fault",
-    "electronic_throttle_tracking_fault",
     "accelerator_pedal_sensor",
-    "idle_speed_control_or_surge_degradation",
 ]
 
 # GL-127 naming alignment table.
 # interface_name and grounded_knowledge_key should stay the same because
-# shared/interface_models.py and grounded_knowledge.yaml use the same keys.
+# shared/interface_models.py and Dashboard use the same current keys.
 ANOMALY_TYPE_MAPPING_TABLE = [
     {
         "interface_name": "cooling_degradation",
@@ -42,21 +39,9 @@ ANOMALY_TYPE_MAPPING_TABLE = [
         "legacy_alias": None,
     },
     {
-        "interface_name": "electronic_throttle_tracking_fault",
-        "grounded_knowledge_key": "electronic_throttle_tracking_fault",
-        "dashboard_key": "electronic_throttle_tracking_fault",
-        "legacy_alias": None,
-    },
-    {
         "interface_name": "accelerator_pedal_sensor",
         "grounded_knowledge_key": "accelerator_pedal_sensor",
         "dashboard_key": "accelerator_pedal_sensor",
-        "legacy_alias": None,
-    },
-    {
-        "interface_name": "idle_speed_control_or_surge_degradation",
-        "grounded_knowledge_key": "idle_speed_control_or_surge_degradation",
-        "dashboard_key": "idle_speed_control_or_surge_degradation",
         "legacy_alias": None,
     },
 ]
