@@ -159,7 +159,7 @@ def test_signal_sort_order_abnormal_first():
         {"signal_name": "coolant_temp", "value": 95.0, "status": "NORMAL"},
         {"signal_name": "maf", "value": 28.5, "status": "ABNORMAL"},
         {"signal_name": "map", "value": 85.0, "status": "NORMAL"},
-        {"signal_name": "coolant_slope", "value": 5.2, "status": "ABNORMAL"},
+        {"signal_name": "ect_rate_180s", "value": 5.2, "status": "ABNORMAL"},
     ]
     
     # Act

@@ -108,9 +108,16 @@ def _show_theme_toggle(dark_mode: bool, tokens: dict) -> None:
     )
 
 
-def _show_status_banner(mock_data: dict, tokens: dict) -> None:
+def _show_status_banner(
+    mock_data: dict,
+    data_source: dict,
+    tokens: dict,
+) -> None:
     """Status banner with inline risk legend chips."""
     has_high = any(c.get("risk_level") == "High" for c in mock_data.values())
+    has_incomplete = any(
+        source == "missing" for source in data_source.values()
+    )
 
     if has_high:
         banner_bg = hex_to_rgba(tokens["risk_high"], 0.10)
@@ -118,11 +125,17 @@ def _show_status_banner(mock_data: dict, tokens: dict) -> None:
         icon_svg = lucide_icon("alert-triangle", size=18, color=tokens["danger_text"])
         status_text = "Attention needed — one or more components require urgent action"
         text_color = tokens["danger_text"]
+    elif has_incomplete:
+        banner_bg = hex_to_rgba(tokens["text_secondary"], 0.08)
+        banner_border = hex_to_rgba(tokens["text_secondary"], 0.22)
+        icon_svg = lucide_icon("info", size=18, color=tokens["text_secondary"])
+        status_text = "Analysis incomplete — some components do not have data yet"
+        text_color = tokens["text_secondary"]
     else:
         banner_bg = hex_to_rgba(tokens["risk_low"], 0.10)
         banner_border = hex_to_rgba(tokens["risk_low"], 0.30)
         icon_svg = lucide_icon("check-square", size=18, color=tokens["risk_low"])
-        status_text = "All systems within normal range"
+        status_text = "No high-risk components detected"
         text_color = tokens["risk_low"]
 
     legend_chips = "".join(
@@ -156,21 +169,65 @@ def _show_status_banner(mock_data: dict, tokens: dict) -> None:
     )
 
 
-def _show_csv_uploader_hint(tokens: dict) -> None:
-    """Inline ? toggle + collapsible CSV format hint panel.
+def _show_csv_upload_heading(tokens: dict) -> None:
+    """Render centered upload heading with inline requirements toggle."""
+    columns = [
+        "Time",
+        "Engine RPM [RPM]",
+        "Vehicle Speed Sensor [km/h]",
+        "Engine Coolant Temperature [°C]",
+        "Intake Air Temperature [°C]",
+        "Intake Manifold Absolute Pressure [kPa]",
+        "Air Flow Rate from Mass Flow Sensor [g/s]",
+        "Absolute Throttle Position [%]",
+        "Ambient Air Temperature [°C]",
+        "Accelerator Pedal Position D [%]",
+        "Accelerator Pedal Position E [%]",
+    ]
+    column_items = "".join(
+        f'<div style="font-size:12px;color:{tokens["text"]};'
+        f'line-height:1.8;font-family:{FONT_MONO};">{col}</div>'
+        for col in columns
+    )
 
-    Shared by both the landing upload card and the dashboard re-upload section.
-    Uses session key ``csv_hint_open`` to track open/closed state.
-    """
-    hint_open = st.session_state.get("csv_hint_open", False)
-    hint_icon_color = tokens["accent"] if hint_open else tokens["text_secondary"]
-    hint_icon = lucide_icon("help-circle", size=16, color=hint_icon_color)
+    hint_icon = lucide_icon("help-circle", size=16, color=tokens["text_secondary"])
     hint_icon_src = svg_data_uri(hint_icon)
 
     st.markdown(
         f"""
         <style>
-        .st-key-csv_hint_btn button {{
+        .csv-upload-help {{
+            display:block;
+            margin:0 0 20px 0;
+            width:100%;
+        }}
+        .csv-upload-help summary {{
+            align-items:center;
+            cursor:pointer;
+            display:grid;
+            gap:10px;
+            grid-template-columns:28px auto 28px;
+            justify-content:center;
+            list-style:none;
+            width:100%;
+        }}
+        .csv-upload-help summary::-webkit-details-marker {{
+            display:none;
+        }}
+        .csv-heading-spacer {{
+            height:28px;
+            visibility:hidden;
+            width:28px;
+        }}
+        .csv-upload-heading-title {{
+            color:{tokens["text"]};
+            font-size:15px;
+            font-weight:700;
+            line-height:28px;
+            text-align:center;
+            white-space:nowrap;
+        }}
+        .csv-help-icon {{
             background-color: {tokens["surface"]} !important;
             background-image: url("{hint_icon_src}") !important;
             background-position: center !important;
@@ -178,75 +235,51 @@ def _show_csv_uploader_hint(tokens: dict) -> None:
             background-size: 16px 16px !important;
             border: 1px solid {tokens["border"]} !important;
             border-radius: 50% !important;
-            box-shadow: none !important;
-            color: transparent !important;
-            font-size: 0 !important;
+            display:inline-flex;
             height: 28px !important;
-            min-height: 28px !important;
-            min-width: 28px !important;
+            flex:0 0 28px;
             width: 28px !important;
-            padding: 0 !important;
             transition: background-color 0.15s ease, border-color 0.15s ease !important;
         }}
-        .st-key-csv_hint_btn button:hover {{
+        .csv-upload-help summary:hover .csv-help-icon {{
             background-color: {hex_to_rgba(tokens["accent"], 0.08)} !important;
             border-color: {tokens["accent"]} !important;
         }}
-        .st-key-csv_hint_btn button * {{ display: none !important; }}
+        .csv-upload-help-panel {{
+            background:{tokens["surface"]};
+            border:1px solid {hex_to_rgba(tokens["accent"], 0.22)};
+            border-radius:12px;
+            box-shadow:0 8px 24px {tokens["shadow"]};
+            max-width:min(520px, 82vw);
+            margin:14px auto 0 auto;
+            padding:14px 18px;
+            width:520px;
+        }}
         </style>
+        <details class="csv-upload-help">
+            <summary aria-label="Show CSV requirements">
+                <span class="csv-heading-spacer" aria-hidden="true"></span>
+                <span class="csv-upload-heading-title">Upload OBD-II CSV File</span>
+                <span class="csv-help-icon" aria-hidden="true"></span>
+            </summary>
+                <div class="csv-upload-help-panel">
+                    <div style="font-size:12px;font-weight:700;letter-spacing:0.4px;
+                        text-transform:uppercase;color:{tokens["accent"]};
+                        margin-bottom:10px;">Required CSV format</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;
+                        gap:4px 24px;">{column_items}</div>
+                    <div style="margin-top:10px;font-size:12px;
+                        color:{tokens["text_secondary"]};
+                        border-top:1px solid {hex_to_rgba(tokens["accent"], 0.18)};
+                        padding-top:8px;">
+                        Minimum <strong style="color:{tokens["text"]}">700 rows</strong>
+                        (≈ 15 min recorded at 1&nbsp;Hz)
+                    </div>
+                </div>
+        </details>
         """,
         unsafe_allow_html=True,
     )
-
-    # Single row: "CSV format requirements" text left, round ? button right
-    hdr_left, hdr_right = st.columns([20, 1])
-    with hdr_left:
-        st.markdown(
-            f'<div style="margin:16px 0 6px 0;">'
-            f'<span style="font-size:12px;color:{tokens["text_secondary"]};">'
-            'CSV format requirements</span></div>',
-            unsafe_allow_html=True,
-        )
-    with hdr_right:
-        if st.button("?", key="csv_hint_btn"):
-            st.session_state["csv_hint_open"] = not hint_open
-            st.rerun()
-
-    if st.session_state.get("csv_hint_open", False):
-        st.markdown(
-            f'<div style="background:{hex_to_rgba(tokens["accent"], 0.06)};'
-            f'border:1px solid {hex_to_rgba(tokens["accent"], 0.22)};'
-            f'border-radius:12px;padding:14px 18px;margin-bottom:12px;">'
-            f'<div style="font-size:12px;font-weight:700;letter-spacing:0.4px;'
-            f'text-transform:uppercase;color:{tokens["accent"]};margin-bottom:10px;">'
-            'Required CSV format</div>'
-            f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;">'
-            + "".join(
-                f'<div style="font-size:12px;color:{tokens["text"]};'
-                f'line-height:1.8;font-family:{FONT_MONO};">{col}</div>'
-                for col in [
-                    "Time",
-                    "Engine RPM [RPM]",
-                    "Vehicle Speed Sensor [km/h]",
-                    "Engine Coolant Temperature [°C]",
-                    "Intake Air Temperature [°C]",
-                    "Intake Manifold Absolute Pressure [kPa]",
-                    "Air Flow Rate from Mass Flow Sensor [g/s]",
-                    "Absolute Throttle Position [%]",
-                    "Ambient Air Temperature [°C]",
-                    "Accelerator Pedal Position D [%]",
-                    "Accelerator Pedal Position E [%]",
-                ]
-            )
-            + '</div>'
-            f'<div style="margin-top:10px;font-size:12px;'
-            f'color:{tokens["text_secondary"]};border-top:1px solid '
-            f'{hex_to_rgba(tokens["accent"], 0.18)};padding-top:8px;">'
-            'Minimum <strong style="color:{t}">700 rows</strong> '
-            '(≈ 15 min recorded at 1&nbsp;Hz)'.format(t=tokens["text"])
-            + '</div></div>',
-            unsafe_allow_html=True,
-        )
 
 
 def _show_csv_uploader(tokens: dict) -> None:
@@ -266,10 +299,79 @@ def _show_csv_uploader(tokens: dict) -> None:
         }}
         /* ── Drop-zone ── */
         .st-key-csv_upload_section
+            [data-testid="stFileUploader"] {{
+            display: block !important;
+            width: 100% !important;
+        }}
+        .st-key-csv_upload_section
             [data-testid="stFileUploaderDropzone"] {{
-            border: 1.5px dashed {tokens["border"]} !important;
-            border-radius: 10px !important;
+            align-items: center !important;
+            background: transparent !important;
+            border: none !important;
+            display: flex !important;
+            justify-content: center !important;
+            min-height: 58px !important;
+            padding: 0 !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzoneInstructions"] {{
+            display: none !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploader"] label {{
+            display: none !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploader"] small {{
+            display: none !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploader"] section {{
+            align-items: center !important;
+            display: flex !important;
+            justify-content: center !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploader"] button {{
+            align-items: center !important;
             background: {tokens["surface_alt"]} !important;
+            border: 1.5px solid {tokens["border"]} !important;
+            border-radius: 12px !important;
+            color: transparent !important;
+            display: flex !important;
+            font-size: 0 !important;
+            font-weight: 700 !important;
+            justify-content: center !important;
+            margin: 0 auto !important;
+            min-height: 44px !important;
+            min-width: 132px !important;
+            padding: 0 24px !important;
+            width: 132px !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploader"] button * {{
+            color: transparent !important;
+            font-size: 0 !important;
+            line-height: 0 !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploader"] button::after {{
+            color: {tokens["text"]} !important;
+            content: "Upload";
+            display: block !important;
+            font-size: 15px !important;
+            font-weight: 700 !important;
+            line-height: 1 !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploader"] button:hover {{
+            border-color: {tokens["accent"]} !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploader"] button:hover::after {{
+            color: {tokens["accent"]} !important;
         }}
         /* ── Run Analysis button ── */
         .st-key-csv_submit_btn button {{
@@ -290,35 +392,18 @@ def _show_csv_uploader(tokens: dict) -> None:
     )
 
     with st.container(key="csv_upload_section"):
-        left_col, right_col = st.columns([3, 1], gap="large")
-        with left_col:
-            st.markdown(
-                f'<p style="color:{tokens["text"]};font-size:14px;'
-                f'font-weight:600;margin:0 0 4px 0;">Upload OBD-II CSV file</p>'
-                f'<p style="color:{tokens["text_secondary"]};font-size:13px;'
-                f'line-height:1.5;margin:0 0 12px 0;">'
-                "Upload a raw OBD-II CSV file from your vehicle. "
-                "Required columns include Time, Engine RPM, Vehicle Speed, "
-                "Coolant Temperature, and other standard OBD-II signals. "
-                "Minimum 700 rows (≈15 min at 1\u202fHz)."
-                "</p>",
-                unsafe_allow_html=True,
-            )
-            uploaded_file = st.file_uploader(
-                "Upload OBD-II CSV file",
-                type=["csv"],
-                key="csv_file_uploader",
-                label_visibility="collapsed",
-            )
-        with right_col:
-            st.markdown(
-                '<div style="height:52px;"></div>', unsafe_allow_html=True
-            )
-            submit_clicked = st.button(
-                "Run Analysis",
-                key="csv_submit_btn",
-                use_container_width=True,
-            )
+        _show_csv_upload_heading(tokens)
+        uploaded_file = st.file_uploader(
+            "CSV file",
+            type=["csv"],
+            key="csv_file_uploader",
+            label_visibility="collapsed",
+        )
+        submit_clicked = st.button(
+            "Run Analysis",
+            key="csv_submit_btn",
+            use_container_width=True,
+        )
 
     # ── Validation feedback ──
     if submit_clicked:
@@ -365,11 +450,20 @@ def _show_csv_uploader(tokens: dict) -> None:
             )
         else:
             try:
-                st.session_state["dashboard_data"] = run_uploaded_csv_batch(
-                    uploaded_file.getvalue()
-                )
+                with st.spinner("Running analysis..."):
+                    st.session_state["dashboard_data"] = (
+                        run_uploaded_csv_batch(uploaded_file.getvalue())
+                    )
             except Exception as exc:
-                st.error(f"Model analysis is not available: {exc}")
+                body = (
+                    f'<p style="color:{tokens["danger_text"]};'
+                    'font-size:14px;margin:8px 0 0 0;line-height:1.5;">'
+                    f'Model analysis is not connected yet. {exc}</p>'
+                )
+                st.markdown(
+                    danger_card_html("Analysis Unavailable", body, tokens),
+                    unsafe_allow_html=True,
+                )
                 return
             st.session_state["validated_df"] = df
             st.session_state["dashboard_mode"] = "dashboard"
@@ -381,16 +475,23 @@ def show_mock_data_warning(tokens: dict) -> None:
     from anomaly_display import COMPONENT_DISPLAY_NAMES as _CDN
     data_source = get_data_source()
     mock_keys = [k for k, v in data_source.items() if v == "mock"]
-    if not mock_keys:
+    missing_keys = [k for k, v in data_source.items() if v == "missing"]
+    if not mock_keys and not missing_keys:
         return
-    names = ", ".join(_CDN.get(k, k) for k in mock_keys)
+    parts = []
+    if mock_keys:
+        names = ", ".join(_CDN.get(k, k) for k in mock_keys)
+        parts.append(f"<em>{names}</em> use demo values")
+    if missing_keys:
+        names = ", ".join(_CDN.get(k, k) for k in missing_keys)
+        parts.append(f"<em>{names}</em> have no data yet")
     st.markdown(
         warning_banner_html(
-            f"Real pipeline output is not yet available for: "
-            f"<em>{names}</em>. "
-            "These cards show placeholder values from the test dataset.",
+            "Real pipeline output is incomplete: "
+            + "; ".join(parts)
+            + ".",
             tokens,
-            label="Mock data active",
+            label="Data source notice",
         ),
         unsafe_allow_html=True,
     )
@@ -449,11 +550,70 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             margin: 0 auto !important;
         }}
         /* Larger drop-zone */
+        .st-key-landing_upload_card [data-testid="stFileUploader"] {{
+            display: block !important;
+            width: 100% !important;
+        }}
         .st-key-landing_upload_card [data-testid="stFileUploaderDropzone"] {{
-            border: 1.5px dashed {tokens["border"]} !important;
-            border-radius: 12px !important;
+            align-items: center !important;
+            background: transparent !important;
+            border: none !important;
+            display: flex !important;
+            justify-content: center !important;
+            min-height: 64px !important;
+            padding: 0 !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzoneInstructions"] {{
+            display: none !important;
+        }}
+        .st-key-landing_upload_card [data-testid="stFileUploader"] label {{
+            display: none !important;
+        }}
+        .st-key-landing_upload_card [data-testid="stFileUploader"] small {{
+            display: none !important;
+        }}
+        .st-key-landing_upload_card [data-testid="stFileUploader"] section {{
+            align-items: center !important;
+            display: flex !important;
+            justify-content: center !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }}
+        .st-key-landing_upload_card [data-testid="stFileUploader"] button {{
+            align-items: center !important;
             background: {tokens["surface_alt"]} !important;
-            min-height: 100px !important;
+            border: 1.5px solid {tokens["border"]} !important;
+            border-radius: 12px !important;
+            color: transparent !important;
+            display: flex !important;
+            font-size: 0 !important;
+            font-weight: 700 !important;
+            justify-content: center !important;
+            margin: 0 auto !important;
+            min-height: 46px !important;
+            min-width: 140px !important;
+            padding: 0 26px !important;
+            width: 140px !important;
+        }}
+        .st-key-landing_upload_card [data-testid="stFileUploader"] button * {{
+            color: transparent !important;
+            font-size: 0 !important;
+            line-height: 0 !important;
+        }}
+        .st-key-landing_upload_card [data-testid="stFileUploader"] button::after {{
+            color: {tokens["text"]} !important;
+            content: "Upload";
+            display: block !important;
+            font-size: 15px !important;
+            font-weight: 700 !important;
+            line-height: 1 !important;
+        }}
+        .st-key-landing_upload_card [data-testid="stFileUploader"] button:hover {{
+            border-color: {tokens["accent"]} !important;
+        }}
+        .st-key-landing_upload_card [data-testid="stFileUploader"] button:hover::after {{
+            color: {tokens["accent"]} !important;
         }}
         /* Run Analysis button — full-width accent */
         .st-key-landing_run_btn button {{
@@ -494,21 +654,13 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
     _, card_col, _ = st.columns([1, 4, 1])
     with card_col:
         with st.container(key="landing_upload_card"):
-            # Card title (no label on file_uploader to avoid "uploadUpload" overlap)
-            st.markdown(
-                f'<p style="font-size:15px;font-weight:600;'
-                f'color:{tokens["text"]};margin:0 0 12px 0;">'
-                'Upload OBD-II CSV File</p>',
-                unsafe_allow_html=True,
-            )
+            _show_csv_upload_heading(tokens)
             uploaded_file = st.file_uploader(
-                "upload",
+                "CSV file",
                 type=["csv"],
                 key="landing_csv_uploader",
                 label_visibility="collapsed",
             )
-            # Format hint inside the card, below the drop-zone
-            _show_csv_uploader_hint(tokens)
             # Run Analysis button — full width inside the card col
             submit_clicked = st.button(
                 "Run Analysis",
@@ -558,11 +710,22 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
                 )
             else:
                 try:
-                    st.session_state["dashboard_data"] = (
-                        run_uploaded_csv_batch(uploaded_file.getvalue())
-                    )
+                    with st.spinner("Running analysis..."):
+                        st.session_state["dashboard_data"] = (
+                            run_uploaded_csv_batch(uploaded_file.getvalue())
+                        )
                 except Exception as exc:
-                    st.error(f"Model analysis is not available: {exc}")
+                    body = (
+                        f'<p style="color:{tokens["danger_text"]};'
+                        'font-size:14px;margin:8px 0 0 0;line-height:1.5;">'
+                        f'Model analysis is not connected yet. {exc}</p>'
+                    )
+                    st.markdown(
+                        danger_card_html(
+                            "Analysis Unavailable", body, tokens
+                        ),
+                        unsafe_allow_html=True,
+                    )
                     return
                 st.session_state["validated_df"] = df
                 st.session_state["dashboard_mode"] = "dashboard"
@@ -624,9 +787,6 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
     mock_data = get_mock_data()
 
     # ── Back button + title row ──
-    # Check if user arrived via demo (no validated_df) to show "← Back" label
-    is_demo = "validated_df" not in st.session_state
-    back_icon = lucide_icon("trending-up", size=14, color=tokens["text_secondary"])
     st.markdown(
         f"""
         <style>
@@ -713,7 +873,8 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
     show_mock_data_warning(tokens)
 
     # ── Status banner with inline legend ──
-    _show_status_banner(mock_data, tokens)
+    data_source = get_data_source()
+    _show_status_banner(mock_data, data_source, tokens)
 
     st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
 
@@ -757,7 +918,7 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
         unsafe_allow_html=True,
     )
 
-    for idx, (component_key, component_data, _) in enumerate(sorted_components):
+    for idx, (component_key, component_data, is_placeholder) in enumerate(sorted_components):
         col_idx = idx % len(cols) if num >= 3 else idx
         with cols[col_idx]:
             risk_level = component_data.get("risk_level", "Unknown")
@@ -767,6 +928,9 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
                 "Low": tokens["risk_low"],
             }.get(risk_level, tokens["text_secondary"])
 
+            has_score = not is_placeholder and risk_level in {
+                "High", "Medium", "Low"
+            }
             risk_pct = int(component_data.get("risk_score", 0) * 100)
             component_icon = lucide_icon(
                 COMPONENT_ICONS.get(component_key, "activity"),
@@ -775,13 +939,15 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
             )
             ring_size = 124
             ring_svg = progress_ring(
-                risk_pct,
+                risk_pct if has_score else 0,
                 color=badge_bg,
                 track_color=tokens["border"],
                 anim_key=component_key,
                 size=ring_size,
                 stroke=10,
             )
+            score_text = f"{risk_pct}%" if has_score else "N/A"
+            score_label = "Risk Score" if has_score else "No Data"
             card_html = (
                 f'<div style="'
                 f'background:{tokens["glass_surface"]};'
@@ -807,10 +973,10 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
                 'flex-direction:column;align-items:center;justify-content:center;">'
                 f'<span style="font-family:{FONT_MONO};font-size:30px;'
                 f'font-weight:700;color:{tokens["text"]};line-height:1;">'
-                f'{risk_pct}%</span>'
+                f'{score_text}</span>'
                 f'<span style="font-size:11px;color:{tokens["text_secondary"]};'
                 'margin-top:6px;font-weight:600;letter-spacing:0.5px;'
-                'text-transform:uppercase;">Risk Score</span>'
+                f'text-transform:uppercase;">{score_label}</span>'
                 '</div></div>'
                 '<div style="width:100%;flex:1;"></div>'
                 '</div>'

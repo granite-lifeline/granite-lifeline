@@ -26,7 +26,7 @@ one monitored component.
         "reference_range": [90.0, 95.0]
       },
       {
-        "feature": "coolant_slope",
+        "feature": "ect_rate_180s",
         "value": 3.4,
         "unit": "C/min",
         "reference_range": [0.0, 2.0]

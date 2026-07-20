@@ -16,6 +16,6 @@ COMPONENT_DISPLAY_NAMES = {
     "cooling_system_stress": "Cooling System",
     "intake_air_temperature_sensor_fault": "Intake Air Temperature",
     "air_intake_maf_anomaly": "Air Intake System",
-    "map_load_signal_plausibility_fault": "MAP Load Signal",
+    "map_load_signal_plausibility_fault": "Manifold Pressure Signal",
     "accelerator_pedal_sensor": "Accelerator Pedal",
 }

@@ -140,6 +140,24 @@ def _render_gauge(
     trend: list[float],
 ) -> None:
     """Risk score gauge chart."""
+    risk_level = component_data.get("risk_level")
+    if risk_level not in {"High", "Medium", "Low"}:
+        info = lucide_icon("info", size=20, color=tokens["text_secondary"])
+        st.markdown(
+            f'<div style="display:flex;justify-content:center;width:100%;">'
+            f'<div style="background:{hex_to_rgba(tokens["text_secondary"],0.08)};'
+            f'border:1px solid {hex_to_rgba(tokens["text_secondary"],0.20)};'
+            'border-radius:12px;padding:18px 20px;margin:28px 0;'
+            'max-width:420px;display:flex;align-items:center;gap:12px;">'
+            f'<div style="display:flex;align-items:center;flex-shrink:0;">'
+            f'{info}</div>'
+            f'<div style="color:{tokens["text"]};font-size:14px;'
+            'line-height:1.5;">No risk score is available for this '
+            'component yet.</div></div></div>',
+            unsafe_allow_html=True,
+        )
+        return
+
     risk_pct = int(component_data["risk_score"] * 100)
     delta_config = None
     if len(trend) >= 2:
@@ -216,7 +234,17 @@ def _render_trend(
         )
         return
 
-    time_labels = ["T-4", "T-3", "T-2", "T-1", "Now"][-len(trend):]
+    history = component_data.get("risk_history") or []
+    time_labels = []
+    for idx, entry in enumerate(history[-len(trend):]):
+        raw_ts = entry.get("timestamp", "")
+        try:
+            label = datetime.fromisoformat(
+                raw_ts.replace("Z", "+00:00")
+            ).strftime("%m-%d %H:%M")
+        except Exception:
+            label = raw_ts or f"T-{len(trend) - idx - 1}"
+        time_labels.append(label)
     fill_color = (
         "rgba(41,151,255,0.15)" if dark_mode else "rgba(0,113,227,0.12)"
     )
@@ -253,7 +281,7 @@ def _render_trend(
     )
     st.plotly_chart(fig, use_container_width=True, key="detail_trend_chart")
     st.caption(
-        "Risk score over the last 5 recorded readings. "
+        "Risk score over the latest recorded model windows. "
         "Higher values indicate greater risk."
     )
 
@@ -362,9 +390,9 @@ def _render_report(
 ) -> None:
     """Diagnostic report section (What's Happening / Why / Action)."""
     pending = "Pending Granite LLM report generation..."
-    anomaly_desc = component_data.get("anomaly_description", pending)
-    possible_cause = component_data.get("possible_cause", pending)
-    recommended_action = component_data.get("recommended_action", pending)
+    anomaly_desc = component_data.get("anomaly_description") or pending
+    possible_cause = component_data.get("possible_cause") or pending
+    recommended_action = component_data.get("recommended_action") or pending
 
     if isinstance(recommended_action, list):
         items = "".join(

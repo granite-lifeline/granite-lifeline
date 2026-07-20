@@ -16,7 +16,7 @@
         ]
       },
       {
-        "feature": "coolant_slope",
+        "feature": "ect_rate_180s",
         "value": 2.5,
         "unit": "°C/min",
         "reference_range": [
