@@ -47,22 +47,31 @@ SIGNAL_DISPLAY_NAMES = {
     "accel_pedal_e": "Pedal Sensor E"
 }
 
-# Load report data from Report Layer
-# Allow specifying test data file via environment variable
-test_data_file = os.getenv(
+# Load report data from Report Layer — cached so Ollama is only called
+# once per server session, not on every st.rerun().
+@st.cache_resource
+def _load_report_data_cached(file_path: str) -> dict:
+    try:
+        return load_dashboard_data(file_path)
+    except Exception:
+        return {}
+
+
+_test_data_file = os.getenv(
     "DASHBOARD_TEST_DATA", "dashboard/tests/ui_required_data.json"
 )
-try:
-    REPORT_DATA = load_dashboard_data(test_data_file)
-except Exception as e:
-    st.error(f"Failed to load report data from {test_data_file}: {e}")
-    REPORT_DATA = {}
+REPORT_DATA = _load_report_data_cached(_test_data_file)
 
 # GL-132: Extract _data_source metadata before building MOCK_DATA.
 # Maps component_key → "real" | "mock".
+# Work on a copy so the cache entry is never mutated.
 DATA_SOURCE: dict = {}
 if isinstance(REPORT_DATA, dict):
-    DATA_SOURCE = REPORT_DATA.pop("_data_source", {})
+    _ds = REPORT_DATA.get("_data_source", {})
+    DATA_SOURCE = dict(_ds)
+    # Build REPORT_DATA view without the sentinel key
+    REPORT_DATA = {k: v for k, v in REPORT_DATA.items()
+                   if k != "_data_source"}
 
 # Fallback MOCK_DATA for development (kept for reference)
 MOCK_DATA_FALLBACK = {
