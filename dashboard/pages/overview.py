@@ -155,9 +155,12 @@ def _show_status_banner(mock_data: dict, tokens: dict) -> None:
     )
 
 
-def _show_csv_uploader(tokens: dict) -> None:
-    """CSV upload section with inline validation feedback."""
-    # ── Section header row: label left, ? toggle right ──
+def _show_csv_uploader_hint(tokens: dict) -> None:
+    """Inline ? toggle + collapsible CSV format hint panel.
+
+    Shared by both the landing upload card and the dashboard re-upload section.
+    Uses session key ``csv_hint_open`` to track open/closed state.
+    """
     hint_open = st.session_state.get("csv_hint_open", False)
     hint_icon_color = tokens["accent"] if hint_open else tokens["text_secondary"]
     hint_icon = lucide_icon("help-circle", size=16, color=hint_icon_color)
@@ -188,9 +191,7 @@ def _show_csv_uploader(tokens: dict) -> None:
             background-color: {hex_to_rgba(tokens["accent"], 0.08)} !important;
             border-color: {tokens["accent"]} !important;
         }}
-        .st-key-csv_hint_btn button * {{
-            display: none !important;
-        }}
+        .st-key-csv_hint_btn button * {{ display: none !important; }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -199,23 +200,18 @@ def _show_csv_uploader(tokens: dict) -> None:
     hdr_left, hdr_right = st.columns([20, 1])
     with hdr_left:
         st.markdown(
-            f'<div style="margin:40px 0 14px 0;display:flex;align-items:center;'
-            f'gap:10px;">'
-            f'{lucide_icon("file-text", size=18, color=tokens["text_secondary"])}'
-            f'<span style="font-size:13px;font-weight:700;letter-spacing:0.4px;'
-            f'text-transform:uppercase;color:{tokens["text_secondary"]};">'
-            'Analyze Your Own Drive Data</span></div>',
+            f'<div style="margin:16px 0 6px 0;display:flex;align-items:center;'
+            f'gap:8px;">'
+            f'{lucide_icon("help-circle", size=14, color=tokens["text_secondary"])}'
+            f'<span style="font-size:12px;color:{tokens["text_secondary"]};">'
+            'CSV format requirements</span></div>',
             unsafe_allow_html=True,
         )
     with hdr_right:
-        st.markdown(
-            '<div style="height:40px;"></div>', unsafe_allow_html=True
-        )
         if st.button("?", key="csv_hint_btn"):
             st.session_state["csv_hint_open"] = not hint_open
             st.rerun()
 
-    # ── Format hint panel (toggled) ──
     if st.session_state.get("csv_hint_open", False):
         st.markdown(
             f'<div style="background:{hex_to_rgba(tokens["accent"], 0.06)};'
@@ -242,7 +238,7 @@ def _show_csv_uploader(tokens: dict) -> None:
                     "Accelerator Pedal Position E [%]",
                 ]
             )
-            + f'</div>'
+            + '</div>'
             f'<div style="margin-top:10px;font-size:12px;'
             f'color:{tokens["text_secondary"]};border-top:1px solid '
             f'{hex_to_rgba(tokens["accent"], 0.18)};padding-top:8px;">'
@@ -252,6 +248,9 @@ def _show_csv_uploader(tokens: dict) -> None:
             unsafe_allow_html=True,
         )
 
+
+def _show_csv_uploader(tokens: dict) -> None:
+    """CSV upload section with inline validation feedback (re-upload in dashboard)."""
     st.markdown(
         f"""
         <style>
@@ -393,13 +392,195 @@ def show_mock_data_warning(tokens: dict) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Public entry point
+# Landing page (state A — no data uploaded yet)
 # ---------------------------------------------------------------------------
 
-def show_overview_page() -> None:
-    """Display the Overview Page with component health summary."""
-    dark_mode = st.session_state.get("dark_mode", False)
-    tokens = THEME_TOKENS["dark" if dark_mode else "light"]
+def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
+    """Centered upload card with a secondary demo-data link."""
+    # ── Minimal nav bar: brand left, theme toggle right ──
+    nav_left, nav_right = st.columns([10, 1])
+    with nav_left:
+        st.markdown(
+            f'<div style="padding:8px 0 24px 0;">'
+            f'<span style="font-size:17px;font-weight:700;'
+            f'color:{tokens["text"]};">Granite Lifeline</span></div>',
+            unsafe_allow_html=True,
+        )
+    with nav_right:
+        _show_theme_toggle(dark_mode, tokens)
+
+    # ── Vertical centering spacer ──
+    st.markdown(
+        '<div style="height:clamp(24px, 6vh, 60px);"></div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── Hero text ──
+    st.markdown(
+        f'<div style="text-align:center;max-width:560px;margin:0 auto 32px auto;">'
+        f'<h1 style="font-size:clamp(24px,4vw,36px);font-weight:700;'
+        f'color:{tokens["text"]};margin:0 0 12px 0;line-height:1.2;">'
+        'Vehicle Health Analysis</h1>'
+        f'<p style="font-size:15px;color:{tokens["text_secondary"]};'
+        'line-height:1.6;margin:0;">'
+        'Upload your OBD-II drive data to get a full health diagnostic report.'
+        '</p></div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── Upload card CSS ──
+    st.markdown(
+        f"""
+        <style>
+        .st-key-landing_upload_card {{
+            background: {tokens["glass_surface"]} !important;
+            backdrop-filter: blur(20px) saturate(150%) !important;
+            -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+            border: 1px solid {tokens["glass_border"]} !important;
+            border-radius: 20px !important;
+            box-shadow: 0 4px 24px {tokens["shadow"]} !important;
+            padding: 32px 32px 24px 32px !important;
+            max-width: 560px !important;
+            margin: 0 auto !important;
+        }}
+        /* Larger drop-zone */
+        .st-key-landing_upload_card [data-testid="stFileUploaderDropzone"] {{
+            border: 1.5px dashed {tokens["border"]} !important;
+            border-radius: 12px !important;
+            background: {tokens["surface_alt"]} !important;
+            min-height: 100px !important;
+        }}
+        /* Run Analysis button — full-width accent */
+        .st-key-landing_run_btn button {{
+            width: 100% !important;
+            background-color: {tokens["accent"]} !important;
+            color: {tokens["accent_contrast"]} !important;
+            border: none !important;
+            border-radius: 12px !important;
+            font-weight: 700 !important;
+            font-size: 15px !important;
+            padding: 13px 0 !important;
+            margin-top: 4px !important;
+            transition: opacity 0.15s ease !important;
+        }}
+        .st-key-landing_run_btn button:hover {{ opacity: 0.88 !important; }}
+        /* Demo data link-button */
+        .st-key-landing_demo_btn button {{
+            background: transparent !important;
+            color: {tokens["text_secondary"]} !important;
+            border: none !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            text-decoration: underline !important;
+            padding: 4px 8px !important;
+            box-shadow: none !important;
+        }}
+        .st-key-landing_demo_btn button:hover {{
+            color: {tokens["text"]} !important;
+            background: transparent !important;
+            border: none !important;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # ── Upload card ──
+    with st.container(key="landing_upload_card"):
+        card_icon = lucide_icon("file-text", size=20, color=tokens["accent"])
+        st.markdown(
+            f'<div style="display:flex;align-items:center;gap:10px;'
+            f'margin-bottom:16px;">'
+            f'{card_icon}'
+            f'<span style="font-size:16px;font-weight:700;'
+            f'color:{tokens["text"]};">Upload OBD-II CSV File</span>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        uploaded_file = st.file_uploader(
+            "Upload OBD-II CSV file",
+            type=["csv"],
+            key="landing_csv_uploader",
+            label_visibility="collapsed",
+        )
+        submit_clicked = st.button(
+            "Run Analysis",
+            key="landing_run_btn",
+            use_container_width=True,
+        )
+
+    # ── Validation feedback ──
+    if submit_clicked:
+        if uploaded_file is None:
+            st.warning("Please select a CSV file before clicking Run Analysis.")
+        else:
+            st.session_state["uploaded_csv"] = uploaded_file
+            try:
+                df = pd.read_csv(io.BytesIO(uploaded_file.getvalue()))
+            except Exception:
+                df = pd.DataFrame()
+
+            cols_ok, missing_cols = validate_csv_columns(df)
+            rows_ok = validate_csv_min_rows(df)
+
+            if not cols_ok:
+                items_html = "".join(
+                    f'<li style="margin-bottom:4px;">{c}</li>'
+                    for c in missing_cols
+                )
+                body = (
+                    f'<ul style="color:{tokens["danger_text"]};font-size:14px;'
+                    f'margin:8px 0 0 0;padding-left:20px;line-height:1.7;">'
+                    f'{items_html}</ul>'
+                )
+                st.markdown(
+                    danger_card_html("Missing Required Columns", body, tokens),
+                    unsafe_allow_html=True,
+                )
+            elif not rows_ok:
+                body = (
+                    f'<p style="color:{tokens["danger_text"]};font-size:14px;'
+                    f'margin:8px 0 0 0;line-height:1.5;">'
+                    "Your file contains fewer than 700 rows. "
+                    "Please upload at least 15 minutes of driving data "
+                    "recorded at 1\u202fHz.</p>"
+                )
+                st.markdown(
+                    danger_card_html("Insufficient Data", body, tokens),
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.session_state["validated_df"] = df
+                st.session_state["dashboard_mode"] = "dashboard"
+                st.rerun()
+
+    # ── Format hint (collapsed by default, same as existing ? panel) ──
+    _show_csv_uploader_hint(tokens)
+
+    # ── Secondary: demo data link ──
+    st.markdown(
+        '<div style="text-align:center;margin-top:20px;"></div>',
+        unsafe_allow_html=True,
+    )
+    _, demo_col, _ = st.columns([3, 2, 3])
+    with demo_col:
+        if st.button(
+            "Or explore with demo data",
+            key="landing_demo_btn",
+            use_container_width=True,
+        ):
+            st.session_state["dashboard_mode"] = "dashboard"
+            st.rerun()
+
+    show_footer(dark_mode)
+
+
+# ---------------------------------------------------------------------------
+# Dashboard page (state B — data loaded, show component cards)
+# ---------------------------------------------------------------------------
+
+def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
+    """Full dashboard view with component cards and collapsible re-upload."""
     mock_data = get_mock_data()
 
     # ── Title row ──
@@ -436,7 +617,6 @@ def show_overview_page() -> None:
     with theme_col:
         _show_theme_toggle(dark_mode, tokens)
 
-    # ── Empty state ──
     if not mock_data:
         info_icon = lucide_icon("info", size=20, color=tokens["text_secondary"])
         st.markdown(
@@ -470,7 +650,7 @@ def show_overview_page() -> None:
     else:
         cols = st.columns(3, gap="large")
 
-    # Scoped CSS for the detail button inside each card — Variant B: solid button
+    # Scoped CSS for the detail button — Variant B: solid button
     st.markdown(
         f"""
         <style>
@@ -525,7 +705,6 @@ def show_overview_page() -> None:
                 size=ring_size,
                 stroke=10,
             )
-            # Card body — button sits inside the card padding area
             card_html = (
                 f'<div style="'
                 f'background:{tokens["glass_surface"]};'
@@ -569,7 +748,30 @@ def show_overview_page() -> None:
                 st.session_state["page"] = "detail"
                 st.rerun()
 
-    # ── CSV uploader (below cards) ──
-    _show_csv_uploader(tokens)
+    # ── Re-upload section (collapsed) ──
+    st.markdown(
+        "<div style='height:16px;'></div>", unsafe_allow_html=True
+    )
+    with st.expander("Upload new data", expanded=False):
+        _show_csv_uploader(tokens)
 
     show_footer(dark_mode)
+
+
+# ---------------------------------------------------------------------------
+# Public entry point
+# ---------------------------------------------------------------------------
+
+def show_overview_page() -> None:
+    """Route between landing (state A) and dashboard (state B)."""
+    dark_mode = st.session_state.get("dark_mode", False)
+    tokens = THEME_TOKENS["dark" if dark_mode else "light"]
+
+    # State B is active when the user has explicitly uploaded data OR
+    # clicked "explore with demo data".
+    mode = st.session_state.get("dashboard_mode", "landing")
+
+    if mode == "dashboard":
+        _show_dashboard_page(dark_mode, tokens)
+    else:
+        _show_landing_page(dark_mode, tokens)
