@@ -22,6 +22,7 @@ suite can always be run offline.
 
 import sys
 from pathlib import Path
+from typing import Optional
 
 import pytest
 
@@ -38,7 +39,7 @@ from dashboard.data_loader import (  # noqa: E402
 # Shared fixture — runs load_dashboard_data() once per test module.
 # Uses the real pipeline for cooling_degradation; mock for the other two.
 # ---------------------------------------------------------------------------
-_DATA_CACHE: dict | None = None
+_DATA_CACHE: Optional[dict] = None
 
 
 def _get_data() -> dict:
