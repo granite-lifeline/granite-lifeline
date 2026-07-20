@@ -354,9 +354,9 @@ def test_model_layer_output_missing_required_field():
     # Arrange
     invalid_data = {
         # "timestamp": missing
-        "anomaly_type": "cooling_system_stress",
+        "anomaly_type": "cooling_degradation",
         "risk_score": 86.0,
-        "component": "cooling_system_stress",
+        "component": "cooling_degradation",
         "prediction_confidence": 0.88,
         "key_signals": []
     }
@@ -379,9 +379,9 @@ def test_model_layer_output_wrong_type():
     # Arrange
     invalid_data = {
         "timestamp": "2026-06-16T12:00:00Z",
-        "anomaly_type": "cooling_system_stress",
+        "anomaly_type": "cooling_degradation",
         "risk_score": "not_a_number",  # Invalid string
-        "component": "cooling_system_stress",
+        "component": "cooling_degradation",
         "prediction_confidence": 0.88,
         "key_signals": []
     }
@@ -544,9 +544,9 @@ def test_model_layer_output_missing_each_required_field(missing_field):
     # Arrange
     complete_data = {
         "timestamp": "2026-06-16T12:00:00Z",
-        "anomaly_type": "cooling_system_stress",
+        "anomaly_type": "cooling_degradation",
         "risk_score": 86.0,
-        "component": "cooling_system_stress",
+        "component": "cooling_degradation",
         "prediction_confidence": 0.88,
         "key_signals": []
     }

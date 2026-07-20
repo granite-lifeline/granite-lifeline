@@ -205,11 +205,17 @@ _MOCK_DATA_FALLBACK: dict = json.loads(_MOCK_FALLBACK_JSON)
 
 def get_mock_data() -> dict:
     """Return the active component data (real or mock)."""
+    uploaded = st.session_state.get("dashboard_data")
+    if isinstance(uploaded, dict):
+        return {k: v for k, v in uploaded.items() if k != "_data_source"}
     return _REPORT_DATA if _REPORT_DATA else _MOCK_DATA_FALLBACK
 
 
 def get_data_source() -> dict:
     """Return the component → 'real'|'mock' source map."""
+    uploaded = st.session_state.get("dashboard_data")
+    if isinstance(uploaded, dict):
+        return dict(uploaded.get("_data_source", {}))
     data = get_mock_data()
     if not _DATA_SOURCE and data:
         return {k: "mock" for k in data}

@@ -16,7 +16,7 @@ one monitored component.
     "timestamp": "2026-06-16T12:00:00Z",
     "risk_score": 0.86,
     "risk_level": "High",
-    "component": "cooling_system_stress",
+    "component": "cooling_degradation",
     "prediction_confidence": 0.88,
     "key_signals": [
       {

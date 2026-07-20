@@ -10,6 +10,7 @@ import streamlit as st
 
 from anomaly_display import COMPONENT_DISPLAY_NAMES
 from csv_validator import validate_csv_columns, validate_csv_min_rows
+from csv_pipeline import run_uploaded_csv_batch
 from data_store import get_data_source, get_mock_data, get_overview_components
 from theme import (
     COMPONENT_ICONS,
@@ -363,11 +364,16 @@ def _show_csv_uploader(tokens: dict) -> None:
                 unsafe_allow_html=True,
             )
         else:
+            try:
+                st.session_state["dashboard_data"] = run_uploaded_csv_batch(
+                    uploaded_file.getvalue()
+                )
+            except Exception as exc:
+                st.error(f"Model analysis is not available: {exc}")
+                return
             st.session_state["validated_df"] = df
-            st.success(
-                f"File validated successfully. "
-                f"{len(df)} rows loaded. Running analysis\u2026"
-            )
+            st.session_state["dashboard_mode"] = "dashboard"
+            st.rerun()
 
 
 def show_mock_data_warning(tokens: dict) -> None:
@@ -551,6 +557,13 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
                     unsafe_allow_html=True,
                 )
             else:
+                try:
+                    st.session_state["dashboard_data"] = (
+                        run_uploaded_csv_batch(uploaded_file.getvalue())
+                    )
+                except Exception as exc:
+                    st.error(f"Model analysis is not available: {exc}")
+                    return
                 st.session_state["validated_df"] = df
                 st.session_state["dashboard_mode"] = "dashboard"
                 st.rerun()

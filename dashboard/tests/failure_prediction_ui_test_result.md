@@ -12,9 +12,9 @@ the component detail page.
 
 | State | Test data | Expected result |
 |---|---|---|
-| Has value | `cooling_system_stress` in `ui_required_data.json` | Shows `72%` and `15 trips` as highlighted values in the summary banner. |
+| Has value | `cooling_degradation` in `ui_required_data.json` | Shows `72%` and `15 trips` as highlighted values in the summary banner. |
 | Null value | `air_intake_maf_anomaly` in `ui_required_data.json` | Shows the pending placeholder in a compact info notice style. |
-| Notes non-empty | `cooling_system_stress` in `ui_required_data.json` | Shows Data Quality Notes as a glass content card with accent icon, title divider, and normal text. |
+| Notes non-empty | `cooling_degradation` in `ui_required_data.json` | Shows Data Quality Notes as a glass content card with accent icon, title divider, and normal text. |
 | Notes empty | `air_intake_maf_anomaly` in `ui_required_data.json` | Notes area renders nothing. |
 | Banner placement | `dashboard/app.py` | Incomplete Data appears before Failure Prediction; Failure Prediction appears before Risk Score. |
 | Icon uniqueness | `dashboard/app.py` | Failure Prediction uses alert-triangle, while Risk Score Trend uses trending-up. |

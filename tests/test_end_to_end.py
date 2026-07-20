@@ -23,11 +23,11 @@ def test_complete_data_flow():
     components = {k: v for k, v in data.items() if k != "_data_source"}
     assert len(components) == 3, "Should load 3 components"
 
-    # cooling_degradation is the canonical key; cooling_system_stress is the
+    # cooling_degradation is the canonical key; cooling_degradation is the
     # legacy mock key used before GL-127 naming alignment.
     cooling_present = (
         "cooling_degradation" in components
-        or "cooling_system_stress" in components
+        or "cooling_degradation" in components
     )
     assert cooling_present, "Missing cooling component"
     assert "air_intake_maf_anomaly" in components
@@ -43,7 +43,7 @@ def test_cooling_system_data():
     cooling_key = (
         "cooling_degradation"
         if "cooling_degradation" in data
-        else "cooling_system_stress"
+        else "cooling_degradation"
     )
     cooling = data[cooling_key]
 
@@ -150,7 +150,7 @@ def test_signal_status_calculation():
     cooling_key = (
         "cooling_degradation"
         if "cooling_degradation" in data
-        else "cooling_system_stress"
+        else "cooling_degradation"
     )
     cooling = data[cooling_key]
 
@@ -180,7 +180,7 @@ def test_display_name_mapping():
     # real pipeline output and the legacy mock key (GL-127 alignment).
     component_names = {
         "cooling_degradation": "Cooling System",
-        "cooling_system_stress": "Cooling System",
+        "cooling_degradation": "Cooling System",
         "air_intake_maf_anomaly": "Air Intake System",
         "accelerator_pedal_sensor": "Accelerator Pedal",
     }

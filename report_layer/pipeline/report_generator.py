@@ -13,7 +13,7 @@ import logging
 import sys
 import time
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional
 
 import requests
 
@@ -129,7 +129,8 @@ def call_ollama(prompt: str) -> str:
 # ---------------------------------------------------------------------------
 
 def _build_empty_report(
-    model_output_dict: Dict[str, Any]
+    model_output_dict: Dict[str, Any],
+    risk_history: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """
     Build a ReportLayerOutput-compatible dict with empty generated
@@ -142,6 +143,7 @@ def _build_empty_report(
 
     Args:
         model_output_dict: Raw ModelLayerOutput-compatible dict.
+        risk_history: Optional batch-window trend entries.
 
     Returns:
         ReportLayerOutput-compatible dict with empty report content.
@@ -164,7 +166,7 @@ def _build_empty_report(
         ),
         "notes": model_output_dict.get("notes", []),
         # Report Layer maintained fields
-        "risk_history": None,
+        "risk_history": risk_history,
         # Generated fields — empty (fallback)
         "anomaly_description": "",
         "possible_cause": "",
@@ -187,12 +189,37 @@ def _extract_summary_payload(
     return model_output
 
 
+def _extract_risk_history_payload(
+    model_output: Dict[str, Any]
+) -> Optional[List[Dict[str, Any]]]:
+    """Return risk history entries from a batch input envelope."""
+    if not (
+        isinstance(model_output, dict)
+        and isinstance(model_output.get("summary"), dict)
+        and isinstance(model_output.get("windows"), list)
+    ):
+        return None
+
+    history = []
+    for window in model_output["windows"]:
+        if not isinstance(window, dict):
+            continue
+        if "timestamp" not in window or "risk_score" not in window:
+            continue
+        history.append({
+            "timestamp": window["timestamp"],
+            "risk_score": window["risk_score"],
+        })
+    return history
+
+
 # ---------------------------------------------------------------------------
 # Main public function
 # ---------------------------------------------------------------------------
 
 def generate_report(
-    model_output: Dict[str, Any]
+    model_output: Dict[str, Any],
+    risk_history: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """
     Generate a diagnostic report from Model Layer output.
@@ -205,12 +232,17 @@ def generate_report(
     Args:
         model_output: ModelLayerOutput-compatible dict from the
             Model Layer.
+        risk_history: Optional batch-window trend entries maintained
+            for Dashboard visualization.
 
     Returns:
         ReportLayerOutput-compatible dict with generated diagnostic
         content, or empty generated fields when fallback was used.
     """
     try:
+        if risk_history is None:
+            risk_history = _extract_risk_history_payload(model_output)
+
         # Step 0: Normalize and validate input
         try:
             summary_payload = _extract_summary_payload(model_output)
@@ -402,7 +434,7 @@ def generate_report(
             ),
             "notes": summary_payload.get("notes", []),
             # Report Layer maintained fields
-            "risk_history": None,
+            "risk_history": risk_history,
             # Generated fields
             "anomaly_description": anomaly_description,
             "possible_cause": possible_cause,
@@ -422,4 +454,4 @@ def generate_report(
             model_output.get("summary"), dict
         ):
             fallback_source = model_output["summary"]
-        return _build_empty_report(fallback_source)
+        return _build_empty_report(fallback_source, risk_history)

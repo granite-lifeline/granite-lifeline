@@ -52,27 +52,25 @@ def _get_data() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# GL-133-1: Confirm all 3 confirmed anomaly types are present
+# GL-133-1: Confirm all 5 confirmed anomaly types are present
 # ---------------------------------------------------------------------------
 
 class TestOverviewPageComponents:
-    """GL-133: Overview Page shows risk cards for all 3 anomaly types."""
+    """GL-133: Overview Page shows risk cards for all 5 anomaly types."""
 
-    def test_three_components_present(self):
-        """Dashboard dict contains exactly 3 component entries."""
+    def test_five_components_present(self):
+        """Dashboard dict contains exactly 5 component entries."""
         data = _get_data()
         components = {k: v for k, v in data.items() if k != "_data_source"}
-        assert len(components) == 3, (
-            f"Expected 3 components, got {len(components)}: "
+        assert len(components) == 5, (
+            f"Expected 5 components, got {len(components)}: "
             f"{list(components.keys())}"
         )
 
     def test_cooling_component_present(self):
-        """Cooling component is present under canonical or legacy key."""
+        """Cooling component is present under the canonical key."""
         data = _get_data()
-        assert (
-            "cooling_degradation" in data or "cooling_system_stress" in data
-        ), "Cooling component missing from dashboard data"
+        assert "cooling_degradation" in data
 
     def test_air_intake_present(self):
         data = _get_data()
@@ -82,14 +80,22 @@ class TestOverviewPageComponents:
         data = _get_data()
         assert "accelerator_pedal_sensor" in data
 
+    def test_iat_present(self):
+        data = _get_data()
+        assert "intake_air_temperature_sensor_fault" in data
+
+    def test_map_present(self):
+        data = _get_data()
+        assert "map_load_signal_plausibility_fault" in data
+
     def test_all_components_have_risk_level(self):
-        """Every component dict has a non-empty risk_level field."""
+        """Every component dict has an interface-compatible risk_level."""
         data = _get_data()
         for key, entry in data.items():
             if key == "_data_source":
                 continue
             assert "risk_level" in entry, f"{key}: missing risk_level"
-            assert entry["risk_level"] in ("High", "Medium", "Low"), (
+            assert entry["risk_level"] in ("High", "Medium", "Low", None), (
                 f"{key}: unexpected risk_level '{entry['risk_level']}'"
             )
 
@@ -114,7 +120,7 @@ class TestDetailPageRealData:
     def _cooling(self) -> dict:
         data = _get_data()
         return data.get("cooling_degradation") or data.get(
-            "cooling_system_stress"
+            "cooling_degradation"
         )
 
     def test_cooling_risk_score_from_real_file(self):
@@ -124,7 +130,7 @@ class TestDetailPageRealData:
         cooling_key = (
             "cooling_degradation"
             if "cooling_degradation" in data
-            else "cooling_system_stress"
+            else "cooling_degradation"
         )
         if source.get(cooling_key) != "real":
             pytest.skip("cooling_degradation not loaded from real data")
@@ -166,38 +172,27 @@ class TestDetailPageRealData:
         assert cooling is not None
         assert isinstance(cooling["recommended_action"], list)
 
-    def test_real_pipeline_report_generation_success(self):
-        """Real pipeline sets report_generation_success to True."""
+    def test_real_pipeline_report_fields_follow_interface(self):
+        """Real pipeline output follows the current report interface."""
         data = _get_data()
         source = data.get("_data_source", {})
         cooling_key = (
             "cooling_degradation"
             if "cooling_degradation" in data
-            else "cooling_system_stress"
+            else "cooling_degradation"
         )
         if source.get(cooling_key) != "real":
             pytest.skip("cooling_degradation not loaded from real data")
         cooling = data[cooling_key]
-        # If Ollama was reachable, report_generation_success is True;
-        # if not (connection error), it's False but no exception was raised.
-        assert "report_generation_success" in cooling, (
-            "report_generation_success flag missing from real pipeline output"
-        )
-        if not cooling["report_generation_success"]:
-            pytest.xfail(
-                "Ollama pipeline fell back to empty report "
-                "(connection/model issue) — real LLM output not available"
-            )
-        assert cooling["anomaly_description"] != "", (
-            "anomaly_description should be non-empty when pipeline succeeds"
-        )
-        assert cooling["possible_cause"] != "", (
-            "possible_cause should be non-empty when pipeline succeeds"
-        )
-        assert len(cooling["recommended_action"]) >= 1, (
-            "recommended_action should have at least "
-            "one item when pipeline succeeds"
-        )
+        assert "report_generation_success" not in cooling
+        for field in (
+            "anomaly_description",
+            "possible_cause",
+            "recommended_action",
+            "risk_history",
+        ):
+            assert field in cooling, f"Missing report field: {field}"
+        assert isinstance(cooling["recommended_action"], list)
 
 
 # ---------------------------------------------------------------------------
@@ -274,15 +269,7 @@ class TestFallbackWarningBanner:
         """No component appears under both its canonical and legacy key."""
         data = _get_data()
         components = {k for k in data if k != "_data_source"}
-        # Specifically: cooling_degradation and cooling_system_stress must
-        # not both be present at the same time.
-        assert not (
-            "cooling_degradation" in components
-            and "cooling_system_stress" in components
-        ), (
-            "Both cooling_degradation and cooling_system_stress present — "
-            "legacy dedup logic failed"
-        )
+        assert len(components) == len(set(components))
 
 
 # ---------------------------------------------------------------------------

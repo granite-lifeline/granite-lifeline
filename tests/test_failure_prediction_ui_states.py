@@ -47,7 +47,7 @@ def test_failure_prediction_has_value_and_null_states():
     )
 
     cooling_text, cooling_has_value = format_failure_prediction_text(
-        mock["cooling_system_stress"]
+        mock["cooling_degradation"]
     )
     intake_text, intake_has_value = format_failure_prediction_text(
         mock["air_intake_maf_anomaly"]
@@ -72,7 +72,7 @@ def test_data_quality_notes_visible_and_hidden_states():
         load_report_data("dashboard/tests/ui_required_data.json")
     )
 
-    cooling_notes = get_data_quality_notes(mock["cooling_system_stress"])
+    cooling_notes = get_data_quality_notes(mock["cooling_degradation"])
     intake_notes = get_data_quality_notes(mock["air_intake_maf_anomaly"])
 
     assert cooling_notes == [

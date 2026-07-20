@@ -56,7 +56,7 @@ class RiskHistoryEntry(BaseModel):
 class DataLayerOutput(BaseModel):
     """Output from Data Layer, consumed by Model Layer.
 
-    Follows the production_features.csv contract (INTERFACE.md v1.0):
+    Follows the production_features.csv contract (INTERFACE.md v1.1):
     46 ordered columns = 4 sample keys + 16 A-class context/raw fields
     + 24 B-class production features + 2 provenance fields.
     Nullable columns are typed Optional but remain required keys.

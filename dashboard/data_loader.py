@@ -43,7 +43,7 @@ RETIRED_SIGNALS = {"coolant_stability"}
 
 
 def extract_model_summary(raw: Dict[str, Any]) -> Dict[str, Any]:
-    """Return a single-window ModelLayerOutput from either model shape."""
+    """Return the summary ModelLayerOutput from either model shape."""
     if (
         isinstance(raw, dict)
         and isinstance(raw.get("summary"), dict)
@@ -51,6 +51,30 @@ def extract_model_summary(raw: Dict[str, Any]) -> Dict[str, Any]:
     ):
         return raw["summary"]
     return raw
+
+
+def extract_risk_history(
+    raw: Dict[str, Any]
+) -> Optional[List[Dict[str, Any]]]:
+    """Return risk history entries from a batch Model Layer payload."""
+    if not (
+        isinstance(raw, dict)
+        and isinstance(raw.get("summary"), dict)
+        and isinstance(raw.get("windows"), list)
+    ):
+        return None
+
+    history = []
+    for window in raw["windows"]:
+        if not isinstance(window, dict):
+            continue
+        if "timestamp" not in window or "risk_score" not in window:
+            continue
+        history.append({
+            "timestamp": window["timestamp"],
+            "risk_score": window["risk_score"],
+        })
+    return history
 
 
 def normalize_key_signals(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -196,6 +220,7 @@ def load_real_data(anomaly_type: str) -> Optional[Dict[str, Any]]:
         return None
 
     model_payload = normalize_key_signals(extract_model_summary(raw))
+    risk_history = extract_risk_history(raw)
 
     # Validate against ModelLayerOutput schema
     try:
@@ -221,7 +246,7 @@ def load_real_data(anomaly_type: str) -> Optional[Dict[str, Any]]:
     # Attempt to generate a ReportLayerOutput via report_generator
     try:
         from report_layer.pipeline.report_generator import generate_report
-        report = generate_report(model_payload)
+        report = generate_report(model_payload, risk_history=risk_history)
         logger.info(
             "[GL-131] Loaded real data for '%s' from %s.",
             anomaly_type,
@@ -243,6 +268,26 @@ def load_real_data(anomaly_type: str) -> Optional[Dict[str, Any]]:
             exc,
         )
         return None
+
+
+def load_model_output_for_dashboard(
+    raw: Dict[str, Any],
+    source: str = "real",
+) -> Dict[str, Any]:
+    """Convert single or batch Model Layer output into dashboard data."""
+    model_payload = normalize_key_signals(extract_model_summary(raw))
+    risk_history = extract_risk_history(raw)
+
+    from shared.interface_models import ModelLayerOutput
+    ModelLayerOutput(**model_payload)
+
+    from report_layer.pipeline.report_generator import generate_report
+    report = generate_report(model_payload, risk_history=risk_history)
+    component_key = report.get("component", model_payload.get("component"))
+    return {
+        component_key: report,
+        "_data_source": {component_key: source},
+    }
 
 
 def load_dashboard_data(
