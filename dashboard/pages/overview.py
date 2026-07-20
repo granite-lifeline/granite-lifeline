@@ -487,27 +487,22 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
 
     # ── Upload card ──
     with st.container(key="landing_upload_card"):
-        card_icon = lucide_icon("file-text", size=20, color=tokens["accent"])
-        st.markdown(
-            f'<div style="display:flex;align-items:center;gap:10px;'
-            f'margin-bottom:16px;">'
-            f'{card_icon}'
-            f'<span style="font-size:16px;font-weight:700;'
-            f'color:{tokens["text"]};">Upload OBD-II CSV File</span>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
+        # File picker — label shown as the card title
         uploaded_file = st.file_uploader(
-            "Upload OBD-II CSV file",
+            "Upload OBD-II CSV File",
             type=["csv"],
             key="landing_csv_uploader",
-            label_visibility="collapsed",
         )
-        submit_clicked = st.button(
-            "Run Analysis",
-            key="landing_run_btn",
-            use_container_width=True,
-        )
+        # Format hint inside the card, below the drop-zone
+        _show_csv_uploader_hint(tokens)
+        # Centered Run Analysis button
+        _, btn_col, _ = st.columns([1, 2, 1])
+        with btn_col:
+            submit_clicked = st.button(
+                "Run Analysis",
+                key="landing_run_btn",
+                use_container_width=True,
+            )
 
     # ── Validation feedback ──
     if submit_clicked:
@@ -553,9 +548,6 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
                 st.session_state["validated_df"] = df
                 st.session_state["dashboard_mode"] = "dashboard"
                 st.rerun()
-
-    # ── Format hint (collapsed by default, same as existing ? panel) ──
-    _show_csv_uploader_hint(tokens)
 
     # ── Secondary: demo data link ──
     st.markdown(
