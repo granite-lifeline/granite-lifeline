@@ -19,7 +19,7 @@ import yaml
 from shared.anomaly_mapping import GROUND_KNOWLEDGE_ANOMALY_TYPES
 
 
-# Six current anomaly types from docs/INTERFACE.md v0.9.
+# Five current anomaly types from docs/INTERFACE.md v1.0.
 EXPECTED_ANOMALY_TYPES = list(GROUND_KNOWLEDGE_ANOMALY_TYPES)
 
 # ChromaDB configuration
@@ -142,7 +142,7 @@ def index_symptom_knowledge() -> int:
     Index the symptom knowledge base into ChromaDB.
 
     Returns:
-        Number of documents indexed (should be 6).
+        Number of documents indexed (should be 5).
 
     Raises:
         ValueError: If anomaly types are missing from the YAML.
