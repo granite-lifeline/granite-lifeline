@@ -178,11 +178,10 @@ ICONS: dict[str, str] = {
 COMPONENT_ICONS: dict[str, str] = {
     "cooling_degradation": "droplet",
     "cooling_system_stress": "droplet",
-    "intake_air_temperature_sensor_or_heat_soak_fault": "thermometer",
+    "intake_air_temperature_sensor_fault": "thermometer",
     "air_intake_maf_anomaly": "wind",
     "map_load_signal_plausibility_fault": "gauge",
     "accelerator_pedal_sensor": "zap",
-    "idle_speed_control_or_surge_degradation": "trending-up",
 }
 
 

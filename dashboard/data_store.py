@@ -66,11 +66,11 @@ _REPORT_DATA, _DATA_SOURCE = _build_data_views()
 # ---------------------------------------------------------------------------
 
 _MOCK_FALLBACK_JSON = json.dumps({
-    "cooling_system_stress": {
+    "cooling_degradation": {
         "timestamp": "2026-06-16T12:00:00Z",
         "risk_score": 0.86,
         "risk_level": "High",
-        "component": "cooling_system_stress",
+        "component": "cooling_degradation",
         "prediction_confidence": 0.88,
         "key_signals": [
             {
@@ -80,10 +80,10 @@ _MOCK_FALLBACK_JSON = json.dumps({
                 "reference_range": [90.0, 95.0],
             },
             {
-                "feature": "coolant_slope",
+                "feature": "ect_rate_180s",
                 "value": 3.4,
                 "unit": "\u00b0C/min",
-                "reference_range": [0.0, 2.0],
+                "reference_range": [0.0, 0.5],
             },
         ],
         "risk_history": [
@@ -99,7 +99,7 @@ _MOCK_FALLBACK_JSON = json.dumps({
             "need prompt attention."
         ),
         "possible_cause": (
-            "This could be related to cooling system stress, such as low "
+            "This could be related to cooling system degradation, such as low "
             "coolant, radiator problems, or water pump degradation."
         ),
         "recommended_action": [
@@ -225,14 +225,17 @@ def make_overview_placeholder(component_key: str) -> dict:
     return {
         "timestamp": "",
         "risk_score": 0.0,
-        "risk_level": "Unknown",
+        "risk_level": None,
         "component": component_key,
         "prediction_confidence": 0.0,
         "key_signals": [],
-        "risk_history": [],
+        "risk_history": None,
         "anomaly_description": "",
         "possible_cause": "",
         "recommended_action": [],
+        "estimated_cycles_to_failure": None,
+        "estimated_failure_probability": None,
+        "notes": [],
     }
 
 

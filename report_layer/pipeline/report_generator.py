@@ -21,7 +21,10 @@ import requests
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from shared.interface_models import ModelLayerOutput  # noqa: E402
+from shared.interface_models import (  # noqa: E402
+    BatchModelLayerOutput,
+    ModelLayerOutput,
+)
 from report_layer.pipeline.context_injection import (  # noqa: E402
     build_context_with_rag,
 )
@@ -169,6 +172,21 @@ def _build_empty_report(
     }
 
 
+def _extract_summary_payload(
+    model_output: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Return the single-window payload from either supported input shape."""
+    if (
+        isinstance(model_output, dict)
+        and isinstance(model_output.get("summary"), dict)
+        and isinstance(model_output.get("windows"), list)
+    ):
+        # Validate the full envelope so malformed batch outputs fail cleanly.
+        BatchModelLayerOutput(**model_output)
+        return model_output["summary"]
+    return model_output
+
+
 # ---------------------------------------------------------------------------
 # Main public function
 # ---------------------------------------------------------------------------
@@ -181,8 +199,8 @@ def generate_report(
 
     Runs the full RAG-grounded three-layer Granite prompt chain and
     returns a ReportLayerOutput-compatible dict.  This function never
-    raises — any failure activates the graceful fallback path and
-    sets ``report_generation_success`` to False in the returned dict.
+    raises — any failure activates the graceful fallback path with empty
+    generated report fields.
 
     Args:
         model_output: ModelLayerOutput-compatible dict from the
@@ -190,14 +208,13 @@ def generate_report(
 
     Returns:
         ReportLayerOutput-compatible dict with generated diagnostic
-        content and a ``report_generation_success`` boolean flag.
-        ``report_generation_success`` is True when the full pipeline
-        succeeded; False when the fallback (empty report) was used.
+        content, or empty generated fields when fallback was used.
     """
     try:
-        # Step 0: Validate input
+        # Step 0: Normalize and validate input
         try:
-            validated = ModelLayerOutput(**model_output)
+            summary_payload = _extract_summary_payload(model_output)
+            validated = ModelLayerOutput(**summary_payload)
         except Exception as exc:
             raise ValueError(
                 f"Invalid model_output: {exc}"
@@ -369,28 +386,27 @@ def generate_report(
         # Step 5: Assemble successful output
         result = {
             # Pass-through fields
-            "timestamp": model_output.get("timestamp", ""),
-            "risk_score": model_output.get("risk_score", 0.0),
-            "risk_level": model_output.get("risk_level"),
-            "component": model_output.get("component", ""),
-            "prediction_confidence": model_output.get(
+            "timestamp": summary_payload.get("timestamp", ""),
+            "risk_score": summary_payload.get("risk_score", 0.0),
+            "risk_level": summary_payload.get("risk_level"),
+            "component": summary_payload.get("component", ""),
+            "prediction_confidence": summary_payload.get(
                 "prediction_confidence", 0.0
             ),
-            "key_signals": model_output.get("key_signals", []),
-            "estimated_cycles_to_failure": model_output.get(
+            "key_signals": summary_payload.get("key_signals", []),
+            "estimated_cycles_to_failure": summary_payload.get(
                 "estimated_cycles_to_failure"
             ),
-            "estimated_failure_probability": model_output.get(
+            "estimated_failure_probability": summary_payload.get(
                 "estimated_failure_probability"
             ),
-            "notes": model_output.get("notes", []),
+            "notes": summary_payload.get("notes", []),
             # Report Layer maintained fields
             "risk_history": None,
             # Generated fields
             "anomaly_description": anomaly_description,
             "possible_cause": possible_cause,
             "recommended_action": recommended_action,
-            "report_generation_success": True,
         }
         return result
 
@@ -401,6 +417,9 @@ def generate_report(
             exc,
             exc_info=True,
         )
-        fallback = _build_empty_report(model_output)
-        fallback["report_generation_success"] = False
-        return fallback
+        fallback_source = model_output
+        if isinstance(model_output, dict) and isinstance(
+            model_output.get("summary"), dict
+        ):
+            fallback_source = model_output["summary"]
+        return _build_empty_report(fallback_source)

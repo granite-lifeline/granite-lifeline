@@ -43,12 +43,12 @@ Examples:
 Bad example (cooling_degradation, High risk):
 "The coolant_temp signal shows 102°C which exceeds the
 reference_range of 90-95°C. The system has detected a
-cooling_system_stress anomaly with high risk_score. This confirms a
+cooling_degradation anomaly with high risk_score. This confirms a
 thermostat malfunction."
 
 Why this is wrong:
 - Uses raw field names (coolant_temp, reference_range, risk_score)
-- Uses technical component name (cooling_system_stress) instead of
+- Uses technical component name (cooling_degradation) instead of
   plain language
 - Presents prediction as confirmed fault ("confirms a thermostat
   malfunction")

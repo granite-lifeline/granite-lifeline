@@ -26,13 +26,48 @@ REAL_DATA_PATHS: Dict[str, Optional[str]] = {
     ),
     "air_intake_maf_anomaly": None,
     "accelerator_pedal_sensor": None,
+    "intake_air_temperature_sensor_fault": None,
+    "map_load_signal_plausibility_fault": None,
 }
 
 # Canonical mock-data fallback file (ReportLayerOutput format)
 _MOCK_DATA_FILE = "dashboard/tests/ui_required_data.json"
 
-# The 3 confirmed anomaly types for GL-129
+# The five current anomaly types from INTERFACE.md v1.1.
 CONFIRMED_ANOMALY_TYPES = list(REAL_DATA_PATHS.keys())
+
+LEGACY_SIGNAL_ALIASES: Dict[str, str] = {
+    "coolant_slope": "ect_rate_180s",
+}
+RETIRED_SIGNALS = {"coolant_stability"}
+
+
+def extract_model_summary(raw: Dict[str, Any]) -> Dict[str, Any]:
+    """Return a single-window ModelLayerOutput from either model shape."""
+    if (
+        isinstance(raw, dict)
+        and isinstance(raw.get("summary"), dict)
+        and isinstance(raw.get("windows"), list)
+    ):
+        return raw["summary"]
+    return raw
+
+
+def normalize_key_signals(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Normalize legacy key signal names at the dashboard boundary."""
+    normalized = dict(payload)
+    signals = []
+    for signal in normalized.get("key_signals", []):
+        signal_copy = dict(signal)
+        feature = signal_copy.get("feature")
+        if feature in RETIRED_SIGNALS:
+            continue
+        signal_copy["feature"] = LEGACY_SIGNAL_ALIASES.get(
+            feature, feature
+        )
+        signals.append(signal_copy)
+    normalized["key_signals"] = signals
+    return normalized
 
 
 def load_report_data(file_path: str) -> List[Dict[str, Any]]:
@@ -90,6 +125,25 @@ def convert_to_component_dict(
     return component_dict
 
 
+def make_empty_report(anomaly_type: str) -> Dict[str, Any]:
+    """Create an interface-complete placeholder report for missing data."""
+    return {
+        "timestamp": "",
+        "risk_score": 0.0,
+        "risk_level": None,
+        "component": anomaly_type,
+        "prediction_confidence": 0.0,
+        "key_signals": [],
+        "estimated_cycles_to_failure": None,
+        "estimated_failure_probability": None,
+        "notes": [],
+        "risk_history": None,
+        "anomaly_description": "",
+        "possible_cause": "",
+        "recommended_action": [],
+    }
+
+
 def load_real_data(anomaly_type: str) -> Optional[Dict[str, Any]]:
     """
     GL-131: Attempt to load real ModelLayerOutput for an anomaly type,
@@ -141,12 +195,14 @@ def load_real_data(anomaly_type: str) -> Optional[Dict[str, Any]]:
         )
         return None
 
+    model_payload = normalize_key_signals(extract_model_summary(raw))
+
     # Validate against ModelLayerOutput schema
     try:
         import sys as _sys
         _sys.path.insert(0, ".")
         from shared.interface_models import ModelLayerOutput
-        ModelLayerOutput(**raw)
+        ModelLayerOutput(**model_payload)
     except ImportError:
         logger.warning(
             "[GL-131] shared.interface_models not available — "
@@ -165,7 +221,7 @@ def load_real_data(anomaly_type: str) -> Optional[Dict[str, Any]]:
     # Attempt to generate a ReportLayerOutput via report_generator
     try:
         from report_layer.pipeline.report_generator import generate_report
-        report = generate_report(raw)
+        report = generate_report(model_payload)
         logger.info(
             "[GL-131] Loaded real data for '%s' from %s.",
             anomaly_type,
@@ -272,9 +328,11 @@ def load_dashboard_data(
             else:
                 logger.warning(
                     "[GL-132] No mock data found for anomaly type '%s' — "
-                    "component will be absent from dashboard.",
+                    "using placeholder.",
                     anomaly_type,
                 )
+                result[anomaly_type] = make_empty_report(anomaly_type)
+                data_source[anomaly_type] = "missing"
 
     # Preserve extra components from the mock file that are not already
     # covered — but skip legacy alias keys whose canonical counterpart was
