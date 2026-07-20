@@ -157,16 +157,100 @@ def _show_status_banner(mock_data: dict, tokens: dict) -> None:
 
 def _show_csv_uploader(tokens: dict) -> None:
     """CSV upload section with inline validation feedback."""
-    # Section header
+    # ── Section header row: label left, ? toggle right ──
+    hint_open = st.session_state.get("csv_hint_open", False)
+    hint_icon_color = tokens["accent"] if hint_open else tokens["text_secondary"]
+    hint_icon = lucide_icon("help-circle", size=16, color=hint_icon_color)
+    hint_icon_src = svg_data_uri(hint_icon)
+
     st.markdown(
-        f'<div style="margin:40px 0 14px 0;display:flex;align-items:center;'
-        f'gap:10px;">'
-        f'{lucide_icon("file-text", size=18, color=tokens["text_secondary"])}'
-        f'<span style="font-size:13px;font-weight:700;letter-spacing:0.4px;'
-        f'text-transform:uppercase;color:{tokens["text_secondary"]};">'
-        'Analyze Your Own Drive Data</span></div>',
+        f"""
+        <style>
+        .st-key-csv_hint_btn button {{
+            background-color: {tokens["surface"]} !important;
+            background-image: url("{hint_icon_src}") !important;
+            background-position: center !important;
+            background-repeat: no-repeat !important;
+            background-size: 16px 16px !important;
+            border: 1px solid {tokens["border"]} !important;
+            border-radius: 50% !important;
+            box-shadow: none !important;
+            color: transparent !important;
+            font-size: 0 !important;
+            height: 28px !important;
+            min-height: 28px !important;
+            min-width: 28px !important;
+            width: 28px !important;
+            padding: 0 !important;
+            transition: background-color 0.15s ease, border-color 0.15s ease !important;
+        }}
+        .st-key-csv_hint_btn button:hover {{
+            background-color: {hex_to_rgba(tokens["accent"], 0.08)} !important;
+            border-color: {tokens["accent"]} !important;
+        }}
+        .st-key-csv_hint_btn button * {{
+            display: none !important;
+        }}
+        </style>
+        """,
         unsafe_allow_html=True,
     )
+
+    hdr_left, hdr_right = st.columns([20, 1])
+    with hdr_left:
+        st.markdown(
+            f'<div style="margin:40px 0 14px 0;display:flex;align-items:center;'
+            f'gap:10px;">'
+            f'{lucide_icon("file-text", size=18, color=tokens["text_secondary"])}'
+            f'<span style="font-size:13px;font-weight:700;letter-spacing:0.4px;'
+            f'text-transform:uppercase;color:{tokens["text_secondary"]};">'
+            'Analyze Your Own Drive Data</span></div>',
+            unsafe_allow_html=True,
+        )
+    with hdr_right:
+        st.markdown(
+            '<div style="height:40px;"></div>', unsafe_allow_html=True
+        )
+        if st.button("?", key="csv_hint_btn"):
+            st.session_state["csv_hint_open"] = not hint_open
+            st.rerun()
+
+    # ── Format hint panel (toggled) ──
+    if st.session_state.get("csv_hint_open", False):
+        st.markdown(
+            f'<div style="background:{hex_to_rgba(tokens["accent"], 0.06)};'
+            f'border:1px solid {hex_to_rgba(tokens["accent"], 0.22)};'
+            f'border-radius:12px;padding:14px 18px;margin-bottom:12px;">'
+            f'<div style="font-size:12px;font-weight:700;letter-spacing:0.4px;'
+            f'text-transform:uppercase;color:{tokens["accent"]};margin-bottom:10px;">'
+            'Required CSV format</div>'
+            f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;">'
+            + "".join(
+                f'<div style="font-size:12px;color:{tokens["text"]};'
+                f'line-height:1.8;font-family:{FONT_MONO};">{col}</div>'
+                for col in [
+                    "Time",
+                    "Engine RPM [RPM]",
+                    "Vehicle Speed Sensor [km/h]",
+                    "Engine Coolant Temperature [°C]",
+                    "Intake Air Temperature [°C]",
+                    "Intake Manifold Absolute Pressure [kPa]",
+                    "Air Flow Rate from Mass Flow Sensor [g/s]",
+                    "Absolute Throttle Position [%]",
+                    "Ambient Air Temperature [°C]",
+                    "Accelerator Pedal Position D [%]",
+                    "Accelerator Pedal Position E [%]",
+                ]
+            )
+            + f'</div>'
+            f'<div style="margin-top:10px;font-size:12px;'
+            f'color:{tokens["text_secondary"]};border-top:1px solid '
+            f'{hex_to_rgba(tokens["accent"], 0.18)};padding-top:8px;">'
+            'Minimum <strong style="color:{t}">700 rows</strong> '
+            '(≈ 15 min recorded at 1&nbsp;Hz)'.format(t=tokens["text"])
+            + '</div></div>',
+            unsafe_allow_html=True,
+        )
 
     st.markdown(
         f"""
@@ -386,29 +470,30 @@ def show_overview_page() -> None:
     else:
         cols = st.columns(3, gap="large")
 
-    # Scoped CSS for the detail button inside each card
+    # Scoped CSS for the detail button inside each card — Variant B: solid button
     st.markdown(
         f"""
         <style>
         [class*="st-key-card_btn_"] button {{
             width: 100% !important;
-            background: transparent !important;
-            color: {tokens["text_secondary"]} !important;
-            border: none !important;
-            border-top: 1px solid {tokens["border"]} !important;
-            border-radius: 0 0 16px 16px !important;
+            background: {tokens["surface_alt"]} !important;
+            color: {tokens["text"]} !important;
+            border: 1.5px solid {tokens["border"]} !important;
+            border-radius: 10px !important;
             font-size: 13px !important;
             font-weight: 600 !important;
-            padding: 12px 0 !important;
+            padding: 10px 0 !important;
             margin: 0 !important;
-            transition: color 0.15s ease, background 0.15s ease !important;
+            transition: background 0.15s ease, border-color 0.15s ease,
+                        color 0.15s ease !important;
         }}
         [class*="st-key-card_btn_"] button:hover {{
-            background: {hex_to_rgba(tokens["accent"], 0.06)} !important;
-            color: {tokens["accent"]} !important;
+            background: {tokens["accent"]} !important;
+            border-color: {tokens["accent"]} !important;
+            color: {tokens["accent_contrast"]} !important;
         }}
         [class*="st-key-card_btn_"] button:active {{
-            transform: none !important;
+            transform: scale(0.98) !important;
         }}
         </style>
         """,
@@ -440,7 +525,7 @@ def show_overview_page() -> None:
                 size=ring_size,
                 stroke=10,
             )
-            # Card: top color stripe indicates risk level; no left bar
+            # Card body — button sits inside the card padding area
             card_html = (
                 f'<div style="'
                 f'background:{tokens["glass_surface"]};'
@@ -450,7 +535,7 @@ def show_overview_page() -> None:
                 f'border-top:3px solid {badge_bg};'
                 'border-radius:16px;'
                 f'box-shadow:0 2px 12px {tokens["shadow"]};'
-                'padding:22px 16px 0 16px;min-height:260px;'
+                'padding:22px 16px 16px 16px;min-height:260px;'
                 'display:flex;flex-direction:column;align-items:center;'
                 'justify-content:center;gap:20px;">'
                 '<div style="display:flex;align-items:center;gap:10px;">'
@@ -471,7 +556,7 @@ def show_overview_page() -> None:
                 'margin-top:6px;font-weight:600;letter-spacing:0.5px;'
                 'text-transform:uppercase;">Risk Score</span>'
                 '</div></div>'
-                '<div style="width:100%;"></div>'
+                '<div style="width:100%;flex:1;"></div>'
                 '</div>'
             )
             st.markdown(card_html, unsafe_allow_html=True)
