@@ -14,7 +14,7 @@ Stricter validation will be added once all layers confirm field details.
 from typing import List, Optional, Literal
 from pydantic import BaseModel, Field
 
-# Anomaly type enum based on grounded_knowledge.yaml proxy_failures
+# Anomaly type enum based on INTERFACE.md v1.0
 AnomalyType = Literal[
     "cooling_degradation",
     "air_intake_maf_anomaly",

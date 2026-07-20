@@ -111,3 +111,27 @@ def write_group1_csv(
         frame["model"] = "Leon"
     frame.to_csv(path, index=False)
     return path
+
+
+def make_multi_segment_frame(
+    segments: Sequence[tuple[str, str, int]],
+) -> pd.DataFrame:
+    """Concatenate correct-format frames as multiple segments.
+
+    ``segments`` is a sequence of (trip_id, segment_id, rows).
+    Timestamps run sequentially across segments with a gap so
+    per-trip ordering matches real Group 1 output.
+    """
+    frames = []
+    start = pd.Timestamp("2026-06-16 10:00:00")
+    for trip_id, segment_id, rows in segments:
+        frame = make_group1_frame(rows)
+        frame["trip_id"] = trip_id
+        frame["segment_id"] = segment_id
+        stamps = pd.date_range(start, periods=rows, freq="1s")
+        frame["timestamp"] = stamps.strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
+        start = stamps[-1] + pd.Timedelta(seconds=61)
+        frames.append(frame)
+    return pd.concat(frames, ignore_index=True)
