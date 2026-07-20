@@ -1034,6 +1034,75 @@ def show_mock_data_warning(tokens: dict):
     st.markdown(warning_html, unsafe_allow_html=True)
 
 
+def show_pipeline_error_card(
+    error_type: str,
+    tokens: dict,
+) -> None:
+    """GL-261: Render a styled amber warning card for a pipeline error.
+
+    Parameters
+    ----------
+    error_type:
+        One of ``"empty_file"``, ``"pipeline_timeout"``,
+        ``"model_unavailable"``, or ``"report_unavailable"``.
+    tokens:
+        Active theme token dict from ``THEME_TOKENS``.
+    """
+    _MESSAGES: dict[str, str] = {
+        "empty_file": (
+            "The uploaded file appears to be empty. "
+            "Please upload a valid OBD-II CSV file."
+        ),
+        "pipeline_timeout": (
+            "The analysis pipeline timed out. This may happen with "
+            "very large files. Please try uploading a shorter drive "
+            "session (15\u201330 minutes recommended)."
+        ),
+        "model_unavailable": (
+            "The anomaly detection model is currently unavailable. "
+            "Analysis will resume when the model service is restored."
+        ),
+        "report_unavailable": (
+            "The diagnostic report could not be generated. "
+            "Raw analysis results are shown below."
+        ),
+    }
+    message = _MESSAGES.get(error_type, f"Unknown error: {error_type}")
+    warn_icon = lucide_icon(
+        "alert-triangle", size=18, color=tokens["risk_medium"]
+    )
+    card_html = (
+        f'<div style="'
+        f'background:{hex_to_rgba(tokens["risk_medium"], 0.10)};'
+        f'border:1px solid {hex_to_rgba(tokens["risk_medium"], 0.35)};'
+        f'backdrop-filter:blur(16px);'
+        f'-webkit-backdrop-filter:blur(16px);'
+        f'border-radius:12px;'
+        f'padding:12px 16px;'
+        f'margin:12px auto 4px auto;'
+        f'max-width:860px;'
+        f'display:flex;'
+        f'align-items:flex-start;'
+        f'gap:12px;'
+        f'box-shadow:0 4px 16px {tokens["shadow"]};'
+        f'">'
+        f'<span style="flex-shrink:0;margin-top:1px;">'
+        f'{warn_icon}'
+        f'</span>'
+        f'<span style="'
+        f'color:{tokens["text"]};'
+        f'font-size:14px;'
+        f'line-height:1.5;'
+        f'">'
+        f'<strong style="color:{tokens["risk_medium"]};">'
+        f'Pipeline warning</strong> \u2014 '
+        f'{message}'
+        f'</span>'
+        f'</div>'
+    )
+    st.markdown(card_html, unsafe_allow_html=True)
+
+
 def show_overview_page():
     """Display the Overview Page with component health summary."""
     dark_mode = st.session_state.get("dark_mode", False)
@@ -2443,4 +2512,16 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # GL-261: smoke-test show_pipeline_error_card() for each error type.
+    import sys as _sys
+    if "--test-pipeline-cards" in _sys.argv:
+        _tokens = THEME_TOKENS["light"]
+        for _etype in (
+            "empty_file",
+            "pipeline_timeout",
+            "model_unavailable",
+            "report_unavailable",
+        ):
+            show_pipeline_error_card(_etype, _tokens)
+    else:
+        main()
