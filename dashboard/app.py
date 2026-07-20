@@ -1386,9 +1386,60 @@ def show_overview_page():
     """
     st.markdown(legend_html, unsafe_allow_html=True)
 
-    # GL-256: CSV upload expander
+    # GL-256: CSV upload expander — style to match glass card theme
+    st.markdown(
+        f"""
+        <style>
+        /* Expander container */
+        details[data-testid="stExpander"] {{
+            background: {tokens["glass_surface"]} !important;
+            border: 1px solid {tokens["glass_border"]} !important;
+            border-radius: 14px !important;
+            box-shadow: 0 4px 16px {tokens["shadow"]} !important;
+            overflow: hidden;
+        }}
+        /* Expander header row */
+        details[data-testid="stExpander"] > summary {{
+            background: transparent !important;
+            padding: 14px 20px !important;
+            font-size: 15px !important;
+            font-weight: 600 !important;
+            color: {tokens["text"]} !important;
+        }}
+        /* Expander body */
+        details[data-testid="stExpander"] > div[data-testid="stExpanderDetails"] {{
+            padding: 0 20px 20px 20px !important;
+        }}
+        /* Hide the file_uploader's redundant visible label */
+        .st-key-csv_file_uploader label[data-testid="stWidgetLabel"] {{
+            display: none !important;
+        }}
+        /* Style the upload drop-zone */
+        .st-key-csv_file_uploader [data-testid="stFileUploaderDropzone"] {{
+            border: 1px dashed {tokens["border"]} !important;
+            border-radius: 10px !important;
+            background: {tokens["surface_alt"]} !important;
+        }}
+        /* Run Analysis button — full width, accent colour */
+        .st-key-csv_submit_btn button {{
+            width: 100% !important;
+            background-color: {tokens["accent"]} !important;
+            color: {tokens["accent_contrast"]} !important;
+            border: none !important;
+            border-radius: 10px !important;
+            font-weight: 600 !important;
+            font-size: 14px !important;
+            padding: 10px 0 !important;
+            margin-top: 8px !important;
+        }}
+        .st-key-csv_submit_btn button:hover {{
+            opacity: 0.88 !important;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
     with st.expander("Upload your OBD-II data", expanded=False):
-        # Helper text — single self-contained markdown block
         helper_text = (
             "Upload a raw OBD-II CSV file recorded from your vehicle. "
             "The file must contain columns including: Time, "
@@ -1401,7 +1452,7 @@ def show_overview_page():
             f'color:{tokens["text_secondary"]};'
             f'font-size:14px;'
             f'line-height:1.5;'
-            f'margin:0 0 16px 0;'
+            f'margin:4px 0 16px 0;'
             f'">{helper_text}</p>',
             unsafe_allow_html=True,
         )
@@ -1409,10 +1460,12 @@ def show_overview_page():
             "Upload OBD-II CSV file",
             type=["csv"],
             key="csv_file_uploader",
+            label_visibility="collapsed",
         )
         submit_clicked = st.button(
             "Run Analysis",
             key="csv_submit_btn",
+            use_container_width=True,
         )
         if submit_clicked and uploaded_file is not None:
             st.session_state["uploaded_csv"] = uploaded_file
