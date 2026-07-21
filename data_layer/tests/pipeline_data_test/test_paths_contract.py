@@ -54,6 +54,13 @@ def test_run_layout_uses_the_frozen_directory_contract(tmp_path: Path) -> None:
         layout.run_dir
         / "proxy/61_duration_evidence/duration_evidence_manifest.json"
     )
+    assert layout.proxy_decisions == (
+        layout.run_dir / "proxy/70_decisions/proxy_decisions.csv"
+    )
+    assert layout.proxy_decision_manifest == (
+        layout.run_dir
+        / "proxy/70_decisions/proxy_decision_manifest.json"
+    )
     assert layout.calibration_registry == (
         tmp_path / "data_layer/calibration/calibration_registry.v1.json"
     ).resolve()

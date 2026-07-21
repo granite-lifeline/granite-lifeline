@@ -314,6 +314,14 @@ class RunLayout:
         return self.proxy_dir / "70_decisions"
 
     @property
+    def proxy_decisions(self) -> Path:
+        return self.decisions_dir / "proxy_decisions.csv"
+
+    @property
+    def proxy_decision_manifest(self) -> Path:
+        return self.decisions_dir / "proxy_decision_manifest.json"
+
+    @property
     def feature_contract(self) -> Path:
         return (
             self.repo_root
