@@ -287,8 +287,27 @@ class RunLayout:
         return self.proxy_dir / "60_event_evidence"
 
     @property
+    def pedal_step_events(self) -> Path:
+        return self.event_evidence_dir / "pedal_step_events.csv"
+
+    @property
+    def event_evidence_manifest(self) -> Path:
+        return self.event_evidence_dir / "event_evidence_manifest.json"
+
+    @property
     def duration_evidence_dir(self) -> Path:
         return self.proxy_dir / "61_duration_evidence"
+
+    @property
+    def duration_episodes(self) -> Path:
+        return self.duration_evidence_dir / "duration_episodes.csv"
+
+    @property
+    def duration_evidence_manifest(self) -> Path:
+        return (
+            self.duration_evidence_dir
+            / "duration_evidence_manifest.json"
+        )
 
     @property
     def decisions_dir(self) -> Path:

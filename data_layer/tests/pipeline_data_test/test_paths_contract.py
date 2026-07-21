@@ -39,6 +39,21 @@ def test_run_layout_uses_the_frozen_directory_contract(tmp_path: Path) -> None:
     assert layout.rule_state_manifest == (
         layout.run_dir / "proxy/50_rule_state/rule_state_manifest.json"
     )
+    assert layout.pedal_step_events == (
+        layout.run_dir / "proxy/60_event_evidence/pedal_step_events.csv"
+    )
+    assert layout.event_evidence_manifest == (
+        layout.run_dir
+        / "proxy/60_event_evidence/event_evidence_manifest.json"
+    )
+    assert layout.duration_episodes == (
+        layout.run_dir
+        / "proxy/61_duration_evidence/duration_episodes.csv"
+    )
+    assert layout.duration_evidence_manifest == (
+        layout.run_dir
+        / "proxy/61_duration_evidence/duration_evidence_manifest.json"
+    )
     assert layout.calibration_registry == (
         tmp_path / "data_layer/calibration/calibration_registry.v1.json"
     ).resolve()
