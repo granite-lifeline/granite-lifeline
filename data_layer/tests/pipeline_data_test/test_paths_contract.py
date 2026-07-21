@@ -30,6 +30,15 @@ def test_run_layout_uses_the_frozen_directory_contract(tmp_path: Path) -> None:
     assert layout.production_features == (
         layout.run_dir / "features/41_production/production_features.csv"
     )
+    assert layout.rule_state == (
+        layout.run_dir / "proxy/50_rule_state/rule_state.csv"
+    )
+    assert layout.engine_start_rule_state == (
+        layout.run_dir / "proxy/50_rule_state/engine_start_rule_state.csv"
+    )
+    assert layout.rule_state_manifest == (
+        layout.run_dir / "proxy/50_rule_state/rule_state_manifest.json"
+    )
     assert layout.calibration_registry == (
         tmp_path / "data_layer/calibration/calibration_registry.v1.json"
     ).resolve()

@@ -1,0 +1,46 @@
+{
+  "child_state_share_by_condition_label": [
+    {
+      "acceleration": 0.1801,
+      "condition_label": "Frei",
+      "deceleration": 0.2677,
+      "high_load": 0.0848,
+      "idle": 0.1095,
+      "inactive_engine_off": 0.023,
+      "n_trips": 14,
+      "steady_driving": 0.3349,
+      "unknown": 0.0001
+    },
+    {
+      "acceleration": 0.1729,
+      "condition_label": "Normal",
+      "deceleration": 0.2587,
+      "high_load": 0.0959,
+      "idle": 0.0768,
+      "inactive_engine_off": 0.0341,
+      "n_trips": 56,
+      "steady_driving": 0.3615,
+      "unknown": 0.0001
+    },
+    {
+      "acceleration": 0.2044,
+      "condition_label": "Stau",
+      "deceleration": 0.2822,
+      "high_load": 0.0829,
+      "idle": 0.0613,
+      "inactive_engine_off": 0.0703,
+      "n_trips": 11,
+      "steady_driving": 0.2989,
+      "unknown": 0.0001
+    }
+  ],
+  "condition_label_counts": {
+    "Frei": 14,
+    "Normal": 56,
+    "Stau": 11
+  },
+  "manifest_type": "condition_label_crosscheck_summary",
+  "matched_trip_count": 81,
+  "raw_file_count": 81,
+  "run_id": "2026-07-19-data-layer-v1"
+}

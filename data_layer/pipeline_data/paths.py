@@ -271,6 +271,18 @@ class RunLayout:
         return self.proxy_dir / "50_rule_state"
 
     @property
+    def rule_state(self) -> Path:
+        return self.rule_state_dir / "rule_state.csv"
+
+    @property
+    def engine_start_rule_state(self) -> Path:
+        return self.rule_state_dir / "engine_start_rule_state.csv"
+
+    @property
+    def rule_state_manifest(self) -> Path:
+        return self.rule_state_dir / "rule_state_manifest.json"
+
+    @property
     def event_evidence_dir(self) -> Path:
         return self.proxy_dir / "60_event_evidence"
 
