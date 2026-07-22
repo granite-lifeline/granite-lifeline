@@ -149,6 +149,18 @@ def convert_to_component_dict(
     return component_dict
 
 
+def load_static_dashboard_data(
+    file_path: str = _MOCK_DATA_FILE,
+) -> Dict[str, Any]:
+    """Load dashboard-ready demo data without invoking the pipeline."""
+    report_list = load_report_data(file_path)
+    result = convert_to_component_dict(report_list)
+    result["_data_source"] = {
+        component_key: "mock" for component_key in result
+    }
+    return result
+
+
 def make_empty_report(anomaly_type: str) -> Dict[str, Any]:
     """Create an interface-complete placeholder report for missing data."""
     return {

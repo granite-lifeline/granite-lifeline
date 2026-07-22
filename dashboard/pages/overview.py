@@ -185,8 +185,7 @@ def _show_csv_upload_heading(tokens: dict) -> None:
         "Accelerator Pedal Position E [%]",
     ]
     column_items = "".join(
-        f'<div style="font-size:12px;color:{tokens["text"]};'
-        f'line-height:1.8;font-family:{FONT_MONO};">{col}</div>'
+        f'<div class="csv-upload-help-column">{col}</div>'
         for col in columns
     )
 
@@ -249,11 +248,33 @@ def _show_csv_upload_heading(tokens: dict) -> None:
             background:{tokens["surface"]};
             border:1px solid {hex_to_rgba(tokens["accent"], 0.22)};
             border-radius:12px;
+            box-sizing:border-box;
             box-shadow:0 8px 24px {tokens["shadow"]};
-            max-width:min(520px, 82vw);
+            max-width:min(460px, calc(100% - 24px));
             margin:14px auto 0 auto;
-            padding:14px 18px;
-            width:520px;
+            padding:16px 18px;
+            width:100%;
+        }}
+        .csv-upload-help-grid {{
+            display:grid;
+            gap:8px 20px;
+            grid-template-columns:repeat(2, minmax(0, 1fr));
+        }}
+        .csv-upload-help-column {{
+            color:{tokens["text"]};
+            font-family:{FONT_MONO};
+            font-size:12px;
+            line-height:1.55;
+            overflow-wrap:anywhere;
+        }}
+        @media (max-width: 640px) {{
+            .csv-upload-help-panel {{
+                max-width:100%;
+                padding:14px;
+            }}
+            .csv-upload-help-grid {{
+                grid-template-columns:1fr;
+            }}
         }}
         </style>
         <details class="csv-upload-help">
@@ -266,8 +287,7 @@ def _show_csv_upload_heading(tokens: dict) -> None:
                     <div style="font-size:12px;font-weight:700;letter-spacing:0.4px;
                         text-transform:uppercase;color:{tokens["accent"]};
                         margin-bottom:10px;">Required CSV format</div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;
-                        gap:4px 24px;">{column_items}</div>
+                    <div class="csv-upload-help-grid">{column_items}</div>
                     <div style="margin-top:10px;font-size:12px;
                         color:{tokens["text_secondary"]};
                         border-top:1px solid {hex_to_rgba(tokens["accent"], 0.18)};
@@ -348,22 +368,29 @@ def _show_csv_uploader(tokens: dict) -> None:
             min-height: 44px !important;
             min-width: 132px !important;
             padding: 0 24px !important;
+            position: relative !important;
             width: 132px !important;
         }}
         .st-key-csv_upload_section
             [data-testid="stFileUploader"] button * {{
             color: transparent !important;
+            display: none !important;
             font-size: 0 !important;
             line-height: 0 !important;
         }}
         .st-key-csv_upload_section
             [data-testid="stFileUploader"] button::after {{
+            align-items: center !important;
             color: {tokens["text"]} !important;
             content: "Upload";
-            display: block !important;
+            display: flex !important;
             font-size: 15px !important;
             font-weight: 700 !important;
+            inset: 0 !important;
+            justify-content: center !important;
             line-height: 1 !important;
+            position: absolute !important;
+            text-align: center !important;
         }}
         .st-key-csv_upload_section
             [data-testid="stFileUploader"] button:hover {{
@@ -594,20 +621,27 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             min-height: 46px !important;
             min-width: 140px !important;
             padding: 0 26px !important;
+            position: relative !important;
             width: 140px !important;
         }}
         .st-key-landing_upload_card [data-testid="stFileUploader"] button * {{
             color: transparent !important;
+            display: none !important;
             font-size: 0 !important;
             line-height: 0 !important;
         }}
         .st-key-landing_upload_card [data-testid="stFileUploader"] button::after {{
+            align-items: center !important;
             color: {tokens["text"]} !important;
             content: "Upload";
-            display: block !important;
+            display: flex !important;
             font-size: 15px !important;
             font-weight: 700 !important;
+            inset: 0 !important;
+            justify-content: center !important;
             line-height: 1 !important;
+            position: absolute !important;
+            text-align: center !important;
         }}
         .st-key-landing_upload_card [data-testid="stFileUploader"] button:hover {{
             border-color: {tokens["accent"]} !important;
@@ -772,6 +806,9 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             key="landing_demo_btn",
             use_container_width=True,
         ):
+            st.session_state.pop("dashboard_data", None)
+            st.session_state.pop("validated_df", None)
+            st.session_state.pop("uploaded_csv", None)
             st.session_state["dashboard_mode"] = "dashboard"
             st.rerun()
 
@@ -995,8 +1032,72 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
     st.markdown(
         "<div style='height:16px;'></div>", unsafe_allow_html=True
     )
-    with st.expander("Upload new data", expanded=False):
-        _show_csv_uploader(tokens)
+    st.markdown(
+        f"""
+        <style>
+        .st-key-dashboard_reupload_expander {{
+            border: 1px solid {tokens["border"]} !important;
+            border-radius: 10px !important;
+            overflow: hidden !important;
+        }}
+        .st-key-dashboard_reupload_toggle button {{
+            align-items: center !important;
+            background: {tokens["surface"]} !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            color: {tokens["text"]} !important;
+            display: inline-flex !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            gap: 10px !important;
+            justify-content: flex-start !important;
+            line-height: 1.2 !important;
+            margin: 0 !important;
+            min-height: 44px !important;
+            padding: 0 18px !important;
+            text-align: left !important;
+            width: 100% !important;
+        }}
+        .st-key-dashboard_reupload_toggle button:hover {{
+            background: {hex_to_rgba(tokens["accent"], 0.06)} !important;
+            border: none !important;
+            color: {tokens["text"]} !important;
+        }}
+        .st-key-dashboard_reupload_toggle button p {{
+            align-items: center !important;
+            display: inline-flex !important;
+            gap: 10px !important;
+        }}
+        .st-key-dashboard_reupload_body {{
+            border-top: 1px solid {tokens["border"]} !important;
+            padding: 18px 16px 20px 16px !important;
+        }}
+        .st-key-dashboard_reupload_body .st-key-csv_upload_section {{
+            margin: 0 auto !important;
+            max-width: 100% !important;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    if "dashboard_reupload_open" not in st.session_state:
+        st.session_state["dashboard_reupload_open"] = False
+
+    with st.container(key="dashboard_reupload_expander"):
+        is_open = st.session_state["dashboard_reupload_open"]
+        arrow = "\u25be" if is_open else "\u203a"
+        if st.button(
+            f"{arrow} Upload new data",
+            key="dashboard_reupload_toggle",
+            use_container_width=True,
+        ):
+            st.session_state["dashboard_reupload_open"] = not is_open
+            st.rerun()
+
+        if st.session_state["dashboard_reupload_open"]:
+            with st.container(key="dashboard_reupload_body"):
+                _show_csv_uploader(tokens)
 
     show_footer(dark_mode)
 

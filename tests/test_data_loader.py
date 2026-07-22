@@ -9,6 +9,7 @@ import pytest
 from dashboard.data_loader import (
     load_report_data,
     convert_to_component_dict,
+    load_static_dashboard_data,
     load_dashboard_data
 )
 
@@ -21,12 +22,25 @@ def test_load_report_data_success():
     data = load_report_data("dashboard/tests/ui_required_data.json")
 
     assert isinstance(data, list)
-    assert len(data) == 3
+    assert len(data) == 5
 
     # Check first component
     assert data[0]["component"] == "cooling_degradation"
     assert data[0]["risk_level"] == "High"
     assert data[0]["risk_score"] == 0.86
+
+
+def test_load_static_dashboard_data():
+    """Test static demo loading without invoking the report pipeline."""
+    data = load_static_dashboard_data("dashboard/tests/ui_required_data.json")
+    component_data = {
+        k: v for k, v in data.items() if k != "_data_source"
+    }
+
+    assert len(component_data) == 5
+    assert set(data["_data_source"].values()) == {"mock"}
+    assert "intake_air_temperature_sensor_fault" in component_data
+    assert "map_load_signal_plausibility_fault" in component_data
 
 
 def test_load_report_data_file_not_found():

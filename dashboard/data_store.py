@@ -13,7 +13,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from data_loader import load_dashboard_data
+from data_loader import load_static_dashboard_data
 from anomaly_display import (
     GROUND_KNOWLEDGE_ANOMALY_TYPES,
     LEGACY_COMPONENT_ALIASES,
@@ -34,14 +34,14 @@ _DEFAULT_TEST_FILE = "dashboard/tests/ui_required_data.json"
 
 
 # ---------------------------------------------------------------------------
-# Cached loader  (Ollama / report_generator called at most once per process)
+# Cached loader for static demo data.
 # ---------------------------------------------------------------------------
 
 @st.cache_resource
 def _load_cached(file_path: str) -> dict:
     """Load dashboard data exactly once; return {} on any failure."""
     try:
-        return load_dashboard_data(file_path)
+        return load_static_dashboard_data(file_path)
     except Exception:
         return {}
 

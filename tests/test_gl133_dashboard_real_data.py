@@ -1,9 +1,9 @@
 """
-GL-133: Verify Dashboard renders correctly with real data for all 3
+GL-133: Verify Dashboard renders correctly with data for all 5
 confirmed anomaly types.
 
 Covers:
-- Overview Page: all 3 anomaly types produce dashboard-ready component
+- Overview Page: all 5 anomaly types produce dashboard-ready component
   dicts with the correct risk fields.
 - Detail Page data: risk_score, key_signals, and report panel fields
   (anomaly_description, possible_cause, recommended_action) are present.
@@ -37,7 +37,7 @@ from dashboard.data_loader import (  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Shared fixture — runs load_dashboard_data() once per test module.
-# Uses the real pipeline for cooling_degradation; mock for the other two.
+# Uses the real pipeline for cooling_degradation; mock for missing real files.
 # ---------------------------------------------------------------------------
 _DATA_CACHE: Optional[dict] = None
 
@@ -196,11 +196,11 @@ class TestDetailPageRealData:
 
 
 # ---------------------------------------------------------------------------
-# GL-133-3: Mock-data fallback for the two types without real files
+# GL-133-3: Mock-data fallback for types without real files
 # ---------------------------------------------------------------------------
 
 class TestMockDataFallback:
-    """GL-133: air_intake_maf_anomaly and accelerator_pedal_sensor use mock."""
+    """GL-133: types without configured real files use mock data."""
 
     def test_air_intake_source_is_mock(self):
         data = _get_data()
