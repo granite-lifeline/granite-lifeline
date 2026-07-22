@@ -271,16 +271,55 @@ class RunLayout:
         return self.proxy_dir / "50_rule_state"
 
     @property
+    def rule_state(self) -> Path:
+        return self.rule_state_dir / "rule_state.csv"
+
+    @property
+    def engine_start_rule_state(self) -> Path:
+        return self.rule_state_dir / "engine_start_rule_state.csv"
+
+    @property
+    def rule_state_manifest(self) -> Path:
+        return self.rule_state_dir / "rule_state_manifest.json"
+
+    @property
     def event_evidence_dir(self) -> Path:
         return self.proxy_dir / "60_event_evidence"
+
+    @property
+    def pedal_step_events(self) -> Path:
+        return self.event_evidence_dir / "pedal_step_events.csv"
+
+    @property
+    def event_evidence_manifest(self) -> Path:
+        return self.event_evidence_dir / "event_evidence_manifest.json"
 
     @property
     def duration_evidence_dir(self) -> Path:
         return self.proxy_dir / "61_duration_evidence"
 
     @property
+    def duration_episodes(self) -> Path:
+        return self.duration_evidence_dir / "duration_episodes.csv"
+
+    @property
+    def duration_evidence_manifest(self) -> Path:
+        return (
+            self.duration_evidence_dir
+            / "duration_evidence_manifest.json"
+        )
+
+    @property
     def decisions_dir(self) -> Path:
         return self.proxy_dir / "70_decisions"
+
+    @property
+    def proxy_decisions(self) -> Path:
+        return self.decisions_dir / "proxy_decisions.csv"
+
+    @property
+    def proxy_decision_manifest(self) -> Path:
+        return self.decisions_dir / "proxy_decision_manifest.json"
 
     @property
     def feature_contract(self) -> Path:
