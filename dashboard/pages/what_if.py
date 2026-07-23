@@ -431,7 +431,7 @@ def show_what_if_page() -> None:
                 st.session_state.get("wi_style", "Normal")
             ),
             horizontal=True,
-            label_visibility="collapsed",
+            label_visibility="hidden",
         )
         st.session_state["wi_style"] = driving_style
         st.markdown(
