@@ -21,6 +21,7 @@ import streamlit as st  # noqa: E402 (must come after sys.path patch)
 from theme import apply_theme  # noqa: E402
 from pages.overview import show_overview_page  # noqa: E402
 from pages.detail import show_detail_page  # noqa: E402
+from pages.what_if import show_what_if_page  # noqa: E402
 
 
 def main() -> None:
@@ -40,6 +41,8 @@ def main() -> None:
 
     if st.session_state["page"] == "detail":
         show_detail_page()
+    elif st.session_state["page"] == "what_if":
+        show_what_if_page()
     else:
         show_overview_page()
 

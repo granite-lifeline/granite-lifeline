@@ -848,11 +848,25 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
             background: transparent !important;
             border: none !important;
         }}
+        .st-key-dashboard_what_if_btn button {{
+            background: {tokens["surface_alt"]} !important;
+            border: 1px solid {tokens["border"]} !important;
+            border-radius: 10px !important;
+            color: {tokens["text"]} !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            min-height: 38px !important;
+            transition: border-color 0.15s ease, color 0.15s ease !important;
+        }}
+        .st-key-dashboard_what_if_btn button:hover {{
+            border-color: {tokens["accent"]} !important;
+            color: {tokens["accent"]} !important;
+        }}
         </style>
         """,
         unsafe_allow_html=True,
     )
-    spacer_col, title_col, theme_col = st.columns([1, 10, 1])
+    spacer_col, title_col, action_col, theme_col = st.columns([1, 8, 2, 1])
     with spacer_col:
         st.markdown(
             '<div style="height:8px;"></div>', unsafe_allow_html=True
@@ -893,6 +907,17 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
             """,
             unsafe_allow_html=True,
         )
+    with action_col:
+        st.markdown(
+            '<div style="height:12px;"></div>', unsafe_allow_html=True
+        )
+        if st.button(
+            "What-If Analysis",
+            key="dashboard_what_if_btn",
+            use_container_width=True,
+        ):
+            st.session_state["page"] = "what_if"
+            st.rerun()
     with theme_col:
         _show_theme_toggle(dark_mode, tokens)
 
