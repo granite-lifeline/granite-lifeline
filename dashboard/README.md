@@ -263,9 +263,8 @@ The dashboard loads `ReportLayerOutput` JSON via `data_loader.py`. A
 - `cooling_degradation` → "Cooling System"
 - `air_intake_maf_anomaly` → "Air Intake System"
 - `accelerator_pedal_sensor` → "Accelerator Pedal"
-- `intake_air_temperature_sensor_or_heat_soak_fault` → "Intake Air Temperature"
+- `intake_air_temperature_sensor_fault` → "Intake Air Temperature"
 - `map_load_signal_plausibility_fault` → "MAP Load Signal"
-- `idle_speed_control_or_surge_degradation` → "Idle Speed Control"
 
 `cooling_system_stress` is retained as a legacy alias for older dashboard
 test data and is displayed as "Cooling System".

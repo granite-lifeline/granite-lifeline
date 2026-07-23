@@ -3,14 +3,20 @@
 from __future__ import annotations
 
 import io
+import html
 from datetime import datetime
 
 import pandas as pd
 import streamlit as st
+from pandas.errors import EmptyDataError
 
 from anomaly_display import COMPONENT_DISPLAY_NAMES
 from csv_validator import validate_csv_columns, validate_csv_min_rows
-from csv_pipeline import run_uploaded_csv_batch
+from csv_pipeline import (
+    ModelBatchRunnerUnavailable,
+    UploadedCsvPipelineError,
+    run_uploaded_csv_batch,
+)
 from data_store import get_data_source, get_mock_data, get_overview_components
 from theme import (
     COMPONENT_ICONS,
@@ -302,6 +308,124 @@ def _show_csv_upload_heading(tokens: dict) -> None:
     )
 
 
+def _error_paragraph(message: str, tokens: dict) -> str:
+    return (
+        f'<p style="color:{tokens["danger_text"]};font-size:14px;'
+        f'margin:8px 0 0 0;line-height:1.5;">'
+        f'{html.escape(message)}</p>'
+    )
+
+
+def _show_pipeline_error(title: str, message: str, tokens: dict) -> None:
+    st.markdown(
+        danger_card_html(title, _error_paragraph(message, tokens), tokens),
+        unsafe_allow_html=True,
+    )
+
+
+def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
+    """Validate an uploaded CSV and run the dashboard upload pipeline."""
+    if uploaded_file is None:
+        st.warning("Please select a CSV file before clicking Run Analysis.")
+        return
+
+    csv_bytes = uploaded_file.getvalue()
+    if not csv_bytes.strip():
+        _show_pipeline_error(
+            "Empty File",
+            "The uploaded file appears to be empty. "
+            "Please upload a valid OBD-II CSV file.",
+            tokens,
+        )
+        return
+
+    st.session_state["uploaded_csv"] = uploaded_file
+    try:
+        df = pd.read_csv(io.BytesIO(csv_bytes))
+    except EmptyDataError:
+        _show_pipeline_error(
+            "Empty File",
+            "The uploaded file does not contain any CSV rows.",
+            tokens,
+        )
+        return
+    except Exception as exc:
+        _show_pipeline_error(
+            "Unreadable CSV",
+            f"The uploaded file could not be parsed as CSV. {exc}",
+            tokens,
+        )
+        return
+
+    if df.empty:
+        _show_pipeline_error(
+            "Empty File",
+            "The uploaded file does not contain any data rows.",
+            tokens,
+        )
+        return
+
+    cols_ok, missing_cols = validate_csv_columns(df)
+    rows_ok = validate_csv_min_rows(df)
+
+    if not cols_ok:
+        items_html = "".join(
+            f'<li style="margin-bottom:4px;">{html.escape(c)}</li>'
+            for c in missing_cols
+        )
+        body = (
+            f'<ul style="color:{tokens["danger_text"]};'
+            f'font-size:14px;margin:8px 0 0 0;'
+            f'padding-left:20px;line-height:1.7;">'
+            f'{items_html}</ul>'
+        )
+        st.markdown(
+            danger_card_html("Missing Required Columns", body, tokens),
+            unsafe_allow_html=True,
+        )
+        return
+
+    if not rows_ok:
+        _show_pipeline_error(
+            "Insufficient Data",
+            "Your file contains fewer than 700 rows. Please upload at "
+            "least 15 minutes of driving data recorded at 1 Hz.",
+            tokens,
+        )
+        return
+
+    try:
+        with st.spinner("Running analysis..."):
+            st.session_state["dashboard_data"] = (
+                run_uploaded_csv_batch(csv_bytes)
+            )
+    except TimeoutError:
+        _show_pipeline_error(
+            "Analysis Timed Out",
+            "The analysis pipeline timed out. Please try uploading a "
+            "shorter drive session.",
+            tokens,
+        )
+        return
+    except ModelBatchRunnerUnavailable as exc:
+        _show_pipeline_error("Model Analysis Unavailable", str(exc), tokens)
+        return
+    except UploadedCsvPipelineError as exc:
+        _show_pipeline_error("Analysis Unavailable", str(exc), tokens)
+        return
+    except Exception as exc:
+        _show_pipeline_error(
+            "Analysis Unavailable",
+            f"The analysis pipeline could not complete. {exc}",
+            tokens,
+        )
+        return
+
+    st.session_state["validated_df"] = df
+    st.session_state["dashboard_mode"] = "dashboard"
+    st.rerun()
+
+
 def _show_csv_uploader(tokens: dict) -> None:
     """CSV upload section with inline validation feedback (re-upload in dashboard)."""
     st.markdown(
@@ -434,67 +558,7 @@ def _show_csv_uploader(tokens: dict) -> None:
 
     # ── Validation feedback ──
     if submit_clicked:
-        if uploaded_file is None:
-            st.warning("Please select a CSV file before clicking Run Analysis.")
-            return
-
-        st.session_state["uploaded_csv"] = uploaded_file
-        try:
-            df = pd.read_csv(io.BytesIO(uploaded_file.getvalue()))
-        except Exception:
-            df = pd.DataFrame()
-
-        cols_ok, missing_cols = validate_csv_columns(df)
-        rows_ok = validate_csv_min_rows(df)
-
-        if not cols_ok:
-            items_html = "".join(
-                f'<li style="margin-bottom:4px;">{c}</li>'
-                for c in missing_cols
-            )
-            body = (
-                f'<ul style="color:{tokens["danger_text"]};'
-                f'font-size:14px;margin:8px 0 0 0;'
-                f'padding-left:20px;line-height:1.7;">'
-                f'{items_html}</ul>'
-            )
-            st.markdown(
-                danger_card_html("Missing Required Columns", body, tokens),
-                unsafe_allow_html=True,
-            )
-        elif not rows_ok:
-            body = (
-                f'<p style="color:{tokens["danger_text"]};'
-                f'font-size:14px;margin:8px 0 0 0;line-height:1.5;">'
-                "Your file contains fewer than 700 rows. "
-                "Please upload at least 15 minutes of driving data "
-                "recorded at 1\u202fHz."
-                "</p>"
-            )
-            st.markdown(
-                danger_card_html("Insufficient Data", body, tokens),
-                unsafe_allow_html=True,
-            )
-        else:
-            try:
-                with st.spinner("Running analysis..."):
-                    st.session_state["dashboard_data"] = (
-                        run_uploaded_csv_batch(uploaded_file.getvalue())
-                    )
-            except Exception as exc:
-                body = (
-                    f'<p style="color:{tokens["danger_text"]};'
-                    'font-size:14px;margin:8px 0 0 0;line-height:1.5;">'
-                    f'Model analysis is not connected yet. {exc}</p>'
-                )
-                st.markdown(
-                    danger_card_html("Analysis Unavailable", body, tokens),
-                    unsafe_allow_html=True,
-                )
-                return
-            st.session_state["validated_df"] = df
-            st.session_state["dashboard_mode"] = "dashboard"
-            st.rerun()
+        _handle_uploaded_csv_submit(uploaded_file, tokens)
 
 
 def show_mock_data_warning(tokens: dict) -> None:
@@ -704,66 +768,7 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
 
     # ── Validation feedback ──
     if submit_clicked:
-        if uploaded_file is None:
-            st.warning("Please select a CSV file before clicking Run Analysis.")
-        else:
-            st.session_state["uploaded_csv"] = uploaded_file
-            try:
-                df = pd.read_csv(io.BytesIO(uploaded_file.getvalue()))
-            except Exception:
-                df = pd.DataFrame()
-
-            cols_ok, missing_cols = validate_csv_columns(df)
-            rows_ok = validate_csv_min_rows(df)
-
-            if not cols_ok:
-                items_html = "".join(
-                    f'<li style="margin-bottom:4px;">{c}</li>'
-                    for c in missing_cols
-                )
-                body = (
-                    f'<ul style="color:{tokens["danger_text"]};font-size:14px;'
-                    f'margin:8px 0 0 0;padding-left:20px;line-height:1.7;">'
-                    f'{items_html}</ul>'
-                )
-                st.markdown(
-                    danger_card_html("Missing Required Columns", body, tokens),
-                    unsafe_allow_html=True,
-                )
-            elif not rows_ok:
-                body = (
-                    f'<p style="color:{tokens["danger_text"]};font-size:14px;'
-                    f'margin:8px 0 0 0;line-height:1.5;">'
-                    "Your file contains fewer than 700 rows. "
-                    "Please upload at least 15 minutes of driving data "
-                    "recorded at 1\u202fHz.</p>"
-                )
-                st.markdown(
-                    danger_card_html("Insufficient Data", body, tokens),
-                    unsafe_allow_html=True,
-                )
-            else:
-                try:
-                    with st.spinner("Running analysis..."):
-                        st.session_state["dashboard_data"] = (
-                            run_uploaded_csv_batch(uploaded_file.getvalue())
-                        )
-                except Exception as exc:
-                    body = (
-                        f'<p style="color:{tokens["danger_text"]};'
-                        'font-size:14px;margin:8px 0 0 0;line-height:1.5;">'
-                        f'Model analysis is not connected yet. {exc}</p>'
-                    )
-                    st.markdown(
-                        danger_card_html(
-                            "Analysis Unavailable", body, tokens
-                        ),
-                        unsafe_allow_html=True,
-                    )
-                    return
-                st.session_state["validated_df"] = df
-                st.session_state["dashboard_mode"] = "dashboard"
-                st.rerun()
+        _handle_uploaded_csv_submit(uploaded_file, tokens)
 
     # ── Secondary: demo data entry ──
     st.markdown(
