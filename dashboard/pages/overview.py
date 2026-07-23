@@ -858,8 +858,14 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
             min-height: 38px !important;
             transition: border-color 0.15s ease, color 0.15s ease !important;
         }}
+        .st-key-dashboard_what_if_btn button * {{
+            color: inherit !important;
+        }}
         .st-key-dashboard_what_if_btn button:hover {{
             border-color: {tokens["accent"]} !important;
+            color: {tokens["accent"]} !important;
+        }}
+        .st-key-dashboard_what_if_btn button:hover * {{
             color: {tokens["accent"]} !important;
         }}
         </style>
@@ -955,7 +961,7 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
     else:
         cols = st.columns(3, gap="large")
 
-    # Scoped CSS for the detail button — Variant B: solid button
+    # Scoped CSS for the detail button and what-if link button.
     st.markdown(
         f"""
         <style>
@@ -979,6 +985,22 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
         }}
         [class*="st-key-card_btn_"] button:active {{
             transform: scale(0.98) !important;
+        }}
+        [class*="st-key-card_whatif_"] button {{
+            width: 100% !important;
+            background: transparent !important;
+            color: {tokens["text_secondary"]} !important;
+            border: 1px solid {tokens["border"]} !important;
+            border-radius: 10px !important;
+            font-size: 12px !important;
+            font-weight: 500 !important;
+            padding: 7px 0 !important;
+            margin: 0 !important;
+            transition: border-color 0.15s ease, color 0.15s ease !important;
+        }}
+        [class*="st-key-card_whatif_"] button:hover {{
+            border-color: {tokens["accent"]} !important;
+            color: {tokens["accent"]} !important;
         }}
         </style>
         """,
@@ -1057,6 +1079,15 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
                 st.session_state["selected_component"] = component_key
                 st.session_state["page"] = "detail"
                 st.rerun()
+            # Show What-If shortcut for High / Medium components only.
+            if has_score and risk_level in ("High", "Medium"):
+                if st.button(
+                    "Try What-If →",
+                    key=f"card_whatif_{component_key}",
+                    use_container_width=True,
+                ):
+                    st.session_state["page"] = "what_if"
+                    st.rerun()
 
     # ── Re-upload section (collapsed) ──
     st.markdown(

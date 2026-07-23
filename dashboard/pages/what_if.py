@@ -42,21 +42,38 @@ STYLE_DESCRIPTIONS = {
     "Hard":   "Heavy acceleration, high RPM, sustained load.",
 }
 
-# Slider default values per driving style (rpm_multiplier, load_multiplier).
+# Slider default values per driving style.
+# Keys use a _pending_ prefix so we never touch live widget keys.
 STYLE_SLIDER_PRESETS: dict[str, dict] = {
-    "Easy":   {"wi_rpm": 0.90, "wi_load": 0.88, "wi_coolant": -2, "wi_intake": 0},
-    "Normal": {"wi_rpm": 1.00, "wi_load": 1.00, "wi_coolant": 0,  "wi_intake": 0},
-    "Hard":   {"wi_rpm": 1.20, "wi_load": 1.25, "wi_coolant": 4,  "wi_intake": 3},
+    "Easy":   {"wi_coolant_p": -2, "wi_rpm_p": 0.90, "wi_load_p": 0.88, "wi_intake_p": 0},
+    "Normal": {"wi_coolant_p": 0,  "wi_rpm_p": 1.00, "wi_load_p": 1.00, "wi_intake_p": 0},
+    "Hard":   {"wi_coolant_p": 4,  "wi_rpm_p": 1.20, "wi_load_p": 1.25, "wi_intake_p": 3},
 }
 
-# One-line plain-English tooltip per component (used as slider help= or title=).
-COMPONENT_EXPLANATIONS = {
-    "cooling_degradation":                   "Driven by heat, RPM, and heavy load.",
-    "air_intake_maf_anomaly":                "Driven by RPM, load, and air temperature.",
-    "accelerator_pedal_sensor":              "Driven by throttle changes and load.",
-    "intake_air_temperature_sensor_fault":   "Driven by intake and ambient air temperature.",
-    "map_load_signal_plausibility_fault":    "Driven by RPM and throttle load.",
+# Mapping from _pending_ key → live widget key.
+_PENDING_TO_WIDGET: dict[str, str] = {
+    "wi_coolant_p": "wi_coolant",
+    "wi_rpm_p":     "wi_rpm",
+    "wi_load_p":    "wi_load",
+    "wi_intake_p":  "wi_intake",
 }
+
+# One-line plain-English description per component.
+COMPONENT_EXPLANATIONS = {
+    "cooling_degradation":                  "Driven by heat, RPM, and heavy load.",
+    "air_intake_maf_anomaly":               "Driven by RPM, load, and air temperature.",
+    "accelerator_pedal_sensor":             "Driven by throttle changes and load.",
+    "intake_air_temperature_sensor_fault":  "Driven by intake and ambient air temperature.",
+    "map_load_signal_plausibility_fault":   "Driven by RPM and throttle load.",
+}
+
+# Uncertainty half-width added to projected scores for the range display.
+# Represents the inherent imprecision of the heuristic formula.
+_UNCERTAINTY_MARGIN = 0.07
+
+# When the combined "intensity" of all slider adjustments exceeds this
+# threshold, we show an extreme-scenario warning.
+_EXTREME_THRESHOLD = 0.55
 
 
 @dataclass(frozen=True)
@@ -126,12 +143,21 @@ def project_component_risk(
     """Project a scenario risk score from the current dashboard baseline."""
     baseline = max(0.0, min(1.0, float(baseline_score or 0.0)))
     projected = baseline + _component_sensitivity(component_key, inputs)
-    # For Conservative/Easy driving, cap projected at baseline so it never
-    # rises above the current reading (style_delta is negative, so sensitivity
-    # already pushes projected down; the cap guards against slider overrides).
+    # Easy mode: never let projected exceed baseline (sliders could otherwise
+    # push it up even when style_delta is negative).
     if inputs.driving_style == "Easy":
         projected = min(projected, baseline)
     return max(0.0, min(1.0, projected))
+
+
+def _scenario_intensity(inputs: ScenarioInputs) -> float:
+    """Return a rough 0–1 measure of how extreme the scenario is."""
+    style_push = STYLE_MULTIPLIERS[inputs.driving_style] - 1.0
+    rpm_push   = max(inputs.rpm_multiplier - 1.0, 0)
+    load_push  = max(inputs.load_stress_multiplier - 1.0, 0)
+    temp_push  = max(inputs.coolant_temp_offset, 0) / 20.0
+    intake_push = max(inputs.intake_temp_offset, 0) / 20.0
+    return style_push + rpm_push + load_push + temp_push + intake_push
 
 
 def _risk_color(level: str, tokens: dict) -> str:
@@ -168,7 +194,7 @@ def _render_page_styles(tokens: dict) -> None:
             border-top:1px solid {tokens["border"]};
             display:grid;
             gap:16px;
-            grid-template-columns:minmax(200px,1.4fr) 90px 90px 90px 110px;
+            grid-template-columns:minmax(200px,1.4fr) 130px 90px 110px;
             padding:14px 0;
         }}
         .what-if-row:first-child {{
@@ -201,6 +227,13 @@ def _render_page_styles(tokens: dict) -> None:
             font-weight:800;
             text-align:right;
         }}
+        .what-if-range {{
+            color:{tokens["text_secondary"]};
+            font-family:{FONT_MONO};
+            font-size:11px;
+            text-align:right;
+            margin-top:2px;
+        }}
         .what-if-label {{
             color:{tokens["text_secondary"]};
             font-size:11px;
@@ -230,6 +263,26 @@ def _render_page_styles(tokens: dict) -> None:
             border-radius:999px;
             display:block;
             height:6px;
+        }}
+        .what-if-action {{
+            background:{hex_to_rgba(tokens["accent"], 0.07)};
+            border-radius:8px;
+            color:{tokens["text"]};
+            font-size:12px;
+            line-height:1.5;
+            margin-top:6px;
+            padding:8px 10px;
+        }}
+        .what-if-extreme-warn {{
+            background:{hex_to_rgba(tokens["risk_medium"], 0.10)};
+            border:1px solid {hex_to_rgba(tokens["risk_medium"], 0.35)};
+            border-radius:10px;
+            color:{tokens["risk_medium"]};
+            font-size:12px;
+            font-weight:600;
+            line-height:1.45;
+            margin-top:10px;
+            padding:10px 12px;
         }}
         .st-key-what_if_back_btn button {{
             background:transparent !important;
@@ -270,6 +323,9 @@ def _render_page_styles(tokens: dict) -> None:
             .what-if-score {{
                 text-align:left;
             }}
+            .what-if-range {{
+                text-align:left;
+            }}
         }}
         @media (max-width: 540px) {{
             .what-if-row {{
@@ -282,12 +338,22 @@ def _render_page_styles(tokens: dict) -> None:
     )
 
 
-def _metric_cell(label: str, value: str, color: str | None = None) -> str:
+def _metric_cell(
+    label: str,
+    value: str,
+    subtext: str = "",
+    color: str | None = None,
+) -> str:
     score_style = f"color:{color};" if color else ""
+    sub_html = (
+        f'<div class="what-if-range">{html.escape(subtext)}</div>'
+        if subtext else ""
+    )
     return (
         '<div>'
         f'<div class="what-if-label">{html.escape(label)}</div>'
         f'<div class="what-if-score" style="{score_style}">{html.escape(value)}</div>'
+        f'{sub_html}'
         '</div>'
     )
 
@@ -296,6 +362,7 @@ def _render_component_row(
     component_key: str,
     baseline: float,
     projected: float,
+    component_data: dict,
     tokens: dict,
 ) -> str:
     baseline_pct = int(round(baseline * 100))
@@ -309,11 +376,29 @@ def _render_component_row(
         else tokens["risk_low"] if delta_pct < 0
         else tokens["text_secondary"]
     )
+
+    # Range: projected ± uncertainty, clamped to [0, 100]
+    lo = max(0, int(round((projected - _UNCERTAINTY_MARGIN) * 100)))
+    hi = min(100, int(round((projected + _UNCERTAINTY_MARGIN) * 100)))
+    range_str = f"{lo}–{hi}%"
+
     icon = lucide_icon(
         COMPONENT_ICONS.get(component_key, "activity"),
         size=18,
         color=level_color,
     )
+
+    # Recommended action (first item only) for High/Medium components
+    action_html = ""
+    if level in ("High", "Medium"):
+        actions = component_data.get("recommended_action") or []
+        if actions:
+            action_html = (
+                f'<div class="what-if-action">'
+                f'💡 {html.escape(str(actions[0]))}'
+                '</div>'
+            )
+
     return (
         '<div class="what-if-row">'
         '<div class="what-if-name">'
@@ -321,11 +406,11 @@ def _render_component_row(
         f'<div>{html.escape(COMPONENT_DISPLAY_NAMES.get(component_key, component_key))}</div>'
         '<div class="what-if-component-help">'
         f'{html.escape(COMPONENT_EXPLANATIONS.get(component_key, "Risk based on current reading."))}'
-        '</div></div>'
         '</div>'
+        f'{action_html}'
+        '</div></div>'
         f'{_metric_cell("Now", f"{baseline_pct}%")}'
-        f'{_metric_cell("What-if", f"{projected_pct}%")}'
-        f'{_metric_cell("Change", f"{delta_prefix}{delta_pct}%", color=delta_color)}'
+        f'{_metric_cell("What-if", f"{projected_pct}%", subtext=f"range {range_str}", color=delta_color)}'
         '<div>'
         f'<span class="what-if-pill" style="background:{level_color};">'
         f'{html.escape(level)}</span>'
@@ -343,8 +428,8 @@ def _render_summary_card(
     if not rows:
         return
 
-    avg_baseline = sum(row[1] for row in rows) / len(rows)
-    avg_projected = sum(row[2] for row in rows) / len(rows)
+    avg_baseline = sum(r[1] for r in rows) / len(rows)
+    avg_projected = sum(r[2] for r in rows) / len(rows)
     avg_baseline_pct = int(round(avg_baseline * 100))
     avg_projected_pct = int(round(avg_projected * 100))
     delta = avg_projected_pct - avg_baseline_pct
@@ -359,6 +444,17 @@ def _render_summary_card(
         verdict = f"Overall risk stays at {avg_baseline_pct}%."
         verdict_color = tokens["text_secondary"]
 
+    # Extreme scenario warning
+    intensity = _scenario_intensity(inputs)
+    extreme_html = ""
+    if intensity >= _EXTREME_THRESHOLD:
+        extreme_html = (
+            '<div class="what-if-extreme-warn">'
+            "⚠️ This is a very extreme scenario. Real-world risk changes are "
+            "likely smaller than shown — the numbers are estimates, not predictions."
+            "</div>"
+        )
+
     st.markdown(
         '<div class="what-if-card" style="margin-bottom:18px;">'
         f'<div style="color:{tokens["text_secondary"]};font-size:11px;'
@@ -367,22 +463,42 @@ def _render_summary_card(
         f'<div style="color:{verdict_color};font-size:22px;font-weight:800;'
         f'line-height:1.2;">{html.escape(verdict)}</div>'
         f'<div style="color:{tokens["text_secondary"]};font-size:12px;'
-        'margin-top:6px;">Estimate only — not a new diagnostic scan.'
-        '</div></div>',
+        'margin-top:6px;">'
+        'Each "What-if" number shows a range — the actual outcome could land '
+        'anywhere inside it. Estimate only, not a new diagnostic scan.'
+        '</div>'
+        f'{extreme_html}'
+        '</div>',
         unsafe_allow_html=True,
     )
 
 
+def _flush_pending_presets() -> None:
+    """Copy any pending preset values into live widget keys before widgets render.
+
+    Streamlit raises StreamlitAPIException if you write to a widget's
+    session_state key *after* the widget has been instantiated in the same
+    run.  The fix: store the desired values under *pending* keys in one run,
+    then read them here at the top of the *next* run — before the widgets are
+    created — and promote them to the live keys.
+    """
+    for pending_key, widget_key in _PENDING_TO_WIDGET.items():
+        if pending_key in st.session_state:
+            st.session_state[widget_key] = st.session_state.pop(pending_key)
+
+
 def _apply_preset(style: str) -> None:
-    """Write preset slider values into session_state and rerun."""
-    preset = STYLE_SLIDER_PRESETS[style]
-    for key, value in preset.items():
-        st.session_state[key] = value
+    """Store preset values as pending keys and rerun."""
+    for pending_key, value in STYLE_SLIDER_PRESETS[style].items():
+        st.session_state[pending_key] = value
     st.rerun()
 
 
 def show_what_if_page() -> None:
     """Render the What-If Analysis page."""
+    # Must run before any widget is instantiated.
+    _flush_pending_presets()
+
     dark_mode = st.session_state.get("dark_mode", False)
     tokens = THEME_TOKENS["dark" if dark_mode else "light"]
     _render_page_styles(tokens)
@@ -493,9 +609,11 @@ def show_what_if_page() -> None:
                 "↺ Reset",
                 key="what_if_reset_btn",
                 use_container_width=True,
-                help="Reset all sliders to their default (Normal) values.",
+                help="Reset all sliders to Normal defaults.",
             ):
-                for k in ("wi_coolant", "wi_rpm", "wi_load", "wi_intake", "wi_style"):
+                for k in ("wi_coolant", "wi_rpm", "wi_load", "wi_intake",
+                          "wi_style",
+                          "wi_coolant_p", "wi_rpm_p", "wi_load_p", "wi_intake_p"):
                     st.session_state.pop(k, None)
                 st.rerun()
 
@@ -509,23 +627,32 @@ def show_what_if_page() -> None:
         load_stress_multiplier=float(load_multiplier),
         intake_temp_offset=float(intake_offset),
     )
-    rows: list[tuple[str, float, float]] = []
+
+    # Collect real component rows, keeping component_data for recommended_action.
+    rows: list[tuple[str, float, float, dict]] = []
     for component_key, component_data, is_placeholder in get_overview_components():
         if is_placeholder:
             continue
         baseline = float(component_data.get("risk_score", 0.0) or 0.0)
         projected = project_component_risk(component_key, baseline, inputs)
-        rows.append((component_key, baseline, projected))
+        rows.append((component_key, baseline, projected, component_data))
 
     # ── Results ─────────────────────────────────────────────────────────────
     with result_col:
         if not rows:
-            st.info("No component data available yet. Upload a CSV on the main dashboard to get started.")
+            st.info(
+                "No component data available yet. "
+                "Upload a CSV on the main dashboard to get started."
+            )
         else:
-            _render_summary_card(rows, inputs, tokens)
+            _render_summary_card(
+                [(key, base, proj) for key, base, proj, _ in rows],
+                inputs,
+                tokens,
+            )
             body = "".join(
-                _render_component_row(key, base, proj, tokens)
-                for key, base, proj in rows
+                _render_component_row(key, base, proj, cdata, tokens)
+                for key, base, proj, cdata in rows
             )
             st.markdown(
                 '<div class="what-if-card">'
@@ -536,7 +663,8 @@ def show_what_if_page() -> None:
                 'Component breakdown</div>'
                 f'<div style="color:{tokens["text_secondary"]};font-size:12px;'
                 'margin-bottom:10px;">'
-                '"Now" = current reading · "What-if" = estimated under this scenario'
+                '"Now" = current reading · "What-if" = estimated · '
+                '"Range" = realistic spread'
                 '</div>'
                 f'{body}</div>',
                 unsafe_allow_html=True,
