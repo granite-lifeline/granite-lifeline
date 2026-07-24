@@ -4,11 +4,14 @@ from dashboard.export_helper import (
     CSV_COLUMNS,
     DEFAULT_EXPORT_SECTIONS,
     NOT_AVAILABLE,
+    PDF_TITLE,
     build_csv_file_name,
+    build_diagnostic_pdf_bytes,
     build_export_data,
     build_key_signal_rows,
     build_key_signals_csv,
     build_key_signals_csv_bytes,
+    build_pdf_file_name,
     clean_csv_columns,
     clean_export_sections,
     format_percent,
@@ -190,6 +193,39 @@ def test_build_csv_file_name_uses_component_and_timestamp():
     assert file_name == (
         "cooling_degradation_2026_06_16t12_00_00z_key_signals.csv"
     )
+
+
+def test_build_pdf_file_name_uses_component_and_timestamp():
+    """Test PDF filename is simple and stable for download."""
+    file_name = build_pdf_file_name(_sample_component())
+
+    assert file_name == (
+        "cooling_degradation_2026_06_16t12_00_00z_diagnostic_report.pdf"
+    )
+
+
+def test_build_diagnostic_pdf_bytes_returns_pdf_file():
+    """Test PDF export creates a real PDF byte payload."""
+    pdf_bytes = build_diagnostic_pdf_bytes(_sample_component())
+
+    assert pdf_bytes.startswith(b"%PDF")
+    assert len(pdf_bytes) > 1000
+
+
+def test_build_diagnostic_pdf_bytes_accepts_section_filter():
+    """Test PDF export can use popup section choices."""
+    pdf_bytes = build_diagnostic_pdf_bytes(
+        _sample_component(),
+        selected_sections=["summary", "key_signals"],
+    )
+
+    assert pdf_bytes.startswith(b"%PDF")
+    assert len(pdf_bytes) > 1000
+
+
+def test_pdf_title_is_user_facing():
+    """Test PDF title is ready for the exported report."""
+    assert PDF_TITLE == "Granite Lifeline Diagnostic Report"
 
 
 def test_build_export_data_default_sections():

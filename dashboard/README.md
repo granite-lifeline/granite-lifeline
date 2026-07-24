@@ -80,6 +80,7 @@ Renders:
 |-----------|-----------|---------|---------|
 | Framework | Streamlit | 1.x | Web app framework |
 | Visualization | Plotly | 5.x | Interactive charts |
+| PDF Export | ReportLab | 4.x | Local PDF generation |
 | Styling | Custom CSS | - | Theme implementation |
 | Fonts | Google Fonts | - | IBM Plex Sans, IBM Plex Mono, Noto Sans SC |
 
@@ -92,7 +93,7 @@ dashboard/
 ├── app.py                  # Main Streamlit application
 ├── anomaly_display.py      # Component/signal display name mappings
 ├── data_loader.py          # JSON → component-keyed dict loader
-├── export_helper.py        # GL-344 filtered export data helper
+├── export_helper.py        # PDF / CSV export data and file helpers
 ├── EXPORT_REPORT_PLAN.md   # GL-343 export entry and field checklist
 ├── assets/                 # Static assets
 ├── DATA_INTEGRATION.md     # Data contract and field documentation

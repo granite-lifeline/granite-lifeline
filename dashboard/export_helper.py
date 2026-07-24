@@ -7,6 +7,7 @@ import io
 import re
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional
+from xml.sax.saxutils import escape
 
 try:
     from dashboard.anomaly_display import COMPONENT_DISPLAY_NAMES
@@ -49,6 +50,8 @@ CSV_COLUMNS = (
     "reference_range",
     "status",
 )
+
+PDF_TITLE = "Granite Lifeline Diagnostic Report"
 
 SIGNAL_DISPLAY_NAMES = {
     "coolant_temp": "Coolant Temperature",
@@ -243,6 +246,20 @@ def build_csv_file_name(component_data: Dict[str, Any]) -> str:
     return f"{component}_{timestamp}_key_signals.csv"
 
 
+def build_pdf_file_name(component_data: Dict[str, Any]) -> str:
+    """Build a simple PDF filename for the current component report."""
+    component = clean_file_name_part(component_data.get("component"))
+    timestamp = clean_file_name_part(component_data.get("timestamp"))
+    if timestamp == "not_available":
+        return f"{component}_diagnostic_report.pdf"
+    return f"{component}_{timestamp}_diagnostic_report.pdf"
+
+
+def pdf_text(value: Any) -> str:
+    """Make plain text safe for ReportLab Paragraph."""
+    return escape(format_plain_value(value))
+
+
 def build_summary(component_data: Dict[str, Any]) -> Dict[str, str]:
     """Build the top summary section for export."""
     component = component_data.get("component")
@@ -278,6 +295,175 @@ def build_diagnostic_report(component_data: Dict[str, Any]) -> Dict[str, Any]:
         ),
         "recommended_action": clean_actions,
     }
+
+
+def _get_reportlab_tools():
+    """Load reportlab only when PDF export is used."""
+    try:
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.lib.units import mm
+        from reportlab.platypus import (
+            Paragraph,
+            SimpleDocTemplate,
+            Spacer,
+            Table,
+            TableStyle,
+        )
+    except ImportError as exc:
+        raise RuntimeError(
+            "PDF export needs the Python package 'reportlab'. "
+            "Install project dependencies with "
+            "pip install -r requirements.txt."
+        ) from exc
+
+    return {
+        "colors": colors,
+        "A4": A4,
+        "getSampleStyleSheet": getSampleStyleSheet,
+        "mm": mm,
+        "Paragraph": Paragraph,
+        "SimpleDocTemplate": SimpleDocTemplate,
+        "Spacer": Spacer,
+        "Table": Table,
+        "TableStyle": TableStyle,
+    }
+
+
+def _add_pdf_section(elements: List[Any], tools: Dict[str, Any], title: str):
+    styles = tools["getSampleStyleSheet"]()
+    elements.append(tools["Spacer"](1, 4 * tools["mm"]))
+    elements.append(tools["Paragraph"](title, styles["Heading2"]))
+
+
+def _add_summary_pdf(elements: List[Any], tools: Dict[str, Any], summary):
+    rows = [
+        ["Component", summary["component_name"]],
+        ["Risk Score", summary["risk_score"]],
+        ["Risk Level", summary["risk_level"]],
+        ["Timestamp", summary["timestamp"]],
+    ]
+    _add_small_table(elements, tools, rows)
+
+
+def _add_signal_pdf_table(elements: List[Any], tools: Dict[str, Any], rows):
+    table_rows = [[
+        "Feature",
+        "Value",
+        "Unit",
+        "Reference Range",
+        "Status",
+    ]]
+    for row in rows:
+        table_rows.append([
+            row["feature"],
+            row["value"],
+            row["unit"],
+            row["reference_range"],
+            row["status"],
+        ])
+
+    if len(table_rows) == 1:
+        table_rows.append(["No key signals available", "", "", "", ""])
+
+    _add_small_table(elements, tools, table_rows, has_header=True)
+
+
+def _add_small_table(
+    elements: List[Any],
+    tools: Dict[str, Any],
+    rows,
+    has_header: bool = False,
+):
+    colors = tools["colors"]
+    table = tools["Table"](rows, hAlign="LEFT")
+    style = [
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#d6d9df")),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f1f4f8")),
+        ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#222222")),
+        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+    ]
+    if has_header:
+        style.append(("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"))
+    else:
+        style.append(("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"))
+
+    table.setStyle(tools["TableStyle"](style))
+    elements.append(table)
+
+
+def build_diagnostic_pdf_bytes(
+    component_data: Dict[str, Any],
+    selected_sections: Optional[Iterable[str]] = None,
+) -> bytes:
+    """Build PDF bytes for the component diagnostic report."""
+    tools = _get_reportlab_tools()
+    buffer = io.BytesIO()
+    doc = tools["SimpleDocTemplate"](
+        buffer,
+        pagesize=tools["A4"],
+        rightMargin=16 * tools["mm"],
+        leftMargin=16 * tools["mm"],
+        topMargin=14 * tools["mm"],
+        bottomMargin=14 * tools["mm"],
+    )
+    styles = tools["getSampleStyleSheet"]()
+    elements: List[Any] = [
+        tools["Paragraph"](PDF_TITLE, styles["Title"]),
+        tools["Spacer"](1, 5 * tools["mm"]),
+    ]
+    export_data = build_export_data(component_data, selected_sections)
+
+    if "summary" in export_data:
+        _add_pdf_section(elements, tools, "Summary")
+        _add_summary_pdf(elements, tools, export_data["summary"])
+
+    if "failure_prediction" in export_data:
+        _add_pdf_section(elements, tools, "Failure Prediction")
+        elements.append(tools["Paragraph"](
+            pdf_text(export_data["failure_prediction"]["text"]),
+            styles["BodyText"],
+        ))
+
+    if "key_signals" in export_data:
+        _add_pdf_section(elements, tools, "Key Signals")
+        _add_signal_pdf_table(elements, tools, export_data["key_signals"])
+
+    if "diagnostic_report" in export_data:
+        report = export_data["diagnostic_report"]
+        _add_pdf_section(elements, tools, "What's Happening")
+        elements.append(tools["Paragraph"](
+            pdf_text(report["anomaly_description"]),
+            styles["BodyText"],
+        ))
+        _add_pdf_section(elements, tools, "Why This Matters")
+        elements.append(tools["Paragraph"](
+            pdf_text(report["possible_cause"]),
+            styles["BodyText"],
+        ))
+        _add_pdf_section(elements, tools, "What You Should Do")
+        actions = report["recommended_action"] or [NOT_AVAILABLE]
+        for action in actions:
+            elements.append(tools["Paragraph"](
+                pdf_text(f"- {action}"),
+                styles["BodyText"],
+            ))
+
+    if "data_quality_notes" in export_data:
+        _add_pdf_section(elements, tools, "Data Quality Notes")
+        notes = export_data["data_quality_notes"] or [NOT_AVAILABLE]
+        for note in notes:
+            elements.append(tools["Paragraph"](
+                pdf_text(f"- {note}"),
+                styles["BodyText"],
+            ))
+
+    doc.build(elements)
+    return buffer.getvalue()
 
 
 def build_export_data(

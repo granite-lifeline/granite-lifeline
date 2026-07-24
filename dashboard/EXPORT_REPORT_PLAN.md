@@ -49,6 +49,13 @@ Current supported section keys:
 
 The PDF should contain the complete component diagnostic report.
 
+GL-346 adds PDF generation helpers in `dashboard/export_helper.py`:
+
+- `build_diagnostic_pdf_bytes()` returns a complete PDF byte payload.
+- `build_pdf_file_name()` returns a stable download filename.
+- PDF generation uses `reportlab`, a Python dependency with no external
+  service dependency.
+
 | PDF section | Source field | Notes |
 |---|---|---|
 | Component name | `component` | Convert to display name with `COMPONENT_DISPLAY_NAMES`. |
