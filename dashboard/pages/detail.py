@@ -14,6 +14,7 @@ from failure_prediction import (
     format_failure_prediction_text,
     get_data_quality_notes,
 )
+from glossary import get_signal_display_name, get_signal_tooltip
 from theme import (
     COMPONENT_ICONS,
     FONT_MONO,
@@ -309,26 +310,6 @@ def _render_signals(
         )
         return
 
-    _SIGNAL_NAMES = {
-        "coolant_temp": "Coolant Temperature",
-        "ect_rate_180s": "Coolant Temperature Rise Rate",
-        "ect_start": "Coolant Temperature at Engine Start",
-        "aat_start": "Ambient Temperature at Engine Start",
-        "maf_integral_180s": "MAF Integral",
-        "intake_temp": "Intake Air Temperature",
-        "intake_temp_stability": "Intake Temperature Stability",
-        "intake_ambient_delta": "Intake-Ambient Temperature Difference",
-        "speed_density_maf_residual": "Speed-Density MAF Residual",
-        "pedal_mapping_residual": "Pedal Mapping Residual",
-        "pedal_slope": "Pedal Demand Rate",
-        "accel_pedal_channel_delta": "Pedal Channel Difference",
-        "map_range_60s": "MAP Range",
-        "maf": "Mass Airflow",
-        "map": "Intake Pressure",
-        "accel_pedal_d": "Pedal Sensor D",
-        "accel_pedal_e": "Pedal Sensor E",
-    }
-
     header_html = (
         f'<div style="display:flex;align-items:center;gap:8px;'
         f'padding:8px 12px;font-size:11px;font-weight:700;'
@@ -358,14 +339,18 @@ def _render_signals(
             tokens["risk_high"] if status == "ABNORMAL"
             else tokens["risk_low"]
         )
-        name = _SIGNAL_NAMES.get(sig["feature"], sig["feature"])
+        name = get_signal_display_name(sig["feature"])
+        tooltip = get_signal_tooltip(sig["feature"])
+        safe_name = _html.escape(str(name))
+        safe_tooltip = _html.escape(str(tooltip), quote=True)
         st.markdown(
             f'<div style="display:flex;align-items:center;gap:8px;'
             f'background:{row_bg};border-radius:8px;'
             f'padding:10px 12px;margin-bottom:6px;">'
             f'<div style="flex:2.5;min-width:100px;font-weight:600;'
             f'color:{tokens["text"]};font-size:13px;line-height:1.3;'
-            f'word-wrap:break-word;" title="{name}">{name}</div>'
+            f'word-wrap:break-word;" title="{safe_tooltip}">'
+            f'{safe_name}</div>'
             f'<div style="flex:1.5;min-width:70px;'
             f'font-family:{FONT_MONO};color:{tokens["text"]};'
             f'font-size:13px;font-weight:600;">{sig["value"]}</div>'
