@@ -1,10 +1,15 @@
 """Tests for dashboard export data helpers."""
 
 from dashboard.export_helper import (
+    CSV_COLUMNS,
     DEFAULT_EXPORT_SECTIONS,
     NOT_AVAILABLE,
+    build_csv_file_name,
     build_export_data,
     build_key_signal_rows,
+    build_key_signals_csv,
+    build_key_signals_csv_bytes,
+    clean_csv_columns,
     clean_export_sections,
     format_percent,
     format_reference_range,
@@ -74,6 +79,23 @@ def test_clean_export_sections_defaults_to_required_export_content():
     assert clean_export_sections() == list(DEFAULT_EXPORT_SECTIONS)
 
 
+def test_clean_csv_columns_uses_required_export_order():
+    """Test CSV columns stay in the required Task 6 order."""
+    columns = clean_csv_columns([
+        "status",
+        "bad_column",
+        "feature",
+    ])
+
+    assert columns == ["feature", "status"]
+
+
+def test_clean_csv_columns_defaults_to_all_columns():
+    """Test CSV helper defaults to all required columns."""
+    assert clean_csv_columns() == list(CSV_COLUMNS)
+    assert clean_csv_columns(["bad_column"]) == list(CSV_COLUMNS)
+
+
 def test_format_percent_handles_scores_and_missing_values():
     """Test risk score percentage formatting for export."""
     assert format_percent(0.864) == "86%"
@@ -119,6 +141,55 @@ def test_build_key_signal_rows_handles_empty_data():
     """Test empty key signals still return an empty row list."""
     assert build_key_signal_rows({"key_signals": []}) == []
     assert build_key_signal_rows({}) == []
+
+
+def test_build_key_signals_csv_contains_header_and_rows():
+    """Test CSV export contains the required key signal data."""
+    csv_text = build_key_signals_csv(_sample_component())
+
+    assert csv_text.splitlines()[0] == (
+        "feature,value,unit,reference_range,status"
+    )
+    assert "coolant_temp,104.0,C,90.0-95.0,ABNORMAL" in csv_text
+    assert "map,82.0,kPa,60.0-90.0,NORMAL" in csv_text
+
+
+def test_build_key_signals_csv_handles_empty_signals():
+    """Test CSV export still has a header when there are no rows."""
+    csv_text = build_key_signals_csv({"key_signals": []})
+
+    assert csv_text == "feature,value,unit,reference_range,status\n"
+
+
+def test_build_key_signals_csv_filters_columns():
+    """Test popup column choices can filter the CSV export."""
+    csv_text = build_key_signals_csv(
+        _sample_component(),
+        selected_columns=["feature", "status"],
+    )
+
+    assert csv_text.splitlines() == [
+        "feature,status",
+        "coolant_temp,ABNORMAL",
+        "map,NORMAL",
+    ]
+
+
+def test_build_key_signals_csv_bytes_returns_utf8_bytes():
+    """Test Streamlit download_button can receive CSV bytes."""
+    csv_bytes = build_key_signals_csv_bytes(_sample_component())
+
+    assert isinstance(csv_bytes, bytes)
+    assert csv_bytes.decode("utf-8").startswith("feature,value")
+
+
+def test_build_csv_file_name_uses_component_and_timestamp():
+    """Test CSV filename is simple and stable for download."""
+    file_name = build_csv_file_name(_sample_component())
+
+    assert file_name == (
+        "cooling_degradation_2026_06_16t12_00_00z_key_signals.csv"
+    )
 
 
 def test_build_export_data_default_sections():

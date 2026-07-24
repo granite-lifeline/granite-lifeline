@@ -74,6 +74,16 @@ not required by Task 6 export content.
 
 The CSV should contain only the key signals table.
 
+GL-345 adds CSV generation helpers in `dashboard/export_helper.py`:
+
+- `build_key_signals_csv()` returns CSV text.
+- `build_key_signals_csv_bytes()` returns UTF-8 bytes for
+  `st.download_button`.
+- `build_csv_file_name()` returns a stable download filename.
+
+The helper uses only the Python standard library, so it has no external
+service or system-level dependency.
+
 | CSV column | Source field | Notes |
 |---|---|---|
 | `feature` | `key_signals[].feature` | Keep the interface feature name. |

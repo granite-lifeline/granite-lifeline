@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import csv
+import io
+import re
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -38,6 +41,14 @@ DEFAULT_EXPORT_SECTIONS = (
 )
 
 ALL_EXPORT_SECTIONS = tuple(EXPORT_SECTION_LABELS.keys())
+
+CSV_COLUMNS = (
+    "feature",
+    "value",
+    "unit",
+    "reference_range",
+    "status",
+)
 
 SIGNAL_DISPLAY_NAMES = {
     "coolant_temp": "Coolant Temperature",
@@ -84,6 +95,21 @@ def clean_export_sections(
         if section_key in wanted:
             clean_sections.append(section_key)
     return clean_sections
+
+
+def clean_csv_columns(
+    selected_columns: Optional[Iterable[str]] = None,
+) -> List[str]:
+    """Keep known CSV column keys in the required export order."""
+    wanted = (
+        list(selected_columns)
+        if selected_columns is not None else list(CSV_COLUMNS)
+    )
+    clean_columns = []
+    for column_key in CSV_COLUMNS:
+        if column_key in wanted:
+            clean_columns.append(column_key)
+    return clean_columns or list(CSV_COLUMNS)
 
 
 def format_plain_value(value: Any) -> str:
@@ -167,6 +193,54 @@ def build_key_signal_rows(
             "status": get_signal_status(signal),
         })
     return rows
+
+
+def build_key_signals_csv(
+    component_data: Dict[str, Any],
+    selected_columns: Optional[Iterable[str]] = None,
+) -> str:
+    """Build CSV text for the key signals table."""
+    columns = clean_csv_columns(selected_columns)
+    output = io.StringIO()
+    writer = csv.DictWriter(
+        output,
+        fieldnames=columns,
+        extrasaction="ignore",
+        lineterminator="\n",
+    )
+
+    writer.writeheader()
+    for row in build_key_signal_rows(component_data):
+        writer.writerow(row)
+
+    return output.getvalue()
+
+
+def build_key_signals_csv_bytes(
+    component_data: Dict[str, Any],
+    selected_columns: Optional[Iterable[str]] = None,
+) -> bytes:
+    """Build UTF-8 CSV bytes for Streamlit download_button."""
+    return build_key_signals_csv(
+        component_data,
+        selected_columns,
+    ).encode("utf-8")
+
+
+def clean_file_name_part(value: Any) -> str:
+    """Make one small filename part from report data."""
+    text = format_plain_value(value).lower()
+    text = re.sub(r"[^a-z0-9]+", "_", text).strip("_")
+    return text or "report"
+
+
+def build_csv_file_name(component_data: Dict[str, Any]) -> str:
+    """Build a simple CSV filename for the current component report."""
+    component = clean_file_name_part(component_data.get("component"))
+    timestamp = clean_file_name_part(component_data.get("timestamp"))
+    if timestamp == "not_available":
+        return f"{component}_key_signals.csv"
+    return f"{component}_{timestamp}_key_signals.csv"
 
 
 def build_summary(component_data: Dict[str, Any]) -> Dict[str, str]:
