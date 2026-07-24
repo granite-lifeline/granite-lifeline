@@ -1,0 +1,129 @@
+{
+  "config_version": "stage4_cases.v1",
+  "description": "Default synthetic fault-injection cases for proxy Stage 4 validation. Each case edits target signals in a copied run, then reruns proxy stages 50/60/61/70.",
+  "cases": [
+    {
+      "case_id": "1s2_coolant_overheat_high",
+      "proxy_id": "cooling_degradation",
+      "expected_sub_check_id": "1-S2",
+      "target_signal": "coolant_temp",
+      "selector": "post_warmup",
+      "duration_seconds": 200,
+      "strategy": "set_constant",
+      "value": 106.0,
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "1s3_coolant_rising_precursor",
+      "proxy_id": "cooling_degradation",
+      "expected_sub_check_id": "1-S3",
+      "target_signal": "coolant_temp",
+      "selector": "post_warmup",
+      "duration_seconds": 220,
+      "strategy": "linear_ramp",
+      "start_value": 100.0,
+      "rate_per_min": 0.8,
+      "expected_result_state": "pending"
+    },
+    {
+      "case_id": "2s2_maf_under_read",
+      "proxy_id": "air_intake_maf_anomaly",
+      "expected_sub_check_id": "2-S2",
+      "target_signal": "maf",
+      "selector": "post_warmup_high_load",
+      "duration_seconds": 15,
+      "strategy": "multiply",
+      "factor": 0.35,
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "2s3b_maf_zero_while_firing",
+      "proxy_id": "air_intake_maf_anomaly",
+      "expected_sub_check_id": "2-S3b",
+      "target_signal": "maf",
+      "selector": "engine_firing",
+      "duration_seconds": 12,
+      "strategy": "set_constant",
+      "value": 0.0,
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "3s1a_pedal_e_offset",
+      "proxy_id": "accelerator_pedal_sensor",
+      "expected_sub_check_id": "3-S1a",
+      "target_signal": "accel_pedal_e",
+      "selector": "pedal_lowmotion",
+      "duration_seconds": 35,
+      "strategy": "add_offset",
+      "offset": 5.0,
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "3s1b_pedal_extreme_delta",
+      "proxy_id": "accelerator_pedal_sensor",
+      "expected_sub_check_id": "3-S1b",
+      "target_signal": "accel_pedal_e",
+      "selector": "engine_firing",
+      "duration_seconds": 3,
+      "strategy": "force_pedal_delta",
+      "delta": 70.0,
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "4s1_iat_frozen_context",
+      "proxy_id": "intake_air_temperature_sensor_fault",
+      "expected_sub_check_id": "4-S1",
+      "target_signal": "intake_temp",
+      "selector": "iat_context_change",
+      "duration_seconds": 250,
+      "strategy": "freeze_to_first",
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "4s3_iat_low_range",
+      "proxy_id": "intake_air_temperature_sensor_fault",
+      "expected_sub_check_id": "4-S3",
+      "target_signal": "intake_temp",
+      "selector": "engine_firing",
+      "duration_seconds": 1,
+      "strategy": "set_constant",
+      "value": -41.0,
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "5s1_map_suppressed_step_response",
+      "proxy_id": "map_load_signal_plausibility_fault",
+      "expected_sub_check_id": "5-S1",
+      "target_signal": "map",
+      "selector": "pedal_step_events",
+      "event_count": 4,
+      "strategy": "suppress_map_step_response",
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "5s2_map_residual_high",
+      "proxy_id": "map_load_signal_plausibility_fault",
+      "expected_sub_check_id": "5-S2",
+      "target_signal": "maf",
+      "selector": "steady_driving",
+      "duration_seconds": 45,
+      "strategy": "multiply",
+      "expected_result_state": "triggered",
+      "factor": 3.0,
+      "freeze_for_guard": [
+        "accel_pedal_d",
+        "accel_pedal_e"
+      ]
+    },
+    {
+      "case_id": "5s3_map_frozen_context",
+      "proxy_id": "map_load_signal_plausibility_fault",
+      "expected_sub_check_id": "5-S3",
+      "target_signal": "map",
+      "selector": "map_context_change",
+      "duration_seconds": 250,
+      "strategy": "freeze_to_first",
+      "expected_result_state": "triggered"
+    }
+  ]
+}
