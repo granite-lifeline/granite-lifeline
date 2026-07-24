@@ -848,24 +848,28 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
             background: transparent !important;
             border: none !important;
         }}
+        div.st-key-dashboard_what_if_btn button,
         .st-key-dashboard_what_if_btn button {{
-            background: {tokens["surface_alt"]} !important;
-            border: 1px solid {tokens["border"]} !important;
+            background: transparent !important;
+            border: 1.5px solid {tokens["border"]} !important;
             border-radius: 10px !important;
             color: {tokens["text"]} !important;
             font-size: 13px !important;
-            font-weight: 700 !important;
+            font-weight: 600 !important;
             min-height: 38px !important;
-            transition: border-color 0.15s ease, color 0.15s ease !important;
+            transition: border-color 0.15s ease, color 0.15s ease,
+                        background 0.15s ease !important;
         }}
-        .st-key-dashboard_what_if_btn button * {{
+        div.st-key-dashboard_what_if_btn button *,
+        div.st-key-dashboard_what_if_btn button:hover *,
+        .st-key-dashboard_what_if_btn button *,
+        .st-key-dashboard_what_if_btn button:hover * {{
             color: inherit !important;
         }}
+        div.st-key-dashboard_what_if_btn button:hover,
         .st-key-dashboard_what_if_btn button:hover {{
+            background: {hex_to_rgba(tokens["accent"], 0.07)} !important;
             border-color: {tokens["accent"]} !important;
-            color: {tokens["accent"]} !important;
-        }}
-        .st-key-dashboard_what_if_btn button:hover * {{
             color: {tokens["accent"]} !important;
         }}
         </style>

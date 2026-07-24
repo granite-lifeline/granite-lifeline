@@ -378,50 +378,14 @@ def _scenario_intensity(inputs: ScenarioInputs) -> float:
 def _render_page_styles(tokens: dict) -> None:
     T = tokens  # short alias
 
-    # Scenario cards: each card is a st.container(key="wi_sc_wrap_{key}").
-    # Strategy: the HTML card has pointer-events:none so mouse events fall
-    # through to the st.button sitting behind it (z-index lower).
-    # The button is invisible but receives all pointer events.
-    # Card :hover is triggered via CSS sibling: button:hover ~ [card].
     active_scenario = st.session_state.get("wi_scenario")
-    sc_btn_rules = ""
-    for sc in SCENARIO_CARDS:
-        wrap_cls = f".st-key-wi_sc_wrap_{sc.key}"
-        btn_cls  = f".st-key-wi_sc_{sc.key}"
-        sc_btn_rules += f"""
-        {wrap_cls} {{
-            position: relative !important;
-        }}
-        {btn_cls} {{
-            bottom: 0 !important;
-            left: 0 !important;
-            position: absolute !important;
-            right: 0 !important;
-            top: 0 !important;
-            z-index: 1 !important;
-        }}
-        {btn_cls} button {{
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            cursor: pointer !important;
-            height: 100% !important;
-            opacity: 0 !important;
-            width: 100% !important;
-        }}
-        /* Card sits above button visually but passes pointer events through */
-        {wrap_cls} .wi-sc-card {{
-            pointer-events: none !important;
-            position: relative !important;
-            z-index: 2 !important;
-        }}
-        /* Hover: trigger card style when the sibling button is hovered.
-           Uses the general sibling combinator on Streamlit's rendered DOM:
-           button container div is followed by the markdown div containing the card. */
-        {btn_cls} button:hover ~ * .wi-sc-card,
-        {btn_cls}:hover ~ * .wi-sc-card {{
+    active_scenario_btn_rules = ""
+    if active_scenario:
+        active_scenario_btn_rules = f"""
+        .st-key-wi_sc_{active_scenario} button {{
+            background: {hex_to_rgba(T["accent"], 0.10)} !important;
             border-color: {T["accent"]} !important;
-            background: {hex_to_rgba(T["accent"], 0.05)} !important;
+            color: {T["accent"]} !important;
         }}
         """
 
@@ -485,9 +449,6 @@ def _render_page_styles(tokens: dict) -> None:
             text-transform: uppercase;
         }}
 
-        /* ── Scenario picker: invisible overlay buttons on top of HTML cards ── */
-        {sc_btn_rules}
-
         /* ── Scenario card (pure HTML, rendered via st.markdown) ── */
         .wi-sc-card {{
             background: {T["glass_surface"]};
@@ -504,7 +465,11 @@ def _render_page_styles(tokens: dict) -> None:
             transition: border-color 0.15s ease, background 0.15s ease;
             z-index: 1;
         }}
-        .wi-sc-card:hover {{
+        .st-key-wi_sc_wrap_hard_acceleration:hover .wi-sc-card,
+        .st-key-wi_sc_wrap_hills_towing:hover .wi-sc-card,
+        .st-key-wi_sc_wrap_hot_day_highway:hover .wi-sc-card,
+        .st-key-wi_sc_wrap_city_traffic:hover .wi-sc-card,
+        .st-key-wi_sc_wrap_easy_commute:hover .wi-sc-card {{
             border-color: {T["accent"]};
             background: {hex_to_rgba(T["accent"], 0.05)};
         }}
@@ -548,6 +513,35 @@ def _render_page_styles(tokens: dict) -> None:
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
         }}
+
+        .st-key-wi_scenario_picker [class*="st-key-wi_sc_"] button {{
+            align-items: center !important;
+            background: {T["surface"]} !important;
+            border: 1.5px solid {T["border"]} !important;
+            border-radius: 10px !important;
+            box-shadow: none !important;
+            color: {T["text"]} !important;
+            display: flex !important;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+            height: 34px !important;
+            justify-content: center !important;
+            line-height: 1 !important;
+            margin-top: 8px !important;
+            padding: 0 10px !important;
+            transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
+            width: 100% !important;
+        }}
+        .st-key-wi_scenario_picker [class*="st-key-wi_sc_"] button:hover {{
+            background: {hex_to_rgba(T["accent"], 0.08)} !important;
+            border-color: {T["accent"]} !important;
+            color: {T["accent"]} !important;
+        }}
+        .st-key-wi_scenario_picker [class*="st-key-wi_sc_"] button *,
+        .st-key-wi_scenario_picker [class*="st-key-wi_sc_"] button:hover * {{
+            color: inherit !important;
+        }}
+        {active_scenario_btn_rules}
 
         /* ── Summary banner ── */
         .wi-summary {{
@@ -595,50 +589,6 @@ def _render_page_styles(tokens: dict) -> None:
             line-height: 1.45;
             margin-top: 10px;
             padding: 9px 12px;
-        }}
-
-        /* ── Filter pills — rendered as a flex-wrap HTML row with real <button>s
-               so they never overflow into clipped st.columns ── */
-        .wi-filter-row {{
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 16px;
-        }}
-        .wi-filter-pill {{
-            background: transparent;
-            border: 1.5px solid {T["border"]};
-            border-radius: 999px;
-            color: {T["text_secondary"]};
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 12px;
-            font-weight: 600;
-            line-height: 1;
-            padding: 5px 14px;
-            transition: border-color 0.12s, color 0.12s;
-            white-space: nowrap;
-        }}
-        .wi-filter-pill:hover {{
-            border-color: {T["accent"]};
-            color: {T["accent"]};
-        }}
-        .wi-filter-pill.wi-filter-active {{
-            border-color: {T["accent"]};
-            color: {T["accent"]};
-        }}
-
-        /* Filter radio: visually hidden but DOM-accessible so clicks work.
-           position:absolute takes it out of flow; opacity:0 makes it invisible;
-           pointer-events kept enabled so Streamlit's click handler fires. */
-        .st-key-wi_filter_radio {{
-            height: 1px !important;
-            left: -9999px !important;
-            opacity: 0 !important;
-            overflow: hidden !important;
-            position: absolute !important;
-            top: auto !important;
-            width: 1px !important;
         }}
 
         /* ── Component breakdown table ── */
@@ -878,7 +828,7 @@ def _render_page_styles(tokens: dict) -> None:
         }}
         .wi-step:not(:last-child)::after {{
             color: {T["border"]};
-            content: "\2192";
+            content: "\\2192";
             font-size: 14px;
             line-height: 1;
             margin-left: 12px;
@@ -900,6 +850,24 @@ def _render_page_styles(tokens: dict) -> None:
         .wi-step-lbl {{
             color: {T["text_secondary"]};
             font-size: 12px;
+        }}
+
+        /* Scenario picker: force the 5 scenario cards to stay on one row
+           on desktop instead of Streamlit's responsive 3+2 wrap. */
+        .st-key-wi_scenario_picker
+            div[data-testid="stHorizontalBlock"] {{
+            display: grid !important;
+            gap: 10px !important;
+            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        }}
+        .st-key-wi_scenario_picker
+            div[data-testid="stColumn"] {{
+            min-width: 0 !important;
+            width: auto !important;
+        }}
+        .st-key-wi_scenario_picker
+            div[data-testid="stColumn"] > div {{
+            min-width: 0 !important;
         }}
 
         /* Back button */
@@ -936,6 +904,13 @@ def _render_page_styles(tokens: dict) -> None:
 
         /* ── Responsive ── */
         @media (max-width: 760px) {{
+            .st-key-wi_scenario_picker
+                div[data-testid="stHorizontalBlock"] {{
+                gap: 8px !important;
+                grid-template-columns: repeat(5, minmax(96px, 1fr)) !important;
+                overflow-x: auto !important;
+                padding-bottom: 4px !important;
+            }}
             .wi-row {{ grid-template-columns: 1fr 80px 80px 80px; }}
             .wi-cell-name {{ padding: 14px; }}
             .wi-cell {{ padding: 14px 8px; }}
@@ -1200,7 +1175,7 @@ def _apply_scenario(sc: ScenarioCard) -> None:
 def _reset_all() -> None:
     for k in (
         "wi_coolant", "wi_rpm", "wi_load", "wi_intake",
-        "wi_style", "wi_scenario", "wi_filter", "wi_focus_component",
+        "wi_style", "wi_scenario", "wi_focus_component",
         "wi_coolant_p", "wi_rpm_p", "wi_load_p", "wi_intake_p", "wi_style_p",
     ):
         st.session_state.pop(k, None)
@@ -1218,7 +1193,6 @@ def show_what_if_page() -> None:
     dark_mode       = st.session_state.get("dark_mode", False)
     tokens          = THEME_TOKENS["dark" if dark_mode else "light"]
     active_scenario = st.session_state.get("wi_scenario")
-    active_filter   = st.session_state.get("wi_filter")
     focus_component = st.session_state.get("wi_focus_component")
 
     _render_page_styles(tokens)
@@ -1254,19 +1228,11 @@ def show_what_if_page() -> None:
     )
 
     # ── Scenario picker ──────────────────────────────────────────────────────
-    # Layout: 2 rows × 3 cols (first row) + 2 cols centred (second row) via
-    # st.columns([1,1,1]) then st.columns([0.5,1,1,0.5]).
-    # Each card: st.container(key="wi_sc_wrap_{key}") holds the HTML card
-    # + an invisible full-height st.button overlay as the click target.
+    # Single row of 5 columns. Each card has a normal visible button below it.
     st.markdown('<div class="wi-section-head">Choose a scenario</div>', unsafe_allow_html=True)
-    row1 = SCENARIO_CARDS[:3]
-    row2 = SCENARIO_CARDS[3:]
-
-    for row_cards, cols in [
-        (row1, st.columns(3, gap="small")),
-        (row2, st.columns([0.5] + [1] * len(row2) + [0.5], gap="small")[1:-1]),
-    ]:
-        for col, sc in zip(cols, row_cards):
+    with st.container(key="wi_scenario_picker"):
+        sc_cols = st.columns(len(SCENARIO_CARDS), gap="small")
+        for col, sc in zip(sc_cols, SCENARIO_CARDS):
             with col:
                 is_active = sc.key == active_scenario
                 with st.container(key=f"wi_sc_wrap_{sc.key}"):
@@ -1275,7 +1241,7 @@ def show_what_if_page() -> None:
                         unsafe_allow_html=True,
                     )
                     if st.button(
-                        sc.label,
+                        "Selected" if is_active else "Select",
                         key=f"wi_sc_{sc.key}",
                         use_container_width=True,
                     ):
@@ -1417,76 +1383,32 @@ def show_what_if_page() -> None:
                 tokens,
             )
 
-            # Filter pills — pure HTML buttons in a flex-wrap row.
-            # A hidden st.radio tracks the selection; JS-free via form submit fallback
-            # is unavailable in Streamlit, so we use a compact st.radio with pill CSS.
-            all_keys      = [k for k, *_ in rows]
-            filter_labels = ["All"] + [COMPONENT_DISPLAY_NAMES.get(k, k) for k in all_keys]
-
-            pills_html = '<div class="wi-filter-row">'
-            for lbl in filter_labels:
-                is_active_pill = (lbl == "All" and active_filter is None) or (
-                    lbl != "All" and active_filter == lbl
+            rows_html = "".join(
+                _component_row_html(
+                    k, b, p, d, tokens,
+                    scenario_key=active_scenario,
+                    focus=(k == focus_component),
                 )
-                pill_cls = "wi-filter-pill wi-filter-active" if is_active_pill else "wi-filter-pill"
-                pills_html += f'<span class="{pill_cls}">{html.escape(lbl)}</span>'
-            pills_html += "</div>"
-            st.markdown(pills_html, unsafe_allow_html=True)
-
-            # Invisible st.radio drives the actual selection (Streamlit needs a widget).
-            selected_pill = st.radio(
-                "Filter by component",
-                filter_labels,
-                index=filter_labels.index(active_filter) if active_filter in filter_labels else 0,
-                horizontal=True,
-                key="wi_filter_radio",
-                label_visibility="collapsed",
+                for k, b, p, d in rows
             )
-            # Sync session state and rerun only when selection changes.
-            new_filter = None if selected_pill == "All" else selected_pill
-            if new_filter != active_filter:
-                if new_filter is None:
-                    st.session_state.pop("wi_filter", None)
-                else:
-                    st.session_state["wi_filter"] = new_filter
-                st.rerun()
-
-            # Build visible rows
-            visible = [
-                (k, b, p, d) for k, b, p, d in rows
-                if active_filter is None
-                or COMPONENT_DISPLAY_NAMES.get(k, k) == active_filter
-            ]
-
-            if not visible:
-                st.info("No components match the current filter.")
-            else:
-                rows_html = "".join(
-                    _component_row_html(
-                        k, b, p, d, tokens,
-                        scenario_key=active_scenario,
-                        focus=(k == focus_component),
-                    )
-                    for k, b, p, d in visible
-                )
-                col_headers = (
-                    '<div class="wi-col-headers">'
-                    '<div class="wi-col-hdr">Component</div>'
-                    '<div class="wi-col-hdr">Risk change</div>'
-                    '<div class="wi-col-hdr right">Level</div>'
-                    '</div>'
-                )
-                st.markdown(
-                    '<div class="wi-breakdown">'
-                    '<div class="wi-breakdown-head">'
-                    f'{lucide_icon("sliders", size=15, color=tokens["accent"])}'
-                    '<span class="wi-breakdown-title">Component breakdown</span>'
-                    '</div>'
-                    f'{col_headers}'
-                    f'{rows_html}'
-                    '</div>',
-                    unsafe_allow_html=True,
-                )
+            col_headers = (
+                '<div class="wi-col-headers">'
+                '<div class="wi-col-hdr">Component</div>'
+                '<div class="wi-col-hdr">Risk change</div>'
+                '<div class="wi-col-hdr right">Level</div>'
+                '</div>'
+            )
+            st.markdown(
+                '<div class="wi-breakdown">'
+                '<div class="wi-breakdown-head">'
+                f'{lucide_icon("sliders", size=15, color=tokens["accent"])}'
+                '<span class="wi-breakdown-title">Component breakdown</span>'
+                '</div>'
+                f'{col_headers}'
+                f'{rows_html}'
+                '</div>',
+                unsafe_allow_html=True,
+            )
 
     st.markdown('</div>', unsafe_allow_html=True)
 

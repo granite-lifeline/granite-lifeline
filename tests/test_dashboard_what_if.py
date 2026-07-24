@@ -17,7 +17,7 @@ ANOMALY_TYPES = [
 ]
 
 
-def _inputs(style: str = "Normal") -> ScenarioInputs:
+def _inputs(style: str = "Typical") -> ScenarioInputs:
     return ScenarioInputs(
         driving_style=style,
         coolant_temp_offset=5.0,
@@ -29,7 +29,7 @@ def _inputs(style: str = "Normal") -> ScenarioInputs:
 
 def test_project_component_risk_stays_in_unit_range():
     high_stress = ScenarioInputs(
-        driving_style="Aggressive",
+        driving_style="Spirited",
         coolant_temp_offset=20.0,
         rpm_multiplier=1.4,
         load_stress_multiplier=1.5,
@@ -43,21 +43,21 @@ def test_project_component_risk_stays_in_unit_range():
         assert 0.0 <= projected <= 1.0
 
 
-def test_aggressive_style_projects_higher_than_normal_for_all_types():
-    normal = _inputs("Normal")
-    aggressive = _inputs("Aggressive")
+def test_spirited_style_projects_higher_than_typical_for_all_types():
+    typical = _inputs("Typical")
+    spirited = _inputs("Spirited")
 
     for anomaly_type in ANOMALY_TYPES:
-        normal_score = project_component_risk(anomaly_type, 0.4, normal)
-        aggressive_score = project_component_risk(
-            anomaly_type, 0.4, aggressive
+        typical_score = project_component_risk(anomaly_type, 0.4, typical)
+        spirited_score = project_component_risk(
+            anomaly_type, 0.4, spirited
         )
-        assert aggressive_score >= normal_score
+        assert spirited_score >= typical_score
 
 
-def test_conservative_style_does_not_raise_low_stress_baseline():
-    conservative = ScenarioInputs(
-        driving_style="Conservative",
+def test_relaxed_style_does_not_raise_low_stress_baseline():
+    relaxed = ScenarioInputs(
+        driving_style="Relaxed",
         coolant_temp_offset=0.0,
         rpm_multiplier=1.0,
         load_stress_multiplier=1.0,
@@ -66,15 +66,15 @@ def test_conservative_style_does_not_raise_low_stress_baseline():
 
     for anomaly_type in ANOMALY_TYPES:
         projected = project_component_risk(
-            anomaly_type, baseline_score=0.5, inputs=conservative
+            anomaly_type, baseline_score=0.5, inputs=relaxed
         )
         assert projected <= 0.5
 
 
 def test_unknown_component_uses_generic_style_sensitivity():
-    normal = _inputs("Normal")
-    aggressive = _inputs("Aggressive")
+    typical = _inputs("Typical")
+    spirited = _inputs("Spirited")
 
-    assert project_component_risk("unknown", 0.3, aggressive) > (
-        project_component_risk("unknown", 0.3, normal)
+    assert project_component_risk("unknown", 0.3, spirited) > (
+        project_component_risk("unknown", 0.3, typical)
     )
