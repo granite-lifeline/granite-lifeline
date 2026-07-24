@@ -36,22 +36,22 @@ except ImportError:  # package import during tests
 # ---------------------------------------------------------------------------
 
 STYLE_MULTIPLIERS = {
-    "Easy": 0.90,
-    "Normal": 1.00,
-    "Hard": 1.12,
+    "Relaxed": 0.90,
+    "Typical": 1.00,
+    "Spirited": 1.12,
 }
 
 STYLE_DESCRIPTIONS = {
-    "Easy":   "Light acceleration, low engine load.",
-    "Normal": "Matches your current dashboard reading.",
-    "Hard":   "Heavy acceleration, high RPM, sustained load.",
+    "Relaxed":  "Gentle acceleration, low revs — easy on the engine.",
+    "Typical":  "Everyday driving — matches your current readings.",
+    "Spirited": "Frequent hard acceleration and high engine load.",
 }
 
 # Pending-key presets (never write directly to live widget keys mid-run).
 STYLE_SLIDER_PRESETS: dict[str, dict] = {
-    "Easy":   {"wi_coolant_p": -2, "wi_rpm_p": 0.90, "wi_load_p": 0.88, "wi_intake_p": 0, "wi_style_p": "Easy"},
-    "Normal": {"wi_coolant_p": 0,  "wi_rpm_p": 1.00, "wi_load_p": 1.00, "wi_intake_p": 0, "wi_style_p": "Normal"},
-    "Hard":   {"wi_coolant_p": 4,  "wi_rpm_p": 1.20, "wi_load_p": 1.25, "wi_intake_p": 3, "wi_style_p": "Hard"},
+    "Relaxed":  {"wi_coolant_p": -2, "wi_rpm_p": 0.90, "wi_load_p": 0.88, "wi_intake_p": 0, "wi_style_p": "Relaxed"},
+    "Typical":  {"wi_coolant_p": 0,  "wi_rpm_p": 1.00, "wi_load_p": 1.00, "wi_intake_p": 0, "wi_style_p": "Typical"},
+    "Spirited": {"wi_coolant_p": 4,  "wi_rpm_p": 1.20, "wi_load_p": 1.25, "wi_intake_p": 3, "wi_style_p": "Spirited"},
 }
 
 _PENDING_TO_WIDGET: dict[str, str] = {
@@ -79,7 +79,7 @@ class ScenarioCard:
     label: str
     description: str       # One plain-English sentence shown on the card
     icon: str              # Lucide icon name
-    driving_style: str     # "Easy" | "Normal" | "Hard"
+    driving_style: str     # "Relaxed" | "Typical" | "Spirited"
     coolant_offset: int    # °C relative to normal
     rpm_multiplier: float  # relative to steady-driving median 1675 RPM
     load_multiplier: float # relative to steady-driving median MAF 20.8 g/s
@@ -93,7 +93,7 @@ SCENARIO_CARDS: list[ScenarioCard] = [
         label="Hard Acceleration",
         description="Fast driving with frequent heavy acceleration.",
         icon="zap",
-        driving_style="Hard",
+        driving_style="Spirited",
         # high_load: rpm median 2065 → 2065/1675 = 1.23; maf median 46.4 → cap 1.50
         coolant_offset=4,
         rpm_multiplier=1.23,
@@ -105,7 +105,7 @@ SCENARIO_CARDS: list[ScenarioCard] = [
         label="Hills or Heavy Load",
         description="Climbing a slope, towing, or carrying extra weight.",
         icon="gauge",
-        driving_style="Hard",
+        driving_style="Spirited",
         coolant_offset=6,
         rpm_multiplier=1.23,
         load_multiplier=1.40,
@@ -116,7 +116,7 @@ SCENARIO_CARDS: list[ScenarioCard] = [
         label="Hot Day Highway",
         description="Long motorway cruise on a hot day.",
         icon="thermometer",
-        driving_style="Normal",
+        driving_style="Typical",
         # intake_temp P95 ≈ 36 °C → offset capped at +10
         coolant_offset=5,
         rpm_multiplier=1.05,
@@ -128,7 +128,7 @@ SCENARIO_CARDS: list[ScenarioCard] = [
         label="Stuck in Traffic",
         description="Stop-and-go city driving with the engine idling a lot.",
         icon="activity",
-        driving_style="Normal",
+        driving_style="Typical",
         # idle rpm median 832 → 0.75× mixed; high coolant because no airflow cooling
         coolant_offset=10,
         rpm_multiplier=0.75,
@@ -140,7 +140,7 @@ SCENARIO_CARDS: list[ScenarioCard] = [
         label="Easy Commute",
         description="Short, relaxed drive in cool weather.",
         icon="wind",
-        driving_style="Easy",
+        driving_style="Relaxed",
         coolant_offset=-3,
         rpm_multiplier=0.54,
         load_multiplier=0.85,
@@ -356,7 +356,7 @@ def project_component_risk(
 ) -> float:
     baseline  = max(0.0, min(1.0, float(baseline_score or 0.0)))
     projected = baseline + _component_sensitivity(component_key, inputs)
-    if inputs.driving_style == "Easy":
+    if inputs.driving_style == "Relaxed":
         projected = min(projected, baseline)
     return max(0.0, min(1.0, projected))
 
@@ -378,31 +378,34 @@ def _scenario_intensity(inputs: ScenarioInputs) -> float:
 def _render_page_styles(tokens: dict) -> None:
     T = tokens  # short alias
 
-    # Scenario cards are pure HTML (st.markdown); each column also gets a
-    # transparent overlay button for click handling. CSS only needs to style
-    # that overlay button — it must be invisible and fill its container.
+    # Scenario cards: each card is a st.container(key="wi_sc_wrap_{key}").
+    # Inside: st.markdown renders the visible card HTML, st.button is the
+    # invisible click target absolutely positioned over the whole container.
     active_scenario = st.session_state.get("wi_scenario")
     sc_btn_rules = ""
     for sc in SCENARIO_CARDS:
-        key_cls = f".st-key-wi_sc_{sc.key}"
+        wrap_cls = f".st-key-wi_sc_wrap_{sc.key}"
+        btn_cls  = f".st-key-wi_sc_{sc.key}"
         sc_btn_rules += f"""
-        {key_cls} {{
+        {wrap_cls} {{
             position: relative !important;
-            margin-top: -8px !important;
         }}
-        {key_cls} button {{
-            background: transparent !important;
-            border: none !important;
+        {btn_cls} {{
             bottom: 0 !important;
-            cursor: pointer !important;
             left: 0 !important;
-            opacity: 0 !important;
             position: absolute !important;
             right: 0 !important;
             top: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
             z-index: 2 !important;
+        }}
+        {btn_cls} button {{
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            cursor: pointer !important;
+            height: 100% !important;
+            opacity: 0 !important;
+            width: 100% !important;
         }}
         """
 
@@ -719,27 +722,38 @@ def _render_page_styles(tokens: dict) -> None:
             border: 1px solid {T["glass_border"]};
             border-radius: 16px;
             box-shadow: 0 2px 12px {T["shadow"]};
-            padding: 20px;
+            padding: 20px 20px 12px 20px;
+        }}
+        /* Collapse the extra gap Streamlit adds between elements inside the container */
+        .st-key-wi_controls_box > div > div > div {{
+            gap: 0 !important;
         }}
         .wi-controls-title {{
             color: {T["text"]};
             font-size: 15px;
             font-weight: 700;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }}
         .wi-style-desc {{
             color: {T["text_secondary"]};
             font-size: 12px;
             line-height: 1.4;
-            margin-top: -8px;
-            margin-bottom: 12px;
+            margin-top: 2px;
+            margin-bottom: 4px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid {T["border"]};
         }}
         .wi-slider-caption {{
             color: {T["text_secondary"]};
             font-size: 11px;
-            margin-top: -10px;
-            margin-bottom: 8px;
+            margin-top: -14px;
+            margin-bottom: 4px;
             line-height: 1.4;
+        }}
+        /* Tighten the slider's own bottom margin */
+        .st-key-wi_controls_box [data-testid="stSlider"] {{
+            margin-bottom: 0 !important;
+            padding-bottom: 4px !important;
         }}
 
         /* Step indicator */
@@ -1123,23 +1137,32 @@ def show_what_if_page() -> None:
     )
 
     # ── Scenario picker ──────────────────────────────────────────────────────
-    # Each column: HTML card (visible) + transparent st.button overlay (clickable).
-    # The button container is position:relative; the button is position:absolute
-    # covering the entire card so clicking anywhere on the card fires it.
+    # Layout: 2 rows × 3 cols (first row) + 2 cols centred (second row) via
+    # st.columns([1,1,1]) then st.columns([0.5,1,1,0.5]).
+    # Each card: st.container(key="wi_sc_wrap_{key}") holds the HTML card
+    # + an invisible full-height st.button overlay as the click target.
     st.markdown('<div class="wi-section-head">Choose a scenario</div>', unsafe_allow_html=True)
-    sc_cols = st.columns(len(SCENARIO_CARDS), gap="small")
-    for i, sc in enumerate(SCENARIO_CARDS):
-        with sc_cols[i]:
-            is_active = sc.key == active_scenario
-            # Render the visible card HTML
-            st.markdown(_scenario_card_html(sc, is_active, tokens), unsafe_allow_html=True)
-            # Transparent overlay button — absolutely positioned over the card via CSS
-            if st.button(
-                sc.label,           # plain text label (invisible due to opacity:0)
-                key=f"wi_sc_{sc.key}",
-                use_container_width=True,
-            ):
-                _apply_scenario(sc)
+    row1 = SCENARIO_CARDS[:3]
+    row2 = SCENARIO_CARDS[3:]
+
+    for row_cards, cols in [
+        (row1, st.columns(3, gap="small")),
+        (row2, st.columns([0.5] + [1] * len(row2) + [0.5], gap="small")[1:-1]),
+    ]:
+        for col, sc in zip(cols, row_cards):
+            with col:
+                is_active = sc.key == active_scenario
+                with st.container(key=f"wi_sc_wrap_{sc.key}"):
+                    st.markdown(
+                        _scenario_card_html(sc, is_active, tokens),
+                        unsafe_allow_html=True,
+                    )
+                    if st.button(
+                        sc.label,
+                        key=f"wi_sc_{sc.key}",
+                        use_container_width=True,
+                    ):
+                        _apply_scenario(sc)
 
     st.markdown('<hr class="wi-divider">', unsafe_allow_html=True)
 
@@ -1154,7 +1177,7 @@ def show_what_if_page() -> None:
                 unsafe_allow_html=True,
             )
 
-            prev_style = st.session_state.get("wi_style", "Normal")
+            prev_style = st.session_state.get("wi_style", "Typical")
             driving_style = st.radio(
                 "Driving style",
                 list(STYLE_MULTIPLIERS),

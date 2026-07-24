@@ -986,21 +986,9 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
         [class*="st-key-card_btn_"] button:active {{
             transform: scale(0.98) !important;
         }}
-        [class*="st-key-card_whatif_"] button {{
-            width: 100% !important;
-            background: transparent !important;
-            color: {tokens["text_secondary"]} !important;
-            border: 1px solid {tokens["border"]} !important;
-            border-radius: 10px !important;
-            font-size: 12px !important;
-            font-weight: 500 !important;
-            padding: 7px 0 !important;
-            margin: 0 !important;
-            transition: border-color 0.15s ease, color 0.15s ease !important;
-        }}
-        [class*="st-key-card_whatif_"] button:hover {{
-            border-color: {tokens["accent"]} !important;
-            color: {tokens["accent"]} !important;
+        [class*="st-key-card_btn_"] button *,
+        [class*="st-key-card_btn_"] button:hover * {{
+            color: inherit !important;
         }}
         </style>
         """,
@@ -1079,21 +1067,6 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
                 st.session_state["selected_component"] = component_key
                 st.session_state["page"] = "detail"
                 st.rerun()
-            # What-If shortcut on every component with a real score.
-            # Sets wi_focus_component so the What-If page highlights and
-            # pre-filters to that component.
-            if has_score:
-                if st.button(
-                    "Try What-If →",
-                    key=f"card_whatif_{component_key}",
-                    use_container_width=True,
-                ):
-                    st.session_state["wi_focus_component"] = component_key
-                    st.session_state["wi_filter"] = COMPONENT_DISPLAY_NAMES.get(
-                        component_key, component_key
-                    )
-                    st.session_state["page"] = "what_if"
-                    st.rerun()
 
     # ── Re-upload section (collapsed) ──
     st.markdown(
