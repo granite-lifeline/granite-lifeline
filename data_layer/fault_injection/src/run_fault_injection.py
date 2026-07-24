@@ -14,6 +14,7 @@ import argparse
 import copy
 import importlib.util
 import json
+import math
 import shutil
 import sys
 from dataclasses import dataclass
@@ -23,6 +24,7 @@ from types import ModuleType
 from typing import Any
 
 import pandas as pd
+import numpy as np
 
 HERE = Path(__file__).resolve().parent
 FAULT_INJECTION_DIR = HERE.parent
@@ -73,8 +75,36 @@ class Window:
     end_timestamp: str
 
 
+REQUIRED_CASE_FIELDS = {
+    "case_id", "proxy_id", "expected_sub_check_id", "target_signal",
+    "selector", "strategy",
+}
+FIXED_STRATEGY_TARGETS = {
+    "force_pedal_delta": "accel_pedal_e",
+    "suppress_map_step_response": "map",
+}
+
+
 def utc_stamp() -> str:
     return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+
+def json_default(value: Any) -> Any:
+    """Convert pandas/numpy scalars without weakening JSON validity."""
+
+    if isinstance(value, np.bool_):
+        return bool(value)
+    if isinstance(value, np.integer):
+        return int(value)
+    if isinstance(value, np.floating):
+        if np.isnan(value):
+            return None
+        return float(value)
+    if pd.isna(value):
+        return None
+    raise TypeError(
+        f"Object of type {type(value).__name__} is not JSON serializable"
+    )
 
 
 def load_cases(config_path: Path) -> list[dict[str, Any]]:
@@ -82,7 +112,31 @@ def load_cases(config_path: Path) -> list[dict[str, Any]]:
     cases = config.get("cases", [])
     if not isinstance(cases, list) or not cases:
         raise FaultInjectionError(f"No cases found in {config_path}.")
-    return [dict(case) for case in cases]
+    seen: set[str] = set()
+    validated: list[dict[str, Any]] = []
+    for raw_case in cases:
+        case = dict(raw_case)
+        missing = REQUIRED_CASE_FIELDS - set(case)
+        if missing:
+            raise FaultInjectionError(
+                f"Case is missing required fields {sorted(missing)}: {case}"
+            )
+        if case["case_id"] in seen:
+            raise FaultInjectionError(f"Duplicate case_id: {case['case_id']}")
+        seen.add(case["case_id"])
+        if case.get("freeze_for_guard"):
+            raise FaultInjectionError(
+                f"{case['case_id']} modifies non-target guard signals; "
+                "Stage 4 requires target-signal-only injection."
+            )
+        fixed_target = FIXED_STRATEGY_TARGETS.get(case["strategy"])
+        if fixed_target and case["target_signal"] != fixed_target:
+            raise FaultInjectionError(
+                f"{case['case_id']} strategy {case['strategy']} modifies "
+                f"{fixed_target}, not declared target {case['target_signal']}."
+            )
+        validated.append(case)
+    return validated
 
 
 def load_stage_module(filename: str) -> ModuleType:
@@ -161,18 +215,25 @@ def consecutive_window(mask: pd.Series, duration: int) -> list[int] | None:
     return None
 
 
-def select_basic_window(frame: pd.DataFrame, case: dict[str, Any]) -> Window:
+def select_basic_windows(
+    frame: pd.DataFrame, case: dict[str, Any]
+) -> list[Window]:
     selector = case["selector"]
     duration = int(case.get("duration_seconds", 1))
     base = pd.Series(True, index=frame.index)
 
     if selector == "post_warmup":
         mask = base & frame["thermal_state"].eq("post_warmup")
+        if case["expected_sub_check_id"] == "1-S2":
+            mask &= frame["ambient_temp"].le(25)
     elif selector == "post_warmup_high_load":
         mask = base & frame["operating_state"].eq("post_warmup__high_load")
     elif selector == "steady_driving":
-        mask = base & frame["operating_state"].eq(
-            "post_warmup__steady_driving"
+        mask = (
+            base
+            & frame["operating_state"].eq("post_warmup__steady_driving")
+            & frame["pedal_slope"].eq(0)
+            & frame["rpm_slope"].abs().le(9)
         )
     elif selector == "engine_firing":
         mask = base & frame["rpm"].ge(500)
@@ -204,41 +265,142 @@ def select_basic_window(frame: pd.DataFrame, case: dict[str, Any]) -> Window:
             )
             & frame["map_range_60s"].notna()
         )
+    elif selector in {"cold_start_ect", "cold_start_iat"}:
+        first = frame["row_in_segment"].eq(1)
+        later_start = frame.groupby(
+            ["trip_id", "segment_id"], sort=False
+        )["engine_start_observed"].transform(
+            lambda values: values.fillna(False).astype(bool).any()
+        )
+        mask = (
+            base
+            & first
+            & frame["segment_gap_seconds"].ge(21600)
+            & frame["rpm"].lt(50)
+            & later_start
+            & frame[["coolant_temp", "intake_temp", "ambient_temp"]]
+            .notna().all(axis=1)
+        )
+        if selector == "cold_start_ect":
+            mask &= (
+                frame["intake_temp"] - frame["ambient_temp"]
+            ).abs().le(7)
+        else:
+            mask &= (
+                frame["coolant_temp"] - frame["ambient_temp"]
+            ).abs().le(15)
     else:
         raise FaultInjectionError(f"Unsupported selector: {selector}")
 
     # Keep windows inside one trip and one segment.
+    windows: list[Window] = []
+    used_trips: set[str] = set()
     for (_trip, _segment), group in frame[mask].groupby(
         ["trip_id", "segment_id"], sort=False
     ):
+        if str(_trip) in used_trips:
+            continue
         local_mask = pd.Series(False, index=frame.index)
         local_mask.loc[group.index] = True
         indices = consecutive_window(local_mask, duration)
         if indices:
             rows = frame.loc[indices]
-            return Window(
+            windows.append(Window(
                 indices=indices,
                 trip_id=str(rows["trip_id"].iloc[0]),
                 segment_id=str(rows["segment_id"].iloc[0]),
                 start_timestamp=str(rows["timestamp"].iloc[0]),
                 end_timestamp=str(rows["timestamp"].iloc[-1]),
-            )
+            ))
+            used_trips.add(str(_trip))
+    if windows:
+        return windows
     raise FaultInjectionError(
         f"No injection window found for case {case['case_id']} "
         f"with selector {selector}."
     )
 
 
-def select_pedal_step_window(frame: pd.DataFrame, case: dict[str, Any]) -> Window:
+def select_warmup_windows(
+    frame: pd.DataFrame, case: dict[str, Any]
+) -> list[Window]:
+    """Return independent, injection-capable observed warm-up episodes."""
+
+    minimum_followup = int(case.get("minimum_followup_seconds", 900))
+    candidates = frame[
+        frame["engine_start_episode_id"].notna()
+        & frame["elapsed_since_engine_start"].notna()
+    ]
+    windows: list[Window] = []
+    used_trips: set[str] = set()
+    for episode_id, group in candidates.groupby(
+        "engine_start_episode_id", sort=False
+    ):
+        group = group.sort_values("elapsed_since_engine_start")
+        first = group.iloc[0]
+        trip_id = str(first["trip_id"])
+        if trip_id in used_trips:
+            continue
+        if not bool(first.get("engine_start_observed", False)):
+            continue
+        if (
+            pd.isna(first["ect_start"])
+            or float(first["ect_start"]) > 50
+            or float(first["ect_start"]) >= 79
+            or pd.isna(first["aat_start"])
+            or float(first["aat_start"]) < -7
+        ):
+            continue
+        eligible = group[
+            group["elapsed_since_engine_start"].le(minimum_followup)
+        ]
+        if (
+            group["elapsed_since_engine_start"].max() < minimum_followup
+            or len(eligible) < minimum_followup
+        ):
+            continue
+        rows = eligible
+        windows.append(Window(
+            indices=rows.index.tolist(),
+            trip_id=trip_id,
+            segment_id=str(first["segment_id"]),
+            start_timestamp=str(rows["timestamp"].iloc[0]),
+            end_timestamp=str(rows["timestamp"].iloc[-1]),
+        ))
+        used_trips.add(trip_id)
+    if not windows:
+        raise FaultInjectionError(
+            f"No qualified warm-up episode found for {case['case_id']}."
+        )
+    return windows
+
+
+def select_pedal_step_windows(
+    frame: pd.DataFrame, case: dict[str, Any]
+) -> list[Window]:
     """Select events likely to be consumed by 5-S1."""
 
     needed = int(case.get("event_count", 4))
+    thresholds = {
+        "post_warmup__idle": 9.2,
+        "post_warmup__steady_driving": 11.4,
+        "post_warmup__acceleration": 18.6,
+        "post_warmup__high_load": 26.5,
+    }
+    step_threshold = frame["operating_state"].map(thresholds)
     mask = (
         frame["thermal_state"].eq("post_warmup")
         & frame["condition_confidence"].eq("high")
-        & frame["pedal_slope"].ge(18.6)
+        & frame["pedal_slope"].ge(step_threshold)
         & frame["map"].notna()
     )
+    # The low-magnitude steady-driving bin is explicitly non-separable.
+    steady_low = (
+        frame["operating_state"].eq("post_warmup__steady_driving")
+        & frame["pedal_slope"].lt(15.907275785122629)
+    )
+    mask &= ~steady_low
+    windows: list[Window] = []
     for (_trip, _segment), group in frame[mask].groupby(
         ["trip_id", "segment_id"], sort=False
     ):
@@ -255,20 +417,50 @@ def select_pedal_step_window(frame: pd.DataFrame, case: dict[str, Any]) -> Windo
             and frame.at[item, "segment_id"] == _segment
         }
         rows = frame.loc[sorted(touched)]
-        return Window(
+        windows.append(Window(
             indices=event_indices,
             trip_id=str(_trip),
             segment_id=str(_segment),
             start_timestamp=str(rows["timestamp"].iloc[0]),
             end_timestamp=str(rows["timestamp"].iloc[-1]),
-        )
+        ))
+    if windows:
+        return windows
     raise FaultInjectionError(f"No pedal-step window found for {case['case_id']}.")
 
 
 def select_window(frame: pd.DataFrame, case: dict[str, Any]) -> Window:
     if case["selector"] == "pedal_step_events":
-        return select_pedal_step_window(frame, case)
-    return select_basic_window(frame, case)
+        windows = select_pedal_step_windows(frame, case)
+    elif case["selector"] == "warmup_episode":
+        windows = select_warmup_windows(frame, case)
+    else:
+        windows = select_basic_windows(frame, case)
+    ordinal = int(case.get("_window_ordinal", 0))
+    if ordinal >= len(windows):
+        raise FaultInjectionError(
+            f"{case['case_id']} requested window {ordinal}, but only "
+            f"{len(windows)} independent trip windows are available."
+        )
+    return windows[ordinal]
+
+
+def select_windows(
+    frame: pd.DataFrame, case: dict[str, Any], count: int
+) -> list[Window]:
+    if case["selector"] == "pedal_step_events":
+        windows = select_pedal_step_windows(frame, case)
+    elif case["selector"] == "warmup_episode":
+        windows = select_warmup_windows(frame, case)
+    else:
+        windows = select_basic_windows(frame, case)
+    if len(windows) < count:
+        raise FaultInjectionError(
+            f"{case['case_id']} severity {case.get('_severity_id')} needs "
+            f"{count} independent trip windows, but only {len(windows)} "
+            "are available."
+        )
+    return windows[:count]
 
 
 def inject_case(frame: pd.DataFrame, case: dict[str, Any], window: Window) -> None:
@@ -296,6 +488,20 @@ def inject_case(frame: pd.DataFrame, case: dict[str, Any], window: Window) -> No
         rate_per_second = float(case["rate_per_min"]) / 60.0
         values = [start + i * rate_per_second for i in range(len(indices))]
         frame.loc[indices, signal] = values
+    elif strategy == "cap_max":
+        frame.loc[indices, signal] = frame.loc[indices, signal].clip(
+            upper=float(case["value"])
+        )
+    elif strategy == "relative_offset":
+        reference = case["reference_signal"]
+        if reference not in frame.columns:
+            raise FaultInjectionError(
+                f"Missing reference signal column: {reference}"
+            )
+        frame.loc[indices, signal] = (
+            frame.loc[indices, reference].astype(float)
+            + float(case["offset"])
+        )
     elif strategy == "force_pedal_delta":
         delta = float(case["delta"])
         frame.loc[indices, "accel_pedal_e"] = (
@@ -314,13 +520,6 @@ def inject_case(frame: pd.DataFrame, case: dict[str, Any], window: Window) -> No
     else:
         raise FaultInjectionError(f"Unsupported injection strategy: {strategy}")
 
-    # Freeze auxiliary signals to create proper guard conditions
-    # (e.g. for 5-S2 which requires pedal_slope == 0 for 10s)
-    if case.get("freeze_for_guard"):
-        for col in case["freeze_for_guard"]:
-            if col in frame.columns:
-                first_val = frame.loc[indices, col].iloc[0]
-                frame.loc[indices, col] = float(first_val)
 def recompute_dependent_features(frame: pd.DataFrame) -> None:
     """Refresh feature columns consumed by proxy stages after injection."""
 
@@ -376,7 +575,8 @@ def recompute_dependent_features(frame: pd.DataFrame) -> None:
         )
     frame["speed_density_maf_residual"] = frame["maf"] - expected_maf
 
-    group = frame.groupby("segment_id", sort=False)
+    # Segment identifiers are not assumed globally unique across trips.
+    group = frame.groupby(["trip_id", "segment_id"], sort=False)
     frame["pedal_slope"] = group["accel_pedal_mean"].diff()
     frame["rpm_slope"] = group["rpm"].diff()
     frame["ect_rate_180s"] = group["coolant_temp"].transform(
@@ -404,7 +604,11 @@ def recompute_dependent_features(frame: pd.DataFrame) -> None:
         )
     )
     frame["maf_integral_180s"] = group["maf"].transform(
-        lambda s: s.rolling(181, min_periods=181).sum()
+        lambda s: (
+            s.rolling(181, min_periods=181).sum()
+            - 0.5 * s
+            - 0.5 * s.shift(180)
+        )
     )
 
 
@@ -415,27 +619,80 @@ def run_proxy_stages(layout: RunLayout, creation_time_utc: str) -> None:
         function(layout, creation_time_utc=creation_time_utc)
 
 
-def evaluate_case(layout: RunLayout, case: dict[str, Any]) -> dict[str, Any]:
+def evaluate_case(
+    layout: RunLayout,
+    case: dict[str, Any],
+    window: Window,
+    *,
+    baseline_layout: RunLayout | None = None,
+) -> dict[str, Any]:
     decisions = pd.read_csv(layout.proxy_decisions, low_memory=False)
     target = decisions[
         decisions["sub_check_id"].eq(case["expected_sub_check_id"])
     ]
+    target = target[target["trip_id"].astype(str).eq(window.trip_id)]
+    if target["segment_id"].notna().any():
+        target = target[
+            target["segment_id"].astype(str).eq(window.segment_id)
+        ]
     if target.empty:
         raise FaultInjectionError(
-            f"No decision row found for {case['expected_sub_check_id']}."
+            f"No scoped decision row found for "
+            f"{case['expected_sub_check_id']} in trip {window.trip_id}."
         )
     expected_state = case.get("expected_result_state", "triggered")
     hits = target[target["result_state"].eq(expected_state)]
     chosen = hits.iloc[0] if not hits.empty else target.iloc[0]
+    baseline_state = None
+    baseline_already_positive = False
+    if baseline_layout is not None:
+        baseline = pd.read_csv(
+            baseline_layout.proxy_decisions, low_memory=False
+        )
+        baseline = baseline[
+            baseline["sub_check_id"].eq(case["expected_sub_check_id"])
+            & baseline["trip_id"].astype(str).eq(window.trip_id)
+        ]
+        if baseline["segment_id"].notna().any():
+            baseline = baseline[
+                baseline["segment_id"].astype(str).eq(window.segment_id)
+            ]
+        if not baseline.empty:
+            baseline_state = str(baseline.iloc[0].get("result_state"))
+            baseline_already_positive = bool(
+                baseline["result_state"].eq(expected_state).any()
+            )
+    emitted = chosen.get("dtc_emitted")
+    actual_dtc = chosen.get("dtc_candidate_label")
+    expected_dtc = case.get("expected_dtc_candidate_label")
+    dtc_matches = (
+        expected_dtc is None
+        or str(actual_dtc) == str(expected_dtc)
+    )
+    expected_emitted = case.get("expected_dtc_emitted")
+    emitted_bool = bool(emitted) if pd.notna(emitted) else False
+    emission_matches = (
+        expected_emitted is None
+        or emitted_bool is bool(expected_emitted)
+    )
     return {
         "actual_result_state": chosen.get("result_state"),
+        "baseline_result_state": baseline_state,
+        "baseline_already_positive": baseline_already_positive,
         "decision_reason": chosen.get("decision_reason"),
         "decision_margin": chosen.get("decision_margin"),
-        "dtc_candidate_label": chosen.get("dtc_candidate_label"),
-        "dtc_emitted": bool(chosen.get("dtc_emitted")),
+        "dtc_candidate_label": actual_dtc,
+        "dtc_matches_expected": dtc_matches,
+        "dtc_emitted": emitted_bool,
+        "emission_matches_expected": emission_matches,
         "routed_dtc": chosen.get("routed_dtc"),
         "confidence": chosen.get("confidence"),
-        "passed": bool(not hits.empty),
+        "passed": bool(
+            not hits.empty
+            and not baseline_already_positive
+            and dtc_matches
+            and emission_matches
+        ),
     }
 
 
@@ -461,7 +718,9 @@ def run_case(
     )
     update_production_manifest(target_layout, case)
     run_proxy_stages(target_layout, creation_time_utc)
-    result = evaluate_case(target_layout, case)
+    result = evaluate_case(
+        target_layout, case, window, baseline_layout=base_layout
+    )
     return {
         "case_id": case["case_id"],
         "run_id": run_id,
@@ -472,6 +731,9 @@ def run_case(
         ),
         "target_signal": case["target_signal"],
         "selector": case["selector"],
+        "severity_id": case.get("_severity_id", "single"),
+        "severity_rank": case.get("_severity_rank", 0),
+        "replicate": case.get("_window_ordinal", 0) + 1,
         "trip_id": window.trip_id,
         "segment_id": window.segment_id,
         "injection_start_timestamp": window.start_timestamp,
@@ -483,14 +745,265 @@ def run_case(
     }
 
 
-def write_summary(rows: list[dict[str, Any]], stamp: str) -> None:
+def run_batch_case(
+    *,
+    base_layout: RunLayout,
+    case: dict[str, Any],
+    run_id: str,
+    creation_time_utc: str,
+) -> list[dict[str, Any]]:
+    """Inject one severity into several trips and run the pipeline once."""
+
+    target_layout = RunLayout.for_run_id(run_id, repo_root=REPO_ROOT)
+    copy_minimal_run(base_layout, target_layout)
+    frame = pd.read_csv(target_layout.production_features, low_memory=False)
+    windows = select_windows(frame, case, int(case.get("_replicates", 1)))
+    for window in windows:
+        inject_case(frame, case, window)
+    recompute_dependent_features(frame)
+    frame.to_csv(
+        target_layout.production_features,
+        index=False,
+        float_format="%.15g",
+        lineterminator="\n",
+    )
+    update_production_manifest(target_layout, {
+        **case,
+        "case_id": (
+            f"{case['case_id']}__{case.get('_severity_id', 'single')}"
+        ),
+    })
+    run_proxy_stages(target_layout, creation_time_utc)
+
+    return collect_batch_case_results(
+        base_layout=base_layout,
+        target_layout=target_layout,
+        case=case,
+        windows=windows,
+    )
+
+
+def collect_batch_case_results(
+    *,
+    base_layout: RunLayout,
+    target_layout: RunLayout,
+    case: dict[str, Any],
+    windows: list[Window] | None = None,
+) -> list[dict[str, Any]]:
+    """Collect results from an existing batch run (supports resumption)."""
+
+    if windows is None:
+        injected = pd.read_csv(
+            target_layout.production_features, low_memory=False
+        )
+        windows = select_windows(
+            injected, case, int(case.get("_replicates", 1))
+        )
+    rows: list[dict[str, Any]] = []
+    for replicate, window in enumerate(windows, start=1):
+        result = evaluate_case(
+            target_layout, case, window, baseline_layout=base_layout
+        )
+        rows.append({
+            "case_id": case["case_id"],
+            "run_id": target_layout.run_id,
+            "proxy_id": case["proxy_id"],
+            "expected_sub_check_id": case["expected_sub_check_id"],
+            "expected_result_state": case.get(
+                "expected_result_state", "triggered"
+            ),
+            "target_signal": case["target_signal"],
+            "selector": case["selector"],
+            "severity_id": case.get("_severity_id", "single"),
+            "severity_rank": case.get("_severity_rank", 0),
+            "replicate": replicate,
+            "trip_id": window.trip_id,
+            "segment_id": window.segment_id,
+            "injection_start_timestamp": window.start_timestamp,
+            "injection_end_timestamp": window.end_timestamp,
+            **result,
+            "decisions_path": target_layout.run_relative_posix(
+                target_layout.proxy_decisions
+            ),
+        })
+    return rows
+
+
+def expand_cases(cases: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Expand registered severity grids and independent-trip replicates."""
+
+    expanded: list[dict[str, Any]] = []
+    for case in cases:
+        severities = case.get("severity_grid") or [
+            {"severity_id": "single", "parameters": {}}
+        ]
+        replicates = int(case.get("replicates", 1))
+        if replicates <= 0:
+            raise FaultInjectionError(
+                f"{case['case_id']} replicates must be positive."
+            )
+        for rank, severity in enumerate(severities):
+            parameters = severity.get("parameters", {})
+            illegal = set(parameters) & {
+                "case_id", "proxy_id", "expected_sub_check_id",
+                "target_signal", "selector", "strategy",
+            }
+            if illegal:
+                raise FaultInjectionError(
+                    f"{case['case_id']} severity overrides identity fields: "
+                    f"{sorted(illegal)}"
+                )
+            item = copy.deepcopy(case)
+            item.update(parameters)
+            item["_severity_id"] = severity["severity_id"]
+            item["_severity_rank"] = rank
+            item["_replicates"] = replicates
+            item["_window_ordinal"] = 0
+            expanded.append(item)
+    return expanded
+
+
+def wilson_interval(successes: int, total: int) -> tuple[float, float]:
+    if total == 0:
+        return (math.nan, math.nan)
+    z = 1.959963984540054
+    p = successes / total
+    denominator = 1 + z * z / total
+    centre = (p + z * z / (2 * total)) / denominator
+    half = z * math.sqrt(
+        p * (1 - p) / total + z * z / (4 * total * total)
+    ) / denominator
+    return (max(0.0, centre - half), min(1.0, centre + half))
+
+
+def healthy_baseline(base_layout: RunLayout) -> list[dict[str, Any]]:
+    """Measure frozen-rule outcomes on the configured healthy base run."""
+
+    if not base_layout.proxy_decisions.is_file():
+        raise FaultInjectionError(
+            f"Base run has no proxy decisions: {base_layout.proxy_decisions}"
+        )
+    decisions = pd.read_csv(base_layout.proxy_decisions, low_memory=False)
+    rows: list[dict[str, Any]] = []
+    for sub_check_id, group in decisions.groupby("sub_check_id", sort=True):
+        evaluable = group[group["result_state"].isin(
+            ["pass", "triggered", "pending"]
+        )]
+        positives = evaluable["result_state"].isin(
+            ["triggered", "pending"]
+        ).sum()
+        low, high = wilson_interval(int(positives), len(evaluable))
+        rows.append({
+            "sub_check_id": sub_check_id,
+            "evaluable_units": int(len(evaluable)),
+            "positive_units": int(positives),
+            "positive_rate": (
+                float(positives / len(evaluable)) if len(evaluable)
+                else None
+            ),
+            "wilson_95_low": None if math.isnan(low) else low,
+            "wilson_95_high": None if math.isnan(high) else high,
+        })
+    return rows
+
+
+def campaign_summary(
+    rows: list[dict[str, Any]], healthy_rows: list[dict[str, Any]]
+) -> dict[str, Any]:
+    frame = pd.DataFrame(rows)
+    curves: list[dict[str, Any]] = []
+    monotonicity: list[dict[str, Any]] = []
+    for (case_id, rank, severity_id), group in frame.groupby(
+        ["case_id", "severity_rank", "severity_id"], sort=True
+    ):
+        detected = int(group["passed"].sum())
+        low, high = wilson_interval(detected, len(group))
+        curves.append({
+            "case_id": case_id,
+            "severity_rank": int(rank),
+            "severity_id": severity_id,
+            "injected_trip_count": int(len(group)),
+            "detected_trip_count": detected,
+            "detection_rate": float(detected / len(group)),
+            "wilson_95_low": low,
+            "wilson_95_high": high,
+        })
+    curve_frame = pd.DataFrame(curves)
+    acceptance_rows: list[dict[str, Any]] = []
+    for case_id, group in curve_frame.groupby("case_id", sort=True):
+        ordered = group.sort_values("severity_rank")
+        rates = ordered["detection_rate"].tolist()
+        monotonic = all(
+            right >= left for left, right in zip(rates, rates[1:])
+        )
+        monotonicity.append({
+            "case_id": case_id,
+            "nondecreasing_detection_rate": monotonic,
+            "severity_point_count": len(rates),
+        })
+        strongest = ordered.iloc[-1]
+        enough_points = len(ordered) >= 3
+        enough_replicates = bool(
+            ordered["injected_trip_count"].ge(3).all()
+        )
+        strong_rate_ok = strongest["detection_rate"] >= 0.8
+        acceptance_rows.append({
+            "case_id": case_id,
+            "severity_points_at_least_3": enough_points,
+            "replicates_per_point_at_least_3": enough_replicates,
+            "nondecreasing_detection_rate": monotonic,
+            "strongest_detection_rate": float(
+                strongest["detection_rate"]
+            ),
+            "strongest_detection_rate_at_least_0_8": strong_rate_ok,
+            "conditional_acceptance": bool(
+                enough_points
+                and enough_replicates
+                and monotonic
+                and strong_rate_ok
+            ),
+        })
+    conditional_complete = bool(acceptance_rows) and all(
+        row["conditional_acceptance"] for row in acceptance_rows
+    )
+    return {
+        "protocol_status": {
+            "tbd_1_target_signal_only": True,
+            "tbd_2_graded_detectability": bool(
+                curve_frame.groupby("case_id").size().max() > 1
+            ) if len(curve_frame) else False,
+            "acceptance_decision": (
+                "conditional_detection_acceptance_pass"
+                if conditional_complete
+                else "conditional_detection_acceptance_fail"
+            ),
+            "acceptance_scope": (
+                "synthetic target-signal injection, graded severity, "
+                "independent-trip replicates, decision/DTC contract checks"
+            ),
+        },
+        "detectability_curves": curves,
+        "monotonicity_checks": monotonicity,
+        "conditional_acceptance": acceptance_rows,
+        "healthy_baseline": healthy_rows,
+    }
+
+
+def write_summary(
+    rows: list[dict[str, Any]],
+    healthy_rows: list[dict[str, Any]],
+    stamp: str,
+) -> None:
     DEFAULT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     csv_path = DEFAULT_OUTPUT_DIR / f"fault_injection_summary_{stamp}.csv"
     json_path = DEFAULT_OUTPUT_DIR / f"fault_injection_summary_{stamp}.json"
     frame = pd.DataFrame(rows)
     frame.to_csv(csv_path, index=False, lineterminator="\n")
     json_path.write_text(
-        json.dumps(rows, ensure_ascii=False, indent=2) + "\n",
+        json.dumps({
+            "case_results": rows,
+            **campaign_summary(rows, healthy_rows),
+        }, ensure_ascii=False, indent=2, default=json_default) + "\n",
         encoding="utf-8",
     )
     print(json.dumps({
@@ -537,6 +1050,7 @@ def main() -> int:
         ], ensure_ascii=False, indent=2))
         return 0
 
+    cases = expand_cases(cases)
     stamp = utc_stamp()
     prefix = args.run_prefix or f"fault_injection_{stamp}"
     base_layout = RunLayout.for_run_id(args.base_run_id, repo_root=REPO_ROOT)
@@ -552,17 +1066,18 @@ def main() -> int:
     rows: list[dict[str, Any]] = []
     for case in cases:
         case_copy = copy.deepcopy(case)
-        run_id = f"{prefix}__{case_copy['case_id']}"
-        print(f"[Stage4] Running {case_copy['case_id']} -> {run_id}")
-        rows.append(
-            run_case(
+        suffix = f"{case_copy['case_id']}__{case_copy['_severity_id']}"
+        run_id = f"{prefix}__{suffix}"
+        print(f"[Stage4] Running {suffix} -> {run_id}")
+        rows.extend(
+            run_batch_case(
                 base_layout=base_layout,
                 case=case_copy,
                 run_id=run_id,
                 creation_time_utc=creation_time,
             )
         )
-    write_summary(rows, stamp)
+    write_summary(rows, healthy_baseline(base_layout), stamp)
     return 0
 
 
