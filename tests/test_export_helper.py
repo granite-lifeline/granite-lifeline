@@ -1,0 +1,158 @@
+"""Tests for dashboard export data helpers."""
+
+from dashboard.export_helper import (
+    DEFAULT_EXPORT_SECTIONS,
+    NOT_AVAILABLE,
+    build_export_data,
+    build_key_signal_rows,
+    clean_export_sections,
+    format_percent,
+    format_reference_range,
+    get_export_section_options,
+    get_signal_status,
+)
+
+
+def _sample_component():
+    return {
+        "timestamp": "2026-06-16T12:00:00Z",
+        "risk_score": 0.86,
+        "risk_level": "High",
+        "component": "cooling_degradation",
+        "prediction_confidence": 0.88,
+        "key_signals": [
+            {
+                "feature": "coolant_temp",
+                "value": 104.0,
+                "unit": "C",
+                "reference_range": [90.0, 95.0],
+            },
+            {
+                "feature": "map",
+                "value": 82.0,
+                "unit": "kPa",
+                "reference_range": [60.0, 90.0],
+            },
+        ],
+        "anomaly_description": "Coolant temperature is high.",
+        "possible_cause": "This may indicate cooling stress.",
+        "recommended_action": [
+            "Avoid heavy driving if it is safe.",
+            "Ask a mechanic to inspect the cooling system.",
+        ],
+        "estimated_cycles_to_failure": 15,
+        "estimated_failure_probability": 0.72,
+        "notes": ["Failure estimate may change after more drive cycles."],
+    }
+
+
+def test_export_section_options_for_future_popup():
+    """Test export helper exposes choices for the filter popup."""
+    options = get_export_section_options()
+
+    keys = [option["key"] for option in options]
+
+    assert "summary" in keys
+    assert "key_signals" in keys
+    assert "diagnostic_report" in keys
+    assert "data_quality_notes" in keys
+
+
+def test_clean_export_sections_uses_default_order():
+    """Test selected export sections stay in dashboard order."""
+    sections = clean_export_sections([
+        "diagnostic_report",
+        "unknown",
+        "summary",
+    ])
+
+    assert sections == ["summary", "diagnostic_report"]
+
+
+def test_clean_export_sections_defaults_to_required_export_content():
+    """Test default export sections match Task 6 required content."""
+    assert clean_export_sections() == list(DEFAULT_EXPORT_SECTIONS)
+
+
+def test_format_percent_handles_scores_and_missing_values():
+    """Test risk score percentage formatting for export."""
+    assert format_percent(0.864) == "86%"
+    assert format_percent(None) == NOT_AVAILABLE
+    assert format_percent("bad") == NOT_AVAILABLE
+
+
+def test_format_reference_range_for_csv_and_pdf():
+    """Test reference range format used by CSV and PDF exports."""
+    assert format_reference_range([90.0, 95.0]) == "90.0-95.0"
+    assert format_reference_range([]) == NOT_AVAILABLE
+    assert format_reference_range("90-95") == NOT_AVAILABLE
+
+
+def test_get_signal_status_abnormal_normal_unknown():
+    """Test status calculation from value and reference_range."""
+    assert get_signal_status({
+        "value": 104.0,
+        "reference_range": [90.0, 95.0],
+    }) == "ABNORMAL"
+    assert get_signal_status({
+        "value": 82.0,
+        "reference_range": [60.0, 90.0],
+    }) == "NORMAL"
+    assert get_signal_status({
+        "value": None,
+        "reference_range": [60.0, 90.0],
+    }) == "Unknown"
+
+
+def test_build_key_signal_rows_adds_display_name_and_status():
+    """Test key signal rows are ready for export tables."""
+    rows = build_key_signal_rows(_sample_component())
+
+    assert rows[0]["feature"] == "coolant_temp"
+    assert rows[0]["display_name"] == "Coolant Temperature"
+    assert rows[0]["reference_range"] == "90.0-95.0"
+    assert rows[0]["status"] == "ABNORMAL"
+    assert rows[1]["status"] == "NORMAL"
+
+
+def test_build_key_signal_rows_handles_empty_data():
+    """Test empty key signals still return an empty row list."""
+    assert build_key_signal_rows({"key_signals": []}) == []
+    assert build_key_signal_rows({}) == []
+
+
+def test_build_export_data_default_sections():
+    """Test default helper output has summary, signals, and report."""
+    export_data = build_export_data(_sample_component())
+
+    assert export_data["sections"] == [
+        "summary",
+        "key_signals",
+        "diagnostic_report",
+    ]
+    assert export_data["summary"]["component_name"] == "Cooling System"
+    assert export_data["summary"]["risk_score"] == "86%"
+    assert len(export_data["key_signals"]) == 2
+    assert (
+        export_data["diagnostic_report"]["anomaly_description"]
+        == "Coolant temperature is high."
+    )
+
+
+def test_build_export_data_filters_optional_sections():
+    """Test popup section choices can filter the export payload."""
+    export_data = build_export_data(
+        _sample_component(),
+        selected_sections=["failure_prediction", "data_quality_notes"],
+    )
+
+    assert export_data["sections"] == [
+        "failure_prediction",
+        "data_quality_notes",
+    ]
+    assert export_data["failure_prediction"]["has_value"] is True
+    assert "72% probability" in export_data["failure_prediction"]["text"]
+    assert export_data["data_quality_notes"] == [
+        "Failure estimate may change after more drive cycles."
+    ]
+    assert "summary" not in export_data

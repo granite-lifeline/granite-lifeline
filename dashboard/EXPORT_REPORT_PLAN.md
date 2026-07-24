@@ -25,6 +25,26 @@ Recommended UI:
 Both buttons should use `st.download_button` so the feature works in local
 Streamlit without an external service.
 
+## Export Data Helper
+
+GL-344 adds `dashboard/export_helper.py`.
+
+The helper prepares filtered export data before the CSV or PDF file is built.
+This supports the planned popup flow:
+
+1. User clicks `Export PDF` or `Export CSV`.
+2. Dashboard opens a small filter popup.
+3. User chooses sections to export.
+4. The selected section keys are passed to `build_export_data()`.
+
+Current supported section keys:
+
+- `summary`
+- `failure_prediction`
+- `key_signals`
+- `diagnostic_report`
+- `data_quality_notes`
+
 ## PDF Export Fields
 
 The PDF should contain the complete component diagnostic report.
