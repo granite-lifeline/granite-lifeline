@@ -25,6 +25,15 @@ Recommended UI:
 Both buttons should use `st.download_button` so the feature works in local
 Streamlit without an external service.
 
+GL-347 adds these controls to the Overview Page below the component cards.
+The export panel stays visible, lets the user choose one or more components,
+and renders Report components, PDF sections, and CSV columns as dropdown
+checkbox lists. When multiple components are selected, the download is
+packaged as a ZIP file.
+
+Downloaded filenames include selected component names, selected PDF section or
+CSV column names, the download date, and the file type.
+
 ## Export Data Helper
 
 GL-344 adds `dashboard/export_helper.py`.

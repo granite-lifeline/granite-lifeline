@@ -35,6 +35,11 @@ def _detail_text() -> str:
     return Path("dashboard/pages/detail.py").read_text(encoding="utf-8")
 
 
+def _overview_text() -> str:
+    """Read dashboard/pages/overview.py as text for source-level checks."""
+    return Path("dashboard/pages/overview.py").read_text(encoding="utf-8")
+
+
 def test_failure_prediction_has_value_and_null_states():
     """Test dashboard data covers has-value and null UI states."""
     # Load mock data directly (bypasses real pipeline) so the exact
@@ -138,6 +143,35 @@ def test_data_quality_notes_uses_content_card_style():
     assert 'background:{tokens["glass_surface"]}' in src
     assert 'border:1px solid {tokens["glass_border"]}' in src
     assert 'border-bottom:2px solid {tokens["border"]}' in src
+
+
+def test_overview_page_has_pdf_and_csv_export_controls():
+    """Test Overview Page exposes filtered PDF and CSV downloads."""
+    src = _overview_text()
+
+    assert "_show_dashboard_export_controls(sorted_components, tokens)" in src
+    assert "build_diagnostic_pdf_bytes" in src
+    assert "build_key_signals_csv_bytes" in src
+    assert "Export Report</div>" in src
+    assert "Report components" in src
+    assert "export_dropdown_components" in src
+    assert "export_dropdown_pdf" in src
+    assert "export_dropdown_csv" in src
+    assert "overview_component_choice_" in src
+    assert "overview_pdf_choice_" in src
+    assert "overview_csv_choice_" in src
+    assert "_make_export_file_name" in src
+    assert "component_names" in src
+    assert "pdf_detail_names" in src
+    assert "csv_detail_names" in src
+    assert 'strftime("%Y_%m_%d")' in src
+    assert "PDF sections" in src
+    assert "CSV columns" in src
+    assert "st.checkbox(" in src
+    assert "_build_zip_bytes" in src
+    assert "st.download_button(" in src
+    assert '"Download PDF"' in src
+    assert '"Download CSV"' in src
 
 
 def test_light_and_dark_theme_tokens_support_failure_prediction_card():

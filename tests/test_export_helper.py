@@ -66,6 +66,16 @@ def test_export_section_options_for_future_popup():
     assert "data_quality_notes" in keys
 
 
+def test_export_section_options_put_notes_after_failure_prediction():
+    """Test PDF section order keeps data quality after prediction."""
+    keys = [option["key"] for option in get_export_section_options()]
+
+    assert keys.index("failure_prediction") < keys.index(
+        "data_quality_notes"
+    )
+    assert keys.index("data_quality_notes") < keys.index("key_signals")
+
+
 def test_clean_export_sections_uses_default_order():
     """Test selected export sections stay in dashboard order."""
     sections = clean_export_sections([

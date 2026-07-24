@@ -30,9 +30,9 @@ NOT_AVAILABLE = "Not available"
 EXPORT_SECTION_LABELS = {
     "summary": "Summary",
     "failure_prediction": "Failure Prediction",
+    "data_quality_notes": "Data Quality Notes",
     "key_signals": "Key Signals",
     "diagnostic_report": "Diagnostic Report",
-    "data_quality_notes": "Data Quality Notes",
 }
 
 DEFAULT_EXPORT_SECTIONS = (
@@ -52,6 +52,14 @@ CSV_COLUMNS = (
 )
 
 PDF_TITLE = "Granite Lifeline Diagnostic Report"
+PDF_BLUE = "#2563eb"
+PDF_DARK = "#1f2937"
+PDF_MUTED = "#6b7280"
+PDF_BORDER = "#d6d9df"
+PDF_PANEL = "#f8fafc"
+PDF_DANGER = "#dc2626"
+PDF_WARNING = "#f97316"
+PDF_SUCCESS = "#16a34a"
 
 SIGNAL_DISPLAY_NAMES = {
     "coolant_temp": "Coolant Temperature",
@@ -301,7 +309,9 @@ def _get_reportlab_tools():
     """Load reportlab only when PDF export is used."""
     try:
         from reportlab.lib import colors
+        from reportlab.lib.enums import TA_CENTER, TA_LEFT
         from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import ParagraphStyle
         from reportlab.lib.styles import getSampleStyleSheet
         from reportlab.lib.units import mm
         from reportlab.platypus import (
@@ -321,6 +331,9 @@ def _get_reportlab_tools():
     return {
         "colors": colors,
         "A4": A4,
+        "ParagraphStyle": ParagraphStyle,
+        "TA_CENTER": TA_CENTER,
+        "TA_LEFT": TA_LEFT,
         "getSampleStyleSheet": getSampleStyleSheet,
         "mm": mm,
         "Paragraph": Paragraph,
@@ -331,43 +344,388 @@ def _get_reportlab_tools():
     }
 
 
-def _add_pdf_section(elements: List[Any], tools: Dict[str, Any], title: str):
+def _get_pdf_styles(tools: Dict[str, Any]):
+    """Create the small style set used by the exported report template."""
+    colors = tools["colors"]
     styles = tools["getSampleStyleSheet"]()
+    ParagraphStyle = tools["ParagraphStyle"]
+
+    styles.add(ParagraphStyle(
+        name="ReportHeaderTitle",
+        parent=styles["Title"],
+        fontName="Helvetica-Bold",
+        fontSize=20,
+        leading=24,
+        textColor=colors.white,
+        alignment=tools["TA_LEFT"],
+        spaceAfter=3,
+    ))
+    styles.add(ParagraphStyle(
+        name="ReportHeaderSub",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=9,
+        leading=12,
+        textColor=colors.white,
+        alignment=tools["TA_LEFT"],
+    ))
+    styles.add(ParagraphStyle(
+        name="ReportHeaderRiskBox",
+        parent=styles["BodyText"],
+        fontName="Helvetica-Bold",
+        fontSize=11,
+        leading=14,
+        textColor=colors.white,
+        alignment=tools["TA_CENTER"],
+    ))
+    styles.add(ParagraphStyle(
+        name="ReportSection",
+        parent=styles["Heading2"],
+        fontName="Helvetica-Bold",
+        fontSize=14,
+        leading=18,
+        textColor=colors.HexColor(PDF_DARK),
+        spaceBefore=3,
+        spaceAfter=7,
+    ))
+    styles.add(ParagraphStyle(
+        name="ReportPanelTitle",
+        parent=styles["Heading3"],
+        fontName="Helvetica-Bold",
+        fontSize=10,
+        leading=13,
+        textColor=colors.HexColor(PDF_BLUE),
+        spaceAfter=4,
+    ))
+    styles.add(ParagraphStyle(
+        name="ReportBody",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=9.5,
+        leading=14,
+        textColor=colors.HexColor(PDF_DARK),
+    ))
+    styles.add(ParagraphStyle(
+        name="ReportMuted",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=7.5,
+        leading=9,
+        textColor=colors.HexColor(PDF_MUTED),
+    ))
+    styles.add(ParagraphStyle(
+        name="ReportMetric",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=9,
+        leading=13,
+        textColor=colors.HexColor(PDF_DARK),
+    ))
+    styles.add(ParagraphStyle(
+        name="TableHeader",
+        parent=styles["BodyText"],
+        fontName="Helvetica-Bold",
+        fontSize=8.5,
+        leading=11,
+        textColor=colors.white,
+    ))
+    styles.add(ParagraphStyle(
+        name="TableCell",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=8.5,
+        leading=11,
+        textColor=colors.HexColor(PDF_DARK),
+    ))
+    styles.add(ParagraphStyle(
+        name="TableCellMuted",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=7.5,
+        leading=9,
+        textColor=colors.HexColor(PDF_MUTED),
+    ))
+    styles.add(ParagraphStyle(
+        name="StatusBad",
+        parent=styles["TableCell"],
+        fontName="Helvetica-Bold",
+        textColor=colors.HexColor(PDF_DANGER),
+    ))
+    styles.add(ParagraphStyle(
+        name="StatusGood",
+        parent=styles["TableCell"],
+        fontName="Helvetica-Bold",
+        textColor=colors.HexColor(PDF_SUCCESS),
+    ))
+    styles.add(ParagraphStyle(
+        name="StatusUnknown",
+        parent=styles["TableCell"],
+        fontName="Helvetica-Bold",
+        textColor=colors.HexColor(PDF_MUTED),
+    ))
+    return styles
+
+
+def _pdf_color(tools: Dict[str, Any], hex_value: str):
+    return tools["colors"].HexColor(hex_value)
+
+
+def _risk_color(summary: Dict[str, str]) -> str:
+    level = summary.get("risk_level", "").lower()
+    if level == "high":
+        return PDF_DANGER
+    if level == "medium":
+        return PDF_WARNING
+    if level == "low":
+        return PDF_SUCCESS
+    return PDF_MUTED
+
+
+def _add_report_header(
+    elements: List[Any],
+    tools: Dict[str, Any],
+    styles,
+    summary: Dict[str, str],
+):
+    Paragraph = tools["Paragraph"]
+    Table = tools["Table"]
+    TableStyle = tools["TableStyle"]
+    mm = tools["mm"]
+
+    title = Paragraph(PDF_TITLE, styles["ReportHeaderTitle"])
+    subtitle = Paragraph(
+        f"Component: {pdf_text(summary['component_name'])}<br/>"
+        f"Generated: {pdf_text(summary['timestamp'])}",
+        styles["ReportHeaderSub"],
+    )
+    risk_score = summary["risk_score"]
+    if risk_score == NOT_AVAILABLE:
+        risk_score = "N/A"
+    risk = Paragraph(
+        f"RISK SCORE&nbsp;&nbsp;"
+        f"<font size='16'>{pdf_text(risk_score)}</font>"
+        f"<br/>Risk level: {pdf_text(summary['risk_level'])}",
+        styles["ReportHeaderRiskBox"],
+    )
+    header = Table(
+        [[[title, subtitle], risk]],
+        colWidths=[126 * mm, 42 * mm],
+        hAlign="CENTER",
+    )
+    header.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (0, 0), _pdf_color(tools, PDF_BLUE)),
+        ("BACKGROUND", (1, 0), (1, 0), _pdf_color(tools, _risk_color(summary))),
+        ("BOX", (0, 0), (-1, -1), 0.5, _pdf_color(tools, PDF_BLUE)),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 14),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 14),
+        ("TOPPADDING", (0, 0), (-1, -1), 13),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 13),
+    ]))
+    elements.append(header)
+    elements.append(tools["Spacer"](1, 7 * mm))
+
+
+def _add_pdf_section(
+    elements: List[Any],
+    tools: Dict[str, Any],
+    styles,
+    title: str,
+):
     elements.append(tools["Spacer"](1, 4 * tools["mm"]))
-    elements.append(tools["Paragraph"](title, styles["Heading2"]))
+    elements.append(tools["Paragraph"](pdf_text(title), styles["ReportSection"]))
 
 
-def _add_summary_pdf(elements: List[Any], tools: Dict[str, Any], summary):
-    rows = [
-        ["Component", summary["component_name"]],
-        ["Risk Score", summary["risk_score"]],
-        ["Risk Level", summary["risk_level"]],
-        ["Timestamp", summary["timestamp"]],
+def _add_summary_pdf(
+    elements: List[Any],
+    tools: Dict[str, Any],
+    styles,
+    summary: Dict[str, str],
+):
+    Paragraph = tools["Paragraph"]
+    Table = tools["Table"]
+    TableStyle = tools["TableStyle"]
+    mm = tools["mm"]
+    metric_items = [
+        ("COMPONENT", summary["component_name"]),
+        ("RISK SCORE", summary["risk_score"]),
+        ("RISK LEVEL", summary["risk_level"]),
+        ("TIMESTAMP", summary["timestamp"]),
     ]
-    _add_small_table(elements, tools, rows)
+    cells = []
+    for label, value in metric_items:
+        cells.append(Paragraph(
+            f"<font color='{PDF_MUTED}' size='7'>{label}</font><br/>"
+            f"<font color='{PDF_DARK}' size='12'><b>{pdf_text(value)}</b></font>",
+            styles["ReportMetric"],
+        ))
+    table = Table([cells], colWidths=[42 * mm] * 4, hAlign="CENTER")
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), _pdf_color(tools, PDF_PANEL)),
+        ("BOX", (0, 0), (-1, -1), 0.5, _pdf_color(tools, PDF_BORDER)),
+        ("INNERGRID", (0, 0), (-1, -1), 0.4, _pdf_color(tools, PDF_BORDER)),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("TOPPADDING", (0, 0), (-1, -1), 10),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+    ]))
+    elements.append(table)
 
 
-def _add_signal_pdf_table(elements: List[Any], tools: Dict[str, Any], rows):
+def _status_style_name(status: str) -> str:
+    if status == "ABNORMAL":
+        return "StatusBad"
+    if status == "NORMAL":
+        return "StatusGood"
+    return "StatusUnknown"
+
+
+def _add_signal_pdf_table(
+    elements: List[Any],
+    tools: Dict[str, Any],
+    styles,
+    rows,
+):
+    Paragraph = tools["Paragraph"]
     table_rows = [[
-        "Feature",
-        "Value",
-        "Unit",
-        "Reference Range",
-        "Status",
+        Paragraph("Feature", styles["TableHeader"]),
+        Paragraph("Value", styles["TableHeader"]),
+        Paragraph("Unit", styles["TableHeader"]),
+        Paragraph("Reference Range", styles["TableHeader"]),
+        Paragraph("Status", styles["TableHeader"]),
     ]]
     for row in rows:
+        display_name = row.get("display_name") or row["feature"]
+        if display_name != row["feature"]:
+            feature = Paragraph(
+                f"{pdf_text(display_name)}<br/>"
+                f"<font color='{PDF_MUTED}' size='7'>{pdf_text(row['feature'])}</font>",
+                styles["TableCell"],
+            )
+        else:
+            feature = Paragraph(pdf_text(row["feature"]), styles["TableCell"])
         table_rows.append([
-            row["feature"],
-            row["value"],
-            row["unit"],
-            row["reference_range"],
-            row["status"],
+            feature,
+            Paragraph(pdf_text(row["value"]), styles["TableCell"]),
+            Paragraph(pdf_text(row["unit"]), styles["TableCell"]),
+            Paragraph(pdf_text(row["reference_range"]), styles["TableCell"]),
+            Paragraph(pdf_text(row["status"]), styles[_status_style_name(row["status"])]),
         ])
 
     if len(table_rows) == 1:
-        table_rows.append(["No key signals available", "", "", "", ""])
+        table_rows.append([
+            Paragraph("No key signals available", styles["TableCell"]),
+            "",
+            "",
+            "",
+            "",
+        ])
 
-    _add_small_table(elements, tools, table_rows, has_header=True)
+    table = tools["Table"](
+        table_rows,
+        colWidths=[
+            54 * tools["mm"],
+            23 * tools["mm"],
+            18 * tools["mm"],
+            44 * tools["mm"],
+            29 * tools["mm"],
+        ],
+        hAlign="CENTER",
+        repeatRows=1,
+    )
+    style = [
+        ("BACKGROUND", (0, 0), (-1, 0), _pdf_color(tools, PDF_BLUE)),
+        ("BOX", (0, 0), (-1, -1), 0.5, _pdf_color(tools, PDF_BORDER)),
+        ("INNERGRID", (0, 0), (-1, -1), 0.35, _pdf_color(tools, PDF_BORDER)),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 7),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+        ("TOPPADDING", (0, 0), (-1, -1), 7),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+    ]
+    for row_number in range(1, len(table_rows)):
+        if row_number % 2 == 1:
+            style.append((
+                "BACKGROUND",
+                (0, row_number),
+                (-1, row_number),
+                _pdf_color(tools, PDF_PANEL),
+            ))
+    table.setStyle(tools["TableStyle"](style))
+    elements.append(table)
+
+
+def _add_text_panel(
+    elements: List[Any],
+    tools: Dict[str, Any],
+    styles,
+    title: str,
+    body: Any,
+    body_is_html: bool = False,
+):
+    Paragraph = tools["Paragraph"]
+    Table = tools["Table"]
+    TableStyle = tools["TableStyle"]
+    mm = tools["mm"]
+    body_text = body if body_is_html else pdf_text(body)
+    table = Table(
+        [[
+            Paragraph(pdf_text(title), styles["ReportPanelTitle"]),
+            Paragraph(body_text, styles["ReportBody"]),
+        ]],
+        colWidths=[42 * mm, 126 * mm],
+        hAlign="CENTER",
+    )
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), _pdf_color(tools, PDF_PANEL)),
+        ("BOX", (0, 0), (-1, -1), 0.5, _pdf_color(tools, PDF_BORDER)),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("TOPPADDING", (0, 0), (-1, -1), 9),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
+    ]))
+    elements.append(table)
+    elements.append(tools["Spacer"](1, 2 * mm))
+
+
+def _add_list_panel(
+    elements: List[Any],
+    tools: Dict[str, Any],
+    styles,
+    title: str,
+    items: Iterable[Any],
+):
+    clean_items = list(items) or [NOT_AVAILABLE]
+    body = "<br/>".join(
+        f"- {pdf_text(item)}" for item in clean_items
+    )
+    _add_text_panel(
+        elements,
+        tools,
+        styles,
+        title,
+        body,
+        body_is_html=True,
+    )
+
+
+def _draw_pdf_footer(canvas, doc, tools: Dict[str, Any]):
+    mm = tools["mm"]
+    canvas.saveState()
+    canvas.setStrokeColor(_pdf_color(tools, PDF_BORDER))
+    canvas.setFillColor(_pdf_color(tools, PDF_MUTED))
+    canvas.setFont("Helvetica", 8)
+    y = 10 * mm
+    canvas.line(doc.leftMargin, y + 5, doc.pagesize[0] - doc.rightMargin, y + 5)
+    canvas.drawString(doc.leftMargin, y, "Granite Lifeline")
+    canvas.drawRightString(
+        doc.pagesize[0] - doc.rightMargin,
+        y,
+        f"Page {doc.page}",
+    )
+    canvas.restoreState()
 
 
 def _add_small_table(
@@ -411,58 +769,84 @@ def build_diagnostic_pdf_bytes(
         topMargin=14 * tools["mm"],
         bottomMargin=14 * tools["mm"],
     )
-    styles = tools["getSampleStyleSheet"]()
-    elements: List[Any] = [
-        tools["Paragraph"](PDF_TITLE, styles["Title"]),
-        tools["Spacer"](1, 5 * tools["mm"]),
-    ]
+    styles = _get_pdf_styles(tools)
+    summary = build_summary(component_data)
+    elements: List[Any] = []
+    _add_report_header(elements, tools, styles, summary)
+
     export_data = build_export_data(component_data, selected_sections)
 
     if "summary" in export_data:
-        _add_pdf_section(elements, tools, "Summary")
-        _add_summary_pdf(elements, tools, export_data["summary"])
+        _add_pdf_section(elements, tools, styles, "Summary")
+        _add_summary_pdf(elements, tools, styles, export_data["summary"])
 
     if "failure_prediction" in export_data:
-        _add_pdf_section(elements, tools, "Failure Prediction")
-        elements.append(tools["Paragraph"](
-            pdf_text(export_data["failure_prediction"]["text"]),
-            styles["BodyText"],
-        ))
+        _add_pdf_section(elements, tools, styles, "Failure Prediction")
+        _add_text_panel(
+            elements,
+            tools,
+            styles,
+            "Prediction",
+            export_data["failure_prediction"]["text"],
+        )
+
+    if "data_quality_notes" in export_data:
+        _add_pdf_section(elements, tools, styles, "Data Quality Notes")
+        _add_list_panel(
+            elements,
+            tools,
+            styles,
+            "Notes",
+            export_data["data_quality_notes"],
+        )
 
     if "key_signals" in export_data:
-        _add_pdf_section(elements, tools, "Key Signals")
-        _add_signal_pdf_table(elements, tools, export_data["key_signals"])
+        _add_pdf_section(elements, tools, styles, "Key Signals")
+        _add_signal_pdf_table(
+            elements,
+            tools,
+            styles,
+            export_data["key_signals"],
+        )
 
     if "diagnostic_report" in export_data:
         report = export_data["diagnostic_report"]
-        _add_pdf_section(elements, tools, "What's Happening")
-        elements.append(tools["Paragraph"](
-            pdf_text(report["anomaly_description"]),
-            styles["BodyText"],
-        ))
-        _add_pdf_section(elements, tools, "Why This Matters")
-        elements.append(tools["Paragraph"](
-            pdf_text(report["possible_cause"]),
-            styles["BodyText"],
-        ))
-        _add_pdf_section(elements, tools, "What You Should Do")
-        actions = report["recommended_action"] or [NOT_AVAILABLE]
-        for action in actions:
-            elements.append(tools["Paragraph"](
-                pdf_text(f"- {action}"),
-                styles["BodyText"],
-            ))
+        _add_pdf_section(elements, tools, styles, "Diagnostic Report")
+        _add_text_panel(
+            elements,
+            tools,
+            styles,
+            "What's Happening",
+            report["anomaly_description"],
+        )
+        _add_text_panel(
+            elements,
+            tools,
+            styles,
+            "Why This Matters",
+            report["possible_cause"],
+        )
+        _add_list_panel(
+            elements,
+            tools,
+            styles,
+            "What You Should Do",
+            report["recommended_action"],
+        )
 
-    if "data_quality_notes" in export_data:
-        _add_pdf_section(elements, tools, "Data Quality Notes")
-        notes = export_data["data_quality_notes"] or [NOT_AVAILABLE]
-        for note in notes:
-            elements.append(tools["Paragraph"](
-                pdf_text(f"- {note}"),
-                styles["BodyText"],
-            ))
-
-    doc.build(elements)
+    doc.build(
+        elements,
+        onFirstPage=lambda canvas, page_doc: _draw_pdf_footer(
+            canvas,
+            page_doc,
+            tools,
+        ),
+        onLaterPages=lambda canvas, page_doc: _draw_pdf_footer(
+            canvas,
+            page_doc,
+            tools,
+        ),
+    )
     return buffer.getvalue()
 
 
