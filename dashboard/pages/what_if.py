@@ -378,37 +378,31 @@ def _scenario_intensity(inputs: ScenarioInputs) -> float:
 def _render_page_styles(tokens: dict) -> None:
     T = tokens  # short alias
 
-    # CSS-target each scenario button by its st-key class so the button IS the card.
-    # Active scenario gets a filled accent border + tinted background.
+    # Scenario cards are pure HTML (st.markdown); each column also gets a
+    # transparent overlay button for click handling. CSS only needs to style
+    # that overlay button — it must be invisible and fill its container.
     active_scenario = st.session_state.get("wi_scenario")
     sc_btn_rules = ""
     for sc in SCENARIO_CARDS:
-        key_cls  = f".st-key-wi_sc_{sc.key}"
-        is_active = sc.key == active_scenario
-        active_bg     = hex_to_rgba(T["accent"], 0.07)
-        active_border = T["accent"]
+        key_cls = f".st-key-wi_sc_{sc.key}"
         sc_btn_rules += f"""
+        {key_cls} {{
+            position: relative !important;
+            margin-top: -8px !important;
+        }}
         {key_cls} button {{
-            align-items:flex-start !important;
-            background:{"" + active_bg if is_active else T["glass_surface"]} !important;
-            border:2px solid {"" + active_border if is_active else T["glass_border"]} !important;
-            border-radius:14px !important;
-            display:flex !important;
-            flex-direction:column !important;
-            height:auto !important;
-            min-height:90px !important;
-            padding:14px 12px 12px 12px !important;
-            text-align:left !important;
-            transition:border-color 0.15s ease, background 0.15s ease !important;
-            width:100% !important;
-        }}
-        {key_cls} button:hover {{
-            border-color:{T["accent"]} !important;
-            background:{hex_to_rgba(T["accent"], 0.05)} !important;
-        }}
-        {key_cls} button * {{
-            text-align:left !important;
-            white-space:normal !important;
+            background: transparent !important;
+            border: none !important;
+            bottom: 0 !important;
+            cursor: pointer !important;
+            left: 0 !important;
+            opacity: 0 !important;
+            position: absolute !important;
+            right: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            z-index: 2 !important;
         }}
         """
 
@@ -450,10 +444,33 @@ def _render_page_styles(tokens: dict) -> None:
             text-transform: uppercase;
         }}
 
-        /* ── Scenario picker: buttons become the cards ── */
+        /* ── Scenario picker: invisible overlay buttons on top of HTML cards ── */
         {sc_btn_rules}
 
-        /* ── Scenario card inner layout (injected via button label HTML) ── */
+        /* ── Scenario card (pure HTML, rendered via st.markdown) ── */
+        .wi-sc-card {{
+            background: {T["glass_surface"]};
+            border: 2px solid {T["glass_border"]};
+            border-radius: 14px;
+            box-shadow: 0 1px 6px {T["shadow"]};
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            min-height: 120px;
+            padding: 14px 12px 12px 12px;
+            position: relative;
+            transition: border-color 0.15s ease, background 0.15s ease;
+            z-index: 1;
+        }}
+        .wi-sc-card:hover {{
+            border-color: {T["accent"]};
+            background: {hex_to_rgba(T["accent"], 0.05)};
+        }}
+        .wi-sc-card.wi-sc-active {{
+            background: {hex_to_rgba(T["accent"], 0.07)};
+            border-color: {T["accent"]};
+        }}
         .wi-sc-icon {{
             display: block;
             margin-bottom: 8px;
@@ -777,7 +794,8 @@ def _render_page_styles(tokens: dict) -> None:
             border-color: {T["accent"]} !important;
             color: {T["accent"]} !important;
         }}
-        .st-key-what_if_back_btn button * {{ color: inherit !important; }}
+        .st-key-what_if_back_btn button *,
+        .st-key-what_if_back_btn button:hover * {{ color: inherit !important; }}
 
         /* Reset button */
         .st-key-what_if_reset_btn button {{
@@ -791,6 +809,8 @@ def _render_page_styles(tokens: dict) -> None:
             border-color: {T["accent"]} !important;
             color: {T["accent"]} !important;
         }}
+        .st-key-what_if_reset_btn button *,
+        .st-key-what_if_reset_btn button:hover * {{ color: inherit !important; }}
 
         /* ── Responsive ── */
         @media (max-width: 760px) {{
@@ -818,19 +838,22 @@ def _render_page_styles(tokens: dict) -> None:
 # HTML renderers
 # ---------------------------------------------------------------------------
 
-def _scenario_button_label(sc: ScenarioCard, active: bool, tokens: dict) -> str:
-    """Build the HTML label for a scenario card button."""
+def _scenario_card_html(sc: ScenarioCard, active: bool, tokens: dict) -> str:
+    """Build the full card HTML for a scenario. Rendered via st.markdown."""
     icon_color = tokens["accent"] if active else tokens["text_secondary"]
     icon_svg   = lucide_icon(sc.icon, size=20, color=icon_color)
+    card_cls   = "wi-sc-card wi-sc-active" if active else "wi-sc-card"
     check      = (
         f'<span class="wi-sc-check">Selected</span>'
         if active else ""
     )
     return (
+        f'<div class="{card_cls}">'
         f'<span class="wi-sc-icon">{icon_svg}</span>'
         f'<span class="wi-sc-label">{html.escape(sc.label)}</span>'
         f'<span class="wi-sc-desc">{html.escape(sc.description)}</span>'
         f'{check}'
+        f'</div>'
     )
 
 
@@ -1100,14 +1123,19 @@ def show_what_if_page() -> None:
     )
 
     # ── Scenario picker ──────────────────────────────────────────────────────
+    # Each column: HTML card (visible) + transparent st.button overlay (clickable).
+    # The button container is position:relative; the button is position:absolute
+    # covering the entire card so clicking anywhere on the card fires it.
     st.markdown('<div class="wi-section-head">Choose a scenario</div>', unsafe_allow_html=True)
     sc_cols = st.columns(len(SCENARIO_CARDS), gap="small")
     for i, sc in enumerate(SCENARIO_CARDS):
         with sc_cols[i]:
             is_active = sc.key == active_scenario
-            btn_label = _scenario_button_label(sc, is_active, tokens)
+            # Render the visible card HTML
+            st.markdown(_scenario_card_html(sc, is_active, tokens), unsafe_allow_html=True)
+            # Transparent overlay button — absolutely positioned over the card via CSS
             if st.button(
-                btn_label,
+                sc.label,           # plain text label (invisible due to opacity:0)
                 key=f"wi_sc_{sc.key}",
                 use_container_width=True,
             ):
