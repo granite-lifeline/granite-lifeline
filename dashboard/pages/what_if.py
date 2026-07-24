@@ -649,28 +649,47 @@ def _render_page_styles(tokens: dict) -> None:
             box-shadow: 0 2px 12px {T["shadow"]};
             overflow: hidden;
         }}
+        /* Title bar */
         .wi-breakdown-head {{
             border-bottom: 1px solid {T["border"]};
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 16px 20px 14px 20px;
+            padding: 14px 20px 12px 20px;
         }}
         .wi-breakdown-title {{
             color: {T["text"]};
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 700;
         }}
-        .wi-breakdown-legend {{
-            color: {T["text_secondary"]};
-            font-size: 11px;
-            margin-left: auto;
+        /* Column header row — gives each column a visible label */
+        .wi-col-headers {{
+            background: {T["surface_alt"]};
+            border-bottom: 1px solid {T["border"]};
+            display: grid;
+            grid-template-columns: 1fr 150px 104px;
         }}
+        .wi-col-hdr {{
+            color: {T["text_secondary"]};
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            padding: 7px 16px;
+            text-transform: uppercase;
+        }}
+        .wi-col-hdr:first-child {{
+            padding-left: 20px;
+        }}
+        .wi-col-hdr.right {{
+            text-align: right;
+            padding-right: 18px;
+        }}
+        /* Data rows — Option B: name | change | risk */
         .wi-row {{
             border-bottom: 1px solid {T["border"]};
             display: grid;
             gap: 0;
-            grid-template-columns: 1fr 88px 88px 100px;
+            grid-template-columns: 1fr 150px 104px;
             padding: 0;
         }}
         .wi-row:last-child {{
@@ -686,7 +705,7 @@ def _render_page_styles(tokens: dict) -> None:
             display: flex;
             flex-direction: column;
             gap: 4px;
-            padding: 16px 20px;
+            padding: 14px 20px;
         }}
         .wi-cell-name-top {{
             align-items: center;
@@ -695,62 +714,81 @@ def _render_page_styles(tokens: dict) -> None:
         }}
         .wi-cell-name-title {{
             color: {T["text"]};
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
         }}
         .wi-cell-name-why {{
             color: {T["text_secondary"]};
-            font-size: 12px;
+            font-size: 11px;
             line-height: 1.45;
         }}
         .wi-cell-action {{
             background: {hex_to_rgba(T["accent"], 0.10)};
             border-left: 2px solid {T["accent"]};
-            border-radius: 0 6px 6px 0;
+            border-radius: 0 5px 5px 0;
             color: {T["text"]};
             font-size: 11px;
-            line-height: 1.45;
-            margin-top: 6px;
-            padding: 5px 8px;
+            line-height: 1.4;
+            margin-top: 5px;
+            padding: 4px 8px;
         }}
-        /* Metric cells */
-        .wi-cell {{
+        /* Change cell (Option B): "48% → 72%" inline flow */
+        .wi-cell-change {{
             border-right: 1px solid {T["border"]};
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding: 16px 12px;
-            text-align: right;
+            padding: 14px 16px;
         }}
-        .wi-cell:last-child {{
-            border-right: none;
+        .wi-change-flow {{
+            align-items: baseline;
+            display: flex;
+            gap: 5px;
+            line-height: 1;
         }}
-        .wi-cell-lbl {{
+        .wi-change-from {{
             color: {T["text_secondary"]};
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.4px;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-        }}
-        .wi-cell-val {{
-            color: {T["text"]};
             font-family: {FONT_MONO};
-            font-size: 17px;
+            font-size: 13px;
+            font-weight: 600;
+        }}
+        .wi-change-arrow {{
+            color: {T["border"]};
+            font-size: 12px;
+        }}
+        .wi-change-to {{
+            font-family: {FONT_MONO};
+            font-size: 18px;
             font-weight: 800;
             line-height: 1;
         }}
-        .wi-cell-delta {{
+        .wi-change-badge {{
+            align-self: flex-start;
+            border-radius: 999px;
             font-family: {FONT_MONO};
             font-size: 11px;
             font-weight: 700;
-            margin-top: 3px;
+            margin-top: 5px;
+            padding: 2px 8px;
         }}
-        .wi-cell-range {{
+        .wi-change-badge.up {{
+            background: {hex_to_rgba(T["risk_high"], 0.10)};
+            color: {T["risk_high"]};
+        }}
+        .wi-change-badge.down {{
+            background: {hex_to_rgba(T["risk_low"], 0.10)};
+            color: {T["risk_low"]};
+        }}
+        .wi-change-badge.flat {{
+            background: {hex_to_rgba(T["text_secondary"], 0.10)};
+            color: {T["text_secondary"]};
+        }}
+        .wi-change-range {{
             color: {T["text_secondary"]};
             font-family: {FONT_MONO};
             font-size: 10px;
-            margin-top: 2px;
+            margin-top: 3px;
+            opacity: 0.7;
         }}
         /* Risk cell */
         .wi-cell-risk {{
@@ -758,27 +796,27 @@ def _render_page_styles(tokens: dict) -> None:
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding: 16px 16px 16px 12px;
+            padding: 14px 18px 14px 10px;
         }}
         .wi-pill {{
             border-radius: 999px;
             color: #fff;
             display: inline-block;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
-            padding: 4px 10px;
+            padding: 3px 10px;
         }}
         .wi-bar-track {{
             background: {T["surface_alt"]};
             border-radius: 999px;
-            height: 5px;
-            margin-top: 8px;
+            height: 4px;
+            margin-top: 7px;
             overflow: hidden;
-            width: 64px;
+            width: 56px;
         }}
         .wi-bar-fill {{
             border-radius: 999px;
-            height: 5px;
+            height: 4px;
         }}
 
         /* ── Control panel — targeted via st.container key ── */
@@ -1006,10 +1044,21 @@ def _component_row_html(
 
     row_cls = "wi-row wi-row-focus" if focus else "wi-row"
 
+    # Delta badge class and label
+    if delta_pct > 0:
+        badge_cls   = "up"
+        badge_label = f"▲ +{delta_pct} pp"
+    elif delta_pct < 0:
+        badge_cls   = "down"
+        badge_label = f"▼ {delta_pct} pp"
+    else:
+        badge_cls   = "flat"
+        badge_label = "no change"
+
     return (
         f'<div class="{row_cls}">'
 
-        # Name + reason
+        # Name + reason + optional action tip
         '<div class="wi-cell-name">'
         f'<div class="wi-cell-name-top">{icon_svg}'
         f'<span class="wi-cell-name-title">{disp_name}</span></div>'
@@ -1017,18 +1066,15 @@ def _component_row_html(
         f'{action_html}'
         '</div>'
 
-        # Now
-        '<div class="wi-cell">'
-        '<div class="wi-cell-lbl">Now</div>'
-        f'<div class="wi-cell-val">{baseline_pct}%</div>'
+        # Change cell — Option B: "48% → 72%" inline flow
+        '<div class="wi-cell-change">'
+        '<div class="wi-change-flow">'
+        f'<span class="wi-change-from">{baseline_pct}%</span>'
+        '<span class="wi-change-arrow">→</span>'
+        f'<span class="wi-change-to" style="color:{val_color};">{projected_pct}%</span>'
         '</div>'
-
-        # What-if: projected value + delta arrow + uncertainty range
-        f'<div class="wi-cell">'
-        '<div class="wi-cell-lbl">What-if</div>'
-        f'<div class="wi-cell-val" style="color:{val_color};">{projected_pct}%</div>'
-        f'{delta_html}'
-        f'<div class="wi-cell-range" title="Estimate +/- 7% model uncertainty">est. {lo}–{hi}%</div>'
+        f'<span class="wi-change-badge {badge_cls}">{badge_label}</span>'
+        f'<div class="wi-change-range" title="Estimate ± 7% model uncertainty">est. {lo}–{hi}%</div>'
         '</div>'
 
         # Risk level + bar
@@ -1423,13 +1469,20 @@ def show_what_if_page() -> None:
                     )
                     for k, b, p, d in visible
                 )
+                col_headers = (
+                    '<div class="wi-col-headers">'
+                    '<div class="wi-col-hdr">Component</div>'
+                    '<div class="wi-col-hdr">Risk change</div>'
+                    '<div class="wi-col-hdr right">Level</div>'
+                    '</div>'
+                )
                 st.markdown(
                     '<div class="wi-breakdown">'
                     '<div class="wi-breakdown-head">'
                     f'{lucide_icon("sliders", size=15, color=tokens["accent"])}'
                     '<span class="wi-breakdown-title">Component breakdown</span>'
-                    '<span class="wi-breakdown-legend">Now · What-if · Risk level</span>'
                     '</div>'
+                    f'{col_headers}'
                     f'{rows_html}'
                     '</div>',
                     unsafe_allow_html=True,
