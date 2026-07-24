@@ -505,7 +505,7 @@ def run(
     df = pd.read_csv(csv, low_memory=False)
     trip_ids = df["trip_id"]
     print(f"Loaded {len(df):,} rows, {trip_ids.nunique()} trips")
-    out = run_dir / "research_diagnostics"
+    out = REPO_ROOT / "data_layer" / "research_diagnostics"
     out.mkdir(parents=True, exist_ok=True)
     print(f"Output: {out}\n")
 
@@ -572,7 +572,7 @@ def main() -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
     run_dir = Path(args.run_dir).resolve()
-    summary = run_dir / "research_diagnostics" / "summary.json"
+    summary = REPO_ROOT / "data_layer" / "research_diagnostics" / "summary.json"
     summary.write_text(json.dumps(result, indent=2), encoding="utf-8")
     _write_manifest(
         run_dir,
