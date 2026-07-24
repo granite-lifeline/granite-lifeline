@@ -48,7 +48,7 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | Feature | Priority | Description |
 |---------|----------|-------------|
 | Mobile Optimization | P1 | Responsive design for mobile devices |
-| PDF Export | P2 | Download reports and charts |
+| PDF / CSV Export | P2 | Download detail-page diagnostic report and key signals |
 | 3D Component Visualization | P3 | Interactive 3D car model with component highlighting |
 
 ---
@@ -92,6 +92,7 @@ dashboard/
 ├── app.py                  # Main Streamlit application
 ├── anomaly_display.py      # Component/signal display name mappings
 ├── data_loader.py          # JSON → component-keyed dict loader
+├── EXPORT_REPORT_PLAN.md   # GL-343 export entry and field checklist
 ├── assets/                 # Static assets
 ├── DATA_INTEGRATION.md     # Data contract and field documentation
 ├── tests/
