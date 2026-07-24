@@ -2,7 +2,7 @@
 
 **Owner:** Report Team  
 **Status:** Active Development  
-**Last Updated:** 2026-07-13
+**Last Updated:** 2026-07-24
 
 ---
 
@@ -21,6 +21,7 @@ Data Layer → Model Layer → Report Layer → Dashboard
 - **Risk Score Trends**: Plotly-powered visualizations showing risk progression over time
 - **Theme Support**: Light/dark mode toggle with an IBM Carbon-inspired "Pro" design
 - **Interface v0.7 Data Loading**: Loads ReportLayerOutput-shaped JSON, including failure prediction fields and Model Layer notes
+- **PDF / CSV Export**: Downloads filtered component reports and key signal data from the overview page
 - **Responsive Design**: Optimized for desktop viewing (mobile optimization planned)
 
 ---
@@ -42,13 +43,13 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | Failure Prediction Data Support | GL-198 | Loads estimated_failure_probability, estimated_cycles_to_failure, notes from INTERFACE.md v0.7 test data |
 | Failure Prediction UI Display | GL-278/GL-280 | Shows failure probability card and Data Quality Notes on the detail page |
 | Six-Type Component Display Mapping | GL-273 | Maps all 6 current anomaly types to owner-friendly display names; legacy cooling_system_stress alias retained |
+| PDF / CSV Export | GL-343 to GL-348 | Overview-page export panel with component filters, PDF section filters, CSV column filters, ZIP downloads, local PDF template, and tests |
 
 ### [PLANNED]
 
 | Feature | Priority | Description |
 |---------|----------|-------------|
 | Mobile Optimization | P1 | Responsive design for mobile devices |
-| PDF / CSV Export | P2 | Download detail-page diagnostic report and key signals |
 | 3D Component Visualization | P3 | Interactive 3D car model with component highlighting |
 
 ---
@@ -165,6 +166,9 @@ streamlit run dashboard/app.py --server.runOnSave true
 - **Theme Toggle**: Sun/moon icon in top-right corner
 - **Risk Visualization**: Animated progress ring per card
 - **Navigation**: "View Details" button on each card
+- **Export Report Panel**: Multi-select dropdown controls for report
+  components, PDF sections, and CSV columns, followed by PDF / CSV download
+  buttons. Multiple selected components are downloaded as ZIP files.
 - **Footer**: Multi-section footer with repository/blog links and
   team attribution
 
@@ -297,6 +301,38 @@ Simple session-state-based routing:
 - Shows warning if insufficient data
 - Handles up to 5 data points (T-4 to Now)
 
+### Export Report Implementation
+
+**Technology:** Streamlit `st.download_button`, Python `csv`, `zipfile`,
+and ReportLab.
+
+**Features:**
+- Overview-page export panel below the component cards
+- Report component multi-select list
+- Collapsible PDF section and CSV column filters
+- Single-component downloads as `.pdf` or `.csv`
+- Multi-component downloads as `.zip`
+- Download filenames include selected component names, selected export detail
+  names, the download date, and the file type
+- PDF report template includes a branded header, risk summary, summary cards,
+  key signals table, diagnostic report panels, and footer page numbering
+- No external service dependency; all export files are generated locally
+
+**Local Validation:**
+```bash
+python -m pytest tests/test_export_helper.py tests/test_failure_prediction_ui_states.py
+streamlit run dashboard/app.py --server.port 8502 --server.runOnSave true
+```
+
+Manual checks:
+- Open `http://localhost:8502`
+- Scroll below the overview component cards
+- Expand and collapse Report components, PDF sections, and CSV columns
+- Download one component as PDF and CSV
+- Select multiple components and confirm PDF / CSV ZIP downloads
+- Confirm the PDF risk block does not overlap in Preview or the browser PDF
+  viewer
+
 ---
 
 ## Development Guidelines
@@ -324,10 +360,14 @@ Before committing dashboard changes:
 - Tested in light mode
 - Tested in dark mode
 - Tested navigation (overview ↔ detail)
-- Tested with all 3 component types
+- Tested with available component types
 - Tested trend chart with various data lengths
+- Tested overview PDF / CSV export with one component
+- Tested overview PDF / CSV ZIP export with multiple components
+- Tested export filters for Report components, PDF sections, and CSV columns
 - Verified responsive layout
 - Checked browser console for errors
+- Ran `python -m pytest tests/test_export_helper.py tests/test_failure_prediction_ui_states.py`
 - Ran `flake8 dashboard/app.py` (exit code 0)
 - Verified no breaking changes to data contracts
 
@@ -368,14 +408,12 @@ See `docs/INTERFACE.md` Section 3 for complete field definitions.
 ### Current Limitations
 
 1. **Partial Real Data**: test JSON currently contains full sample reports for the main 3 components; other anomaly types appear as UI placeholders unless data is provided.
-2. **No Export**: Cannot download reports or charts.
-3. **Desktop-First**: Mobile experience needs optimization.
-4. **No Persistence**: Risk history is read from loaded JSON and is not stored between dashboard sessions.
+2. **Desktop-First**: Mobile experience needs optimization.
+3. **No Persistence**: Risk history is read from loaded JSON and is not stored between dashboard sessions.
 
 ### Planned Improvements
 
 - Mobile-responsive improvements
-- PDF export functionality
 - Accessibility enhancements (WCAG 2.1 AA)
 - 3D component visualization (exploratory)
 
@@ -427,6 +465,16 @@ pkill -f streamlit
 # Or use different port
 streamlit run dashboard/app.py --server.port 8502
 ```
+
+### Downloaded PDF still shows an old layout
+
+**Issue:** The PDF download does not reflect recent template changes.
+
+**Solution:**
+- Stop and restart Streamlit so `dashboard/export_helper.py` is reloaded
+- Refresh the browser page before downloading again
+- Open the newest file in the Downloads folder, because repeated downloads
+  may keep similar filenames
 
 ### Component not found error
 

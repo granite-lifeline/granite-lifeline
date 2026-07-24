@@ -128,3 +128,50 @@ The fields are loaded through:
 3. `dashboard/pages/detail.py`
 
 The current dashboard test data already contains the required Task 6 fields.
+
+## GL-348 Local Testing and Documentation
+
+GL-348 confirms the export feature can be tested locally without external
+services and records the expected validation steps.
+
+Automated checks:
+
+```bash
+python -m pytest tests/test_export_helper.py tests/test_failure_prediction_ui_states.py
+```
+
+Expected result:
+
+- `tests/test_export_helper.py` verifies export section ordering, CSV column
+  filtering, CSV byte output, PDF byte output, filename generation, and missing
+  data fallbacks.
+- `tests/test_failure_prediction_ui_states.py` verifies the Overview Page
+  exposes the export panel, filter controls, and PDF / CSV download buttons.
+
+Manual checks:
+
+1. Start Streamlit locally:
+
+   ```bash
+   streamlit run dashboard/app.py --server.port 8502 --server.runOnSave true
+   ```
+
+2. Open `http://localhost:8502`.
+3. Scroll below the overview component cards.
+4. Expand Report components, PDF sections, and CSV columns.
+5. Download one selected component as PDF and CSV.
+6. Select more than one component and confirm PDF / CSV ZIP downloads.
+7. Open the downloaded PDF and confirm:
+   - branded report header is visible
+   - risk score block does not overlap
+   - selected PDF sections appear in the selected order
+   - Data Quality Notes appear after Failure Prediction
+   - Key Signals table contains feature, value, unit, reference range, and status
+
+Known local testing notes:
+
+- If the PDF still shows an older layout, restart Streamlit and refresh the
+  browser before downloading again.
+- Full project-wide `pytest` may require a Python 3.10+ environment plus model
+  and RAG dependencies such as `torch` and `chromadb`; GL-348 validation is
+  scoped to the dashboard export tests above.
