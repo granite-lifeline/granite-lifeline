@@ -979,9 +979,9 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
                         color 0.15s ease !important;
         }}
         [class*="st-key-card_btn_"] button:hover {{
-            background: {tokens["accent"]} !important;
+            background: {hex_to_rgba(tokens["accent"], 0.08)} !important;
             border-color: {tokens["accent"]} !important;
-            color: {tokens["accent_contrast"]} !important;
+            color: {tokens["accent"]} !important;
         }}
         [class*="st-key-card_btn_"] button:active {{
             transform: scale(0.98) !important;

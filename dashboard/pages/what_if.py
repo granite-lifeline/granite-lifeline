@@ -379,8 +379,10 @@ def _render_page_styles(tokens: dict) -> None:
     T = tokens  # short alias
 
     # Scenario cards: each card is a st.container(key="wi_sc_wrap_{key}").
-    # Inside: st.markdown renders the visible card HTML, st.button is the
-    # invisible click target absolutely positioned over the whole container.
+    # Strategy: the HTML card has pointer-events:none so mouse events fall
+    # through to the st.button sitting behind it (z-index lower).
+    # The button is invisible but receives all pointer events.
+    # Card :hover is triggered via CSS sibling: button:hover ~ [card].
     active_scenario = st.session_state.get("wi_scenario")
     sc_btn_rules = ""
     for sc in SCENARIO_CARDS:
@@ -396,7 +398,7 @@ def _render_page_styles(tokens: dict) -> None:
             position: absolute !important;
             right: 0 !important;
             top: 0 !important;
-            z-index: 2 !important;
+            z-index: 1 !important;
         }}
         {btn_cls} button {{
             background: transparent !important;
@@ -406,6 +408,20 @@ def _render_page_styles(tokens: dict) -> None:
             height: 100% !important;
             opacity: 0 !important;
             width: 100% !important;
+        }}
+        /* Card sits above button visually but passes pointer events through */
+        {wrap_cls} .wi-sc-card {{
+            pointer-events: none !important;
+            position: relative !important;
+            z-index: 2 !important;
+        }}
+        /* Hover: trigger card style when the sibling button is hovered.
+           Uses the general sibling combinator on Streamlit's rendered DOM:
+           button container div is followed by the markdown div containing the card. */
+        {btn_cls} button:hover ~ * .wi-sc-card,
+        {btn_cls}:hover ~ * .wi-sc-card {{
+            border-color: {T["accent"]} !important;
+            background: {hex_to_rgba(T["accent"], 0.05)} !important;
         }}
         """
 
@@ -421,9 +437,31 @@ def _render_page_styles(tokens: dict) -> None:
         }
     """
 
+    # Dark mode: increase card border visibility so cards lift off the dark bg.
+    dark_mode = st.session_state.get("dark_mode", False)
+    dark_card_rules = ""
+    if dark_mode:
+        dark_card_rules = f"""
+        .wi-sc-card {{
+            border-color: rgba(255,255,255,0.18) !important;
+        }}
+        .wi-sc-card.wi-sc-active {{
+            border-color: {T["accent"]} !important;
+        }}
+        .st-key-wi_controls_box {{
+            border-color: rgba(255,255,255,0.14) !important;
+        }}
+        """
+
     st.markdown(
         f"""
         <style>
+        /* ── Font scope — ensure IBM Plex Sans used throughout ── */
+        .wi-shell, .wi-shell * {{
+            font-family: 'IBM Plex Sans', 'Noto Sans SC', -apple-system,
+                         BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }}
+
         /* ── Page shell ── */
         .wi-shell {{
             max-width: 1140px;
@@ -493,11 +531,22 @@ def _render_page_styles(tokens: dict) -> None:
             margin-top: 4px;
         }}
         .wi-sc-check {{
+            background: {hex_to_rgba(T["accent"], 0.15)};
+            border-radius: 999px;
             color: {T["accent"]};
-            display: block;
-            font-size: 11px;
+            display: inline-block;
+            font-size: 10px;
             font-weight: 700;
-            margin-top: 6px;
+            letter-spacing: 0.3px;
+            margin-top: 7px;
+            padding: 2px 8px;
+            text-transform: uppercase;
+        }}
+
+        /* ── Dark-mode card depth: heavier border so glass card lifts off bg ── */
+        .wi-sc-card {{
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
         }}
 
         /* ── Summary banner ── */
@@ -518,6 +567,13 @@ def _render_page_styles(tokens: dict) -> None:
             font-size: 22px;
             font-weight: 800;
             line-height: 1.2;
+        }}
+        .wi-summary-sub {{
+            color: {T["text_secondary"]};
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.45;
+            margin-top: 4px;
         }}
         .wi-summary-worst {{
             font-size: 13px;
@@ -572,9 +628,17 @@ def _render_page_styles(tokens: dict) -> None:
             color: {T["accent"]};
         }}
 
-        /* Hide the functional filter radio — pills provide the visual layer */
+        /* Filter radio: visually hidden but DOM-accessible so clicks work.
+           position:absolute takes it out of flow; opacity:0 makes it invisible;
+           pointer-events kept enabled so Streamlit's click handler fires. */
         .st-key-wi_filter_radio {{
-            display: none !important;
+            height: 1px !important;
+            left: -9999px !important;
+            opacity: 0 !important;
+            overflow: hidden !important;
+            position: absolute !important;
+            top: auto !important;
+            width: 1px !important;
         }}
 
         /* ── Component breakdown table ── */
@@ -640,13 +704,14 @@ def _render_page_styles(tokens: dict) -> None:
             line-height: 1.45;
         }}
         .wi-cell-action {{
-            background: {hex_to_rgba(T["accent"], 0.06)};
-            border-radius: 6px;
+            background: {hex_to_rgba(T["accent"], 0.10)};
+            border-left: 2px solid {T["accent"]};
+            border-radius: 0 6px 6px 0;
             color: {T["text"]};
             font-size: 11px;
             line-height: 1.45;
-            margin-top: 4px;
-            padding: 6px 8px;
+            margin-top: 6px;
+            padding: 5px 8px;
         }}
         /* Metric cells */
         .wi-cell {{
@@ -722,7 +787,7 @@ def _render_page_styles(tokens: dict) -> None:
             border: 1px solid {T["glass_border"]};
             border-radius: 16px;
             box-shadow: 0 2px 12px {T["shadow"]};
-            padding: 20px 20px 12px 20px;
+            padding: 20px 20px 16px 20px;
         }}
         /* Collapse the extra gap Streamlit adds between elements inside the container */
         .st-key-wi_controls_box > div > div > div {{
@@ -739,55 +804,60 @@ def _render_page_styles(tokens: dict) -> None:
             font-size: 12px;
             line-height: 1.4;
             margin-top: 2px;
-            margin-bottom: 4px;
-            padding-bottom: 8px;
+            margin-bottom: 8px;
+            padding-bottom: 10px;
             border-bottom: 1px solid {T["border"]};
         }}
+        /* Slider caption: sits naturally below the slider tick bar,
+           no negative margin needed — just ensure gap is collapsed above */
         .wi-slider-caption {{
             color: {T["text_secondary"]};
             font-size: 11px;
-            margin-top: -14px;
-            margin-bottom: 4px;
+            margin-top: 0;
+            margin-bottom: 10px;
+            padding-top: 2px;
             line-height: 1.4;
         }}
-        /* Tighten the slider's own bottom margin */
+        /* Tighten the slider's own bottom margin so caption sits close */
         .st-key-wi_controls_box [data-testid="stSlider"] {{
             margin-bottom: 0 !important;
-            padding-bottom: 4px !important;
+            padding-bottom: 0 !important;
         }}
 
         /* Step indicator */
         .wi-steps {{
+            align-items: center;
             display: flex;
             gap: 0;
             justify-content: center;
-            margin: -12px auto 28px;
+            margin: 4px auto 28px;
         }}
         .wi-step {{
             align-items: center;
             display: flex;
-            gap: 6px;
-            padding: 0 14px;
+            gap: 7px;
+            padding: 0 12px;
         }}
         .wi-step:not(:last-child)::after {{
             color: {T["border"]};
-            content: "\203A";
-            font-size: 18px;
-            margin-left: 14px;
+            content: "\2192";
+            font-size: 14px;
             line-height: 1;
+            margin-left: 12px;
         }}
         .wi-step-num {{
+            align-items: center;
             background: {T["surface_alt"]};
             border: 1.5px solid {T["border"]};
             border-radius: 50%;
             color: {T["text_secondary"]};
             display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 700;
-            height: 22px;
-            width: 22px;
+            height: 24px;
+            justify-content: center;
+            line-height: 1;
+            width: 24px;
         }}
         .wi-step-lbl {{
             color: {T["text_secondary"]};
@@ -842,6 +912,7 @@ def _render_page_styles(tokens: dict) -> None:
         }}
 
         {slider_rules}
+        {dark_card_rules}
         </style>
         """,
         unsafe_allow_html=True,
