@@ -428,7 +428,7 @@ def bootstrap_1_S1_T_reg_est(df, output_dir, trip_ids):
         "ci_upper_97.5": round(float(np.percentile(arr, 97.5)), 4),
     }
     (output_dir / "bootstrap_1_S1_T_reg_est.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
-    print(f"  Bootstrap 1-S1 T_reg_est: {result["mean"]:.2f}C "
+    print(f"  Bootstrap 1-S1 T_reg_est: {result['mean']:.2f}C "
           f"95% CI=[{result["ci_lower_2.5"]:.2f}, {result["ci_upper_97.5"]:.2f}]C")
 
 
