@@ -187,7 +187,7 @@ The fault-injection campaign was designed to test whether the frozen proxy rules
 
 1. **★ How can you trust labels you can't validate against real faults?**
 
-> We separate what has been demonstrated from what has not. On healthy data, every executable sub-check had zero positive decisions; in Stage 4, all 14 executable checks passed a 126-observation synthetic campaign, with 3/3 detection at strongest severity and correct diagnostic semantics. This supports healthy-data specificity and controlled synthetic detectability, but labelled physical faults are still required to estimate real-world recall.
+> We separate what has been demonstrated from what has not. On healthy data, every executable sub-check had zero positive decisions; in Fault-Injection stage, all 14 executable checks passed a 126-observation synthetic campaign, with 3/3 detection at strongest severity and correct diagnostic semantics. This supports healthy-data specificity and controlled synthetic detectability, but labelled physical faults are still required to estimate real-world recall.
 
 2. **★ Isn't a simple threshold enough? Why all this machinery?**
 
