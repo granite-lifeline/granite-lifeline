@@ -17,7 +17,8 @@ SCRIPT = (
     / "src"
     / "run_fault_injection.py"
 )
-SPEC = importlib.util.spec_from_file_location("fault_injection_campaign", SCRIPT)
+SPEC = importlib.util.spec_from_file_location(
+    "fault_injection_campaign", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
 MODULE = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = MODULE

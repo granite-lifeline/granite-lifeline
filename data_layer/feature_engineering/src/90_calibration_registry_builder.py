@@ -1,9 +1,9 @@
 """
 90_calibration_registry_builder.py — Calibration Reproduction Audit
 
-Phase 1: Load frozen calibration registry and production data from a pipeline run.
-Phase 2: Re-derive every data-driven threshold from the healthy cohort using the
-         method documented in proxy_support.md, then compare against the registry.
+Phase 1: Load the frozen calibration registry and production pipeline data.
+Phase 2: Re-derive data-driven thresholds from the healthy cohort using the
+         documented method, then compare them against the registry.
 Phase 3: Emit a versioned audit manifest and exit with code 1 on any FAIL.
 
 This script is NEVER called by the user-data production path. It does NOT write
@@ -145,7 +145,6 @@ def _pass_no_data(
     ))
 
 
-
 def _trip_equal_q50(series, trip_ids):
     trip_counts = trip_ids.value_counts()
     n_trips = len(trip_counts)
@@ -265,7 +264,9 @@ def verify_release_manifest(
             tolerance=0.0,
             unit="sha256",
             status="PASS" if actual == artifact["sha256"] else "FAIL",
-            method_summary=f"checksum for approved evidence {artifact['path']}",
+            method_summary=(
+                f"checksum for approved evidence {artifact['path']}"
+            ),
         ))
 
 
@@ -308,7 +309,8 @@ def verify_speed_density_model(
     """Re-fit the speed-density linear regression from cleaned data."""
     sd = registry["feature_transforms"]["speed_density_maf"]
 
-    enriched_path = run_dir / "operating_conditions" / "operating_condition_enriched.csv"
+    enriched_path = run_dir / "operating_conditions" / \
+        "operating_condition_enriched.csv"
     if not enriched_path.is_file():
         _fail_not_implemented(manifest, "speed_density", "all_coefficients")
         return
@@ -377,12 +379,16 @@ def verify_speed_density_model(
             rederived_value=round(actual, 12),
             tolerance=1e-3, unit="relative",
             status=status,
-            method_summary="LinearRegression on steady_driving + high_confidence + engine_on",
+            method_summary=(
+                "LinearRegression on steady_driving + high_confidence "
+                "+ engine_on"
+            ),
             detail=f"training_rows={n_train}",
         ))
 
     # Compare intercept
-    rel_diff = abs(model.intercept_ - frozen_intercept) / max(abs(frozen_intercept), 1e-12)
+    rel_diff = abs(model.intercept_ - frozen_intercept) / \
+        max(abs(frozen_intercept), 1e-12)
     ok = rel_diff <= 1e-3
     manifest.add(AuditRecord(
         sub_check="speed_density", param="intercept",
@@ -421,7 +427,8 @@ def verify_pedal_mapping_model(
 
     _check(manifest, "pedal_mapping", "a",
            pm["a"], model.coef_[0], 0.02, "dimensionless",
-           "LinearRegression: accel_pedal_e ~ accel_pedal_d, engine-on samples")
+           "LinearRegression: accel_pedal_e ~ accel_pedal_d, "
+           "engine-on samples")
     _check(manifest, "pedal_mapping", "b",
            pm["b"], model.intercept_, 0.3, "percentage_point",
            "LinearRegression intercept")
@@ -460,8 +467,10 @@ def verify_1_S1(manifest: AuditManifest, registry: dict,
 
     # T_target = T_reg_est - 11 C
     expected_target = s1["target_temperature"]["value"]
-    computed_target = (s1["target_derivation"]["thermostat_regulating_estimate_c"]
-                       - s1["target_derivation"]["regulatory_offset_c"])
+    computed_target = (
+        s1["target_derivation"]["thermostat_regulating_estimate_c"]
+        - s1["target_derivation"]["regulatory_offset_c"]
+    )
     _check(manifest, "1-S1", "target_temperature",
            expected_target, computed_target, 0.01, "degC",
            "T_target = T_reg_est - 11 C (CARB regulatory form)")
@@ -494,7 +503,10 @@ def verify_1_S2(manifest: AuditManifest, registry: dict,
             rederived_value=round(healthy_max, 2),
             tolerance=0.01, unit="degC",
             status="PASS" if ok else "FAIL",
-            method_summary="healthy max coolant_temp in post_warmup; threshold must sit above",
+            method_summary=(
+                "healthy max coolant_temp in post_warmup; threshold "
+                "must sit above"
+            ),
             detail=f"healthy_max={healthy_max:.1f} margin={margin:.1f}C",
         ))
 
@@ -527,7 +539,11 @@ def verify_1_S4(manifest: AuditManifest, registry: dict,
     seg_first = df[df["row_in_segment"] == 1].copy()
     candidates = seg_first[(seg_first["segment_gap_seconds"] >= 21600)
                            & (seg_first["rpm"] < 50)]
-    candidates = candidates.dropna(subset=["coolant_temp", "ambient_temp", "intake_temp"])
+    candidates = candidates.dropna(
+        subset=[
+            "coolant_temp",
+            "ambient_temp",
+            "intake_temp"])
 
     if len(candidates) == 0:
         _fail_not_implemented(manifest, "1-S4", "iat_witness_delta_c")
@@ -545,8 +561,10 @@ def verify_1_S4(manifest: AuditManifest, registry: dict,
         _check(manifest, "1-S4", "iat_witness_delta_c",
                s4["guards"]["iat_witness_abs_delta_c"]["value"],
                valid_iat_max, 2.0, "degC",
-               "max IAT-AAT among cold-soak candidates passing the witness guard",
-               detail=f"{len(valid_cold)} valid, {n_excluded} excluded by witness")
+               "max IAT-AAT among cold-soak candidates passing the "
+               "witness guard",
+               detail=(f"{len(valid_cold)} valid, {n_excluded} excluded "
+                       "by witness"))
 
         valid_cold["_ect_delta"] = (valid_cold["coolant_temp"]
                                     - valid_cold["ambient_temp"]).abs()
@@ -555,7 +573,8 @@ def verify_1_S4(manifest: AuditManifest, registry: dict,
         _check(manifest, "1-S4", "ect_trigger_delta_c",
                ect_trigger, healthy_max_ect, 5.0, "degC",
                "max ECT-AAT among valid cold-soak events",
-               detail=f"{len(valid_cold)} cold-soak events, max_ect_delta={healthy_max_ect:.1f}C")
+               detail=(f"{len(valid_cold)} cold-soak events, "
+                       f"max_ect_delta={healthy_max_ect:.1f}C"))
 
 
 def verify_2_S2(manifest: AuditManifest, registry: dict,
@@ -573,7 +592,8 @@ def verify_2_S2(manifest: AuditManifest, registry: dict,
         frozen = s2["residual"]["raw_value"]
         _check(manifest, "2-S2", "residual_threshold_g_per_s",
                frozen, p05, 2.0, "g/s",
-               "P0.5 of speed_density_maf_residual under post_warmup__high_load",
+               "P0.5 of speed_density_maf_residual under "
+               "post_warmup__high_load",
                detail=f"samples={len(subset)}")
 
 
@@ -635,7 +655,10 @@ def verify_3_S1b(manifest: AuditManifest, registry: dict,
             rederived_value=round(healthy_max, 2),
             tolerance=5.0, unit="pp",
             status="PASS" if ok else "FAIL",
-            method_summary="max accel_pedal_channel_delta; threshold above healthy max",
+            method_summary=(
+                "max accel_pedal_channel_delta; threshold above "
+                "healthy max"
+            ),
             detail=f"healthy_max={healthy_max:.1f}",
         ))
 
@@ -648,13 +671,14 @@ def verify_4_S1(manifest: AuditManifest, registry: dict,
     trip_ids = df["trip_id"]
 
     for col_name, meta in [("speed_std_120s", ctx["speed_std_120s"]),
-                            ("maf_std_120s", ctx["maf_std_120s"])]:
+                           ("maf_std_120s", ctx["maf_std_120s"])]:
         vals = df[col_name].dropna()
         if len(vals) > 0:
             q50 = _trip_equal_q50(vals, trip_ids.loc[vals.index])
 
             _check(manifest, "4-S1", f"context_{col_name}",
-                   meta["raw_value"], q50, meta["raw_value"] * 0.1, meta["unit"],
+                   meta["raw_value"], q50, meta["raw_value"] *
+                   0.1, meta["unit"],
                    f"trip-equal weighted q50 of {col_name}")
 
 
@@ -734,15 +758,16 @@ def verify_5_S3(manifest: AuditManifest, registry: dict,
     trip_ids = df["trip_id"]
 
     for col_name, meta in [("rpm_std_120s", ctx["rpm_std_120s"]),
-                            ("speed_std_120s", ctx["speed_std_120s"]),
-                            ("accel_pedal_mean_std_120s",
-                             ctx["accel_pedal_mean_std_120s"])]:
+                           ("speed_std_120s", ctx["speed_std_120s"]),
+                           ("accel_pedal_mean_std_120s",
+                            ctx["accel_pedal_mean_std_120s"])]:
         vals = df[col_name].dropna()
         if len(vals) > 0:
             q50 = _trip_equal_q50(vals, trip_ids.loc[vals.index])
 
             _check(manifest, "5-S3", f"context_{col_name}",
-                   meta["raw_value"], q50, meta["raw_value"] * 0.1, meta["unit"],
+                   meta["raw_value"], q50, meta["raw_value"] *
+                   0.1, meta["unit"],
                    f"trip-equal weighted q50 of {col_name}")
 
 
@@ -761,9 +786,12 @@ def run_calibration_audit(
     """Run the full calibration reproduction audit."""
     registry = json.loads(registry_path.read_text(encoding="utf-8"))
 
-    production_csv = run_dir / "features" / "41_production" / "production_features.csv"
+    production_csv = run_dir / "features" / \
+        "41_production" / "production_features.csv"
     if not production_csv.is_file():
-        print(f"ERROR: production features not found at {production_csv}", file=sys.stderr)
+        print(
+            f"ERROR: production features not found at {production_csv}",
+            file=sys.stderr)
         sys.exit(1)
 
     df = pd.read_csv(production_csv, low_memory=False)
@@ -808,7 +836,8 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Calibration reproduction audit (script 90).")
     parser.add_argument("--run-dir", required=True,
-                        help="Run directory (e.g. data/processed/runs/recalibrate_20260723)")
+                        help=("Run directory (e.g. data/processed/runs/"
+                              "recalibrate_20260723)"))
     parser.add_argument("--registry",
                         default=str(DEFAULT_REGISTRY),
                         help="Path to the frozen calibration registry")
@@ -828,7 +857,6 @@ def main() -> int:
     run_dir = Path(args.run_dir).resolve()
     registry_path = Path(args.registry).resolve()
     release_manifest_path = Path(args.release_manifest).resolve()
-    evidence_root = None  # removed; kept as None for signature
 
     if not run_dir.is_dir():
         print(f"ERROR: run directory not found: {run_dir}", file=sys.stderr)
@@ -850,7 +878,8 @@ def main() -> int:
         return 1
     if result["incomplete"] > 0:
         print(
-            f"INCOMPLETE: {result['incomplete']} audit item(s) were not fully verified.",
+            f"INCOMPLETE: {result['incomplete']} audit item(s) were not "
+            "fully verified.",
             file=sys.stderr,
         )
         return 2

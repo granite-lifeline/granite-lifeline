@@ -40,7 +40,9 @@ def _is_research_approved_run(run_dir: Path) -> bool:
         data = json.loads(marker.read_text(encoding="utf-8"))
         return bool(data.get("research_diagnostics"))
 
-    manifest = run_dir / "features/41_production/production_feature_manifest.json"
+    manifest = (
+        run_dir / "features/41_production/production_feature_manifest.json"
+    )
     if manifest.is_file():
         data = json.loads(manifest.read_text(encoding="utf-8"))
         return bool(
@@ -122,7 +124,10 @@ def _loto(
         rest = df[trip_ids != left_out]
         recalculated = compute_fn(rest)
         deviation = recalculated - frozen_value
-        deviation_pct = (deviation / frozen_value * 100) if frozen_value != 0 else 0.0
+        deviation_pct = (
+            deviation /
+            frozen_value *
+            100) if frozen_value != 0 else 0.0
         passes = abs(deviation) <= tolerance if tolerance > 0 else True
         records.append({
             "sub_check": label,
@@ -139,7 +144,11 @@ def _loto(
     max_dev = float(result["deviation_pct"].abs().max())
     print(f"  LOTO {label}: {n_pass}/{n_total} passed, max dev={max_dev:.2f}%")
     if output_dir:
-        result.to_csv(output_dir / f"loto_{label.replace('/', '_')}.csv", index=False)
+        safe_label = label.replace("/", "_")
+        result.to_csv(
+            output_dir / f"loto_{safe_label}.csv",
+            index=False,
+        )
     return result
 
 
@@ -150,11 +159,12 @@ def _bootstrap(
     n_iterations: int,
     label: str,
 ) -> dict[str, Any]:
-    """Bootstrap: sample trips with replacement, compute threshold each time."""
+    """Sample trips with replacement and compute the threshold each time."""
     all_trips = trip_ids.unique()
     values = []
     for _ in range(n_iterations):
-        sampled = np.random.choice(all_trips, size=len(all_trips), replace=True)
+        sampled = np.random.choice(
+            all_trips, size=len(all_trips), replace=True)
         chunks = [df[trip_ids == t] for t in sampled]
         boot_df = pd.concat(chunks, ignore_index=True)
         values.append(compute_fn(boot_df))
@@ -169,7 +179,8 @@ def _bootstrap(
         "ci_upper_97.5": round(float(np.percentile(arr, 97.5)), 6),
     }
     print(f"  Bootstrap {label}: mean={result['mean']:.3f} "
-          f"95% CI=[{result['ci_lower_2.5']:.3f}, {result['ci_upper_97.5']:.3f}]")
+          f"95% CI=[{result['ci_lower_2.5']:.3f}, "
+          f"{result['ci_upper_97.5']:.3f}]")
     return result
 
 
@@ -181,9 +192,17 @@ def _bootstrap(
 def loto_1_S1_T_reg_est(df, registry, output_dir, trip_ids):
     """T_reg_est = median of per-trip post-warmup coolant_temp medians."""
     pw = df[df["thermal_state"] == "post_warmup"]
-    f = registry["proxy_rules"]["1-S1"]["target_derivation"]["thermostat_regulating_estimate_c"]
-    _loto(pw, pw["trip_id"], lambda r: r.groupby("trip_id")["coolant_temp"].median().median(),
-          f, "1-S1_T_reg_est", tolerance=1.0, output_dir=output_dir)
+    target = registry["proxy_rules"]["1-S1"]["target_derivation"]
+    frozen = target["thermostat_regulating_estimate_c"]
+    _loto(
+        pw,
+        pw["trip_id"],
+        lambda r: r.groupby("trip_id")["coolant_temp"].median().median(),
+        frozen,
+        "1-S1_T_reg_est",
+        tolerance=1.0,
+        output_dir=output_dir,
+    )
 
 
 def loto_1_S2_envelope(df, registry, output_dir, trip_ids):
@@ -197,7 +216,9 @@ def loto_1_S2_envelope(df, registry, output_dir, trip_ids):
 
 def loto_2_S2_residual(df, registry, output_dir, trip_ids):
     """P0.5 of speed_density_maf_residual under post_warmup__high_load."""
-    mask = (df["operating_state"] == "post_warmup__high_load") & (df["condition_confidence"] == "high")
+    mask = (
+        df["operating_state"] == "post_warmup__high_load") & (
+        df["condition_confidence"] == "high")
     sub = df[mask]
     f = registry["proxy_rules"]["2-S2"]["residual"]["raw_value"]
 
@@ -212,10 +233,12 @@ def loto_2_S2_residual(df, registry, output_dir, trip_ids):
 def loto_3_S1a_band(df, registry, output_dir, trip_ids):
     """Pedal residual band edges under low-motion mask."""
     s1a = registry["proxy_rules"]["3-S1a"]
-    mask = (df["rpm"] >= 50) & (df["pedal_slope"].abs() <= s1a["guards"]["pedal_slope_abs"]["value"])
+    mask = (df["rpm"] >= 50) & (df["pedal_slope"].abs()
+                                <= s1a["guards"]["pedal_slope_abs"]["value"])
     sub = df[mask]
 
-    for side, key, frozen_field in [("low", "low", "raw_value"), ("high", "high", "raw_value")]:
+    for side, key, frozen_field in [
+            ("low", "low", "raw_value"), ("high", "high", "raw_value")]:
         f = s1a["residual_band"][key][frozen_field]
 
         def _comp(r, side=side):
@@ -243,7 +266,8 @@ def loto_4_S1_context(df, registry, output_dir, trip_ids):
                       ("maf_std_120s", ctx["maf_std_120s"])]:
         f = meta["raw_value"]
         _loto(df, trip_ids,
-              lambda r, c=col: _trip_equal_q50(r[c].dropna(), r.loc[r[c].dropna().index, "trip_id"]),
+              lambda r, c=col: _trip_equal_q50(
+                  r[c].dropna(), r.loc[r[c].dropna().index, "trip_id"]),
               f, f"4-S1_{col}_q50", tolerance=f * 0.15, output_dir=output_dir)
 
 
@@ -254,7 +278,10 @@ def loto_5_S1_steps(df, registry, output_dir, trip_ids):
         f = params["pedal_step_threshold"]["value"]
 
         def _comp(r, st=state):
-            m = (r["operating_state"] == st) & (r["pedal_slope"] > 0) & (r["condition_confidence"] == "high")
+            m = (
+                r["operating_state"] == st) & (
+                r["pedal_slope"] > 0) & (
+                r["condition_confidence"] == "high")
             vals = r.loc[m, "pedal_slope"].dropna()
             return vals.quantile(0.95) if len(vals) > 10 else float("nan")
 
@@ -266,12 +293,19 @@ def loto_5_S3_context(df, registry, output_dir, trip_ids):
     """Trip-equal q50 of context thresholds for 5-S3."""
     s3 = registry["proxy_rules"]["5-S3"]
     ctx = s3["context_thresholds"]
-    for col, meta in [("rpm_std_120s", ctx["rpm_std_120s"]),
-                      ("speed_std_120s", ctx["speed_std_120s"]),
-                      ("accel_pedal_mean_std_120s", ctx["accel_pedal_mean_std_120s"])]:
+    checks = [
+        ("rpm_std_120s", ctx["rpm_std_120s"]),
+        ("speed_std_120s", ctx["speed_std_120s"]),
+        (
+            "accel_pedal_mean_std_120s",
+            ctx["accel_pedal_mean_std_120s"],
+        ),
+    ]
+    for col, meta in checks:
         f = meta["raw_value"]
         _loto(df, trip_ids,
-              lambda r, c=col: _trip_equal_q50(r[c].dropna(), r.loc[r[c].dropna().index, "trip_id"]),
+              lambda r, c=col: _trip_equal_q50(
+                  r[c].dropna(), r.loc[r[c].dropna().index, "trip_id"]),
               f, f"5-S3_{col}_q50", tolerance=f * 0.15, output_dir=output_dir)
 
 
@@ -284,7 +318,9 @@ def grid_2_S2_persistence(df, registry, output_dir):
     """Persitence window candidates for high-load under-read."""
     s2 = registry["proxy_rules"]["2-S2"]
     residual_th = s2["residual"]["raw_value"]
-    mask = (df["operating_state"] == "post_warmup__high_load") & (df["condition_confidence"] == "high")
+    mask = (
+        df["operating_state"] == "post_warmup__high_load") & (
+        df["condition_confidence"] == "high")
     sub = df[mask]
     if len(sub) == 0:
         return
@@ -323,9 +359,14 @@ def grid_2_S2_persistence(df, registry, output_dir):
     result.to_csv(output_dir / "grid_2_S2_persistence.csv", index=False)
     chosen = s2["persistence"]["value"]
     for _, r in result.iterrows():
+        marker = (
+            " << CHOSEN"
+            if r["candidate_persistence_s"] == chosen
+            else ""
+        )
         print(f"  Grid 2-S2 {r['candidate_persistence_s']}s: "
               f"{r['trips_triggered']}/{r['total_trips']} trips "
-              f"margin={r['margin_s']}s{' << CHOSEN' if r['candidate_persistence_s'] == chosen else ''}")
+              f"margin={r['margin_s']}s{marker}")
 
 
 def grid_3_S1a_pedal_mask(df, registry, output_dir):
@@ -352,7 +393,7 @@ def grid_3_S1a_pedal_mask(df, registry, output_dir):
         })
     result = pd.DataFrame(records)
     result.to_csv(output_dir / "grid_3_S1a_pedal_mask.csv", index=False)
-    print(f"  Grid 3-S1a pedal mask:")
+    print("  Grid 3-S1a pedal mask:")
     for _, r in result.iterrows():
         m = " << FROZEN" if r["is_frozen"] else ""
         print(f"    {r['candidate_mask_pp_s']} pp/s: "
@@ -366,7 +407,9 @@ def grid_1_S3_rate(df, registry, output_dir):
     level = s3["level"]["value"]
     persistence = s3["persistence"]["value"]
     frozen_rate = s3["rate"]["value"]
-    mask = (df["thermal_state"] == "post_warmup") & (df["coolant_temp"] >= level)
+    mask = (
+        df["thermal_state"] == "post_warmup") & (
+        df["coolant_temp"] >= level)
     sub = df[mask]
 
     records = []
@@ -396,11 +439,12 @@ def grid_1_S3_rate(df, registry, output_dir):
         })
     result = pd.DataFrame(records)
     result.to_csv(output_dir / "grid_1_S3_rate.csv", index=False)
-    print(f"  Grid 1-S3 rate:")
+    print("  Grid 1-S3 rate:")
     for _, r in result.iterrows():
         m = " << FROZEN" if r["is_frozen"] else ""
         print(f"    {r['candidate_rate_c_per_min']} C/min: "
-              f"{r['trips_with_persistent_episode']}/{r['total_trips']} trips{m}")
+              f"{r['trips_with_persistent_episode']}/"
+              f"{r['total_trips']} trips{m}")
 
 
 # ---------------------------------------------------------------------------
@@ -413,7 +457,6 @@ def bootstrap_1_S1_T_reg_est(df, output_dir, trip_ids):
     pw = df[df["thermal_state"] == "post_warmup"]
     per_trip = pw.groupby("trip_id")["coolant_temp"].median()
     trips_arr = per_trip.values
-    all_trips = per_trip.index.values
     n = len(trips_arr)
     values = []
     rng = np.random.default_rng(42)
@@ -427,9 +470,14 @@ def bootstrap_1_S1_T_reg_est(df, output_dir, trip_ids):
         "ci_lower_2.5": round(float(np.percentile(arr, 2.5)), 4),
         "ci_upper_97.5": round(float(np.percentile(arr, 97.5)), 4),
     }
-    (output_dir / "bootstrap_1_S1_T_reg_est.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    output_path = output_dir / "bootstrap_1_S1_T_reg_est.json"
+    output_path.write_text(
+        json.dumps(result, indent=2),
+        encoding="utf-8",
+    )
     print(f"  Bootstrap 1-S1 T_reg_est: {result['mean']:.2f}C "
-          f"95% CI=[{result["ci_lower_2.5"]:.2f}, {result["ci_upper_97.5"]:.2f}]C")
+          f"95% CI=[{result['ci_lower_2.5']:.2f}, "
+          f"{result['ci_upper_97.5']:.2f}]C")
 
 
 def bootstrap_3_S1b_channel_delta(df, output_dir, trip_ids):
@@ -449,14 +497,18 @@ def bootstrap_3_S1b_channel_delta(df, output_dir, trip_ids):
         "ci_lower_2.5": round(float(np.percentile(arr, 2.5)), 4),
         "ci_upper_97.5": round(float(np.percentile(arr, 97.5)), 4),
     }
-    (output_dir / "bootstrap_3_S1b_channel_delta.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
-    print(f"  Bootstrap 3-S1b channel_delta: {result["mean"]:.1f}pp "
-          f"95% CI=[{result["ci_lower_2.5"]:.1f}, {result["ci_upper_97.5"]:.1f}]pp")
+    (output_dir / "bootstrap_3_S1b_channel_delta.json").write_text(
+        json.dumps(result, indent=2), encoding="utf-8")
+    print(f"  Bootstrap 3-S1b channel_delta: {result['mean']:.1f}pp "
+          f"95% CI=[{result['ci_lower_2.5']:.1f}, "
+          f"{result['ci_upper_97.5']:.1f}]pp")
 
 
 def bootstrap_2_S2_residual(df, output_dir, trip_ids):
     """Bootstrap CI for residual P0.5 under high_load (optimized)."""
-    mask = (df["operating_state"] == "post_warmup__high_load") & (df["condition_confidence"] == "high")
+    mask = (
+        df["operating_state"] == "post_warmup__high_load") & (
+        df["condition_confidence"] == "high")
     sub = df[mask]
     per_trip = sub.groupby("trip_id")["speed_density_maf_residual"].apply(
         lambda s: s.quantile(0.005) if len(s) > 5 else float("nan")
@@ -470,14 +522,21 @@ def bootstrap_2_S2_residual(df, output_dir, trip_ids):
         values.append(float(np.median(vals[idx])))
     arr = np.array(values)
     result = {
-        "sub_check": "2-S2_residual_P0.5", "n_iterations": 1000, "n_trips_used": n,
+        "sub_check": "2-S2_residual_P0.5",
+        "n_iterations": 1000,
+        "n_trips_used": n,
         "mean": round(float(arr.mean()), 4), "std": round(float(arr.std()), 4),
         "ci_lower_2.5": round(float(np.percentile(arr, 2.5)), 4),
         "ci_upper_97.5": round(float(np.percentile(arr, 97.5)), 4),
     }
-    (output_dir / "bootstrap_2_S2_residual.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
-    print(f"  Bootstrap 2-S2 residual: {result["mean"]:.2f} g/s "
-          f"95% CI=[{result["ci_lower_2.5"]:.2f}, {result["ci_upper_97.5"]:.2f}] g/s")
+    output_path = output_dir / "bootstrap_2_S2_residual.json"
+    output_path.write_text(
+        json.dumps(result, indent=2),
+        encoding="utf-8",
+    )
+    print(f"  Bootstrap 2-S2 residual: {result['mean']:.2f} g/s "
+          f"95% CI=[{result['ci_lower_2.5']:.2f}, "
+          f"{result['ci_upper_97.5']:.2f}] g/s")
 
 
 # ---------------------------------------------------------------------------
@@ -541,14 +600,23 @@ def run(
     loto_files = sorted(f.name for f in out.glob("loto_*.csv"))
     grid_files = sorted(f.name for f in out.glob("grid_*.csv"))
     boot_files = sorted(f.name for f in out.glob("bootstrap_*.json"))
-    print(f"\n Done: {len(loto_files)} LOTO, {len(grid_files)} grid, {len(boot_files)} bootstrap")
-    return {"output_dir": str(out), "loto": loto_files, "grid": grid_files, "bootstrap": boot_files}
+    print(
+        f"\n Done: {len(loto_files)} LOTO, "
+        f"{len(grid_files)} grid, {len(boot_files)} bootstrap"
+    )
+    return {"output_dir": str(out), "loto": loto_files,
+            "grid": grid_files, "bootstrap": boot_files}
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="Research diagnostics (script 91).")
+    p = argparse.ArgumentParser(
+        description="Research diagnostics (script 91).")
     p.add_argument("--run-dir", required=True)
-    p.add_argument("--registry", default=str(REPO_ROOT / "data_layer/calibration/calibration_registry.v1.json"))
+    p.add_argument(
+        "--registry",
+        default=str(
+            REPO_ROOT /
+            "data_layer/calibration/calibration_registry.v1.json"))
     p.add_argument("--grid-scans", action="store_true")
     p.add_argument("--bootstrap", action="store_true")
     p.add_argument(
@@ -572,7 +640,9 @@ def main() -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
     run_dir = Path(args.run_dir).resolve()
-    summary = REPO_ROOT / "data_layer" / "research_diagnostics" / "summary.json"
+    summary = (
+        REPO_ROOT / "data_layer" / "research_diagnostics" / "summary.json"
+    )
     summary.write_text(json.dumps(result, indent=2), encoding="utf-8")
     _write_manifest(
         run_dir,

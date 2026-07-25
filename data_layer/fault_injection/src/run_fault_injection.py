@@ -1,4 +1,4 @@
-﻿"""Run fault injection for proxy validation.
+"""Run fault injection for proxy validation.
 
 This script creates copied run directories under data/processed/runs,
 injects one synthetic fault case at a time into production_features.csv,
@@ -31,7 +31,10 @@ FAULT_INJECTION_DIR = HERE.parent
 REPO_ROOT = HERE.parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from data_layer.pipeline_data.manifests import sha256_file, write_json_atomic  # noqa: E402
+from data_layer.pipeline_data.manifests import (  # noqa: E402
+    sha256_file,
+    write_json_atomic,
+)
 from data_layer.pipeline_data.paths import RunLayout  # noqa: E402
 
 DEFAULT_CONFIG = FAULT_INJECTION_DIR / "configs/fault_injection_cases.v1.json"
@@ -155,7 +158,9 @@ def copy_minimal_run(base: RunLayout, target: RunLayout) -> None:
     """Copy only the files needed by proxy stages 50/60/61/70."""
 
     if target.run_dir.exists():
-        raise FaultInjectionError(f"Target run already exists: {target.run_dir}")
+        raise FaultInjectionError(
+            f"Target run already exists: {target.run_dir}"
+        )
 
     copies = [
         (base.cleaning_quality, target.cleaning_quality),
@@ -177,7 +182,8 @@ def copy_minimal_run(base: RunLayout, target: RunLayout) -> None:
         shutil.copy2(source, destination)
 
 
-def update_production_manifest(layout: RunLayout, case: dict[str, Any]) -> None:
+def update_production_manifest(
+        layout: RunLayout, case: dict[str, Any]) -> None:
     manifest = json.loads(
         layout.production_feature_manifest.read_text(encoding="utf-8")
     )
@@ -426,7 +432,8 @@ def select_pedal_step_windows(
         ))
     if windows:
         return windows
-    raise FaultInjectionError(f"No pedal-step window found for {case['case_id']}.")
+    raise FaultInjectionError(
+        f"No pedal-step window found for {case['case_id']}.")
 
 
 def select_window(frame: pd.DataFrame, case: dict[str, Any]) -> Window:
@@ -463,7 +470,8 @@ def select_windows(
     return windows[:count]
 
 
-def inject_case(frame: pd.DataFrame, case: dict[str, Any], window: Window) -> None:
+def inject_case(frame: pd.DataFrame,
+                case: dict[str, Any], window: Window) -> None:
     signal = case["target_signal"]
     strategy = case["strategy"]
     indices = window.indices
@@ -518,7 +526,9 @@ def inject_case(frame: pd.DataFrame, case: dict[str, Any], window: Window) -> No
                 if target_index in frame.index:
                     frame.at[target_index, "map"] = baseline_map
     else:
-        raise FaultInjectionError(f"Unsupported injection strategy: {strategy}")
+        raise FaultInjectionError(
+            f"Unsupported injection strategy: {strategy}")
+
 
 def recompute_dependent_features(frame: pd.DataFrame) -> None:
     """Refresh feature columns consumed by proxy stages after injection."""
@@ -558,8 +568,12 @@ def recompute_dependent_features(frame: pd.DataFrame) -> None:
             bounds["map_derived_air_load_raw"]["lower"],
             bounds["map_derived_air_load_raw"]["upper"],
         ),
-        "map": frame["map"].clip(bounds["map"]["lower"], bounds["map"]["upper"]),
-        "rpm": frame["rpm"].clip(bounds["rpm"]["lower"], bounds["rpm"]["upper"]),
+        "map": frame["map"].clip(
+            bounds["map"]["lower"], bounds["map"]["upper"]
+        ),
+        "rpm": frame["rpm"].clip(
+            bounds["rpm"]["lower"], bounds["rpm"]["upper"]
+        ),
         "intake_temp": frame["intake_temp"].clip(
             bounds["intake_temp"]["lower"],
             bounds["intake_temp"]["upper"],
@@ -1087,4 +1101,3 @@ if __name__ == "__main__":
     except FaultInjectionError as exc:
         print(json.dumps({"error": str(exc)}, ensure_ascii=False, indent=2))
         raise SystemExit(1)
-
