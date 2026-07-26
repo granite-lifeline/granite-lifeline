@@ -6,7 +6,9 @@ import argparse
 import copy
 import importlib.util
 import json
+import shutil
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from types import ModuleType
@@ -27,7 +29,18 @@ from data_layer.pipeline_data.manifests import (
     write_json_atomic,
 )
 from data_layer.pipeline_data.paths import RunLayout, repo_relative_posix
+from data_layer.pipeline_data.upload_contract import (
+    UploadRejected,
+    validate_upload_csv,
+)
 
+
+__all__ = [
+    "DataPipelineError",
+    "UploadRejected",
+    "run_data_pipeline",
+    "run_data_pipeline_for_upload",
+]
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = (
@@ -244,7 +257,57 @@ def run_data_pipeline(
             layout.run_relative_posix(path) for path in manifest_paths
         ],
         "feature_stage_ids": list(stage_results),
+        # Absolute paths for downstream consumers (Model Layer /
+        # Dashboard) that read artifacts without a RunLayout.  The
+        # run-relative fields above are unchanged for compatibility.
+        "run_dir_path": str(layout.run_dir),
+        "production_features_path": str(layout.production_features),
     }
+
+
+def run_data_pipeline_for_upload(
+    csv_path: str | Path,
+    *,
+    run_id: str | None = None,
+    repo_root: str | Path = REPO_ROOT,
+    config_path: str | Path = DEFAULT_CONFIG,
+) -> dict[str, Any]:
+    """Run the online pipeline for one uploaded KIT OBD-II CSV file.
+
+    Thin single-file adapter over :func:`run_data_pipeline` for the
+    Dashboard upload flow.  ``csv_path`` must point to a CSV saved on
+    disk (the Dashboard is responsible for persisting its uploaded
+    file object to a path first).  The file must keep its original
+    KIT file name, because the recording date is parsed from the
+    name.
+
+    Intake validation (KIT file name, required KIT columns, minimum
+    row count) runs before any run directory is created, so a
+    rejected upload leaves no run artifacts behind.  Raises
+    :class:`UploadRejected` with a machine-readable ``code`` on
+    intake failure and :class:`DataPipelineError` on pipeline
+    failure.  On success, returns the :func:`run_data_pipeline`
+    summary, whose ``production_features_path`` field is the absolute
+    path handed to the Model Layer.
+    """
+
+    source = Path(csv_path).expanduser().resolve(strict=False)
+    config = load_config(Path(config_path).expanduser().resolve())
+    validate_upload_csv(source, config)
+
+    resolved_run_id = run_id or datetime.now(timezone.utc).strftime(
+        "upload_%Y%m%dT%H%M%SZ"
+    )
+    layout = RunLayout.for_run_id(resolved_run_id, repo_root=repo_root)
+
+    staging_dir = Path(tempfile.mkdtemp(prefix="gl_upload_"))
+    try:
+        shutil.copyfile(source, staging_dir / source.name)
+        return run_data_pipeline(
+            layout, config_path=config_path, input_dir=staging_dir
+        )
+    finally:
+        shutil.rmtree(staging_dir, ignore_errors=True)
 
 
 def build_argument_parser() -> argparse.ArgumentParser:

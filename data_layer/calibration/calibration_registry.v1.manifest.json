@@ -31,7 +31,7 @@
     {
       "id": "proxy_support",
       "path": "data_layer/proxy_failure/proxy_support.md",
-      "sha256": "7dcf939b4f9d5a7cf056b7d81f0adcd96a04ecb4ccd0410fccee4f0d6788af0f"
+      "sha256": "d2f25368f52426bd2c7928b3c9ada5397f9fcf8085bbd51ffbd98858a656b188"
     }
   ],
   "evidence_root_note": "Paths beginning with 'feature engineering/' or 'experiments/' are logical paths in the approved calibration evidence archive. Runtime production does not require that archive; script 90 requires an explicitly supplied evidence root and verifies these checksums.",
