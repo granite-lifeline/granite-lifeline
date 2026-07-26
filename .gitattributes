@@ -9,3 +9,4 @@ data_layer/tests/pipeline_data_test/*.py text eol=lf
 data_layer/tests/feature_engineering_test/*.py text eol=lf
 data_layer/data_cleaning/src/*.py text eol=lf
 data_layer/operating_condition_statistics/src/*.py text eol=lf
+data_layer/**/*.md text eol=lf
