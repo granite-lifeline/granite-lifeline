@@ -1,7 +1,7 @@
 """
 Story 7 tests: synthetic fault injection functions (Lucca).
 
-The two active injectors perturb raw signals per the Data Layer's
+The active injectors perturb raw signals per the Data Layer's
 Stage 4 designs (proxy_support.md) and propagate the change into the
 schema v1 engineered columns the detector scores (`ect_rate_180s`,
 `speed_density_maf_residual`). The speed-density transform is passed
@@ -11,12 +11,9 @@ delivery being present; values match the frozen
 `calibration_registry.v1.json` so the test also serves as an
 informal cross-check.
 
-The three pending-type injectors (`inject_intake_air_temp_fault`,
-`inject_map_plausibility_fault`, `inject_idle_speed_fault`) are
-frozen historical code not migrated to schema v1 — see
-fault_injection.py's module docstring and GL-322. Their test classes
-are skipped rather than deleted, so the coverage intent stays
-documented pending their formal retirement.
+The retired pre-schema-v1 injectors are intentionally absent from the
+active module.  The skipped historical tests below remain only as a record
+of their old coverage until that test archive is moved out of the suite.
 
 Run from ttm-related/:  ../.venv/bin/python -m pytest tests/ -v
 """
@@ -35,17 +32,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from model.fault_injection import (  # noqa: E402
     COOLING_OFFSET_C,
     ECT_RATE_WINDOW_ROWS,
-    IDLE_OFFSET_RPM,
-    IDLE_OSC_AMPLITUDE_RPM,
-    IDLE_OSC_PERIOD_S,
     KELVIN_OFFSET,
     MAF_GAIN,
     MAP_GAIN,
     inject_cooling_fault,
-    inject_idle_speed_fault,
-    inject_intake_air_temp_fault,
     inject_intake_maf_fault,
-    inject_map_plausibility_fault,
+    inject_pedal_sensor_fault,
 )
 from model.input_validation import (  # noqa: E402
     validate_sensor_ranges,
@@ -377,6 +369,69 @@ class TestInjectIntakeMafFault:
         pd.testing.assert_frame_equal(frame, original)
 
 
+class TestInjectPedalSensorFault:
+    TRANSFORM = {"a": 0.9972730218680453, "b": 0.38310321634880656}
+
+    def test_offset_changes_one_channel_and_propagates(self):
+        frame = make_group1_frame(rows=140)
+        result = inject_pedal_sensor_fault(
+            frame, self.TRANSFORM, start_row=120,
+            channel="d", mode="offset", magnitude=10.0,
+        )
+        pd.testing.assert_series_equal(
+            result["accel_pedal_d"].iloc[:120],
+            frame["accel_pedal_d"].iloc[:120],
+        )
+        assert np.allclose(
+            result["accel_pedal_d"].iloc[120:],
+            (frame["accel_pedal_d"].iloc[120:] + 10.0).clip(0, 100),
+        )
+        pd.testing.assert_series_equal(
+            result["accel_pedal_e"], frame["accel_pedal_e"]
+        )
+        expected_mean = (
+            result["accel_pedal_d"] + result["accel_pedal_e"]
+        ) / 2.0
+        assert np.allclose(
+            result["accel_pedal_mean"].iloc[120:],
+            expected_mean.iloc[120:], equal_nan=True,
+        )
+        expected_delta = (
+            result["accel_pedal_d"] - result["accel_pedal_e"]
+        ).abs()
+        assert np.allclose(
+            result["accel_pedal_channel_delta"].iloc[120:],
+            expected_delta.iloc[120:], equal_nan=True,
+        )
+
+    def test_gain_propagates_mapping_residual_and_preserves_nan(self):
+        frame = make_group1_frame(rows=10)
+        frame.loc[7, ["accel_pedal_e", "pedal_mapping_residual"]] = np.nan
+        result = inject_pedal_sensor_fault(
+            frame, self.TRANSFORM, start_row=5,
+            channel="e", mode="gain", magnitude=1.2,
+        )
+        expected = result["accel_pedal_e"] - (
+            self.TRANSFORM["a"] * result["accel_pedal_d"]
+            + self.TRANSFORM["b"]
+        )
+        assert np.allclose(
+            result["pedal_mapping_residual"].iloc[5:],
+            expected.iloc[5:], equal_nan=True,
+        )
+        assert np.isnan(result.loc[7, "accel_pedal_e"])
+        assert np.isnan(result.loc[7, "pedal_mapping_residual"])
+
+    def test_invalid_mode_or_channel_raises(self):
+        frame = make_group1_frame(rows=5)
+        with pytest.raises(ValueError, match="channel"):
+            inject_pedal_sensor_fault(frame, self.TRANSFORM, channel="x")
+        with pytest.raises(ValueError, match="mode"):
+            inject_pedal_sensor_fault(
+                frame, self.TRANSFORM, mode="freeze"
+            )
+
+
 @pytest.mark.skip(
     reason=(
         "frozen historical scenario, not migrated to schema v1 — "
@@ -393,7 +448,7 @@ class TestInjectIntakeAirTempFault:
 
     def test_frozen_from_start_row_only(self):
         frame = self.make_frame()
-        result = inject_intake_air_temp_fault(
+        result = inject_intake_air_temp_fault(  # noqa: F821
             frame, COHESION_PARAMS, SD_MODEL, start_row=6
         )
 
@@ -405,7 +460,7 @@ class TestInjectIntakeAirTempFault:
 
     def test_delta_and_slope_propagate(self):
         frame = self.make_frame()
-        result = inject_intake_air_temp_fault(
+        result = inject_intake_air_temp_fault(  # noqa: F821
             frame, COHESION_PARAMS, SD_MODEL, start_row=6
         )
 
@@ -422,7 +477,7 @@ class TestInjectIntakeAirTempFault:
 
     def test_air_load_cohesion_speed_density_recomputed(self):
         frame = self.make_frame()
-        result = inject_intake_air_temp_fault(
+        result = inject_intake_air_temp_fault(  # noqa: F821
             frame, COHESION_PARAMS, SD_MODEL, start_row=6
         )
 
@@ -462,7 +517,7 @@ class TestInjectIntakeAirTempFault:
         ]
         frame.loc[8, nan_columns] = np.nan
 
-        result = inject_intake_air_temp_fault(
+        result = inject_intake_air_temp_fault(  # noqa: F821
             frame, COHESION_PARAMS, SD_MODEL, start_row=6
         )
 
@@ -475,14 +530,14 @@ class TestInjectIntakeAirTempFault:
         frame = self.make_frame()
         frame.loc[6, "intake_temp"] = np.nan
         with pytest.raises(ValueError, match="freeze"):
-            inject_intake_air_temp_fault(
+            inject_intake_air_temp_fault(  # noqa: F821
                 frame, COHESION_PARAMS, SD_MODEL, start_row=6
             )
 
     def test_input_not_mutated(self):
         frame = self.make_frame()
         original = frame.copy()
-        inject_intake_air_temp_fault(
+        inject_intake_air_temp_fault(  # noqa: F821
             frame, COHESION_PARAMS, SD_MODEL, start_row=3
         )
         pd.testing.assert_frame_equal(frame, original)
@@ -502,7 +557,7 @@ class TestInjectMapPlausibilityFault:
 
     def test_frozen_from_start_row(self):
         frame = self.make_frame()
-        result = inject_map_plausibility_fault(
+        result = inject_map_plausibility_fault(  # noqa: F821
             frame, COHESION_PARAMS, SD_MODEL, start_row=5
         )
 
@@ -513,7 +568,7 @@ class TestInjectMapPlausibilityFault:
 
     def test_air_load_cohesion_speed_density_recomputed(self):
         frame = self.make_frame()
-        result = inject_map_plausibility_fault(
+        result = inject_map_plausibility_fault(  # noqa: F821
             frame, COHESION_PARAMS, SD_MODEL, start_row=5
         )
 
@@ -541,7 +596,7 @@ class TestInjectMapPlausibilityFault:
     def test_input_not_mutated(self):
         frame = self.make_frame()
         original = frame.copy()
-        inject_map_plausibility_fault(
+        inject_map_plausibility_fault(  # noqa: F821
             frame, COHESION_PARAMS, SD_MODEL
         )
         pd.testing.assert_frame_equal(frame, original)
@@ -565,14 +620,14 @@ class TestInjectIdleSpeedFault:
         return frame
 
     def expected_rpm(self, row: int, start_row: int) -> float:
-        wave = IDLE_OSC_AMPLITUDE_RPM * np.sin(
-            2.0 * np.pi * (row - start_row) / IDLE_OSC_PERIOD_S
+        wave = IDLE_OSC_AMPLITUDE_RPM * np.sin(  # noqa: F821
+            2.0 * np.pi * (row - start_row) / IDLE_OSC_PERIOD_S  # noqa: F821
         )
-        return 800.0 + IDLE_OFFSET_RPM + wave
+        return 800.0 + IDLE_OFFSET_RPM + wave  # noqa: F821
 
     def test_offset_and_wave_on_idle_rows_only(self):
         frame = self.make_frame()
-        result = inject_idle_speed_fault(
+        result = inject_idle_speed_fault(  # noqa: F821
             frame, COHESION_PARAMS, SD_MODEL, start_row=4
         )
 
@@ -587,7 +642,7 @@ class TestInjectIdleSpeedFault:
 
     def test_idle_flag_and_engine_on_unchanged(self):
         frame = self.make_frame()
-        result = inject_idle_speed_fault(
+        result = inject_idle_speed_fault(  # noqa: F821
             frame, COHESION_PARAMS, SD_MODEL, start_row=4
         )
         pd.testing.assert_series_equal(
@@ -599,7 +654,7 @@ class TestInjectIdleSpeedFault:
 
     def test_slope_recomputed(self):
         frame = self.make_frame()
-        result = inject_idle_speed_fault(
+        result = inject_idle_speed_fault(  # noqa: F821
             frame, COHESION_PARAMS, SD_MODEL, start_row=4
         )
 
@@ -618,7 +673,7 @@ class TestInjectIdleSpeedFault:
 
     def test_air_loads_recomputed_on_idle_rows_only(self):
         frame = self.make_frame()
-        result = inject_idle_speed_fault(
+        result = inject_idle_speed_fault(  # noqa: F821
             frame, COHESION_PARAMS, SD_MODEL, start_row=4
         )
 
@@ -667,7 +722,7 @@ class TestInjectIdleSpeedFault:
         ]
         frame.loc[10, nan_columns] = np.nan
 
-        result = inject_idle_speed_fault(
+        result = inject_idle_speed_fault(  # noqa: F821
             frame, COHESION_PARAMS, SD_MODEL, start_row=4
         )
 
@@ -680,7 +735,7 @@ class TestInjectIdleSpeedFault:
 
     def test_no_idle_rows_leaves_signals_unchanged(self):
         frame = make_group1_frame(rows=12)  # idle_flag all 0
-        result = inject_idle_speed_fault(
+        result = inject_idle_speed_fault(  # noqa: F821
             frame, COHESION_PARAMS, SD_MODEL, start_row=2
         )
         assert (result["rpm"] == 1500.0).all()
@@ -689,7 +744,7 @@ class TestInjectIdleSpeedFault:
     def test_input_not_mutated(self):
         frame = self.make_frame()
         original = frame.copy()
-        inject_idle_speed_fault(
+        inject_idle_speed_fault(  # noqa: F821
             frame, COHESION_PARAMS, SD_MODEL, start_row=4
         )
         pd.testing.assert_frame_equal(frame, original)

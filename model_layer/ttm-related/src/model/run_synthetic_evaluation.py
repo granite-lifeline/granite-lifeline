@@ -1,43 +1,4 @@
-"""
-Story 7 synthetic-anomaly evaluation runner (Lucca).
-
-Sweeps healthy Group 1 schema v1 segments through the residual
-detector — one healthy control plus the three Model-Layer-scope
-fault scenarios (fault_injection.py, 2026-07-20 schema v1
-adaptation):
-
-    cooling_fault    coolant_temp + 15 degC -> cooling_degradation
-    maf_low_fault    maf x 0.7 -> air_intake_maf_anomaly
-    map_bias_fault   map x 1.25 -> air_intake_maf_anomaly
-
-The other three pre-migration scenarios
-(intake_temp_frozen_fault, map_frozen_fault, idle_speed_fault) are
-out of this sweep: scoring those two pending anomaly types is no
-longer Model Layer scope (Group 1's own decision pipeline owns that
-DTC logic), and their injectors were not migrated to schema v1 —
-see fault_injection.py's module docstring and GL-322, which formally
-retires them.
-
-Each segment is evaluated on its first 512+96 window starting at
-the first `post_warmup` row (Group 1's `thermal_state`): the proxy
-failure conditions are defined post-warm-up (proxy_support.md;
-INTERFACE.md 2.4 gates cooling on >85 degC), and a cold-start
-window saturates cooling risk on healthy data (the committed
-kit_residual_sample.json shows this), which would put every run at
-ceiling and record nothing usable. Segments that never reach
-post_warmup are recorded as skipped.
-
-The fault is injected from the context/future boundary onward, so
-it covers the whole truth window but is unseen in the TTM context:
-both the forecast-residual path and the rule path must react.
-Raw `anomaly_type`/`risk_score` outputs are recorded per run for
-Ray's precision/recall table and threshold calibration
-(user_stories.md Story 7); this script does not judge pass/fail
-beyond expected-type matching.
-
-Run from the repository root:
-    .venv/bin/python ttm-related/src/model/run_synthetic_evaluation.py
-"""
+"""Run the GL-322 single-window synthetic-fault evaluation."""
 
 from __future__ import annotations
 
@@ -52,148 +13,140 @@ import pandas as pd
 try:
     from model import kit_residual_detector as detector
     from model.fault_injection import (
-        COOLING_OFFSET_C,
         DEFAULT_CALIBRATION_REGISTRY,
-        MAF_GAIN,
-        MAP_GAIN,
         inject_cooling_fault,
         inject_intake_maf_fault,
-        load_speed_density_transform,
+        inject_pedal_sensor_fault,
+        load_feature_transforms,
     )
-except ImportError:  # direct script run: src/ not on sys.path
+except ImportError:
     import kit_residual_detector as detector
     from fault_injection import (
-        COOLING_OFFSET_C,
         DEFAULT_CALIBRATION_REGISTRY,
-        MAF_GAIN,
-        MAP_GAIN,
         inject_cooling_fault,
         inject_intake_maf_fault,
-        load_speed_density_transform,
+        inject_pedal_sensor_fault,
+        load_feature_transforms,
     )
 
-_TTM_RELATED_DIR = Path(__file__).resolve().parents[2]
-DEFAULT_MANIFEST = (
-    _TTM_RELATED_DIR / "outputs" / "finetune_split_manifest.json"
+DEFAULT_CSV = Path(
+    "ttm-related/data/production_feature_manifest/production_features.csv"
 )
-DEFAULT_OUTPUT = _TTM_RELATED_DIR / "outputs" / "synthetic_eval_results.json"
-
-# Recorded per run for Ray's analysis, not used for window selection.
+DEFAULT_MANIFEST = Path("ttm-related/outputs/finetune_split_manifest.json")
+DEFAULT_MODEL = Path("ttm-related/outputs/ttm_finetuned_e5_lr5e-5/model")
+DEFAULT_OUTPUT = Path(
+    "ttm-related/outputs/synthetic_eval_results_e5_lr5e-5.json"
+)
 SUSTAINED_FLOW_SPEED_KMH = 30.0
-
 Injector = Callable[[pd.DataFrame, int], pd.DataFrame]
 
 
 def build_scenarios(
-    transform: dict[str, object],
-) -> list[tuple[str, str | None, Injector | None]]:
-    """(scenario name, expected anomaly_type, injector) triples for
-    the default (first post-warmup) window: a healthy control plus
-    the three Model-Layer-scope fault scenarios (see the module
-    docstring — the pre-migration pending-type/idle scenarios are
-    out of this sweep).
-
-    ``None`` injector = healthy control (negative for every fault
-    type — used by Ray's precision computation).
-    """
-    return [
-        ("healthy", None, None),
-        (
-            "cooling_fault",
-            "cooling_degradation",
-            lambda df, start: inject_cooling_fault(df, start_row=start),
-        ),
-        (
-            "maf_low_fault",
-            "air_intake_maf_anomaly",
-            lambda df, start: inject_intake_maf_fault(
-                df, "low_maf", transform, start_row=start
-            ),
-        ),
-        (
-            "map_bias_fault",
-            "air_intake_maf_anomaly",
-            lambda df, start: inject_intake_maf_fault(
-                df, "map_bias", transform, start_row=start
-            ),
-        ),
+    transforms: dict[str, dict[str, object]],
+) -> list[dict[str, Any]]:
+    speed = transforms["speed_density_maf"]
+    pedal = transforms["pedal_mapping"]
+    scenarios: list[dict[str, Any]] = [
+        {
+            "scenario": "healthy",
+            "fault_family": "healthy",
+            "expected_anomaly_type": None,
+            "evaluation_role": "primary",
+            "severity": 0.0,
+            "severity_unit": "none",
+            "injector": None,
+        }
     ]
-
-
-def window_context(
-    frame: pd.DataFrame,
-    context_length: int,
-    prediction_length: int,
-) -> dict[str, int]:
-    """Sustained-flow row count of the truth window (taken
-    pre-injection; the injectors do not change the `speed` column)."""
-    future = frame.iloc[
-        context_length:context_length + prediction_length
-    ]
-    return {
-        "future_sustained_flow_rows": int(
-            (future["speed"] > SUSTAINED_FLOW_SPEED_KMH).sum()
+    for offset in (5.0, 10.0, 15.0):
+        scenarios.append({
+            "scenario": f"cooling_offset_{offset:g}c",
+            "fault_family": "cooling",
+            "expected_anomaly_type": "cooling_degradation",
+            "evaluation_role": "primary",
+            "severity": offset,
+            "severity_unit": "degC_offset",
+            "injector": lambda df, start, value=offset: (
+                inject_cooling_fault(df, start, value)
+            ),
+        })
+    for gain in (0.95, 0.90, 0.80, 0.70):
+        scenarios.append({
+            "scenario": f"maf_gain_{gain:.2f}",
+            "fault_family": "maf",
+            "expected_anomaly_type": "air_intake_maf_anomaly",
+            "evaluation_role": "primary",
+            "severity": round(1.0 - gain, 2),
+            "severity_unit": "fractional_underread",
+            "injector": lambda df, start, value=gain: (
+                inject_intake_maf_fault(
+                    df, "low_maf", speed, start, value
+                )
+            ),
+        })
+    for offset in (2.0, 5.0, 10.0, 20.0):
+        scenarios.append({
+            "scenario": f"pedal_d_offset_{offset:g}pp",
+            "fault_family": "pedal",
+            "expected_anomaly_type": "accelerator_pedal_sensor",
+            "evaluation_role": "primary",
+            "severity": offset,
+            "severity_unit": "percentage_point_offset",
+            "injector": lambda df, start, value=offset: (
+                inject_pedal_sensor_fault(
+                    df, pedal, start, channel="d", mode="offset",
+                    magnitude=value,
+                )
+            ),
+        })
+    for gain in (1.05, 1.10, 1.20):
+        scenarios.append({
+            "scenario": f"pedal_e_gain_{gain:.2f}",
+            "fault_family": "pedal",
+            "expected_anomaly_type": "accelerator_pedal_sensor",
+            "evaluation_role": "primary",
+            "severity": round(gain - 1.0, 2),
+            "severity_unit": "fractional_gain_error",
+            "injector": lambda df, start, value=gain: (
+                inject_pedal_sensor_fault(
+                    df, pedal, start, channel="e", mode="gain",
+                    magnitude=value,
+                )
+            ),
+        })
+    scenarios.append({
+        "scenario": "map_bias_control_1.25",
+        "fault_family": "map_attribution_control",
+        "expected_anomaly_type": "air_intake_maf_anomaly",
+        "evaluation_role": "control",
+        "severity": 0.25,
+        "severity_unit": "fractional_gain_error",
+        "injector": lambda df, start: inject_intake_maf_fault(
+            df, "map_bias", speed, start, 1.25
         ),
-    }
+    })
+    return scenarios
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description=(
-            "Run the residual detector on healthy and "
-            "synthetically-perturbed Group 1 segments and record "
-            "anomaly_type/risk_score per run (Story 7)."
-        )
+    parser = argparse.ArgumentParser()
+    parser.add_argument("csv_path", nargs="?", type=Path, default=DEFAULT_CSV)
+    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
+    parser.add_argument("--model-path", type=Path, default=DEFAULT_MODEL)
+    parser.add_argument(
+        "--segments", choices=["validation", "all"], default="validation"
     )
     parser.add_argument(
-        "csv_path",
-        nargs="?",
-        type=Path,
-        default=detector.DEFAULT_INPUT_CSV,
-        help="Group 1 feature CSV (INTERFACE.md Section 1).",
-    )
-    parser.add_argument(
-        "--manifest",
-        type=Path,
-        default=DEFAULT_MANIFEST,
-        help="Story 6 split manifest listing eligible segments.",
-    )
-    parser.add_argument(
-        "--segments",
-        choices=["validation", "all"],
-        default="validation",
-        help=(
-            "'validation' = the manifest's held-out validation "
-            "segments (default, stays uncontaminated once Story 6 "
-            "fine-tunes on the train split); 'all' = train + "
-            "validation."
-        ),
-    )
-    parser.add_argument(
-        "--calibration-registry",
-        type=Path,
+        "--calibration-registry", type=Path,
         default=DEFAULT_CALIBRATION_REGISTRY,
-        help=(
-            "Frozen data_layer/calibration/calibration_registry.v1"
-            ".json (speed-density MAF regression)."
-        ),
     )
     parser.add_argument(
-        "--context-length",
-        type=int,
-        default=detector.DEFAULT_CONTEXT_LENGTH,
+        "--context-length", type=int, default=detector.DEFAULT_CONTEXT_LENGTH
     )
     parser.add_argument(
-        "--prediction-length",
-        type=int,
+        "--prediction-length", type=int,
         default=detector.DEFAULT_PREDICTION_LENGTH,
     )
-    parser.add_argument(
-        "--output",
-        type=Path,
-        default=DEFAULT_OUTPUT,
-        help="Where to save the results JSON.",
-    )
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     return parser.parse_args()
 
 
@@ -202,32 +155,25 @@ def manifest_segments(manifest_path: Path, which: str) -> list[str]:
         manifest = json.load(handle)
     groups = ["validation_trips"]
     if which == "all":
-        groups = ["train_trips", "validation_trips"]
-    segments: list[str] = []
-    for group in groups:
-        for trip_segments in manifest[group].values():
-            segments.extend(trip_segments)
-    return sorted(segments)
+        groups.insert(0, "train_trips")
+    return sorted(
+        segment
+        for group in groups
+        for values in manifest[group].values()
+        for segment in values
+    )
 
 
 def trim_to_post_warmup(
     segment: pd.DataFrame, min_rows: int
 ) -> pd.DataFrame:
-    """Drop rows before the segment's first post_warmup row.
-
-    Raises ValueError when the segment never reaches post_warmup or
-    has fewer than ``min_rows`` rows left after trimming.
-    """
-    states = segment["thermal_state"].astype(str)
-    post = states.eq("post_warmup")
+    post = segment["thermal_state"].astype(str).eq("post_warmup")
     if not post.any():
         raise ValueError("segment never reaches post_warmup")
-    start = int(post.idxmax())
-    trimmed = segment.loc[start:].reset_index(drop=True)
+    trimmed = segment.loc[int(post.idxmax()):].reset_index(drop=True)
     if len(trimmed) < min_rows:
         raise ValueError(
-            f"only {len(trimmed)} post_warmup rows, "
-            f"need {min_rows}"
+            f"only {len(trimmed)} post_warmup rows, need {min_rows}"
         )
     return trimmed
 
@@ -235,14 +181,11 @@ def trim_to_post_warmup(
 def run_one(
     segment: pd.DataFrame,
     injector: Injector | None,
-    model,
+    model: Any,
     context_length: int,
     prediction_length: int,
 ) -> dict[str, Any]:
-    """One detector pass over one (possibly injected) segment."""
-    frame = segment
-    if injector is not None:
-        frame = injector(frame, context_length)
+    frame = injector(segment, context_length) if injector else segment
     frame, notes = detector.prepare_segment(frame)
     context, future = detector.select_context_and_truth(
         frame, context_length, prediction_length
@@ -250,193 +193,102 @@ def run_one(
     prediction = detector.run_ttm_forecast(
         context, context_length, prediction_length, model
     )
-    residual = detector.calculate_residuals(prediction, future)
-    residual_summary = detector.summarize_residuals(residual)
-    anomaly_type, score, confidence, top_signals, notes = (
-        detector.calculate_risk(residual_summary, future, notes)
+    residual = detector.summarize_residuals(
+        detector.calculate_residuals(prediction, future)
     )
-    result = detector.build_interface_json(
+    anomaly, score, confidence, signals, notes = detector.calculate_risk(
+        residual, future, notes
+    )
+    output = detector.build_interface_json(
         future=future,
-        residual_summary=residual_summary,
-        anomaly_type=anomaly_type,
+        residual_summary=residual,
+        anomaly_type=anomaly,
         risk_score=score,
         confidence=confidence,
-        top_residual_signals=top_signals,
+        top_residual_signals=signals,
         notes=notes,
     )
-    errors = detector.validate_output(result)
+    errors = detector.validate_output(output)
     if errors:
         raise ValueError(f"interface JSON validation failed: {errors}")
-    return result
-
-
-def print_summary(records: list[dict[str, Any]]) -> None:
-    print("\nScenario summary")
-    print("-" * 60)
-    scenarios: dict[str, list[dict[str, Any]]] = {}
-    for record in records:
-        scenarios.setdefault(record["scenario"], []).append(record)
-    for name, rows in scenarios.items():
-        done = [row for row in rows if "error" not in row]
-        failed = len(rows) - len(done)
-        matched = sum(1 for row in done if row.get("correct"))
-        scores = [row["risk_score"] for row in done]
-        mean_score = sum(scores) / len(scores) if scores else 0.0
-        expected = rows[0]["expected_anomaly_type"] or "-"
-        match_text = (
-            f"matched {matched}/{len(done)}"
-            if expected != "-"
-            else "control"
-        )
-        print(
-            f"{name:16s} runs={len(done):3d} errors={failed} "
-            f"mean_risk={mean_score:6.4f} {match_text} "
-            f"(expected: {expected})"
-        )
+    return output
 
 
 def main() -> None:
     args = parse_args()
-
-    print(f"Reading Group 1 feature dataset: {args.csv_path}")
-    df = detector.load_group1_features(args.csv_path)
+    frame = detector.load_group1_features(args.csv_path)
     segments = manifest_segments(args.manifest, args.segments)
-    print(
-        f"Sweeping {len(segments)} {args.segments} segment(s) x "
-        "healthy control + 3 fault scenarios"
-    )
-
-    transform = load_speed_density_transform(args.calibration_registry)
-    scenarios = build_scenarios(transform)
+    transforms = load_feature_transforms(args.calibration_registry)
+    scenarios = build_scenarios(transforms)
     model = detector.load_model(
-        args.context_length, args.prediction_length
+        args.context_length, args.prediction_length, args.model_path
     )
-
     records: list[dict[str, Any]] = []
-    window_rows = args.context_length + args.prediction_length
+    needed = args.context_length + args.prediction_length
     for segment_id in segments:
-        segment = detector.select_segment(df, segment_id=segment_id)
+        segment = detector.select_segment(frame, segment_id=segment_id)
         trip_id = str(segment["trip_id"].iloc[0])
         try:
-            segment = trim_to_post_warmup(segment, window_rows)
+            segment = trim_to_post_warmup(segment, needed)
         except ValueError as error:
-            records.append(
-                {
-                    "trip_id": trip_id,
-                    "segment_id": segment_id,
-                    "scenario": "all",
-                    "expected_anomaly_type": None,
-                    "error": f"segment skipped: {error}",
-                }
-            )
-            print(f"  {segment_id}: skipped ({error})")
+            records.append({
+                "trip_id": trip_id, "segment_id": segment_id,
+                "scenario": "all", "error": f"segment skipped: {error}",
+            })
             continue
-
-        context = window_context(
-            segment, args.context_length, args.prediction_length
+        sustained = int(
+            (segment.iloc[args.context_length:needed]["speed"]
+             > SUSTAINED_FLOW_SPEED_KMH).sum()
         )
-        for name, expected, injector in scenarios:
-            record: dict[str, Any] = {
+        for scenario in scenarios:
+            record = {
+                key: value for key, value in scenario.items()
+                if key != "injector"
+            }
+            record.update({
                 "trip_id": trip_id,
                 "segment_id": segment_id,
-                "scenario": name,
-                "expected_anomaly_type": expected,
-                "window_start_row": 0,
-                **context,
-            }
+                "injection_start_row": args.context_length,
+                "injection_duration_rows": args.prediction_length,
+                "future_sustained_flow_rows": sustained,
+            })
             try:
                 output = run_one(
-                    segment,
-                    injector,
-                    model,
-                    args.context_length,
-                    args.prediction_length,
+                    segment, scenario["injector"], model,
+                    args.context_length, args.prediction_length,
                 )
+                record.update({
+                    "anomaly_type": output["anomaly_type"],
+                    "risk_score": output["risk_score"],
+                    "risk_level": output["risk_level"],
+                    "interface_json": output,
+                })
             except Exception as error:  # noqa: BLE001
-                record["error"] = (
-                    f"{type(error).__name__}: {error}"
-                )
-                print(
-                    f"  {segment_id} {name}: {record['error']}"
-                )
-            else:
-                record["anomaly_type"] = output["anomaly_type"]
-                record["risk_score"] = output["risk_score"]
-                record["risk_level"] = output["risk_level"]
-                record["correct"] = (
-                    output["anomaly_type"] == expected
-                    if expected is not None
-                    else None
-                )
-                record["interface_json"] = output
-                print(
-                    f"  {segment_id} {name:24s} -> "
-                    f"{output['anomaly_type']:24s} "
-                    f"risk={output['risk_score']:.4f} "
-                    f"({output['risk_level']})"
-                )
+                record["error"] = f"{type(error).__name__}: {error}"
             records.append(record)
+            status = record.get("error") or (
+                f"{record['anomaly_type']} {record['risk_score']:.3f}"
+            )
+            print(f"{segment_id} {record['scenario']}: {status}")
 
     payload = {
         "metadata": {
             "generated_at": datetime.now(timezone.utc).isoformat(),
-            "input_file": str(args.csv_path),
-            "manifest": str(args.manifest),
-            "segment_selection": args.segments,
-            "n_segments": len(segments),
-            "model": detector.MODEL_PATH,
-            "model_state": (
-                "zero-shot (Story 6 fine-tuning pending; re-run "
-                "this sweep on the fine-tuned artifact)"
-            ),
+            "csv_path": str(args.csv_path),
+            "manifest_path": str(args.manifest),
+            "model_path": str(args.model_path),
+            "segments": args.segments,
             "context_length": args.context_length,
             "prediction_length": args.prediction_length,
-            "window_policy": (
-                "first context+prediction window starting at the "
-                "segment's first post_warmup row (proxy conditions "
-                "are defined post-warm-up; cold-start windows "
-                "saturate cooling risk on healthy data)."
-            ),
-            "fault_start_row": (
-                f"{args.context_length} rows after the "
-                "post_warmup window start (context/future "
-                "boundary)"
-            ),
-            "injections": {
-                "cooling_fault": (
-                    f"coolant_temp + {COOLING_OFFSET_C} degC"
-                ),
-                "maf_low_fault": f"maf x {MAF_GAIN}",
-                "map_bias_fault": f"map x {MAP_GAIN}",
-            },
-            "notes": (
-                "map_bias_fault deviates from proxy_support.md "
-                "Stage 4 (which scopes MAP injection to the pending "
-                "map_load_signal_plausibility_fault); it is our "
-                "cohesion-attribution test and the expected label "
-                "stays air_intake_maf_anomaly (user_stories.md "
-                "Story 7). Scope revised 2026-07-20: this sweep "
-                "covers only the three Model-Layer-scope anomaly "
-                "types (cooling_degradation, air_intake_maf_anomaly "
-                "x2); the two pending anomaly types "
-                "(intake_air_temperature_sensor_or_heat_soak_fault, "
-                "map_load_signal_plausibility_fault) are Group 1's "
-                "decision-pipeline scope now, and the idle scenario "
-                "is retired — their pre-migration injectors remain "
-                "in fault_injection.py as historical reference only "
-                "(GL-322). Re-run this sweep on the Story 6 "
-                "fine-tuned artifact once it lands."
-            ),
+            "injection_design": "512 healthy context + 96 injected future",
+            "risk_alarm_threshold": 0.3,
+            "calibration_registry": str(args.calibration_registry),
         },
-        "results": records,
+        "records": records,
     }
-
-    print_summary(records)
-
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    text = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
-    args.output.write_text(text)
-    print(f"\nSaved results to {args.output}")
+    args.output.write_text(json.dumps(payload, indent=2) + "\n")
+    print(f"Wrote {args.output} ({len(records)} records)")
 
 
 if __name__ == "__main__":
