@@ -16,7 +16,7 @@ one monitored component.
     "timestamp": "2026-06-16T12:00:00Z",
     "risk_score": 0.86,
     "risk_level": "High",
-    "component": "cooling_system_stress",
+    "component": "cooling_degradation",
     "prediction_confidence": 0.88,
     "key_signals": [
       {
@@ -26,7 +26,7 @@ one monitored component.
         "reference_range": [90.0, 95.0]
       },
       {
-        "feature": "coolant_slope",
+        "feature": "ect_rate_180s",
         "value": 3.4,
         "unit": "C/min",
         "reference_range": [0.0, 2.0]

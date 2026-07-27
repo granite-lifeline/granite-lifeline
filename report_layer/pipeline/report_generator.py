@@ -13,7 +13,7 @@ import logging
 import sys
 import time
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional
 
 import requests
 
@@ -21,7 +21,10 @@ import requests
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from shared.interface_models import ModelLayerOutput  # noqa: E402
+from shared.interface_models import (  # noqa: E402
+    BatchModelLayerOutput,
+    ModelLayerOutput,
+)
 from report_layer.pipeline.context_injection import (  # noqa: E402
     build_context_with_rag,
 )
@@ -126,7 +129,8 @@ def call_ollama(prompt: str) -> str:
 # ---------------------------------------------------------------------------
 
 def _build_empty_report(
-    model_output_dict: Dict[str, Any]
+    model_output_dict: Dict[str, Any],
+    risk_history: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """
     Build a ReportLayerOutput-compatible dict with empty generated
@@ -139,6 +143,7 @@ def _build_empty_report(
 
     Args:
         model_output_dict: Raw ModelLayerOutput-compatible dict.
+        risk_history: Optional batch-window trend entries.
 
     Returns:
         ReportLayerOutput-compatible dict with empty report content.
@@ -161,7 +166,7 @@ def _build_empty_report(
         ),
         "notes": model_output_dict.get("notes", []),
         # Report Layer maintained fields
-        "risk_history": None,
+        "risk_history": risk_history,
         # Generated fields — empty (fallback)
         "anomaly_description": "",
         "possible_cause": "",
@@ -169,35 +174,79 @@ def _build_empty_report(
     }
 
 
+def _extract_summary_payload(
+    model_output: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Return the single-window payload from either supported input shape."""
+    if (
+        isinstance(model_output, dict)
+        and isinstance(model_output.get("summary"), dict)
+        and isinstance(model_output.get("windows"), list)
+    ):
+        # Validate the full envelope so malformed batch outputs fail cleanly.
+        BatchModelLayerOutput(**model_output)
+        return model_output["summary"]
+    return model_output
+
+
+def _extract_risk_history_payload(
+    model_output: Dict[str, Any]
+) -> Optional[List[Dict[str, Any]]]:
+    """Return risk history entries from a batch input envelope."""
+    if not (
+        isinstance(model_output, dict)
+        and isinstance(model_output.get("summary"), dict)
+        and isinstance(model_output.get("windows"), list)
+    ):
+        return None
+
+    history = []
+    for window in model_output["windows"]:
+        if not isinstance(window, dict):
+            continue
+        if "timestamp" not in window or "risk_score" not in window:
+            continue
+        history.append({
+            "timestamp": window["timestamp"],
+            "risk_score": window["risk_score"],
+        })
+    return history
+
+
 # ---------------------------------------------------------------------------
 # Main public function
 # ---------------------------------------------------------------------------
 
 def generate_report(
-    model_output: Dict[str, Any]
+    model_output: Dict[str, Any],
+    risk_history: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """
     Generate a diagnostic report from Model Layer output.
 
     Runs the full RAG-grounded three-layer Granite prompt chain and
     returns a ReportLayerOutput-compatible dict.  This function never
-    raises — any failure activates the graceful fallback path and
-    sets ``report_generation_success`` to False in the returned dict.
+    raises — any failure activates the graceful fallback path with empty
+    generated report fields.
 
     Args:
         model_output: ModelLayerOutput-compatible dict from the
             Model Layer.
+        risk_history: Optional batch-window trend entries maintained
+            for Dashboard visualization.
 
     Returns:
         ReportLayerOutput-compatible dict with generated diagnostic
-        content and a ``report_generation_success`` boolean flag.
-        ``report_generation_success`` is True when the full pipeline
-        succeeded; False when the fallback (empty report) was used.
+        content, or empty generated fields when fallback was used.
     """
     try:
-        # Step 0: Validate input
+        if risk_history is None:
+            risk_history = _extract_risk_history_payload(model_output)
+
+        # Step 0: Normalize and validate input
         try:
-            validated = ModelLayerOutput(**model_output)
+            summary_payload = _extract_summary_payload(model_output)
+            validated = ModelLayerOutput(**summary_payload)
         except Exception as exc:
             raise ValueError(
                 f"Invalid model_output: {exc}"
@@ -369,28 +418,27 @@ def generate_report(
         # Step 5: Assemble successful output
         result = {
             # Pass-through fields
-            "timestamp": model_output.get("timestamp", ""),
-            "risk_score": model_output.get("risk_score", 0.0),
-            "risk_level": model_output.get("risk_level"),
-            "component": model_output.get("component", ""),
-            "prediction_confidence": model_output.get(
+            "timestamp": summary_payload.get("timestamp", ""),
+            "risk_score": summary_payload.get("risk_score", 0.0),
+            "risk_level": summary_payload.get("risk_level"),
+            "component": summary_payload.get("component", ""),
+            "prediction_confidence": summary_payload.get(
                 "prediction_confidence", 0.0
             ),
-            "key_signals": model_output.get("key_signals", []),
-            "estimated_cycles_to_failure": model_output.get(
+            "key_signals": summary_payload.get("key_signals", []),
+            "estimated_cycles_to_failure": summary_payload.get(
                 "estimated_cycles_to_failure"
             ),
-            "estimated_failure_probability": model_output.get(
+            "estimated_failure_probability": summary_payload.get(
                 "estimated_failure_probability"
             ),
-            "notes": model_output.get("notes", []),
+            "notes": summary_payload.get("notes", []),
             # Report Layer maintained fields
-            "risk_history": None,
+            "risk_history": risk_history,
             # Generated fields
             "anomaly_description": anomaly_description,
             "possible_cause": possible_cause,
             "recommended_action": recommended_action,
-            "report_generation_success": True,
         }
         return result
 
@@ -401,6 +449,9 @@ def generate_report(
             exc,
             exc_info=True,
         )
-        fallback = _build_empty_report(model_output)
-        fallback["report_generation_success"] = False
-        return fallback
+        fallback_source = model_output
+        if isinstance(model_output, dict) and isinstance(
+            model_output.get("summary"), dict
+        ):
+            fallback_source = model_output["summary"]
+        return _build_empty_report(fallback_source, risk_history)

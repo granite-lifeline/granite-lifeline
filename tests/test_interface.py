@@ -371,6 +371,8 @@ class TestModelLayerOutput:
                     "reference_range": [0.0, 2.0],
                 },
             ],
+            "estimated_cycles_to_failure": None,
+            "estimated_failure_probability": None,
         }
         output = ModelLayerOutput(**data)
         assert output.anomaly_type == "cooling_degradation"
@@ -395,6 +397,8 @@ class TestModelLayerOutput:
                     "reference_range": [10.0, 20.0],
                 }
             ],
+            "estimated_cycles_to_failure": None,
+            "estimated_failure_probability": None,
         }
         output = ModelLayerOutput(**data)
         assert output.risk_level is None
@@ -464,6 +468,8 @@ class TestReportLayerOutput:
                     "reference_range": [90.0, 95.0],
                 }
             ],
+            "estimated_cycles_to_failure": None,
+            "estimated_failure_probability": None,
             "risk_history": [
                 {"timestamp": "2026-06-15T10:00:00Z", "risk_score": 0.65},
                 {"timestamp": "2026-06-16T10:00:00Z", "risk_score": 0.72},
@@ -495,6 +501,8 @@ class TestReportLayerOutput:
                     "reference_range": [0.0, 100.0],
                 }
             ],
+            "estimated_cycles_to_failure": None,
+            "estimated_failure_probability": None,
             # risk_history omitted (TBD field)
             "anomaly_description": "Pedal sensor discrepancy detected.",
             "possible_cause": "Sensor calibration drift.",

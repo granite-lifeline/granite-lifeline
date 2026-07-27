@@ -24,7 +24,7 @@ from report_layer.rag.rag_retriever import (  # noqa: E402
 )
 from shared.anomaly_mapping import GROUND_KNOWLEDGE_ANOMALY_TYPES  # noqa: E402
 
-# Six current anomaly types
+# Five current anomaly types
 ANOMALY_TYPES = GROUND_KNOWLEDGE_ANOMALY_TYPES
 
 # Three risk levels
@@ -90,7 +90,7 @@ def test_retrieve_actions_valid_combinations(anomaly_type, risk_level):
     Test retrieve_actions returns valid content for all anomaly type
     and risk level combinations.
 
-    Tests all 18 combinations (6 anomaly types × 3 risk levels) to
+    Tests all 15 combinations (5 anomaly types × 3 risk levels) to
     ensure proper metadata filtering.
     """
     result = retrieve_actions(anomaly_type, risk_level)

@@ -89,7 +89,7 @@ class TestGenerateReportSuccess(unittest.TestCase):
         result = generate_report(VALID_MODEL_OUTPUT)
 
         self.assertIsInstance(result, dict)
-        self.assertTrue(result["report_generation_success"])
+        self.assertNotIn("report_generation_success", result)
         self.assertTrue(len(result["anomaly_description"]) > 0)
         self.assertTrue(len(result["possible_cause"]) > 0)
         self.assertIsInstance(result["recommended_action"], list)
@@ -113,7 +113,7 @@ class TestGenerateReportOllamaTimeout(unittest.TestCase):
         result = generate_report(VALID_MODEL_OUTPUT)
 
         self.assertIsInstance(result, dict)
-        self.assertFalse(result["report_generation_success"])
+        self.assertNotIn("report_generation_success", result)
         self.assertEqual(result["anomaly_description"], "")
         self.assertEqual(result["possible_cause"], "")
         self.assertEqual(result["recommended_action"], [])
@@ -141,7 +141,7 @@ class TestGenerateReportJsonParseFailure(unittest.TestCase):
         result = generate_report(VALID_MODEL_OUTPUT)
 
         self.assertIsInstance(result, dict)
-        self.assertFalse(result["report_generation_success"])
+        self.assertNotIn("report_generation_success", result)
         self.assertEqual(result["anomaly_description"], "")
         self.assertEqual(result["possible_cause"], "")
         self.assertEqual(result["recommended_action"], [])
@@ -157,7 +157,7 @@ class TestGenerateReportInvalidInput(unittest.TestCase):
         result = generate_report(bad_input)
 
         self.assertIsInstance(result, dict)
-        self.assertFalse(result["report_generation_success"])
+        self.assertNotIn("report_generation_success", result)
 
 
 class TestGenerateReportPassthroughFields(unittest.TestCase):

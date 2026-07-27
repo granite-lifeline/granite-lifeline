@@ -1,20 +1,21 @@
-"""
-Pydantic models for Granite Lifeline cross-layer data contracts.
-Based on INTERFACE.md v1.0 (updated 2026-07-19).
+"""Pydantic models for Granite Lifeline cross-layer data contracts.
+
+Based on INTERFACE.md v1.1 (updated 2026-07-20).
 
 DataLayerOutput now follows the versioned production_features.csv contract:
 4 sample keys + 16 A-class context/raw fields + 24 B-class production features
 + 2 provenance fields (46 columns total; production feature count remains 24).
 Internal-only proxy label fields (INTERFACE.md 1.4) are kept optional.
 
-This is an early-stage version with basic validation only.
-Stricter validation will be added once all layers confirm field details.
+ModelLayerOutput supports the single-window shape. BatchModelLayerOutput
+supports the v1.1 `{summary, windows}` envelope emitted by Model Layer
+batch inference.
 """
 
 from typing import List, Optional, Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
-# Anomaly type enum based on INTERFACE.md v1.0
+# Anomaly type enum based on INTERFACE.md v1.1.
 AnomalyType = Literal[
     "cooling_degradation",
     "air_intake_maf_anomaly",
@@ -31,17 +32,33 @@ class KeySignal(BaseModel):
     unit: str
     reference_range: List[float]
 
+    @field_validator("reference_range")
+    @classmethod
+    def _reference_range_has_two_values(
+        cls, value: List[float]
+    ) -> List[float]:
+        if len(value) != 2:
+            raise ValueError("reference_range must contain exactly 2 values")
+        return value
+
 
 class RiskHistoryEntry(BaseModel):
     """Single entry in risk history timeline."""
     timestamp: str
     risk_score: float
 
+    @field_validator("risk_score")
+    @classmethod
+    def _risk_score_in_unit_range(cls, value: float) -> float:
+        if not 0 <= value <= 1:
+            raise ValueError("risk_score must be between 0 and 1")
+        return value
+
 
 class DataLayerOutput(BaseModel):
     """Output from Data Layer, consumed by Model Layer.
 
-    Follows the production_features.csv contract (INTERFACE.md v1.0):
+    Follows the production_features.csv contract (INTERFACE.md v1.1):
     46 ordered columns = 4 sample keys + 16 A-class context/raw fields
     + 24 B-class production features + 2 provenance fields.
     Nullable columns are typed Optional but remain required keys.
@@ -126,9 +143,48 @@ class ModelLayerOutput(BaseModel):
     component: AnomalyType  # Mirrors anomaly_type
     prediction_confidence: float
     key_signals: List[KeySignal]
-    estimated_cycles_to_failure: Optional[int] = None
-    estimated_failure_probability: Optional[float] = None
+    estimated_cycles_to_failure: Optional[int] = Field(...)
+    estimated_failure_probability: Optional[float] = Field(...)
     notes: List[str] = Field(default_factory=list)
+
+    @field_validator("risk_score", "prediction_confidence")
+    @classmethod
+    def _score_in_unit_range(cls, value: float) -> float:
+        if not 0 <= value <= 1:
+            raise ValueError("score fields must be between 0 and 1")
+        return value
+
+    @field_validator("estimated_failure_probability")
+    @classmethod
+    def _failure_probability_in_unit_range(
+        cls, value: Optional[float]
+    ) -> Optional[float]:
+        if value is not None and not 0 <= value <= 1:
+            raise ValueError(
+                "estimated_failure_probability must be between 0 and 1"
+            )
+        return value
+
+    @model_validator(mode="after")
+    def _component_mirrors_anomaly_type(self) -> "ModelLayerOutput":
+        if self.component != self.anomaly_type:
+            raise ValueError("component must mirror anomaly_type")
+        return self
+
+
+class BatchWindowOutput(ModelLayerOutput):
+    """Model Layer batch window output with identity fields."""
+
+    trip_id: str
+    segment_id: str
+    window_id: str
+
+
+class BatchModelLayerOutput(BaseModel):
+    """Model Layer v1.1 batch output envelope."""
+
+    summary: ModelLayerOutput
+    windows: List[BatchWindowOutput]
 
 
 class ReportLayerOutput(BaseModel):
@@ -141,8 +197,8 @@ class ReportLayerOutput(BaseModel):
     component: AnomalyType  # Mirrors anomaly_type from Model Layer
     prediction_confidence: float
     key_signals: List[KeySignal]
-    estimated_cycles_to_failure: Optional[int] = None
-    estimated_failure_probability: Optional[float] = None
+    estimated_cycles_to_failure: Optional[int] = Field(...)
+    estimated_failure_probability: Optional[float] = Field(...)
     notes: List[str] = Field(default_factory=list)
 
     # Report Layer maintained fields
@@ -153,3 +209,21 @@ class ReportLayerOutput(BaseModel):
     anomaly_description: str
     possible_cause: str
     recommended_action: List[str]
+
+    @field_validator("risk_score", "prediction_confidence")
+    @classmethod
+    def _score_in_unit_range(cls, value: float) -> float:
+        if not 0 <= value <= 1:
+            raise ValueError("score fields must be between 0 and 1")
+        return value
+
+    @field_validator("estimated_failure_probability")
+    @classmethod
+    def _report_failure_probability_in_unit_range(
+        cls, value: Optional[float]
+    ) -> Optional[float]:
+        if value is not None and not 0 <= value <= 1:
+            raise ValueError(
+                "estimated_failure_probability must be between 0 and 1"
+            )
+        return value

@@ -9,6 +9,7 @@ import pytest
 from dashboard.data_loader import (
     load_report_data,
     convert_to_component_dict,
+    load_static_dashboard_data,
     load_dashboard_data
 )
 
@@ -21,12 +22,25 @@ def test_load_report_data_success():
     data = load_report_data("dashboard/tests/ui_required_data.json")
 
     assert isinstance(data, list)
-    assert len(data) == 3
+    assert len(data) == 5
 
     # Check first component
-    assert data[0]["component"] == "cooling_system_stress"
+    assert data[0]["component"] == "cooling_degradation"
     assert data[0]["risk_level"] == "High"
     assert data[0]["risk_score"] == 0.86
+
+
+def test_load_static_dashboard_data():
+    """Test static demo loading without invoking the report pipeline."""
+    data = load_static_dashboard_data("dashboard/tests/ui_required_data.json")
+    component_data = {
+        k: v for k, v in data.items() if k != "_data_source"
+    }
+
+    assert len(component_data) == 5
+    assert set(data["_data_source"].values()) == {"mock"}
+    assert "intake_air_temperature_sensor_fault" in component_data
+    assert "map_load_signal_plausibility_fault" in component_data
 
 
 def test_load_report_data_file_not_found():
@@ -38,7 +52,7 @@ def test_load_report_data_file_not_found():
 def test_convert_to_component_dict():
     """Test converting report list to component-keyed dictionary."""
     report_list = [
-        {"component": "cooling_system_stress", "risk_score": 0.86},
+        {"component": "cooling_degradation", "risk_score": 0.86},
         {"component": "air_intake_maf_anomaly", "risk_score": 0.61},
     ]
 
@@ -46,15 +60,15 @@ def test_convert_to_component_dict():
 
     assert isinstance(result, dict)
     assert len(result) == 2
-    assert "cooling_system_stress" in result
+    assert "cooling_degradation" in result
     assert "air_intake_maf_anomaly" in result
-    assert result["cooling_system_stress"]["risk_score"] == 0.86
+    assert result["cooling_degradation"]["risk_score"] == 0.86
 
 
 def test_convert_to_component_dict_missing_component():
     """Test handling reports without component field."""
     report_list = [
-        {"component": "cooling_system_stress", "risk_score": 0.86},
+        {"component": "cooling_degradation", "risk_score": 0.86},
         {"risk_score": 0.61},  # Missing component field
     ]
 
@@ -62,7 +76,7 @@ def test_convert_to_component_dict_missing_component():
 
     # Should only include the valid component
     assert len(result) == 1
-    assert "cooling_system_stress" in result
+    assert "cooling_degradation" in result
 
 
 def test_load_dashboard_data():
@@ -74,20 +88,15 @@ def test_load_dashboard_data():
     component_data = {
         k: v for k, v in data.items() if k != "_data_source"
     }
-    assert len(component_data) == 3
+    assert len(component_data) == 5
 
-    # Verify all 3 confirmed anomaly types are present (cooling may appear
-    # under its canonical key "cooling_degradation" when loaded via the
-    # real-data path, or under the legacy mock key "cooling_system_stress"
-    # when falling back).
-    cooling_key = (
-        "cooling_degradation"
-        if "cooling_degradation" in component_data
-        else "cooling_system_stress"
-    )
+    # Verify all 5 confirmed anomaly types are present.
+    cooling_key = "cooling_degradation"
     assert cooling_key in component_data
     assert "air_intake_maf_anomaly" in component_data
     assert "accelerator_pedal_sensor" in component_data
+    assert "intake_air_temperature_sensor_fault" in component_data
+    assert "map_load_signal_plausibility_fault" in component_data
 
     # Verify data structure for the cooling component
     cooling = component_data[cooling_key]

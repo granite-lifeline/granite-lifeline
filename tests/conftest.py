@@ -39,7 +39,8 @@ _PATCH_TARGET = (
 
 
 def _stub_generate_report(
-    model_output: Dict[str, Any]
+    model_output: Dict[str, Any],
+    risk_history: Any = None,
 ) -> Dict[str, Any]:
     """
     Fast stub for report_generator.generate_report used in unit tests.
@@ -63,11 +64,10 @@ def _stub_generate_report(
             "estimated_failure_probability"
         ),
         "notes": model_output.get("notes", []),
-        "risk_history": None,
+        "risk_history": risk_history,
         "anomaly_description": "[stub] anomaly description",
         "possible_cause": "[stub] possible cause",
         "recommended_action": ["[stub] check the vehicle"],
-        "report_generation_success": True,
     }
 
 

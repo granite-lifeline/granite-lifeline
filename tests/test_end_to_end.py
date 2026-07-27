@@ -21,17 +21,13 @@ def test_complete_data_flow():
 
     # _data_source is metadata; exclude it when counting components
     components = {k: v for k, v in data.items() if k != "_data_source"}
-    assert len(components) == 3, "Should load 3 components"
+    assert len(components) == 5, "Should load 5 components"
 
-    # cooling_degradation is the canonical key; cooling_system_stress is the
-    # legacy mock key used before GL-127 naming alignment.
-    cooling_present = (
-        "cooling_degradation" in components
-        or "cooling_system_stress" in components
-    )
-    assert cooling_present, "Missing cooling component"
+    assert "cooling_degradation" in components
     assert "air_intake_maf_anomaly" in components
     assert "accelerator_pedal_sensor" in components
+    assert "intake_air_temperature_sensor_fault" in components
+    assert "map_load_signal_plausibility_fault" in components
 
     print("PASS: All components loaded successfully")
 
@@ -39,13 +35,7 @@ def test_complete_data_flow():
 def test_cooling_system_data():
     """Test cooling system component data structure."""
     data = load_dashboard_data("dashboard/tests/ui_required_data.json")
-    # Accept either the canonical key (real pipeline) or the legacy mock key
-    cooling_key = (
-        "cooling_degradation"
-        if "cooling_degradation" in data
-        else "cooling_system_stress"
-    )
-    cooling = data[cooling_key]
+    cooling = data["cooling_degradation"]
 
     # Verify basic fields
     assert cooling["risk_level"] == "High"
@@ -150,7 +140,7 @@ def test_signal_status_calculation():
     cooling_key = (
         "cooling_degradation"
         if "cooling_degradation" in data
-        else "cooling_system_stress"
+        else "cooling_degradation"
     )
     cooling = data[cooling_key]
 
@@ -166,7 +156,7 @@ def test_signal_status_calculation():
         # Verify calculation works
         if signal["feature"] == "coolant_temp":
             assert status == "ABNORMAL", "Coolant temp should be abnormal"
-        elif signal["feature"] == "coolant_slope":
+        elif signal["feature"] == "ect_rate_180s":
             assert status == "ABNORMAL", "Coolant slope should be abnormal"
 
     print("PASS: Signal status calculation valid")
@@ -180,16 +170,16 @@ def test_display_name_mapping():
     # real pipeline output and the legacy mock key (GL-127 alignment).
     component_names = {
         "cooling_degradation": "Cooling System",
-        "cooling_system_stress": "Cooling System",
         "air_intake_maf_anomaly": "Air Intake System",
         "accelerator_pedal_sensor": "Accelerator Pedal",
+        "intake_air_temperature_sensor_fault": "Intake Air Temperature",
+        "map_load_signal_plausibility_fault": "Manifold Pressure Signal",
     }
 
     # Signal display names (from dashboard/app.py)
     signal_names = {
         "coolant_temp": "Coolant Temperature",
-        "coolant_slope": "Coolant Slope",
-        "coolant_stability": "Coolant Stability",
+        "ect_rate_180s": "Coolant Temperature Rise Rate",
         "maf": "Mass Airflow",
         "map": "Intake Pressure",
         "accel_pedal_d": "Pedal Sensor D",
