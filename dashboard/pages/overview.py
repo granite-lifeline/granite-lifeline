@@ -406,9 +406,7 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
 
     try:
         with st.spinner("Running analysis..."):
-            st.session_state["dashboard_data"] = (
-                run_uploaded_csv_batch(csv_bytes)
-            )
+            result = run_uploaded_csv_batch(csv_bytes)
     except TimeoutError:
         _show_pipeline_error(
             "Analysis Timed Out",
@@ -431,6 +429,23 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
         )
         return
 
+    # report_generator.generate_report() never raises — an LLM timeout or
+    # connection failure surfaces as an empty anomaly_description instead
+    # of an exception, so detect that fallback here rather than in a
+    # (never-triggered) except clause above.
+    components = {k: v for k, v in result.items() if k != "_data_source"}
+    if not components or all(
+        not c.get("anomaly_description") for c in components.values()
+    ):
+        _show_pipeline_error(
+            "Analysis Timed Out",
+            "The diagnostic report could not be generated in time. "
+            "Please try again or upload a shorter drive session.",
+            tokens,
+        )
+        return
+
+    st.session_state["dashboard_data"] = result
     st.session_state["validated_df"] = df
     st.session_state["dashboard_mode"] = "dashboard"
     st.rerun()
