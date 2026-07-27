@@ -91,7 +91,8 @@ def _render_failure_prediction(
         cnt = int(cycles)
         prediction_html = (
             '<div style="display:flex;align-items:baseline;'
-            'justify-content:center;gap:8px;flex-wrap:wrap;text-align:center;">'
+            'justify-content:center;gap:8px;flex-wrap:wrap;'
+            'text-align:center;">'
             f'<span style="color:{tokens["accent"]};'
             f'font-family:{FONT_MONO};font-size:16px;font-weight:800;">'
             f'{pct}%</span>'
@@ -105,8 +106,10 @@ def _render_failure_prediction(
         pending = lucide_icon("info", size=20, color=tokens["text_secondary"])
         prediction_html = (
             '<div style="display:flex;justify-content:center;width:100%;">'
-            f'<div style="background:{hex_to_rgba(tokens["text_secondary"],0.08)};'
-            f'border:1px solid {hex_to_rgba(tokens["text_secondary"],0.20)};'
+            f'<div style="background:'
+            f'{hex_to_rgba(tokens["text_secondary"], 0.08)};'
+            f'border:1px solid '
+            f'{hex_to_rgba(tokens["text_secondary"], 0.20)};'
             'border-radius:12px;padding:16px 20px;'
             'display:flex;align-items:center;gap:12px;max-width:600px;">'
             f'<div style="display:flex;align-items:center;flex-shrink:0;">'
@@ -146,8 +149,10 @@ def _render_gauge(
         info = lucide_icon("info", size=20, color=tokens["text_secondary"])
         st.markdown(
             f'<div style="display:flex;justify-content:center;width:100%;">'
-            f'<div style="background:{hex_to_rgba(tokens["text_secondary"],0.08)};'
-            f'border:1px solid {hex_to_rgba(tokens["text_secondary"],0.20)};'
+            f'<div style="background:'
+            f'{hex_to_rgba(tokens["text_secondary"], 0.08)};'
+            f'border:1px solid '
+            f'{hex_to_rgba(tokens["text_secondary"], 0.20)};'
             'border-radius:12px;padding:18px 20px;margin:28px 0;'
             'max-width:420px;display:flex;align-items:center;gap:12px;">'
             f'<div style="display:flex;align-items:center;flex-shrink:0;">'
@@ -222,8 +227,10 @@ def _render_trend(
         info = lucide_icon("info", size=20, color=tokens["text_secondary"])
         st.markdown(
             f'<div style="display:flex;justify-content:center;width:100%;">'
-            f'<div style="background:{hex_to_rgba(tokens["text_secondary"],0.08)};'
-            f'border:1px solid {hex_to_rgba(tokens["text_secondary"],0.20)};'
+            f'<div style="background:'
+            f'{hex_to_rgba(tokens["text_secondary"], 0.08)};'
+            f'border:1px solid '
+            f'{hex_to_rgba(tokens["text_secondary"], 0.20)};'
             'border-radius:12px;padding:16px 20px;margin:12px 0;'
             'max-width:600px;display:flex;align-items:center;gap:12px;">'
             f'<div style="display:flex;align-items:center;flex-shrink:0;">'
@@ -297,8 +304,10 @@ def _render_signals(
         info = lucide_icon("info", size=20, color=tokens["text_secondary"])
         st.markdown(
             f'<div style="display:flex;justify-content:center;width:100%;">'
-            f'<div style="background:{hex_to_rgba(tokens["text_secondary"],0.08)};'
-            f'border:1px solid {hex_to_rgba(tokens["text_secondary"],0.20)};'
+            f'<div style="background:'
+            f'{hex_to_rgba(tokens["text_secondary"], 0.08)};'
+            f'border:1px solid '
+            f'{hex_to_rgba(tokens["text_secondary"], 0.20)};'
             'border-radius:12px;padding:16px 20px;margin:12px 0;'
             'max-width:600px;display:flex;align-items:center;gap:12px;">'
             f'<div style="display:flex;align-items:center;flex-shrink:0;">'
@@ -457,7 +466,8 @@ def _render_report(
                 f'<h3 style="color:{tokens["text"]};margin:0 0 12px 0;'
                 'font-size:15px;font-weight:700;display:flex;'
                 'align-items:center;justify-content:center;gap:9px;'
-                f'padding-bottom:9px;border-bottom:1px solid {tokens["border"]};">'
+                f'padding-bottom:9px;'
+                f'border-bottom:1px solid {tokens["border"]};">'
                 f'{card["icon"]}{card["title"]}</h3>'
                 '<div style="display:flex;justify-content:center;">'
                 f'<p style="margin:0;max-width:90%;font-size:14px;'
@@ -483,7 +493,8 @@ def _render_report(
             f'padding-bottom:12px;'
             f'border-bottom:1px solid {hex_to_rgba(tokens["accent"], 0.25)};">'
             f'{action_icon}What You Should Do</h3>'
-            f'<div style="font-size:14.5px;line-height:1.7;text-align:center;">'
+            f'<div style="font-size:14.5px;line-height:1.7;'
+            f'text-align:center;">'
             f'{action_html}</div></div>',
             unsafe_allow_html=True,
         )
@@ -528,14 +539,19 @@ def render_component_detail(
     if missing_fields or missing_sections:
         parts = []
         if missing_fields:
-            parts.append(f"missing critical fields ({', '.join(missing_fields)})")
+            fields_str = ", ".join(missing_fields)
+            parts.append(f"missing critical fields ({fields_str})")
         if missing_sections:
             parts.append(f"missing {', '.join(missing_sections)}")
         msg = "This component has " + " and ".join(parts) + "."
-        info_icon = lucide_icon("info", size=20, color=tokens["text_secondary"])
+        info_icon = lucide_icon(
+            "info", size=20, color=tokens["text_secondary"]
+        )
         st.markdown(
-            f'<div style="background:{hex_to_rgba(tokens["text_secondary"],0.08)};'
-            f'border:1px solid {hex_to_rgba(tokens["text_secondary"],0.20)};'
+            f'<div style="background:'
+            f'{hex_to_rgba(tokens["text_secondary"], 0.08)};'
+            f'border:1px solid '
+            f'{hex_to_rgba(tokens["text_secondary"], 0.20)};'
             'border-radius:12px;padding:16px 20px;'
             'margin:0 auto 24px auto;max-width:700px;'
             'display:flex;align-items:flex-start;gap:12px;">'
@@ -568,7 +584,8 @@ def render_component_detail(
     _render_failure_prediction(component_data, tokens)
 
     # Hero row: gauge + trend
-    trend = [e["risk_score"] for e in (component_data.get("risk_history") or [])]
+    risk_history = component_data.get("risk_history") or []
+    trend = [e["risk_score"] for e in risk_history]
 
     st.markdown(
         f"""
@@ -738,7 +755,8 @@ def show_detail_page() -> None:
                         {icon_css}
                         color: {tokens["accent"]} !important;
                         border: none !important;
-                        border-bottom: 2.5px solid {tokens["accent"]} !important;
+                        border-bottom: 2.5px solid
+                            {tokens["accent"]} !important;
                         border-radius: 0 !important;
                         font-weight: 700 !important;
                     }}
@@ -753,7 +771,8 @@ def show_detail_page() -> None:
                         {icon_css}
                         color: {tokens["text_secondary"]} !important;
                         border: none !important;
-                        border-bottom: 2.5px solid {tokens["border"]} !important;
+                        border-bottom: 2.5px solid
+                            {tokens["border"]} !important;
                         border-radius: 0 !important;
                         font-weight: 500 !important;
                     }}

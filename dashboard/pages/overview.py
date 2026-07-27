@@ -138,19 +138,30 @@ def _show_status_banner(
     if has_high:
         banner_bg = hex_to_rgba(tokens["risk_high"], 0.10)
         banner_border = hex_to_rgba(tokens["risk_high"], 0.30)
-        icon_svg = lucide_icon("alert-triangle", size=18, color=tokens["danger_text"])
-        status_text = "Attention needed — one or more components require urgent action"
+        icon_svg = lucide_icon(
+            "alert-triangle", size=18, color=tokens["danger_text"]
+        )
+        status_text = (
+            "Attention needed — one or more components require "
+            "urgent action"
+        )
         text_color = tokens["danger_text"]
     elif has_incomplete:
         banner_bg = hex_to_rgba(tokens["text_secondary"], 0.08)
         banner_border = hex_to_rgba(tokens["text_secondary"], 0.22)
-        icon_svg = lucide_icon("info", size=18, color=tokens["text_secondary"])
-        status_text = "Analysis incomplete — some components do not have data yet"
+        icon_svg = lucide_icon(
+            "info", size=18, color=tokens["text_secondary"]
+        )
+        status_text = (
+            "Analysis incomplete — some components do not have data yet"
+        )
         text_color = tokens["text_secondary"]
     else:
         banner_bg = hex_to_rgba(tokens["risk_low"], 0.10)
         banner_border = hex_to_rgba(tokens["risk_low"], 0.30)
-        icon_svg = lucide_icon("check-square", size=18, color=tokens["risk_low"])
+        icon_svg = lucide_icon(
+            "check-square", size=18, color=tokens["risk_low"]
+        )
         status_text = "No high-risk components detected"
         text_color = tokens["risk_low"]
 
@@ -171,15 +182,18 @@ def _show_status_banner(
     )
 
     st.markdown(
-        f'<div style="background:{banner_bg};border:1px solid {banner_border};'
-        'border-radius:14px;padding:14px 20px;margin:16px auto;max-width:860px;'
+        f'<div style="background:{banner_bg};'
+        f'border:1px solid {banner_border};'
+        'border-radius:14px;padding:14px 20px;margin:16px auto;'
+        'max-width:860px;'
         'display:flex;align-items:center;justify-content:space-between;'
         f'gap:16px;flex-wrap:wrap;box-shadow:0 2px 8px {tokens["shadow"]};">'
         f'<div style="display:flex;align-items:center;gap:10px;">'
         f'{icon_svg}'
         f'<span style="font-weight:600;font-size:14px;color:{text_color};">'
         f'{status_text}</span></div>'
-        f'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
+        f'<div style="display:flex;align-items:center;gap:6px;'
+        f'flex-wrap:wrap;">'
         f'{legend_chips}</div></div>',
         unsafe_allow_html=True,
     )
@@ -205,7 +219,9 @@ def _show_csv_upload_heading(tokens: dict) -> None:
         for col in columns
     )
 
-    hint_icon = lucide_icon("help-circle", size=16, color=tokens["text_secondary"])
+    hint_icon = lucide_icon(
+        "help-circle", size=16, color=tokens["text_secondary"]
+    )
     hint_icon_src = svg_data_uri(hint_icon)
 
     st.markdown(
@@ -254,7 +270,8 @@ def _show_csv_upload_heading(tokens: dict) -> None:
             height: 28px !important;
             flex:0 0 28px;
             width: 28px !important;
-            transition: background-color 0.15s ease, border-color 0.15s ease !important;
+            transition: background-color 0.15s ease,
+                border-color 0.15s ease !important;
         }}
         .csv-upload-help summary:hover .csv-help-icon {{
             background-color: {hex_to_rgba(tokens["accent"], 0.08)} !important;
@@ -296,19 +313,23 @@ def _show_csv_upload_heading(tokens: dict) -> None:
         <details class="csv-upload-help">
             <summary aria-label="Show CSV requirements">
                 <span class="csv-heading-spacer" aria-hidden="true"></span>
-                <span class="csv-upload-heading-title">Upload OBD-II CSV File</span>
+                <span class="csv-upload-heading-title">
+                    Upload OBD-II CSV File</span>
                 <span class="csv-help-icon" aria-hidden="true"></span>
             </summary>
                 <div class="csv-upload-help-panel">
-                    <div style="font-size:12px;font-weight:700;letter-spacing:0.4px;
+                    <div style="font-size:12px;font-weight:700;
+                        letter-spacing:0.4px;
                         text-transform:uppercase;color:{tokens["accent"]};
                         margin-bottom:10px;">Required CSV format</div>
                     <div class="csv-upload-help-grid">{column_items}</div>
                     <div style="margin-top:10px;font-size:12px;
                         color:{tokens["text_secondary"]};
-                        border-top:1px solid {hex_to_rgba(tokens["accent"], 0.18)};
+                        border-top:1px solid
+                            {hex_to_rgba(tokens["accent"], 0.18)};
                         padding-top:8px;">
-                        Minimum <strong style="color:{tokens["text"]}">700 rows</strong>
+                        Minimum <strong style="color:{tokens["text"]}">
+                            700 rows</strong>
                         (≈ 15 min recorded at 1&nbsp;Hz)
                     </div>
                 </div>
@@ -452,7 +473,8 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
 
 
 def _show_csv_uploader(tokens: dict) -> None:
-    """CSV upload section with inline validation feedback (re-upload in dashboard)."""
+    """CSV upload section with inline validation feedback (re-upload
+    in dashboard)."""
     st.markdown(
         f"""
         <style>
@@ -1002,7 +1024,8 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
 
     # ── Hero text ──
     st.markdown(
-        f'<div style="text-align:center;max-width:560px;margin:0 auto 32px auto;">'
+        f'<div style="text-align:center;max-width:560px;'
+        f'margin:0 auto 32px auto;">'
         f'<h1 style="font-size:clamp(24px,4vw,36px);font-weight:700;'
         f'color:{tokens["text"]};margin:0 0 12px 0;line-height:1.2;">'
         'Vehicle Health Analysis</h1>'
@@ -1082,7 +1105,8 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             font-size: 0 !important;
             line-height: 0 !important;
         }}
-        .st-key-landing_upload_card [data-testid="stFileUploader"] button::after {{
+        .st-key-landing_upload_card [data-testid="stFileUploader"]
+                button::after {{
             align-items: center !important;
             color: {tokens["text"]} !important;
             content: "Upload";
@@ -1095,10 +1119,12 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             position: absolute !important;
             text-align: center !important;
         }}
-        .st-key-landing_upload_card [data-testid="stFileUploader"] button:hover {{
+        .st-key-landing_upload_card [data-testid="stFileUploader"]
+                button:hover {{
             border-color: {tokens["accent"]} !important;
         }}
-        .st-key-landing_upload_card [data-testid="stFileUploader"] button:hover::after {{
+        .st-key-landing_upload_card [data-testid="stFileUploader"]
+                button:hover::after {{
             color: {tokens["accent"]} !important;
         }}
         /* Run Analysis button — full-width accent */
@@ -1320,13 +1346,18 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
         _show_theme_toggle(dark_mode, tokens)
 
     if not mock_data:
-        info_icon = lucide_icon("info", size=20, color=tokens["text_secondary"])
+        info_icon = lucide_icon(
+            "info", size=20, color=tokens["text_secondary"]
+        )
         st.markdown(
-            f'<div style="background:{hex_to_rgba(tokens["text_secondary"],0.08)};'
-            f'border:1px solid {hex_to_rgba(tokens["text_secondary"],0.20)};'
+            f'<div style="background:'
+            f'{hex_to_rgba(tokens["text_secondary"], 0.08)};'
+            f'border:1px solid '
+            f'{hex_to_rgba(tokens["text_secondary"], 0.20)};'
             'border-radius:14px;padding:24px 16px;margin:16px 0;'
             f'color:{tokens["text_secondary"]};'
-            'display:flex;align-items:center;justify-content:center;gap:14px;">'
+            'display:flex;align-items:center;justify-content:center;'
+            'gap:14px;">'
             f'{info_icon}'
             f'<span style="font-weight:600;color:{tokens["text_secondary"]};">'
             'No components to display</span></div>',
@@ -1387,7 +1418,9 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
         unsafe_allow_html=True,
     )
 
-    for idx, (component_key, component_data, is_placeholder) in enumerate(sorted_components):
+    for idx, (component_key, component_data, is_placeholder) in enumerate(
+        sorted_components
+    ):
         col_idx = idx % len(cols) if num >= 3 else idx
         with cols[col_idx]:
             risk_level = component_data.get("risk_level", "Unknown")
@@ -1439,11 +1472,13 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
                 f'width:{ring_size}px;height:{ring_size}px;">'
                 f'{ring_svg}'
                 '<div style="position:absolute;inset:0;display:flex;'
-                'flex-direction:column;align-items:center;justify-content:center;">'
+                'flex-direction:column;align-items:center;'
+                'justify-content:center;">'
                 f'<span style="font-family:{FONT_MONO};font-size:30px;'
                 f'font-weight:700;color:{tokens["text"]};line-height:1;">'
                 f'{score_text}</span>'
-                f'<span style="font-size:11px;color:{tokens["text_secondary"]};'
+                f'<span style="font-size:11px;'
+                f'color:{tokens["text_secondary"]};'
                 'margin-top:6px;font-weight:600;letter-spacing:0.5px;'
                 f'text-transform:uppercase;">{score_label}</span>'
                 '</div></div>'

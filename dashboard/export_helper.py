@@ -514,7 +514,10 @@ def _add_report_header(
     )
     header.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (0, 0), _pdf_color(tools, PDF_BLUE)),
-        ("BACKGROUND", (1, 0), (1, 0), _pdf_color(tools, _risk_color(summary))),
+        (
+            "BACKGROUND", (1, 0), (1, 0),
+            _pdf_color(tools, _risk_color(summary)),
+        ),
         ("BOX", (0, 0), (-1, -1), 0.5, _pdf_color(tools, PDF_BLUE)),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("LEFTPADDING", (0, 0), (-1, -1), 14),
@@ -533,7 +536,9 @@ def _add_pdf_section(
     title: str,
 ):
     elements.append(tools["Spacer"](1, 4 * tools["mm"]))
-    elements.append(tools["Paragraph"](pdf_text(title), styles["ReportSection"]))
+    elements.append(
+        tools["Paragraph"](pdf_text(title), styles["ReportSection"])
+    )
 
 
 def _add_summary_pdf(
@@ -556,7 +561,8 @@ def _add_summary_pdf(
     for label, value in metric_items:
         cells.append(Paragraph(
             f"<font color='{PDF_MUTED}' size='7'>{label}</font><br/>"
-            f"<font color='{PDF_DARK}' size='12'><b>{pdf_text(value)}</b></font>",
+            f"<font color='{PDF_DARK}' size='12'>"
+            f"<b>{pdf_text(value)}</b></font>",
             styles["ReportMetric"],
         ))
     table = Table([cells], colWidths=[42 * mm] * 4, hAlign="CENTER")
@@ -600,7 +606,8 @@ def _add_signal_pdf_table(
         if display_name != row["feature"]:
             feature = Paragraph(
                 f"{pdf_text(display_name)}<br/>"
-                f"<font color='{PDF_MUTED}' size='7'>{pdf_text(row['feature'])}</font>",
+                f"<font color='{PDF_MUTED}' size='7'>"
+                f"{pdf_text(row['feature'])}</font>",
                 styles["TableCell"],
             )
         else:
@@ -610,7 +617,10 @@ def _add_signal_pdf_table(
             Paragraph(pdf_text(row["value"]), styles["TableCell"]),
             Paragraph(pdf_text(row["unit"]), styles["TableCell"]),
             Paragraph(pdf_text(row["reference_range"]), styles["TableCell"]),
-            Paragraph(pdf_text(row["status"]), styles[_status_style_name(row["status"])]),
+            Paragraph(
+                pdf_text(row["status"]),
+                styles[_status_style_name(row["status"])],
+            ),
         ])
 
     if len(table_rows) == 1:
@@ -718,7 +728,9 @@ def _draw_pdf_footer(canvas, doc, tools: Dict[str, Any]):
     canvas.setFillColor(_pdf_color(tools, PDF_MUTED))
     canvas.setFont("Helvetica", 8)
     y = 10 * mm
-    canvas.line(doc.leftMargin, y + 5, doc.pagesize[0] - doc.rightMargin, y + 5)
+    canvas.line(
+        doc.leftMargin, y + 5, doc.pagesize[0] - doc.rightMargin, y + 5
+    )
     canvas.drawString(doc.leftMargin, y, "Granite Lifeline")
     canvas.drawRightString(
         doc.pagesize[0] - doc.rightMargin,

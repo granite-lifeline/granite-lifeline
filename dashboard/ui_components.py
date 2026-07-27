@@ -6,13 +6,10 @@ st.markdown directly.  No business logic lives here — only presentation.
 
 from __future__ import annotations
 
-import html as _html
-
 import streamlit as st
 
 from theme import (
     FONT_MONO,
-    FONT_SANS,
     THEME_TOKENS,
     hex_to_rgba,
     lucide_icon,

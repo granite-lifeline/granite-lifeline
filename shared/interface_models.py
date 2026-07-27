@@ -34,7 +34,9 @@ class KeySignal(BaseModel):
 
     @field_validator("reference_range")
     @classmethod
-    def _reference_range_has_two_values(cls, value: List[float]) -> List[float]:
+    def _reference_range_has_two_values(
+        cls, value: List[float]
+    ) -> List[float]:
         if len(value) != 2:
             raise ValueError("reference_range must contain exactly 2 values")
         return value

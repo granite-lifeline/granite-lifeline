@@ -49,9 +49,18 @@ STYLE_DESCRIPTIONS = {
 
 # Pending-key presets (never write directly to live widget keys mid-run).
 STYLE_SLIDER_PRESETS: dict[str, dict] = {
-    "Relaxed":  {"wi_coolant_p": -2, "wi_rpm_p": 0.90, "wi_load_p": 0.88, "wi_intake_p": 0, "wi_style_p": "Relaxed"},
-    "Typical":  {"wi_coolant_p": 0,  "wi_rpm_p": 1.00, "wi_load_p": 1.00, "wi_intake_p": 0, "wi_style_p": "Typical"},
-    "Spirited": {"wi_coolant_p": 4,  "wi_rpm_p": 1.20, "wi_load_p": 1.25, "wi_intake_p": 3, "wi_style_p": "Spirited"},
+    "Relaxed": {
+        "wi_coolant_p": -2, "wi_rpm_p": 0.90, "wi_load_p": 0.88,
+        "wi_intake_p": 0, "wi_style_p": "Relaxed",
+    },
+    "Typical": {
+        "wi_coolant_p": 0, "wi_rpm_p": 1.00, "wi_load_p": 1.00,
+        "wi_intake_p": 0, "wi_style_p": "Typical",
+    },
+    "Spirited": {
+        "wi_coolant_p": 4, "wi_rpm_p": 1.20, "wi_load_p": 1.25,
+        "wi_intake_p": 3, "wi_style_p": "Spirited",
+    },
 }
 
 _PENDING_TO_WIDGET: dict[str, str] = {
@@ -70,7 +79,8 @@ _PENDING_TO_WIDGET: dict[str, str] = {
 #   Normal baseline medians (post_warmup, steady_driving):
 #     coolant_temp ≈ 90 °C, rpm ≈ 1675, maf ≈ 20.8 g/s, intake_temp ≈ 18.5 °C
 #   RPM multiplier  = scenario_rpm_median / 1675
-#   Load multiplier = scenario_maf_median / 20.8  (capped at 1.50 for slider range)
+#   Load multiplier = scenario_maf_median / 20.8
+#     (capped at 1.50 for slider range)
 # ---------------------------------------------------------------------------
 
 @dataclass(frozen=True)
@@ -82,7 +92,7 @@ class ScenarioCard:
     driving_style: str     # "Relaxed" | "Typical" | "Spirited"
     coolant_offset: int    # °C relative to normal
     rpm_multiplier: float  # relative to steady-driving median 1675 RPM
-    load_multiplier: float # relative to steady-driving median MAF 20.8 g/s
+    load_multiplier: float  # relative to steady-driving median 20.8 g/s
     intake_offset: int     # °C relative to normal
 
 
@@ -94,7 +104,8 @@ SCENARIO_CARDS: list[ScenarioCard] = [
         description="Fast driving with frequent heavy acceleration.",
         icon="zap",
         driving_style="Spirited",
-        # high_load: rpm median 2065 → 2065/1675 = 1.23; maf median 46.4 → cap 1.50
+        # high_load: rpm median 2065 → 2065/1675 = 1.23;
+        # maf median 46.4 → cap 1.50
         coolant_offset=4,
         rpm_multiplier=1.23,
         load_multiplier=1.50,
@@ -129,7 +140,8 @@ SCENARIO_CARDS: list[ScenarioCard] = [
         description="Stop-and-go city driving with the engine idling a lot.",
         icon="activity",
         driving_style="Typical",
-        # idle rpm median 832 → 0.75× mixed; high coolant because no airflow cooling
+        # idle rpm median 832 → 0.75× mixed;
+        # high coolant because no airflow cooling
         coolant_offset=10,
         rpm_multiplier=0.75,
         load_multiplier=0.80,
@@ -160,19 +172,22 @@ SCENARIO_COMPONENT_REASONS: dict[str, dict[str, str]] = {
         "intake_air_temperature_sensor_fault":
             "Engine heat can warm the intake air slightly.",
         "map_load_signal_plausibility_fault":
-            "High load makes the pressure sensor work harder to stay accurate.",
+            "High load makes the pressure sensor work harder to stay "
+            "accurate.",
     },
     "hills_towing": {
         "cooling_degradation":
             "Sustained climbing or towing generates a lot of engine heat.",
         "air_intake_maf_anomaly":
-            "The engine needs more air under heavy load — the sensor reads harder.",
+            "The engine needs more air under heavy load — the sensor "
+            "reads harder.",
         "accelerator_pedal_sensor":
             "Sustained heavy pedal pressure stresses the sensor over time.",
         "intake_air_temperature_sensor_fault":
             "Engine bay heat soaks into the intake air during hard work.",
         "map_load_signal_plausibility_fault":
-            "High and sustained load makes pressure readings more likely to drift.",
+            "High and sustained load makes pressure readings more "
+            "likely to drift.",
     },
     "hot_day_highway": {
         "cooling_degradation":
@@ -182,39 +197,48 @@ SCENARIO_COMPONENT_REASONS: dict[str, dict[str, str]] = {
         "accelerator_pedal_sensor":
             "Steady cruise keeps pedal stress low — small change expected.",
         "intake_air_temperature_sensor_fault":
-            "This is the most affected part — the sensor reads much hotter air.",
+            "This is the most affected part — the sensor reads much "
+            "hotter air.",
         "map_load_signal_plausibility_fault":
             "Steady highway load is predictable, so risk change is small.",
     },
     "city_traffic": {
         "cooling_degradation":
-            "Idling in traffic means no airflow over the radiator — heat builds up.",
+            "Idling in traffic means no airflow over the radiator — "
+            "heat builds up.",
         "air_intake_maf_anomaly":
-            "Frequent stop-start causes irregular airflow that is harder to read.",
+            "Frequent stop-start causes irregular airflow that is "
+            "harder to read.",
         "accelerator_pedal_sensor":
             "Lots of small pedal movements in traffic add up over time.",
         "intake_air_temperature_sensor_fault":
-            "Hot road-level air and engine heat raise intake temperature significantly.",
+            "Hot road-level air and engine heat raise intake temperature "
+            "significantly.",
         "map_load_signal_plausibility_fault":
-            "Frequent engine load changes make the pressure sensor work inconsistently.",
+            "Frequent engine load changes make the pressure sensor "
+            "work inconsistently.",
     },
     "easy_commute": {
         "cooling_degradation":
-            "Cool weather and light driving keep the engine well within safe limits.",
+            "Cool weather and light driving keep the engine well "
+            "within safe limits.",
         "air_intake_maf_anomaly":
-            "Low load means steady, easy airflow — the sensor is under little stress.",
+            "Low load means steady, easy airflow — the sensor is "
+            "under little stress.",
         "accelerator_pedal_sensor":
             "Gentle pedal use puts almost no strain on the sensor.",
         "intake_air_temperature_sensor_fault":
             "Cool air entering the engine keeps this sensor reading stable.",
         "map_load_signal_plausibility_fault":
-            "Low and steady engine load means the pressure signal stays predictable.",
+            "Low and steady engine load means the pressure signal "
+            "stays predictable.",
     },
 }
 
 COMPONENT_EXPLANATIONS = {
     "cooling_degradation":
-        "Driven by engine heat, how hard the engine works, and outside temperature.",
+        "Driven by engine heat, how hard the engine works, and "
+        "outside temperature.",
     "air_intake_maf_anomaly":
         "Driven by how much air the engine pulls in and how hard it works.",
     "accelerator_pedal_sensor":
@@ -228,7 +252,7 @@ COMPONENT_EXPLANATIONS = {
 # ±7 % range shown under each What-if number (heuristic imprecision).
 _UNCERTAINTY_MARGIN = 0.07
 # Intensity score above which an extreme-scenario warning is shown.
-_EXTREME_THRESHOLD  = 0.55
+_EXTREME_THRESHOLD = 0.55
 
 
 # ---------------------------------------------------------------------------
@@ -255,7 +279,9 @@ _SURROGATE_CACHE: dict[str, object] = {}
 _ARTIFACT_DIR = Path(__file__).parent.parent / "model_artifacts"
 
 
-def _surrogate_predict(component_key: str, inputs: ScenarioInputs) -> float | None:
+def _surrogate_predict(
+    component_key: str, inputs: ScenarioInputs
+) -> float | None:
     try:
         joblib = importlib.import_module("joblib")
     except ImportError:
@@ -282,16 +308,19 @@ def _surrogate_predict(component_key: str, inputs: ScenarioInputs) -> float | No
         return None
 
 
-def _heuristic_sensitivity(component_key: str, inputs: ScenarioInputs) -> float:
+def _heuristic_sensitivity(
+    component_key: str, inputs: ScenarioInputs
+) -> float:
     """
     Hand-calibrated heuristic risk delta.
     Coefficients grounded in KIT OBD-II operating-condition statistics
-    (data_layer/operating_condition_statistics/operating_condition_signal_summary.csv)
+    (data_layer/operating_condition_statistics/
+    operating_condition_signal_summary.csv)
     and Bosch Automotive Handbook physical relationships.
     """
     style_delta = STYLE_MULTIPLIERS[inputs.driving_style] - 1.0
-    rpm_delta   = inputs.rpm_multiplier - 1.0
-    load_delta  = inputs.load_stress_multiplier - 1.0
+    rpm_delta = inputs.rpm_multiplier - 1.0
+    load_delta = inputs.load_stress_multiplier - 1.0
     return {
         "cooling_degradation": (
             0.35 * style_delta
@@ -324,9 +353,13 @@ def _heuristic_sensitivity(component_key: str, inputs: ScenarioInputs) -> float:
     }.get(component_key, 0.10 * style_delta)
 
 
-def _component_sensitivity(component_key: str, inputs: ScenarioInputs) -> float:
+def _component_sensitivity(
+    component_key: str, inputs: ScenarioInputs
+) -> float:
     surrogate = _surrogate_predict(component_key, inputs)
-    return surrogate if surrogate is not None else _heuristic_sensitivity(component_key, inputs)
+    if surrogate is not None:
+        return surrogate
+    return _heuristic_sensitivity(component_key, inputs)
 
 
 # ---------------------------------------------------------------------------
@@ -354,7 +387,7 @@ def project_component_risk(
     baseline_score: float,
     inputs: ScenarioInputs,
 ) -> float:
-    baseline  = max(0.0, min(1.0, float(baseline_score or 0.0)))
+    baseline = max(0.0, min(1.0, float(baseline_score or 0.0)))
     projected = baseline + _component_sensitivity(component_key, inputs)
     if inputs.driving_style == "Relaxed":
         projected = min(projected, baseline)
@@ -508,7 +541,7 @@ def _render_page_styles(tokens: dict) -> None:
             text-transform: uppercase;
         }}
 
-        /* ── Dark-mode card depth: heavier border so glass card lifts off bg ── */
+        /* Dark-mode card depth: heavier border so glass card lifts off bg */
         .wi-sc-card {{
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
@@ -529,7 +562,8 @@ def _render_page_styles(tokens: dict) -> None:
             line-height: 1 !important;
             margin-top: 8px !important;
             padding: 0 10px !important;
-            transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
+            transition: background 0.15s ease,
+                border-color 0.15s ease, color 0.15s ease !important;
             width: 100% !important;
         }}
         .st-key-wi_scenario_picker [class*="st-key-wi_sc_"] button:hover {{
@@ -777,7 +811,8 @@ def _render_page_styles(tokens: dict) -> None:
             box-shadow: 0 2px 12px {T["shadow"]};
             padding: 20px 20px 16px 20px;
         }}
-        /* Collapse the extra gap Streamlit adds between elements inside the container */
+        /* Collapse the extra gap Streamlit adds between elements
+           inside the container */
         .st-key-wi_controls_box > div > div > div {{
             gap: 0 !important;
         }}
@@ -885,7 +920,9 @@ def _render_page_styles(tokens: dict) -> None:
             color: {T["accent"]} !important;
         }}
         .st-key-what_if_back_btn button *,
-        .st-key-what_if_back_btn button:hover * {{ color: inherit !important; }}
+        .st-key-what_if_back_btn button:hover * {{
+            color: inherit !important;
+        }}
 
         /* Reset button */
         .st-key-what_if_reset_btn button {{
@@ -900,7 +937,9 @@ def _render_page_styles(tokens: dict) -> None:
             color: {T["accent"]} !important;
         }}
         .st-key-what_if_reset_btn button *,
-        .st-key-what_if_reset_btn button:hover * {{ color: inherit !important; }}
+        .st-key-what_if_reset_btn button:hover * {{
+            color: inherit !important;
+        }}
 
         /* ── Responsive ── */
         @media (max-width: 760px) {{
@@ -918,7 +957,10 @@ def _render_page_styles(tokens: dict) -> None:
         }}
         @media (max-width: 540px) {{
             .wi-row {{ grid-template-columns: 1fr; }}
-            .wi-cell-name {{ border-right: none; border-bottom: 1px solid {T["border"]}; }}
+            .wi-cell-name {{
+                border-right: none;
+                border-bottom: 1px solid {T["border"]};
+            }}
             .wi-cell {{ border-right: none; text-align: left; }}
             .wi-cell-risk {{ align-items: flex-start; }}
             .wi-bar-track {{ width: 100%; }}
@@ -939,10 +981,10 @@ def _render_page_styles(tokens: dict) -> None:
 def _scenario_card_html(sc: ScenarioCard, active: bool, tokens: dict) -> str:
     """Build the full card HTML for a scenario. Rendered via st.markdown."""
     icon_color = tokens["accent"] if active else tokens["text_secondary"]
-    icon_svg   = lucide_icon(sc.icon, size=20, color=icon_color)
-    card_cls   = "wi-sc-card wi-sc-active" if active else "wi-sc-card"
-    check      = (
-        f'<span class="wi-sc-check">Selected</span>'
+    icon_svg = lucide_icon(sc.icon, size=20, color=icon_color)
+    card_cls = "wi-sc-card wi-sc-active" if active else "wi-sc-card"
+    check = (
+        '<span class="wi-sc-check">Selected</span>'
         if active else ""
     )
     return (
@@ -965,39 +1007,31 @@ def _component_row_html(
     focus: bool,
 ) -> str:
     T = tokens
-    baseline_pct  = int(round(baseline * 100))
+    baseline_pct = int(round(baseline * 100))
     projected_pct = int(round(projected * 100))
-    delta_pct     = projected_pct - baseline_pct
-    level         = _risk_level(projected)
-    level_color   = _risk_color(level, tokens)
+    delta_pct = projected_pct - baseline_pct
+    level = _risk_level(projected)
+    level_color = _risk_color(level, tokens)
 
-    # What-if value color: red for worse, green for better, muted for unchanged.
+    # What-if value color: red for worse, green for better, muted
+    # for unchanged.
     val_color = (
-        T["risk_high"]    if delta_pct > 0
+        T["risk_high"] if delta_pct > 0
         else T["risk_low"] if delta_pct < 0
         else T["text_secondary"]
     )
 
-    # Delta arrow + formatted change
-    if delta_pct > 0:
-        arrow, arrow_color = "▲", T["risk_high"]
-    elif delta_pct < 0:
-        arrow, arrow_color = "▼", T["risk_low"]
-    else:
-        arrow, arrow_color = "—", T["text_secondary"]
-    delta_html = (
-        f'<div class="wi-cell-delta" style="color:{arrow_color};">'
-        f'{arrow} {abs(delta_pct)}%</div>'
-        if delta_pct != 0 else
-        f'<div class="wi-cell-delta" style="color:{arrow_color};">—</div>'
-    )
-
     # Uncertainty range
-    lo = max(0,   int(round((projected - _UNCERTAINTY_MARGIN) * 100)))
+    lo = max(0, int(round((projected - _UNCERTAINTY_MARGIN) * 100)))
     hi = min(100, int(round((projected + _UNCERTAINTY_MARGIN) * 100)))
 
-    icon_svg  = lucide_icon(COMPONENT_ICONS.get(component_key, "activity"), size=16, color=level_color)
-    disp_name = html.escape(COMPONENT_DISPLAY_NAMES.get(component_key, component_key))
+    icon_svg = lucide_icon(
+        COMPONENT_ICONS.get(component_key, "activity"),
+        size=16, color=level_color,
+    )
+    disp_name = html.escape(
+        COMPONENT_DISPLAY_NAMES.get(component_key, component_key)
+    )
 
     # Sub-label: scenario-specific reason or generic explanation.
     if scenario_key and scenario_key in SCENARIO_COMPONENT_REASONS:
@@ -1014,20 +1048,21 @@ def _component_row_html(
         actions = component_data.get("recommended_action") or []
         if actions:
             action_html = (
-                f'<div class="wi-cell-action">{html.escape(str(actions[0]))}</div>'
+                '<div class="wi-cell-action">'
+                f'{html.escape(str(actions[0]))}</div>'
             )
 
     row_cls = "wi-row wi-row-focus" if focus else "wi-row"
 
     # Delta badge class and label
     if delta_pct > 0:
-        badge_cls   = "up"
+        badge_cls = "up"
         badge_label = f"▲ +{delta_pct} pp"
     elif delta_pct < 0:
-        badge_cls   = "down"
+        badge_cls = "down"
         badge_label = f"▼ {delta_pct} pp"
     else:
-        badge_cls   = "flat"
+        badge_cls = "flat"
         badge_label = "no change"
 
     return (
@@ -1046,16 +1081,22 @@ def _component_row_html(
         '<div class="wi-change-flow">'
         f'<span class="wi-change-from">{baseline_pct}%</span>'
         '<span class="wi-change-arrow">→</span>'
-        f'<span class="wi-change-to" style="color:{val_color};">{projected_pct}%</span>'
+        f'<span class="wi-change-to" style="color:{val_color};">'
+        f'{projected_pct}%</span>'
         '</div>'
         f'<span class="wi-change-badge {badge_cls}">{badge_label}</span>'
-        f'<div class="wi-change-range" title="Estimate ± 7% model uncertainty">est. {lo}–{hi}%</div>'
+        '<div class="wi-change-range" '
+        'title="Estimate ± 7% model uncertainty">'
+        f'est. {lo}–{hi}%</div>'
         '</div>'
 
         # Risk level + bar
         '<div class="wi-cell-risk">'
-        f'<span class="wi-pill" style="background:{level_color};">{html.escape(level)}</span>'
-        f'<div class="wi-bar-track"><div class="wi-bar-fill" style="width:{projected_pct}%;background:{level_color};"></div></div>'
+        f'<span class="wi-pill" style="background:{level_color};">'
+        f'{html.escape(level)}</span>'
+        '<div class="wi-bar-track"><div class="wi-bar-fill" '
+        f'style="width:{projected_pct}%;background:{level_color};">'
+        '</div></div>'
         '</div>'
 
         '</div>'
@@ -1088,14 +1129,14 @@ def _render_summary(
     T = tokens
 
     avg_baseline = sum(r[1] for r in rows) / len(rows)
-    avg_proj     = sum(r[2] for r in rows) / len(rows)
-    b_pct        = int(round(avg_baseline * 100))
-    p_pct        = int(round(avg_proj * 100))
-    delta        = p_pct - b_pct
+    avg_proj = sum(r[2] for r in rows) / len(rows)
+    b_pct = int(round(avg_baseline * 100))
+    p_pct = int(round(avg_proj * 100))
+    delta = p_pct - b_pct
 
     # Identify the component with the largest positive delta.
-    worst_row  = max(rows, key=lambda r: r[2] - r[1])
-    worst_key  = worst_row[0]
+    worst_row = max(rows, key=lambda r: r[2] - r[1])
+    worst_key = worst_row[0]
     worst_proj = int(round(worst_row[2] * 100))
     worst_name = html.escape(COMPONENT_DISPLAY_NAMES.get(worst_key, worst_key))
     worst_delta = int(round((worst_row[2] - worst_row[1]) * 100))
@@ -1122,7 +1163,11 @@ def _render_summary(
     # Worst-component callout (only shown when it actually worsens).
     worst_html = ""
     if worst_delta > 0:
-        wc = T["risk_high"] if worst_proj >= 70 else T["risk_medium"] if worst_proj >= 30 else T["text_secondary"]
+        wc = (
+            T["risk_high"] if worst_proj >= 70
+            else T["risk_medium"] if worst_proj >= 30
+            else T["text_secondary"]
+        )
         worst_html = (
             f'<div class="wi-summary-worst" style="color:{wc};">'
             f'Biggest impact: {worst_name} rises to {worst_proj}%'
@@ -1138,11 +1183,14 @@ def _render_summary(
         )
 
     st.markdown(
-        f'<div class="wi-summary" style="background:{bg};border:1px solid {hex_to_rgba(vcolor, 0.2)};">'
+        f'<div class="wi-summary" style="background:{bg};'
+        f'border:1px solid {hex_to_rgba(vcolor, 0.2)};">'
         f'<div class="wi-summary-label">Result</div>'
-        f'<div class="wi-summary-verdict" style="color:{vcolor};">{html.escape(verdict)}</div>'
+        f'<div class="wi-summary-verdict" style="color:{vcolor};">'
+        f'{html.escape(verdict)}</div>'
         f'{worst_html}'
-        f'<div class="wi-summary-note">Estimate only — not a diagnostic scan.</div>'
+        '<div class="wi-summary-note">Estimate only — '
+        'not a diagnostic scan.</div>'
         f'{extreme}'
         '</div>',
         unsafe_allow_html=True,
@@ -1154,7 +1202,7 @@ def _render_summary(
 # ---------------------------------------------------------------------------
 
 def _flush_pending_presets() -> None:
-    """Promote pending preset keys to live widget keys before widgets render."""
+    """Promote pending preset keys to live widget keys before render."""
     for pending_key, widget_key in _PENDING_TO_WIDGET.items():
         if pending_key in st.session_state:
             st.session_state[widget_key] = st.session_state.pop(pending_key)
@@ -1162,12 +1210,13 @@ def _flush_pending_presets() -> None:
 
 def _apply_scenario(sc: ScenarioCard) -> None:
     st.session_state.update({
-        "wi_scenario":  sc.key,
-        "wi_style_p":   sc.driving_style,   # pending — flushed before next widget render
+        # wi_style_p is pending — flushed before next widget render
+        "wi_scenario": sc.key,
+        "wi_style_p": sc.driving_style,
         "wi_coolant_p": sc.coolant_offset,
-        "wi_rpm_p":     sc.rpm_multiplier,
-        "wi_load_p":    sc.load_multiplier,
-        "wi_intake_p":  sc.intake_offset,
+        "wi_rpm_p": sc.rpm_multiplier,
+        "wi_load_p": sc.load_multiplier,
+        "wi_intake_p": sc.intake_offset,
     })
     st.rerun()
 
@@ -1190,8 +1239,8 @@ def show_what_if_page() -> None:
     """Render the What-If Analysis page."""
     _flush_pending_presets()  # must run before any widget
 
-    dark_mode       = st.session_state.get("dark_mode", False)
-    tokens          = THEME_TOKENS["dark" if dark_mode else "light"]
+    dark_mode = st.session_state.get("dark_mode", False)
+    tokens = THEME_TOKENS["dark" if dark_mode else "light"]
     active_scenario = st.session_state.get("wi_scenario")
     focus_component = st.session_state.get("wi_focus_component")
 
@@ -1213,7 +1262,8 @@ def show_what_if_page() -> None:
         f'line-height:1.2;margin:0;">What if I drive differently?</h1>'
         f'<p style="color:{tokens["text_secondary"]};font-size:13px;'
         f'margin:6px auto 0;max-width:480px;line-height:1.5;">'
-        f'Pick a scenario to instantly see the impact, or fine-tune with the sliders.</p>'
+        'Pick a scenario to instantly see the impact, '
+        'or fine-tune with the sliders.</p>'
         f'</div>'
         # Step indicator
         f'<div class="wi-steps">'
@@ -1229,7 +1279,10 @@ def show_what_if_page() -> None:
 
     # ── Scenario picker ──────────────────────────────────────────────────────
     # Single row of 5 columns. Each card has a normal visible button below it.
-    st.markdown('<div class="wi-section-head">Choose a scenario</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="wi-section-head">Choose a scenario</div>',
+        unsafe_allow_html=True,
+    )
     with st.container(key="wi_scenario_picker"):
         sc_cols = st.columns(len(SCENARIO_CARDS), gap="small")
         for col, sc in zip(sc_cols, SCENARIO_CARDS):
@@ -1273,14 +1326,19 @@ def show_what_if_page() -> None:
             # Auto-apply slider presets when the radio selection changes.
             if driving_style != prev_style:
                 presets = STYLE_SLIDER_PRESETS[driving_style]
-                # Write only the slider pending keys (not wi_style_p — already set).
-                for pk in ("wi_coolant_p", "wi_rpm_p", "wi_load_p", "wi_intake_p"):
+                # Write only the slider pending keys
+                # (not wi_style_p — already set).
+                for pk in (
+                    "wi_coolant_p", "wi_rpm_p",
+                    "wi_load_p", "wi_intake_p",
+                ):
                     st.session_state[pk] = presets[pk]
                 st.session_state.pop("wi_scenario", None)
                 st.rerun()
 
+            style_desc = html.escape(STYLE_DESCRIPTIONS[driving_style])
             st.markdown(
-                f'<div class="wi-style-desc">{html.escape(STYLE_DESCRIPTIONS[driving_style])}</div>',
+                f'<div class="wi-style-desc">{style_desc}</div>',
                 unsafe_allow_html=True,
             )
 
@@ -1291,10 +1349,13 @@ def show_what_if_page() -> None:
                 key="wi_coolant",
                 help="How much hotter or cooler the engine runs vs. now.",
             )
+            coolant_caption = html.escape(
+                _slider_caption(
+                    "Engine temp", coolant_offset, is_offset=True
+                )
+            )
             st.markdown(
-                f'<div class="wi-slider-caption">'
-                f'{html.escape(_slider_caption("Engine temp", coolant_offset, is_offset=True))}'
-                f'</div>',
+                f'<div class="wi-slider-caption">{coolant_caption}</div>',
                 unsafe_allow_html=True,
             )
 
@@ -1307,10 +1368,11 @@ def show_what_if_page() -> None:
                 help="How much faster or slower the engine runs. "
                      "1.20x means 20% more revs than your current reading.",
             )
+            rpm_caption = html.escape(
+                _slider_caption("Engine speed", rpm_multiplier)
+            )
             st.markdown(
-                f'<div class="wi-slider-caption">'
-                f'{html.escape(_slider_caption("Engine speed", rpm_multiplier))}'
-                f'</div>',
+                f'<div class="wi-slider-caption">{rpm_caption}</div>',
                 unsafe_allow_html=True,
             )
 
@@ -1320,12 +1382,14 @@ def show_what_if_page() -> None:
                 value=st.session_state.get("wi_load", 1.0),
                 format="%.2fx",
                 key="wi_load",
-                help="How hard the engine works. Higher = towing, hill climbing, heavy acceleration.",
+                help="How hard the engine works. Higher = towing, "
+                     "hill climbing, heavy acceleration.",
+            )
+            load_caption = html.escape(
+                _slider_caption("Load", load_multiplier)
             )
             st.markdown(
-                f'<div class="wi-slider-caption">'
-                f'{html.escape(_slider_caption("Load", load_multiplier))}'
-                f'</div>',
+                f'<div class="wi-slider-caption">{load_caption}</div>',
                 unsafe_allow_html=True,
             )
 
@@ -1334,12 +1398,16 @@ def show_what_if_page() -> None:
                 min_value=-10, max_value=20, step=1,
                 value=st.session_state.get("wi_intake", 0),
                 key="wi_intake",
-                help="Positive = hotter outside air (hot day, stop-and-go traffic).",
+                help="Positive = hotter outside air "
+                     "(hot day, stop-and-go traffic).",
+            )
+            intake_caption = html.escape(
+                _slider_caption(
+                    "Outside air", intake_offset, is_offset=True
+                )
             )
             st.markdown(
-                f'<div class="wi-slider-caption">'
-                f'{html.escape(_slider_caption("Outside air", intake_offset, is_offset=True))}'
-                f'</div>',
+                f'<div class="wi-slider-caption">{intake_caption}</div>',
                 unsafe_allow_html=True,
             )
 
@@ -1351,7 +1419,7 @@ def show_what_if_page() -> None:
             ):
                 _reset_all()
 
-    # ── Compute projections ───────────────────────────────────────────────────
+    # ── Compute projections ──
     inputs = ScenarioInputs(
         driving_style=driving_style,
         coolant_temp_offset=float(coolant_offset),
@@ -1361,14 +1429,16 @@ def show_what_if_page() -> None:
     )
 
     rows: list[tuple[str, float, float, dict]] = []
-    for component_key, component_data, is_placeholder in get_overview_components():
+    for component_key, component_data, is_placeholder in (
+        get_overview_components()
+    ):
         if is_placeholder:
             continue
-        baseline  = float(component_data.get("risk_score", 0.0) or 0.0)
+        baseline = float(component_data.get("risk_score", 0.0) or 0.0)
         projected = project_component_risk(component_key, baseline, inputs)
         rows.append((component_key, baseline, projected, component_data))
 
-    # ── Results ───────────────────────────────────────────────────────────────
+    # ── Results ──
     with result_col:
         if not rows:
             st.info(
