@@ -7,18 +7,24 @@ from shared.anomaly_mapping import (
 from shared.interface_models import AnomalyType
 
 
-def test_anomaly_mapping_has_six_current_types():
+def test_anomaly_mapping_has_five_current_types():
     """Test shared anomaly mapping follows the current interface enum."""
     expected_types = set(AnomalyType.__args__)
 
     assert set(GROUND_KNOWLEDGE_ANOMALY_TYPES) == expected_types
-    assert len(GROUND_KNOWLEDGE_ANOMALY_TYPES) == 6
+    assert len(GROUND_KNOWLEDGE_ANOMALY_TYPES) == 5
     assert "electronic_throttle_tracking_fault" not in (
+        GROUND_KNOWLEDGE_ANOMALY_TYPES
+    )
+    assert "idle_speed_control_or_surge_degradation" not in (
+        GROUND_KNOWLEDGE_ANOMALY_TYPES
+    )
+    assert "intake_air_temperature_sensor_or_heat_soak_fault" not in (
         GROUND_KNOWLEDGE_ANOMALY_TYPES
     )
 
 
-def test_mapping_table_has_same_six_types():
+def test_mapping_table_has_same_five_types():
     """Test mapping table uses the same names on each side."""
     interface_names = {
         row["interface_name"] for row in ANOMALY_TYPE_MAPPING_TABLE
@@ -34,4 +40,4 @@ def test_mapping_table_has_same_six_types():
     assert interface_names == expected_types
     assert ground_names == expected_types
     assert dashboard_names == expected_types
-    assert len(ANOMALY_TYPE_MAPPING_TABLE) == 6
+    assert len(ANOMALY_TYPE_MAPPING_TABLE) == 5

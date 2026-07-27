@@ -20,6 +20,24 @@ from shared.interface_models import (
 )
 
 
+def model_output_payload(**overrides):
+    """Build a current INTERFACE.md ModelLayerOutput payload."""
+    payload = {
+        "timestamp": "2026-06-16T12:00:00Z",
+        "anomaly_type": "cooling_degradation",
+        "risk_score": 0.86,
+        "risk_level": "High",
+        "component": "cooling_degradation",
+        "prediction_confidence": 0.88,
+        "key_signals": [],
+        "estimated_cycles_to_failure": None,
+        "estimated_failure_probability": None,
+        "notes": [],
+    }
+    payload.update(overrides)
+    return payload
+
+
 # ============================================================================
 # Helper Functions for Dashboard Logic
 # ============================================================================
@@ -317,7 +335,7 @@ def test_model_layer_output_valid_input():
     valid_data = {
         "timestamp": "2026-06-16T12:00:00Z",
         "anomaly_type": "cooling_degradation",
-        "risk_score": 86.0,
+        "risk_score": 0.86,
         "risk_level": "High",
         "component": "cooling_degradation",
         "prediction_confidence": 0.88,
@@ -328,7 +346,9 @@ def test_model_layer_output_valid_input():
                 "unit": "°C",
                 "reference_range": [90.0, 95.0]
             }
-        ]
+        ],
+        "estimated_cycles_to_failure": None,
+        "estimated_failure_probability": None,
     }
 
     # Act
@@ -336,7 +356,7 @@ def test_model_layer_output_valid_input():
 
     # Assert
     assert model.timestamp == "2026-06-16T12:00:00Z"
-    assert model.risk_score == 86.0
+    assert model.risk_score == 0.86
     assert model.risk_level == "High"
     assert model.component == "cooling_degradation"
     assert model.prediction_confidence == 0.88
@@ -352,14 +372,8 @@ def test_model_layer_output_missing_required_field():
     the required 'timestamp' field raises a ValidationError.
     """
     # Arrange
-    invalid_data = {
-        # "timestamp": missing
-        "anomaly_type": "cooling_system_stress",
-        "risk_score": 86.0,
-        "component": "cooling_system_stress",
-        "prediction_confidence": 0.88,
-        "key_signals": []
-    }
+    invalid_data = model_output_payload()
+    del invalid_data["timestamp"]
 
     # Act & Assert
     with pytest.raises(ValidationError) as exc_info:
@@ -377,14 +391,7 @@ def test_model_layer_output_wrong_type():
     ValidationError for risk_score field.
     """
     # Arrange
-    invalid_data = {
-        "timestamp": "2026-06-16T12:00:00Z",
-        "anomaly_type": "cooling_system_stress",
-        "risk_score": "not_a_number",  # Invalid string
-        "component": "cooling_system_stress",
-        "prediction_confidence": 0.88,
-        "key_signals": []
-    }
+    invalid_data = model_output_payload(risk_score="not_a_number")
 
     # Act & Assert
     with pytest.raises(ValidationError) as exc_info:
@@ -396,29 +403,17 @@ def test_model_layer_output_wrong_type():
 
 def test_model_layer_output_risk_score_out_of_range():
     """
-    TC-AT-013: Verify ModelLayerOutput handles risk_score > 100.
+    TC-AT-013: Verify ModelLayerOutput rejects risk_score > 1.0.
 
-    Tests behavior when risk_score exceeds valid range (0-100).
-    Note: Current implementation may not enforce range validation.
+    Tests behavior when risk_score exceeds valid range (0-1).
     """
     # Arrange
-    data_out_of_range = {
-        "timestamp": "2026-06-16T12:00:00Z",
-        "anomaly_type": "cooling_degradation",
-        "risk_score": 150.0,  # Out of range
-        "component": "cooling_degradation",
-        "prediction_confidence": 0.88,
-        "key_signals": []
-    }
+    data_out_of_range = model_output_payload(risk_score=1.5)
 
-    # Act
-    # Current implementation accepts any float
-    # This test documents current behavior
-    model = ModelLayerOutput(**data_out_of_range)
-
-    # Assert
-    assert model.risk_score == 150.0
-    # TODO: Add range validation to model and update this test
+    # Act & Assert
+    with pytest.raises(ValidationError) as exc_info:
+        ModelLayerOutput(**data_out_of_range)
+    assert "risk_score" in str(exc_info.value).lower()
 
 
 def test_report_layer_output_valid_input():
@@ -431,7 +426,7 @@ def test_report_layer_output_valid_input():
     # Arrange
     valid_data = {
         "timestamp": "2026-06-16T12:00:00Z",
-        "risk_score": 86.0,
+        "risk_score": 0.86,
         "risk_level": "High",
         "component": "cooling_degradation",
         "prediction_confidence": 0.88,
@@ -445,7 +440,11 @@ def test_report_layer_output_valid_input():
         ],
         "anomaly_description": "Coolant temperature is rising",
         "possible_cause": "Cooling system stress",
-        "recommended_action": ["Check coolant level", "Inspect radiator"]
+        "recommended_action": ["Check coolant level", "Inspect radiator"],
+        "estimated_cycles_to_failure": None,
+        "estimated_failure_probability": None,
+        "notes": [],
+        "risk_history": [],
     }
 
     # Act
@@ -453,7 +452,7 @@ def test_report_layer_output_valid_input():
 
     # Assert
     assert model.timestamp == "2026-06-16T12:00:00Z"
-    assert model.risk_score == 86.0
+    assert model.risk_score == 0.86
     assert model.anomaly_description == "Coolant temperature is rising"
     assert len(model.recommended_action) == 2
     assert "Check coolant level" in model.recommended_action
@@ -516,7 +515,7 @@ def test_risk_history_entry_valid_input():
     # Arrange
     valid_data = {
         "timestamp": "2026-06-16T12:00:00Z",
-        "risk_score": 86.0
+        "risk_score": 0.86
     }
 
     # Act
@@ -524,7 +523,7 @@ def test_risk_history_entry_valid_input():
 
     # Assert
     assert entry.timestamp == "2026-06-16T12:00:00Z"
-    assert entry.risk_score == 86.0
+    assert entry.risk_score == 0.86
 
 
 @pytest.mark.parametrize("missing_field", [
@@ -542,14 +541,7 @@ def test_model_layer_output_missing_each_required_field(missing_field):
     Parametrized test that verifies each required field is validated.
     """
     # Arrange
-    complete_data = {
-        "timestamp": "2026-06-16T12:00:00Z",
-        "anomaly_type": "cooling_system_stress",
-        "risk_score": 86.0,
-        "component": "cooling_system_stress",
-        "prediction_confidence": 0.88,
-        "key_signals": []
-    }
+    complete_data = model_output_payload()
 
     # Remove one field
     invalid_data = {k: v for k, v in complete_data.items()

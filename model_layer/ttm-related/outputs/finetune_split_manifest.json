@@ -1,6 +1,7 @@
 {
-  "generated_at": "2026-07-20T13:59:01.178286+00:00",
-  "input_file": "data_layer/production_feature_manifest/production_features.csv",
+  "generated_at": "2026-07-20T14:55:53.985070+00:00",
+  "schema_version": "feature_schema.v1",
+  "input_file": "ttm-related/data/production_feature_manifest/production_features.csv",
   "min_rows": 700,
   "train_fraction": 0.8,
   "seed": 42,

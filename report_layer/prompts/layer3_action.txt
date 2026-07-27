@@ -54,7 +54,7 @@ Rules:
 
 Examples:
 
-Bad example (intake_air_temperature_sensor_or_heat_soak_fault,
+Bad example (intake_air_temperature_sensor_fault,
 Medium risk):
 [
   "Check IAT sensor",
@@ -71,7 +71,7 @@ Why this is wrong:
 - Does not match urgency to Medium risk level
 - Assumes owner has technical knowledge and diagnostic tools
 
-Good example (intake_air_temperature_sensor_or_heat_soak_fault,
+Good example (intake_air_temperature_sensor_fault,
 Medium risk):
 [
   "Check the intake air temperature sensor, which is usually located
@@ -90,8 +90,8 @@ test the sensor and wiring with a diagnostic tool."
 Why this works:
 - Explains where to find components (near air filter box or intake
   tube)
-- Provides context-specific advice (heat soak after hot weather
-  driving)
+- Provides context-specific advice (cold-start plausibility,
+  stuck or slow sensor response, wiring checks)
 - Tells owner what to say to mechanic (intake temperature sensor
   reading abnormal)
 - Matches Medium risk urgency (check soon but not emergency)

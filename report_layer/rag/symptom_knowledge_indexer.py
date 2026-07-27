@@ -19,7 +19,7 @@ import yaml
 from shared.anomaly_mapping import GROUND_KNOWLEDGE_ANOMALY_TYPES
 
 
-# Six current anomaly types from docs/INTERFACE.md v0.9.
+# Five current anomaly types from docs/INTERFACE.md v1.1.
 EXPECTED_ANOMALY_TYPES = list(GROUND_KNOWLEDGE_ANOMALY_TYPES)
 
 # ChromaDB configuration
@@ -142,7 +142,7 @@ def index_symptom_knowledge() -> int:
     Index the symptom knowledge base into ChromaDB.
 
     Returns:
-        Number of documents indexed (should be 6).
+        Number of documents indexed (should be 5).
 
     Raises:
         ValueError: If anomaly types are missing from the YAML.
@@ -165,30 +165,11 @@ def index_symptom_knowledge() -> int:
     client = chromadb.PersistentClient(path=str(CHROMA_DB_PATH))
     collection = client.get_or_create_collection(name=COLLECTION_NAME)
 
-    # Check if index is already up to date
-    existing_count = collection.count()
+    # Recreate the collection on every run so source-content changes are
+    # reflected even when document IDs and counts stay the same.
     expected_count = len(EXPECTED_ANOMALY_TYPES)
-
-    if existing_count == expected_count:
-        # Verify all expected document IDs exist
-        try:
-            collection.get(ids=EXPECTED_ANOMALY_TYPES)
-            print(
-                "✓ Index is already up to date "
-                f"({expected_count} documents present)"
-            )
-            return existing_count
-        except Exception:
-            # Some documents are missing, so rebuild the collection.
-            client.delete_collection(name=COLLECTION_NAME)
-            collection = client.get_or_create_collection(
-                name=COLLECTION_NAME
-            )
-    else:
-        # Recreate the collection so stale documents from old anomaly types
-        # are removed when the interface enum changes.
-        client.delete_collection(name=COLLECTION_NAME)
-        collection = client.get_or_create_collection(name=COLLECTION_NAME)
+    client.delete_collection(name=COLLECTION_NAME)
+    collection = client.get_or_create_collection(name=COLLECTION_NAME)
 
     # Create merged documents for all anomaly types
     all_documents = []

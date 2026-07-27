@@ -94,9 +94,9 @@ streamlit run dashboard/app.py
 ```
 
 ### Test Data Files
-- `dashboard/tests/ui_required_data.json` - Complete test data with all fields (3 components: High, Medium, Low)
-- `dashboard/tests/ui_missing_fields_data.json` - Test data with missing optional fields (3 components with various missing fields)
-- `dashboard/tests/ui_all_medium_risk.json` - All components with Medium risk level (3 components)
+- `dashboard/tests/ui_required_data.json` - Complete test data with current anomaly types
+- `dashboard/tests/ui_missing_fields_data.json` - Test data with missing optional fields
+- `dashboard/tests/ui_all_medium_risk.json` - Components with Medium risk level
 - `dashboard/tests/ui_mixed_risk_levels.json` - Mixed risk levels (2 High, 3 Medium, 1 Low)
 - `dashboard/tests/ui_empty_data.json` - Empty component array
 - `dashboard/tests/ui_single_component.json` - Single component data

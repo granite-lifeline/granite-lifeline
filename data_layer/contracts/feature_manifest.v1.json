@@ -1,0 +1,637 @@
+{
+  "manifest_type": "production_feature_contract",
+  "manifest_version": "1.2.0",
+  "schema_version": "feature_schema.v1",
+  "status": "frozen",
+  "frozen_at_utc": "2026-07-19T14:55:30Z",
+  "authoritative_contract": "data_layer/feature_engineering/feature_schema.md",
+  "runtime_layout_contract": {
+    "run_dir_pattern": "data/processed/runs/<run_id>",
+    "shared_run_layout_required": true,
+    "stage_must_receive_run_layout_explicitly": true,
+    "implicit_latest_run_discovery_forbidden": true,
+    "run_artifact_path_base": "run_dir",
+    "repository_artifact_path_base": "repo_root",
+    "manifest_path_format": "POSIX",
+    "runtime_output_must_remain_under_run_dir": true,
+    "runtime_write_forbidden_roots": [
+      "data_layer source directories",
+      "data_layer/contracts",
+      "data_layer/calibration"
+    ]
+  },
+  "upstream_input_contract": {
+    "input_count": 2,
+    "authoritative_inputs": [
+      {
+        "id": "operating_condition_enriched",
+        "run_relative_path": "operating_conditions/operating_condition_enriched.csv",
+        "owns": [
+          "sample_keys",
+          "cleaned_canonical_signals",
+          "dt_seconds",
+          "operating_condition_fields"
+        ]
+      },
+      {
+        "id": "cleaning_quality",
+        "run_relative_path": "cleaning/cleaning_quality.csv",
+        "owns": [
+          "per_signal_quality_flags",
+          "aggregate_quality_state",
+          "cleaning_provenance"
+        ]
+      }
+    ],
+    "join_keys": [
+      "timestamp",
+      "trip_id",
+      "segment_id",
+      "row_in_segment"
+    ],
+    "timestamp_normalization": "UTC",
+    "one_to_one_key_equality_required": true,
+    "input_sha256_required": true,
+    "source_dataset_identity_required": true,
+    "signal_value_authority": "operating_condition_enriched",
+    "quality_authority": "cleaning_quality",
+    "additional_script_00_authorities_forbidden": true
+  },
+  "stage_manifest_contract": {
+    "manifest_required_for_every_functional_stage": true,
+    "required_metadata": [
+      "schema_version",
+      "source_dataset_identity",
+      "script_version",
+      "creation_time_utc",
+      "ordered_input_artifacts",
+      "ordered_output_artifacts",
+      "artifact_sha256",
+      "calibration_version_or_not_applicable"
+    ],
+    "feature_stage_manifests": {
+      "00": "features/00_input_contract/input_contract_manifest.json",
+      "10": "features/10_atomic/atomic_features_manifest.json",
+      "20": "features/20_engine_start/engine_start_context_manifest.json",
+      "30": "features/30_windows/window_features_manifest.json",
+      "40": "features/40_calibrated/calibrated_features_manifest.json",
+      "41": "features/41_production/production_feature_manifest.json"
+    }
+  },
+  "table": {
+    "name": "production_features",
+    "format": "csv",
+    "grain": "one row per validated sample",
+    "ordered_columns": {
+      "keys_then_context_then_features_then_provenance": true,
+      "unexpected_columns_forbidden": true
+    },
+    "trip_cycle_contract": {
+      "trip_definition": "one discovered raw KIT CSV file equals one trip/drive cycle",
+      "source_file_merge_forbidden": true,
+      "trip_start_timestamp_utc": "minimum valid source timestamp after combining filename date with in-file time, applying the configured source timezone, and converting to UTC",
+      "source_file_order": [
+        "trip_start_timestamp_utc ascending",
+        "source_filename ascending"
+      ],
+      "trip_id_assignment": "1-based ordinal in source_file_order, formatted as trip_<zero-padded ordinal> with minimum width 4",
+      "deterministic_for_fixed_source_dataset_identity": true,
+      "filesystem_discovery_order_must_not_affect_assignment": true,
+      "dataset_membership_change_may_renumber_trips": true
+    },
+    "row_order_contract": {
+      "timestamp_normalization": "UTC",
+      "stable_sort_ascending": [
+        "timestamp",
+        "trip_id",
+        "segment_id",
+        "row_in_segment"
+      ],
+      "timestamp_is_primary_global_chronological_key": true,
+      "remaining_keys_are_deterministic_tie_breakers": true,
+      "within_trip_segment": {
+        "row_in_segment": "1-based and strictly increasing",
+        "timestamp": "strictly increasing at canonical 1 Hz cadence"
+      },
+      "join_order_must_be_explicitly_restored": true,
+      "windows_must_not_cross": [
+        "trip_id",
+        "segment_id"
+      ]
+    }
+  },
+  "sample_keys": [
+    {
+      "name": "timestamp",
+      "dtype": "datetime64[ns, UTC]",
+      "unit": "UTC",
+      "nullable": false
+    },
+    {
+      "name": "trip_id",
+      "dtype": "string",
+      "unit": "identifier",
+      "nullable": false,
+      "definition": "Chronological drive-cycle identifier assigned by table.trip_cycle_contract."
+    },
+    {
+      "name": "segment_id",
+      "dtype": "string",
+      "unit": "identifier",
+      "nullable": false
+    },
+    {
+      "name": "row_in_segment",
+      "dtype": "int64",
+      "unit": "1-based row index",
+      "nullable": false
+    }
+  ],
+  "context_fields": [
+    {
+      "position": 1,
+      "name": "dt_seconds",
+      "class": "A1",
+      "dtype": "float64",
+      "unit": "s",
+      "nullable": false,
+      "owner_pipeline": "operating_condition_analysis.py",
+      "definition": "Within-segment elapsed seconds emitted by the canonical 1 Hz operating-condition table."
+    },
+    {
+      "position": 2,
+      "name": "thermal_state",
+      "class": "A4",
+      "dtype": "string",
+      "unit": "categorical",
+      "nullable": false,
+      "owner_pipeline": "operating_condition_analysis.py",
+      "allowed_values": ["engine_off", "warmup", "post_warmup", "unknown"]
+    },
+    {
+      "position": 3,
+      "name": "child_state",
+      "class": "A4",
+      "dtype": "string",
+      "unit": "categorical",
+      "nullable": false,
+      "owner_pipeline": "operating_condition_analysis.py",
+      "allowed_values": ["inactive_engine_off", "idle", "high_load", "acceleration", "deceleration", "steady_driving", "unknown"]
+    },
+    {
+      "position": 4,
+      "name": "operating_state",
+      "class": "A4",
+      "dtype": "string",
+      "unit": "categorical",
+      "nullable": false,
+      "owner_pipeline": "operating_condition_analysis.py",
+      "definition": "engine_off, unknown, or the known running thermal_state and child_state joined by a double underscore."
+    },
+    {
+      "position": 5,
+      "name": "condition_confidence",
+      "class": "A4",
+      "dtype": "string",
+      "unit": "categorical",
+      "nullable": false,
+      "owner_pipeline": "operating_condition_analysis.py",
+      "allowed_values": ["high", "medium", "low"]
+    },
+    {
+      "position": 6,
+      "name": "condition_quality_flags",
+      "class": "A4",
+      "dtype": "string",
+      "unit": "categorical_flags",
+      "nullable": false,
+      "owner_pipeline": "operating_condition_analysis.py",
+      "definition": "OK or a pipe-delimited set drawn from MISSING_ECT, MISSING_MAF, MISSING_RPM, and MISSING_SPEED."
+    },
+    {
+      "position": 7,
+      "name": "coolant_temp",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "degC",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    },
+    {
+      "position": 8,
+      "name": "map",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "kPa",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    },
+    {
+      "position": 9,
+      "name": "rpm",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "rpm",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    },
+    {
+      "position": 10,
+      "name": "speed",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "km/h",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    },
+    {
+      "position": 11,
+      "name": "intake_temp",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "degC",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    },
+    {
+      "position": 12,
+      "name": "maf",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "g/s",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    },
+    {
+      "position": 13,
+      "name": "tps",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "percent",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "consumers": ["Model Layer raw channel"],
+      "proxy_verdict_consumer": null,
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    },
+    {
+      "position": 14,
+      "name": "ambient_temp",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "degC",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    },
+    {
+      "position": 15,
+      "name": "accel_pedal_d",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "percent",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    },
+    {
+      "position": 16,
+      "name": "accel_pedal_e",
+      "class": "A2",
+      "dtype": "float64",
+      "unit": "percent",
+      "nullable": true,
+      "owner_pipeline": "cleaning_core.py",
+      "null_semantics": "Null when the cleaned canonical source remains missing or hard-invalid."
+    }
+  ],
+  "features": [
+    {
+      "position": 1,
+      "name": "segment_gap_seconds",
+      "class": "B1a",
+      "dtype": "float64",
+      "unit": "s",
+      "nullable": true,
+      "owner_script": "10_atomic_feature_builder.py",
+      "consumers": ["1-S4", "4-S2"],
+      "null_semantics": "Populated only at a segment first row; null when predecessor context is unavailable or on all other rows."
+    },
+    {
+      "position": 2,
+      "name": "engine_on_flag",
+      "class": "B1a",
+      "dtype": "boolean",
+      "unit": "boolean",
+      "nullable": true,
+      "owner_script": "10_atomic_feature_builder.py",
+      "consumers": ["shared enable logic"],
+      "definition": "rpm >= 50",
+      "null_semantics": "Null when RPM is not quality-valid."
+    },
+    {
+      "position": 3,
+      "name": "coolant_ambient_delta",
+      "class": "B1a",
+      "dtype": "float64",
+      "unit": "degC",
+      "nullable": true,
+      "owner_script": "10_atomic_feature_builder.py",
+      "consumers": ["1-S4"],
+      "definition": "coolant_temp - ambient_temp"
+    },
+    {
+      "position": 4,
+      "name": "intake_ambient_delta",
+      "class": "B1a",
+      "dtype": "float64",
+      "unit": "degC",
+      "nullable": true,
+      "owner_script": "10_atomic_feature_builder.py",
+      "consumers": ["4-S2"],
+      "definition": "intake_temp - ambient_temp"
+    },
+    {
+      "position": 5,
+      "name": "accel_pedal_mean",
+      "class": "B1a",
+      "dtype": "float64",
+      "unit": "percent",
+      "nullable": true,
+      "owner_script": "10_atomic_feature_builder.py",
+      "consumers": ["5-S3", "shared pedal calculations"],
+      "definition": "(accel_pedal_d + accel_pedal_e) / 2",
+      "null_semantics": "Null unless both D and E are quality-valid."
+    },
+    {
+      "position": 6,
+      "name": "accel_pedal_channel_delta",
+      "class": "B1a",
+      "dtype": "float64",
+      "unit": "percentage_point",
+      "nullable": true,
+      "owner_script": "10_atomic_feature_builder.py",
+      "consumers": ["3-S1b"],
+      "definition": "abs(accel_pedal_d - accel_pedal_e)",
+      "null_semantics": "Null unless both D and E are quality-valid."
+    },
+    {
+      "position": 7,
+      "name": "pedal_slope",
+      "class": "B1a",
+      "dtype": "float64",
+      "unit": "percentage_point/s",
+      "nullable": true,
+      "owner_script": "10_atomic_feature_builder.py",
+      "consumers": ["3-S1a", "5-S1", "5-S2"],
+      "null_semantics": "Null across continuity boundaries, non-positive elapsed time, or an invalid endpoint."
+    },
+    {
+      "position": 8,
+      "name": "rpm_slope",
+      "class": "B1a",
+      "dtype": "float64",
+      "unit": "rpm/s",
+      "nullable": true,
+      "owner_script": "10_atomic_feature_builder.py",
+      "consumers": ["5-S2"],
+      "null_semantics": "Null across continuity boundaries, non-positive elapsed time, or an invalid endpoint."
+    },
+    {
+      "position": 9,
+      "name": "speed_density_maf_residual",
+      "class": "B1b",
+      "dtype": "float64",
+      "unit": "g/s",
+      "nullable": true,
+      "owner_script": "40_calibrated_feature_builder.py",
+      "consumers": ["2-S2", "5-S2", "MAF/MAP routing"],
+      "definition": "maf - frozen_speed_density_expected_maf",
+      "calibration_reference": "data_layer/calibration/calibration_registry.v1.json#/feature_transforms/speed_density_maf"
+    },
+    {
+      "position": 10,
+      "name": "pedal_mapping_residual",
+      "class": "B1b",
+      "dtype": "float64",
+      "unit": "percentage_point",
+      "nullable": true,
+      "owner_script": "40_calibrated_feature_builder.py",
+      "consumers": ["3-S1a"],
+      "definition": "accel_pedal_e - (a * accel_pedal_d + b)",
+      "calibration_reference": "data_layer/calibration/calibration_registry.v1.json#/feature_transforms/pedal_mapping"
+    },
+    {
+      "position": 11,
+      "name": "engine_start_observed",
+      "class": "B2",
+      "dtype": "boolean",
+      "unit": "boolean",
+      "nullable": true,
+      "owner_script": "20_engine_start_context_builder.py",
+      "consumers": ["1-S1", "episode construction", "1-S4 event guard", "4-S2 event guard"],
+      "definition": "True only at an observed within-continuity-block RPM <50 to >=50 crossing row."
+    },
+    {
+      "position": 12,
+      "name": "engine_start_episode_id",
+      "class": "B2",
+      "dtype": "string",
+      "unit": "identifier",
+      "nullable": true,
+      "owner_script": "20_engine_start_context_builder.py",
+      "consumers": ["all episode-scoped calculations"],
+      "null_semantics": "Null outside an observed engine-start episode."
+    },
+    {
+      "position": 13,
+      "name": "elapsed_since_engine_start",
+      "class": "B2",
+      "dtype": "float64",
+      "unit": "s",
+      "nullable": true,
+      "owner_script": "20_engine_start_context_builder.py",
+      "consumers": ["warm-up logic", "episode-window logic"],
+      "null_semantics": "Zero at the crossing row and null outside the episode."
+    },
+    {
+      "position": 14,
+      "name": "ect_start",
+      "class": "B2",
+      "dtype": "float64",
+      "unit": "degC",
+      "nullable": true,
+      "owner_script": "20_engine_start_context_builder.py",
+      "consumers": ["1-S1"],
+      "definition": "Crossing-row ECT stored once in the episode table and mapped by episode foreign key."
+    },
+    {
+      "position": 15,
+      "name": "aat_start",
+      "class": "B2",
+      "dtype": "float64",
+      "unit": "degC",
+      "nullable": true,
+      "owner_script": "20_engine_start_context_builder.py",
+      "consumers": ["1-S1"],
+      "definition": "Crossing-row AAT stored once in the episode table and mapped by episode foreign key."
+    },
+    {
+      "position": 16,
+      "name": "iat_start",
+      "class": "B2",
+      "dtype": "float64",
+      "unit": "degC",
+      "nullable": true,
+      "owner_script": "20_engine_start_context_builder.py",
+      "consumers": ["retained engine-start/model context"],
+      "definition": "Crossing-row IAT stored once in the episode table and mapped by episode foreign key.",
+      "proxy_verdict_consumer": null
+    },
+    {
+      "position": 17,
+      "name": "maf_integral_180s",
+      "class": "B3",
+      "dtype": "float64",
+      "unit": "g",
+      "nullable": true,
+      "owner_script": "30_window_feature_builder.py",
+      "consumers": ["1-S1 heat-input guard"],
+      "definition": "Trapezoidal integral over endpoints t-180s through t.",
+      "window_contract": {
+        "span_seconds": 180,
+        "endpoint_count": 181,
+        "interval_count": 180,
+        "sampling_hz": 1,
+        "same_continuity_block": true,
+        "same_engine_start_episode": true,
+        "all_endpoints_quality_valid": true
+      }
+    },
+    {
+      "position": 18,
+      "name": "ect_rate_180s",
+      "class": "B3",
+      "dtype": "float64",
+      "unit": "degC/min",
+      "nullable": true,
+      "owner_script": "30_window_feature_builder.py",
+      "consumers": ["1-S3"],
+      "definition": "(ECT[t] - ECT[t-180s]) / 3",
+      "window_contract": {
+        "span_seconds": 180,
+        "endpoint_count": 181,
+        "sampling_hz": 1,
+        "same_continuity_block": true,
+        "all_endpoints_quality_valid": true
+      }
+    },
+    {
+      "position": 19,
+      "name": "intake_temp_stability",
+      "class": "B3",
+      "dtype": "float64",
+      "unit": "degC",
+      "nullable": true,
+      "owner_script": "30_window_feature_builder.py",
+      "consumers": ["4-S1"],
+      "definition": "Sample standard deviation over 60 consecutive valid 1 Hz IAT samples.",
+      "window_sample_count": 60,
+      "ddof": 1
+    },
+    {
+      "position": 20,
+      "name": "speed_std_120s",
+      "class": "B3",
+      "dtype": "float64",
+      "unit": "km/h",
+      "nullable": true,
+      "owner_script": "30_window_feature_builder.py",
+      "consumers": ["4-S1", "5-S3"],
+      "definition": "Sample standard deviation over 120 consecutive valid 1 Hz speed samples.",
+      "window_sample_count": 120,
+      "ddof": 1
+    },
+    {
+      "position": 21,
+      "name": "maf_std_120s",
+      "class": "B3",
+      "dtype": "float64",
+      "unit": "g/s",
+      "nullable": true,
+      "owner_script": "30_window_feature_builder.py",
+      "consumers": ["4-S1"],
+      "definition": "Sample standard deviation over 120 consecutive valid 1 Hz MAF samples.",
+      "window_sample_count": 120,
+      "ddof": 1
+    },
+    {
+      "position": 22,
+      "name": "rpm_std_120s",
+      "class": "B3",
+      "dtype": "float64",
+      "unit": "rpm",
+      "nullable": true,
+      "owner_script": "30_window_feature_builder.py",
+      "consumers": ["5-S3"],
+      "definition": "Sample standard deviation over 120 consecutive valid 1 Hz RPM samples.",
+      "window_sample_count": 120,
+      "ddof": 1
+    },
+    {
+      "position": 23,
+      "name": "accel_pedal_mean_std_120s",
+      "class": "B3",
+      "dtype": "float64",
+      "unit": "percent",
+      "nullable": true,
+      "owner_script": "30_window_feature_builder.py",
+      "consumers": ["5-S3"],
+      "definition": "Sample standard deviation over 120 consecutive valid 1 Hz pedal-mean samples.",
+      "window_sample_count": 120,
+      "ddof": 1
+    },
+    {
+      "position": 24,
+      "name": "map_range_60s",
+      "class": "B3",
+      "dtype": "float64",
+      "unit": "kPa",
+      "nullable": true,
+      "owner_script": "30_window_feature_builder.py",
+      "consumers": ["5-S3"],
+      "definition": "Rolling maximum minus minimum over 60 consecutive valid 1 Hz MAP samples.",
+      "window_sample_count": 60
+    }
+  ],
+  "provenance_columns": [
+    {
+      "name": "schema_version",
+      "dtype": "string",
+      "nullable": false,
+      "constant_value": "feature_schema.v1"
+    },
+    {
+      "name": "calibration_version",
+      "dtype": "string",
+      "nullable": false,
+      "constant_value": "calibration.v1"
+    }
+  ],
+  "global_null_policy": {
+    "assembler_imputation": "forbidden; delivered A-class values are passed through exactly from validated upstream outputs",
+    "quality_invalid_source": "null feature",
+    "incomplete_window": "null feature",
+    "out_of_domain_calibrated_transform": "handled exactly as declared by the frozen registry",
+    "missing_required_table_column_key_or_unit": "abort stage as a contract failure"
+  },
+  "context_field_count": 16,
+  "feature_count": 24,
+  "total_column_count": 46
+}

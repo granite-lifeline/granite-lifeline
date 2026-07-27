@@ -131,7 +131,7 @@ signals:
       - "Colder intake air has higher density."
       - "Higher intake air temperature reduces effective oxygen content and combustion efficiency."
     failure_interpretation:
-      - "Abnormally high intake temperature may indicate heat soak or insufficient intake air cooling."
+      - "Abnormal intake temperature may indicate sensor drift, signal sticking, or intake-air measurement plausibility issues."
       - "Abnormally low intake temperature may indicate sensor failure."
       - "Mismatch with MAF data may indicate air intake path abnormality."
     reference_range: null
@@ -316,8 +316,8 @@ features:
       - "ambient_temp"
     formula: "intake_temp - ambient_temp"
     unit: "°C"
-    physical_meaning: "Degree of intake-air heating or heat soak before air enters the engine."
-    intended_signal: "intake_air_heat_soak"
+    physical_meaning: "Difference between measured intake-air temperature and ambient air temperature before air enters the engine."
+    intended_signal: "intake_air_temperature_plausibility"
     reference_range:
       type: "calibrated_baseline"
       normal_range: "dataset normal-reference baseline under comparable ambient, speed, and load conditions"
@@ -329,7 +329,7 @@ features:
       - "timestamp"
     formula: "delta(intake_temp) / delta(time)"
     unit: "°C/s"
-    physical_meaning: "Dynamic rate of intake-air heat soak or cooling."
+    physical_meaning: "Dynamic rate of intake-air temperature change."
     intended_signal: "intake_air_temperature_change_rate"
     reference_range:
       type: "calibrated_baseline"
@@ -618,11 +618,11 @@ features:
 
   # Retired features (record-only, not computed by the pipeline).
   # No active proxy failure depends on these. Each is retained only because the
-  # specific baseline statistics it produced are cited as evidence in
-  # electronic_throttle_tracking_fault's exclusion rationale (see proxy_failures);
-  # those numbers are a frozen historical record, not a live/reproducible column.
-  # If that exclusion is ever revisited, these features would need re-deriving
-  # against corrected tps data rather than re-enabling the current computation as-is.
+  # specific baseline statistics it produced are cited as evidence for a retired
+  # proxy decision; those numbers are a frozen historical record, not a
+  # live/reproducible column. If that decision is ever revisited, these features
+  # would need re-deriving against corrected tps data rather than re-enabling the
+  # current computation as-is.
 
   pedal_throttle_gap:
     inputs:
@@ -674,32 +674,31 @@ proxy_failures:
     component: "Cooling system (Radiator / Water Pump / Thermostat / Coolant Circulation)"
     evidence:
       - "coolant_temp"
-      - "ambient_temp"
-      - "speed"
-      - "rpm"
-      - "coolant_slope"
-      - "coolant_ambient_delta"
-      - "coolant_stability"
-    definition: "Flag abnormal coolant thermal behavior, including sustained overheating after warm-up, coolant temperature rising without plateau, abnormally slow warm-up, and coolant temperature implausible relative to ambient temperature after cold soak."
+      - "ect_start"
+      - "aat_start"
+      - "maf_integral_180s"
+      - "ect_rate_180s"
+    definition: "Flag abnormal coolant thermal behavior, including sustained overheating after warm-up, abnormally slow warm-up, a pending rising-temperature precursor, and low-confidence coolant/ambient plausibility support after cold soak."
     expected_pattern:
       overheating:
         signal: "coolant_temp"
         condition: ">105°C"
         duration: "3-5 min"
         phase: "after warm-up"
-      rising_without_plateau:
-        signal: "coolant_slope"
-        condition: ">2°C/min"
-        condition_si: ">0.0333°C/s"
-        duration: "2-3 min"
+      rising_temperature_precursor:
+        signal: "ect_rate_180s"
+        condition: ">=0.5°C/min while coolant_temp is at least 100°C"
+        duration: "180 s"
+        role: "pending_only_not_a_standalone_dtc"
       slow_warmup:
         signal: "coolant_temp"
-        condition: "<70-75°C"
-        duration: "after 10-15 min running"
+        condition: "fails to reach 79°C within frozen ambient/start-ECT budget"
+        context: "valid engine-start context and maf_integral_180s > 2800.6549999999997 g"
       sensor_plausibility:
         signal: "abs(coolant_temp - ambient_temp)"
-        condition: ">10-15°C"
+        condition: ">15°C while intake_temp agrees with ambient"
         phase: "after cold soak"
+        role: "low_confidence_support_only"
     rationale: "The cooling system prevents thermal overload, lubricating-oil burn-off, and abnormal combustion caused by excessive component temperatures. If coolant temperature stays above the stable post-warm-up range for an extended period, heat input and heat dissipation capacity are out of balance."
     supporting_source: "Bosch Automotive Handbook"
     report_layer:
@@ -784,7 +783,7 @@ proxy_failures:
           - action: "Check that the pump wheel is not loose on the drive shaft"
             source: "MAHLE, p.39–40, 'Engine overheats' troubleshooting (Classification by Bob based on maintenance urgency)"
 
-  intake_air_temperature_sensor_or_heat_soak_fault:
+  intake_air_temperature_sensor_fault:
     component: "Intake-air temperature (IAT) sensor circuit and signal plausibility"
     evidence:
       - "intake_temp"
@@ -798,9 +797,10 @@ proxy_failures:
       - "intake_ambient_delta"
       - "intake_temp_stability"
       - "segment_gap_seconds"
-      - "cold_soak_candidate_flag"
+      - "speed_std_120s"
+      - "maf_std_120s"
       - "condition_confidence"
-    definition: "The IAT signal fails a plausibility check against ambient/coolant references after a cold soak, stays flat (skewed/stuck) despite sustained speed/airflow that would normally change intake temperature, or remains implausibly high in the idle window following high load. This proxies IAT sensor circuit degradation, signal drift, or signal sticking, consistent with SAE J2012 DTC P0111."
+    definition: "The IAT signal fails a plausibility check against ambient/coolant references after a cold soak, stays flat or slow to respond despite sustained speed/airflow that would normally change intake temperature, or falls outside the physical measurement range. This proxies IAT sensor circuit degradation, signal drift, or signal sticking, consistent with SAE J2012 DTC P0111/P0112/P0113."
     expected_pattern:
       cold_soak_plausibility:
         role: "low_confidence_candidate_not_a_standalone_trigger"
@@ -814,15 +814,14 @@ proxy_failures:
         condition: "near zero"
         duration: "sustained window"
         context: "sustained speed/load context using speed, rpm, maf, map, or operating_state; tps is not used as an airflow proxy because it is unreliable in this dataset"
-      post_high_load_heat_soak:
+      physical_range_check:
         signal: "intake_temp"
-        condition: ">~63°C"
-        phase: "idle window following high load, not during high load itself"
-        threshold_role: "project_derived_from_post_warmup_idle_p99_baseline"
+        condition: "outside sensor physical range or implausible relative to ambient/coolant references"
+        threshold_role: "sensor-plausibility guardrail"
     rationale: "Intake air temperature directly affects air density and combustion efficiency — colder air is denser. IAT should track ambient/coolant references at cold start and respond dynamically to speed/airflow changes once the engine is running; failure to do so indicates the sensor circuit is not measuring true intake-air temperature."
     supporting_source: "SAE International, Diagnostic trouble code definitions (P0111); Bosch Automotive Handbook; project-derived baseline calibration"
     report_layer:
-      description: "Air-temperature sensor is installed in the air-intake tract. Together with the signal from the boost-pressure sensor, its signal is applied in calculating the intake-air mass. Setpoint values for various control loops (e.g. EGR, boost-pressure control) can be adapted to the air temperature (measuring range –40 to +120 °C). Its job is simple but crucial: provide accurate air temperature readings to the car's engine control unit (ECU) or powertrain control module (PCM). Cold air is denser and contains more oxygen, so your car needs more fuel for combustion. On the flip side, warm air requires less fuel. It is used by the Powertrain Control Module to assist with the calculation of idle speed, fuel mixture, and spark advance. The sensor operates using a thermistor — a component that measures temperature by changing its resistance. Its resistance decreases as the air temperature rises. Intake air temperature sensor is built into the mass airflow sensor. The intake air temperature sensor converts the intake air temperature into a voltage and inputs the voltage signal to the engine-ECU. In response to the signal, the engine-ECU corrects the fuel injection amount, etc. Heat Soak: Engine heat soak happens when heat from the engine, exhaust, turbo or cooling system builds up under the bonnet and is absorbed by surrounding components. Heat soak means components are absorbing heat faster than they can get rid of it. When the car is moving, airflow helps carry heat out of the engine bay. When you stop in traffic, sit in a queue or shut the engine off, airflow drops. Hot parts keep radiating heat, but that heat has nowhere useful to go. Hot intake air is less dense, more knock-prone and more likely to make the ECU pull timing or reduce boost."
+      description: "The intake air temperature sensor is installed in the air-intake tract and provides the engine control unit with the temperature of the air entering the engine. The signal helps calculate air density, fuel mixture, ignition timing, and related control decisions. The sensor normally behaves like a thermistor: its electrical resistance changes as temperature changes. A plausible signal should be physically reasonable, broadly consistent with ambient and coolant context at cold start, and responsive when airflow and operating conditions change. A signal that is stuck, slow to respond, physically implausible, or inconsistent with its references may indicate an IAT sensor circuit or signal plausibility fault."
       causes:
         - "Faulty IAT sensor: The most common culprit"
         - "Failed intake air temperature sensor"
@@ -837,9 +836,6 @@ proxy_failures:
         - "ECM failed"
         - "Failed engine-ECU"
         - "Faulty Powertrain Control Module (PCM)"
-        - "Heat soak: The main heat sources are usually the exhaust manifold, headers, turbocharger, downpipe, radiator, engine block and charge pipework"
-        - "Heat soak is usually worse on turbocharged cars because the turbocharger adds a concentrated heat source to the engine bay"
-        - "The turbine housing is driven by hot exhaust gas. Under hard use, the turbo, manifold and downpipe radiate a lot of heat into the surrounding area"
       actions:
         low:
           - action: "Use scan tool (M.U.T.-III SE) to check the data list. Item number 50: Air Temperature Sensor"
@@ -850,15 +846,11 @@ proxy_failures:
             source: "OBDeleven, 'P0113', December 17, 2024; Mitsubishi Eclipse Cross Workshop Manual, DTC P0113-00, 'Diagnosis', Step 2 (Classification by Bob based on maintenance urgency)"
           - action: "Normally, the intake air temperature should be similar to or higher than the outside air temperature. If it is significantly lower, it confirms that the issue is still ongoing."
             source: "OBDeleven, 'P0113', December 17, 2024 (Classification by Bob based on maintenance urgency)"
-          - action: "Check intake air temperatures and intake location. OBD intake air temperature: Does IAT climb quickly and recover slowly? Ignition timing or boost: Does the ECU pull performance when hot?"
-            source: "Exoracing, 'Engine Heat Soak: Symptoms, Causes and Fixes', Matthew Marks, May 19, 2026 (Classification by Bob based on maintenance urgency)"
         medium:
           - action: "Look for physical damage, corrosion, or disconnections in the IAT sensor and its wiring. Also, check the air filter for excessive dirt or debris."
             source: "OBDeleven, 'P0113', December 17, 2024 (Classification by Bob based on maintenance urgency)"
           - action: "Remove the IAT sensor. Set the multimeter to measure resistance (Ω). Connect the multimeter to the sensor terminals. Use a hair dryer to blow hot air onto the sensor while observing changes in its resistance. Under normal conditions, the sensor's resistance should decrease as it warms up. However, if the resistance remains unchanged as the temperature increases, this indicates that the sensor is faulty and needs replacement."
             source: "OBDeleven, 'P0113', December 17, 2024 (Classification by Bob based on maintenance urgency)"
-          - action: "Visual inspection: Are parts too close to the heat source? Look for brittle wiring, cooked hoses, melted clips, discoloured sleeving or lines routed close to the turbo or downpipe. After hard driving, especially in a turbo car, avoid switching the engine off immediately. Let it idle gently for a minute or two so oil, coolant and air can keep moving heat away from the turbo, head and block."
-            source: "Exoracing, 'Engine Heat Soak: Symptoms, Causes and Fixes', Matthew Marks, May 19, 2026 (Classification by Bob based on maintenance urgency)"
         high:
           - action: "Replace the mass airflow sensor"
             source: "Mitsubishi Eclipse Cross Workshop Manual, DTC P0113-00, 'Diagnosis', Step 1 (Classification by Bob based on maintenance urgency)"
@@ -869,24 +861,21 @@ proxy_failures:
     component: "MAF sensor / intake air measurement path"
     evidence:
       - "maf"
-      - "map"
+      - "speed_density_maf_residual"
       - "rpm"
+      - "map"
       - "intake_temp"
-      - "maf_derived_air_load_raw"
-      - "map_derived_air_load_raw"
-      - "maf_map_cohesion"
-    definition: "Triggered when maf_map_cohesion remains high. This proxy identifies inconsistency between the MAF-side air-load estimate and the MAP-side air-load estimate, mainly indicating MAF sensor drift, contamination, response delay, or abnormalities in the intake measurement chain."
+    definition: "Triggered by direct MAF paths: high-load under-read against the frozen speed-density residual, or zero MAF while the engine is firing. Residual evidence is shared with MAP plausibility and must be attributed with independent witnesses."
     expected_pattern:
-      high_maf_map_cohesion:
-        signal: "maf_map_cohesion"
-        condition: ">0.25-0.30"
-        duration: "5-10 s"
-        threshold_role: "initial_proxy_hint_not_final_decision_threshold"
-        requires_dataset_baseline: true
-      steady_state_standardized_deviation:
-        signal: "standardized_deviation(maf_derived_air_load_raw, map_derived_air_load_raw)"
-        condition: ">25-30%"
-        phase: "steady-state conditions"
+      high_load_under_read:
+        signal: "speed_density_maf_residual"
+        condition: "< -18.495 g/s"
+        duration: "at least 10 consecutive valid seconds"
+        phase: "high-confidence post_warmup__high_load"
+      zero_maf_while_firing:
+        signal: "maf"
+        condition: "== 0.0 while rpm >= 500"
+        duration: "at least 10 valid seconds"
       masks:
         - "transient acceleration"
         - "gear shifts"
@@ -923,10 +912,12 @@ proxy_failures:
       - "rpm"
       - "accel_pedal_mean"
       - "pedal_slope"
-      - "intake_temp"
       - "speed_density_maf_residual"
-      - "map_slope"
-      - "map_stability"
+      - "map_range_60s"
+      - "rpm_slope"
+      - "rpm_std_120s"
+      - "speed_std_120s"
+      - "accel_pedal_mean_std_120s"
     excluded_diagnostic_context:
       tps: "Retained only as raw diagnostic context, not a triggering input — its physical meaning is unreliable in this dataset (saturated near 83.1-83.5% across nearly all operating states; a simple 100 - tps inversion does not fix it, and map responds more plausibly to pedal_slope than to tps)."
     definition: "MAP fails to reasonably reflect load changes, or its relationship with MAF, driver-demand/load context, and engine speed is inconsistent. This proxies MAP sensor drift, blockage, hose issues, signal sticking, or load-measurement-chain abnormalities, consistent with SAE J2012 DTC P0106; the step-response check approximates the diagnostic intent of P0068 using pedal demand instead of tps as the trigger."
@@ -936,17 +927,16 @@ proxy_failures:
           signal: "accel_pedal_mean"
           detected_via: "pedal_slope exceeding a per-operating_state threshold"
         observation:
-          signal: "abs(map_slope)"
-          condition: "near zero"
-          window: "calibrated response window"
+          signal: "map response"
+          condition: "at least 3 no-responses among the 4 most recent valid pedal-demand events"
       steady_state_cross_consistency:
         signal: "speed_density_maf_residual"
-        condition: "exceeds a per-operating_state tolerance"
-        phase: "steady-state conditions"
+        condition: "outside [-4.04, +16.71] g/s for at least 30 s"
+        phase: "flat-pedal, stable-RPM post-warmup driving"
       stuck_signal:
-        signal: "map_stability"
-        condition: "below a per-operating_state low-variance threshold"
-        duration: "sustained window"
+        signal: "map_range_60s"
+        condition: "== 0"
+        duration: "at least 120 s"
         context: "RPM/pedal/MAF/speed-load context changing"
     calibration_note: "All three thresholds must be calibrated per operating_state; normal MAP/pedal variability differs by roughly 4-11x between idle and high-load conditions in this project's baseline."
     rationale: "MAP is a preferred method for monitoring engine load; MAF- and MAP-derived load estimates should stay physically consistent, and MAP should respond to driver torque demand. If MAP is distorted, load, ignition timing, fuel injection, and torque calculations are all biased."
@@ -993,69 +983,6 @@ proxy_failures:
           - action: "In turbo engines, too low boost pressure leads to a loss of power. If the boost pressure sensor is OK, follow the path of the intake air through the engine and check the air filter, the turbocharger, the charge air lines with the charge air cooler and the exhaust gas recirculation and the particle filter, if present."
             source: "NGK Spark Plug Europe, 'MAP Sensor', Technical Bulletin (Classification by Bob based on maintenance urgency)"
 
-  electronic_throttle_tracking_fault:
-    status: "excluded_not_implementable_with_current_dataset"
-    component: "Electronic throttle control (ETC) / throttle actuator command-response tracking"
-    exclusion_note: "Unlike cooling_degradation and air_intake_maf_anomaly, which are deferred pending DTC-mapping coordination, this exclusion is not a coordination-pending state — it reflects a data-acquisition limitation that additional trip data of the same kind cannot resolve."
-    reason_for_exclusion: "This failure's diagnostic intent (SAE J2012 P2111/P2112/P2108) requires an independent observation of actual throttle position to distinguish actuator-tracking faults from driver-demand or air-path issues. In this dataset, the only available throttle-position channel (tps) shows a sampling artifact — long flat stretches interrupted by large abrupt jumps — consistent with polling-interval/refresh-rate behavior of the OBD dongle rather than continuous physical throttle response. A candidate derived feature (pedal_throttle_gap) was evaluated as a substitute, but its widened-residual regions coincide with exactly the same operating states where the sampling artifact concentrates, making it structurally unable to separate a true actuator fault from the measurement artifact. No other signal in the current feature set (map, maf, rpm) provides an independent observation of throttle position; using them alone would duplicate map_load_signal_plausibility_fault's step-response check under a different DTC label rather than provide independent evidence."
-    reconsideration_criteria: "This exclusion should be revisited if (a) raw per-PID polling timestamps become available to correct for refresh-rate artifacts, or (b) a higher-fidelity throttle-position source (e.g., VCDS/UDS measuring-block data) is captured alongside future trips."
-    report_layer:
-      description: "Electronic throttle control (ETC), also known as drive-by-wire throttle, is an automotive technology that replaces mechanical cables linking the accelerator pedal to the throttle valve with electronic sensors, an engine control unit (ECU), and actuators to precisely regulate engine air intake based on driver input and other vehicle parameters. The system interprets pedal position via potentiometers or Hall effect sensors, processes the signal through the ECU—often integrating data from throttle position sensors, mass airflow sensors, and vehicle dynamics—and drives a DC motor or stepper motor to adjust the throttle plate's angle. A typical ETC system includes the following components: electronic throttle body, accelerator pedal module and electronic control unit. An electric throttle actuator control (TAC) is made of a throttle control motor and two throttle position sensors. When the throttle valve moves, the two throttle position sensors respond with a signal to verify position. These sensors act as potentiometers to convert the throttle valve position into a voltage signal that is sent to the ECM. The TAC turns two reduction gears inside the throttle body that link the drive gear from the motor to the throttle plate shaft. On most systems, idle speed is entirely controlled by throttle plate angle. The ECM calculates the opening angle of the throttle valve from these signals and then commands the throttle control motor to make the proper throttle valve opening angle in response to the driving conditions. The ECM then commands the throttle actuator, usually a DC brushless motor or gear-driven stepper motor integrated into the throttle body, via pulse-width modulation (PWM) or H-bridge circuitry to precisely position the butterfly valve. Throttle position sensors (TPS), often dual-redundant for fault detection, provide closed-loop feedback by monitoring the valve's actual angle and relaying it back to the ECM, enabling proportional-integral-derivative (PID) control algorithms to minimize positioning errors within milliseconds. The system achieves rapid response times—typically under 100 ms for full travel. Calibration maps stored in ECM firmware correlate pedal position to throttle opening nonlinearly; for instance, light pedal inputs yield minimal airflow for idle stability, while full depression commands wide-open throttle under safe conditions. Two redundant sensors control the up to date throttle position. All ETBs have an idle air position. Output signal I: 0 to 5 V for 0 to 90°. Output signal II: 5 to 0 V for 0 to 90°. The accelerator pedal position sensor is also involved in converting the acceleration movement when the pedal is pressed into an electronic signal, which then initiates throttle body control either as opening or closing movements. The APP sensor comprises two individual sensors, with both sensors designed to have individual sensor return wiring. Each sensor has a varying voltage range. If there is a discrepancy between either the output voltage signal by the potentiometers monitoring the pedal position or the sensor itself, the PCM unit will reduce the performance of the vehicle, thereby setting the APP unit into a 'limp-home-mode'."
-      causes:
-        - "Faulty TAC motor: The motor may have internal electrical or mechanical issues"
-        - "Faulty Electronic Throttle Body (Very Common) — The entire throttle body unit fails due to internal electronic failure of the actuator motor or position sensors"
-        - "Dirty or Obstructed Throttle Body (Common) — Carbon and grime buildup around the throttle plate causes it to bind"
-        - "Carbon buildup can accumulate over time around the throttle plate, which the computer responds to by adjusting the home position"
-        - "Damaged wiring or poor electrical connections in the TAC motor circuit"
-        - "Wiring or Connector Issues (Common) — The wiring harness between the throttle body, pedal sensor, and PCM becomes damaged, corroded, or loose"
-        - "Malfunctioning TPS: Incorrect throttle position feedback can cause the ECM to detect an issue"
-        - "TPS malfunctions often result from electrical wear, contamination, or calibration drift"
-        - "Faulty Accelerator Pedal Position (APP) Sensor (Common) — The sensor connected to the gas pedal sends erratic signals that don't match its redundant internal sensors"
-        - "Issues with the power or ground circuit for the TAC motor"
-        - "Low System Voltage (Rare) — A weak battery or failing alternator starves the electronic throttle control system of power"
-        - "Faulty PCM or ECM (rare)"
-      actions:
-        low:
-          - action: "Retrieve freeze frame data to identify the conditions present when the code was set."
-            source: "ZipTuning, 'P2101'; Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
-          - action: "Scan for All Trouble Codes and Analyse Freeze Frame Data."
-            source: "ZipTuning, 'P2101'; Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
-          - action: "OBD II trouble codes for accelerator pedal position (APP) sensor faults include P0120 – P0124, P0220 – P0229."
-            source: "AutoSuccess, Brendan Baker, December 18, 2019 (Classification by Bob based on maintenance urgency)"
-          - action: "Any fault that occur in the motor on the throttle body will be detected by the feedback signals from the throttle position sensors. OBD II codes for this kind of problem include P0638 and P0639."
-            source: "AutoSuccess, Brendan Baker, December 18, 2019 (Classification by Bob based on maintenance urgency)"
-          - action: "Monitor the voltage readings from APP Sensor 1 and APP Sensor 2 using a scan tool with live data."
-            source: "Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
-          - action: "Check Throttle Position: 10-15% at idle, ~100% fully open."
-            source: "Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
-        medium:
-          - action: "Visually inspect the throttle body, wiring harness, and electrical connections for damage or corrosion."
-            source: "ZipTuning, 'P2101'; Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
-          - action: "Visually Inspect the Wiring Harness. Check the wiring harness going to the throttle body and accelerator pedal. Look for signs of damage, corrosion, loose connectors, or cracked insulation."
-            source: "ZipTuning, 'P2101'; Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
-          - action: "Inspect and Clean the Throttle Body."
-            source: "Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
-          - action: "Test the TAC motor circuit for proper voltage and ground signals using a digital multimeter."
-            source: "ZipTuning, 'P2101'; Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
-          - action: "Check Power and Ground at the Throttle Body. verify the power supply wire has battery voltage (~12V). Check the resistance between the ground wire and the battery's negative terminal; it must be less than 0.5 Ohms."
-            source: "ZipTuning, 'P2101'; Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
-          - action: "Command the throttle plate to open and close using a bidirectional scan tool. If the scanner sends the command but the plate doesn't move, the throttle body assembly is faulty."
-            source: "Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
-          - action: "Test the TPS and compare readings to manufacturer specifications."
-            source: "ZipTuning, 'P2101'; AutoSuccess, Brendan Baker, December 18, 2019 (Classification by Bob based on maintenance urgency)"
-          - action: "Diagnosis involves reading the fault codes to determine the circuit that is experiencing the problem. Then you should check the voltage or resistance of the pedal or throttle position sensors with a DVOM."
-            source: "ZipTuning, 'P2101'; AutoSuccess, Brendan Baker, December 18, 2019 (Classification by Bob based on maintenance urgency)"
-        high:
-          - action: "Replacing the TAC motor if it fails pinpoint tests."
-            source: "ZipTuning, 'P2101' (Classification by Bob based on maintenance urgency)"
-          - action: "Repairing damaged wiring or connectors in the TAC motor circuit."
-            source: "ZipTuning, 'P2101' (Classification by Bob based on maintenance urgency)"
-          - action: "Replacing the TPS if it is found to be faulty."
-            source: "ZipTuning, 'P2101' (Classification by Bob based on maintenance urgency)"
-          - action: "If you replace the throttle body, the ECM continues to use the adaptive settings as if the carbon buildup is still there until it is recalibrated. A relearn procedure is necessary to allow the ECM to relearn the baseline idle."
-            source: "AutoSuccess, Brendan Baker, December 18, 2019; Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
-          - action: "Perform the required 'Throttle Relearn' procedure after repair."
-            source: "AutoSuccess, Brendan Baker, December 18, 2019; Go-Parts, 'P2104' (Classification by Bob based on maintenance urgency)"
 
   accelerator_pedal_sensor:
     component: "Accelerator pedal position sensors (dual/redundant)"
@@ -1114,89 +1041,3 @@ proxy_failures:
             source: "Innova.com R&D, 'Accelerator Pedal Position Sensor', March 5, 2024 (Classification by Bob based on maintenance urgency)"
           - action: "The APPS is part of the accelerator pedal assembly, so replacement requires replacing the entire pedal assembly."
             source: "Innova.com R&D, 'Accelerator Pedal Position Sensor', March 5, 2024 (Classification by Bob based on maintenance urgency)"
-
-  idle_speed_control_or_surge_degradation:
-    component: "Idle-speed control / engine-speed control"
-    evidence:
-      - "rpm"
-      - "speed"
-      - "accel_pedal_d"
-      - "accel_pedal_e"
-      - "maf"
-      - "map"
-      - "operating_state"
-      - "idle_rpm_stability"
-      - "rpm_slope"
-    definition: "Under idle conditions, RPM fluctuation is excessive, cyclic surging occurs, or the engine cannot stabilize near its expected idle speed. This proxies idle-control degradation, intake/fuel-injection/ignition disturbances, excessive EGR, or insufficient load compensation, consistent with SAE J2012 DTCs P0506, P0507, and P0519."
-    expected_pattern:
-      idle_window:
-        source: "operating_state / child_state == idle"
-        note: "Derived from smoothed vehicle speed and speed-derived acceleration, not accelerator-pedal position or tps."
-      deviation_and_duration:
-        signal: "idle RPM"
-        condition: "deviates from a project-derived expected-idle-RPM reference band for a calibrated duration"
-        reference: "this project's post_warmup__idle / warmup__idle healthy-trip baseline — no commanded-idle-RPM PID exists in this dataset"
-      stability_variance:
-        idle_rpm_stability:
-          window: "10 s rolling std of RPM within a contiguous idle episode"
-          note: "Episodes shorter than 10 s have no value; use rpm_slope instead."
-          thresholds:
-            post_warmup__idle: "150 rpm (project-derived/provisional)"
-            warmup__idle: "100 rpm (project-derived/provisional)"
-        rpm_slope:
-          condition: "repeated sign reversals above a calibrated amplitude"
-    rationale: "Idle-speed control aims to maintain the desired idle speed under disturbances from accessory loads, intake/EGR flow variation, and combustion-quality variation. Persistent RPM fluctuation or failure to converge to an expected idle speed reflects degradation in this control loop or the combustion stability it depends on."
-    supporting_source: "SAE International, Diagnostic trouble code definitions (P0506/P0507/P0519); Bosch Automotive Handbook; U.S. Patent No. 5,408,871; U.S. Patent No. 5,936,152; Montes-Solano & Pisu (2009), SAFEPROCESS 2009"
-    report_layer:
-      description: "The speed of vehicle engine at idle state is called an idle speed. An idle speed is basically a rotational speed of an engine when the engine is uncoupled to the drivetrain and the throttle pedal is up to the combustion engine. The aim of idle speed control is to maintain the desired engine speed or rpm to avoid any sort of disturbances such as torque disturbance which arises due to accessory loads on an engine such as air conditioning, power steering/alternators, automatic transmissions, etc. To optimize vehicle and powertrain operations at idle conditions a control has to be established especially when there are conflicting requirements such as improved fuel economy, reduced emissions, and stable combustions. The desired main input of the idle speed controller is the engine speed. In addition, inputs are described as throttle position, vehicle speed, feedforward indicators from automatic transmission, air conditioning, power steering and battery charging system with some environmental measurements such as engine coolant temperature and barometric pressure. The main control output is achieved by controlling the amount of air supplied to the engine. The amount of air controlled by a throttle bypass valve turns the intake manifold air towards the closed primary throttle plate. During the stages of sudden deacceleration air, the bypass valve supplies some additional amount of air in the start and end of damper work which prevents stalling of the engine and provides a smooth transition from higher speed rpm to idle speed rpm. This code is often triggered in vehicles with an electronic throttle control rather than a throttle cable going from the accelerator pedal to the engine. This code usually presents itself when the Powertrain control module detects a lower engine idle speed than what is pre-programmed for the RPM. The P0506 check engine error code means that the Idle Air Control System RPM is lower than expected. The code is triggered when the engine control module detects that your engine's idle speed is lower than the programmed threshold. That speed is measured by either the idle air control system or by the electronic throttle control on newer vehicles. The latter system adjusts how much air is allowed into the engine when the throttle is closed. When your idle speed is higher than a preset threshold, it triggers error code P0507. Depending on the vehicle, it could be as much as 200 RPMs over the expected rate."
-      causes:
-        - "If extra air sneaks in through a cracked hose, loose intake tube, leaking gasket, or PCV system problem, the computer may struggle to maintain the correct idle speed"
-        - "a vacuum leak could cause an imbalance in the air/fuel ratio, which would affect your RPMs"
-        - "trouble code P0506 could stem from a vacuum leak or a failed Powertrain control module"
-        - "carbon buildup can collect around the throttle plate and affect airflow at idle. The engine may surge, dip, or feel like it is trying to correct itself repeatedly"
-        - "The throttle body could be dirty or damaged"
-        - "If that valve sticks, clogs, or fails, the engine may not receive the correct amount of air when the throttle is closed. That can lead to idle hunting, stalling, or high idle"
-        - "a faulty positive crankcase ventilation valve could be the sole cause or part of the problem"
-        - "Check the positive crankcase ventilation valve and the EGR valve. Any electrical or physical damage to these valves will alter your idle air control"
-        - "If the mass airflow sensor is dirty or reading incorrectly, the engine may receive the wrong fuel mixture, causing the idle to fluctuate"
-        - "If the EVAP purge valve sticks open, the engine may receive extra vapor at the wrong time, creating a rough or surging idle"
-        - "Low fuel pressure, dirty injectors, a weak fuel pump, or poor injector spray patterns can make the engine struggle to maintain a steady idle"
-        - "Worn spark plugs, weak ignition coils, or misfires can cause the RPM to dip, shake, or bounce because one or more cylinders are not contributing evenly"
-        - "Loose connections, frayed wires or damaged sensors could give you a false reading or cause your electronic throttle control to behave erratically"
-        - "the intake exhaust or air path could be restricted"
-        - "a failed Powertrain control module"
-        - "Your entire powertrain control module could also have an issue, which would affect the entire communication system and the sensors related to P0507"
-      actions:
-        low:
-          - action: "Scan for diagnostic trouble codes. Codes for lean conditions, rich conditions, misfires, throttle control, EVAP, airflow, or temperature sensors can point the inspection in the right direction."
-            source: "Marble Falls Auto Center, Tyler Ellis (Classification by Bob based on maintenance urgency)"
-          - action: "You can use an OBD scanner tool to retrieve and confirm the error code."
-            source: "Edmunds, 'P0506', August 13, 2025 (Classification by Bob based on maintenance urgency)"
-          - action: "Check live engine data. Fuel trims, airflow readings, coolant temperature, throttle position, oxygen sensor activity, and idle speed data can show what the computer is seeing."
-            source: "Marble Falls Auto Center, Tyler Ellis (Classification by Bob based on maintenance urgency)"
-          - action: "Verify the repair with a road test and idle test. A proper fix means the idle stays stable with the engine cold, warm, in gear, parked, and with accessories like AC turned on."
-            source: "Marble Falls Auto Center, Tyler Ellis (Classification by Bob based on maintenance urgency)"
-        medium:
-          - action: "Inspect for vacuum leaks. Intake hoses, PCV hoses, brake booster lines, intake gaskets, and vacuum connections should be checked for cracks, looseness, or leaks."
-            source: "Marble Falls Auto Center, Tyler Ellis; Edmunds, 'P0506', August 13, 2025 (Classification by Bob based on maintenance urgency)"
-          - action: "checking intake hoses and gaskets for air leaks."
-            source: "Marble Falls Auto Center, Tyler Ellis; Edmunds, 'P0506', August 13, 2025 (Classification by Bob based on maintenance urgency)"
-          - action: "Inspect and clean the throttle body if needed. Carbon buildup around the throttle plate can affect idle airflow. Some vehicles may require a relearn procedure after cleaning."
-            source: "Marble Falls Auto Center, Tyler Ellis; Edmunds, 'P0506', August 13, 2025 (Classification by Bob based on maintenance urgency)"
-          - action: "You may be able to clean the throttle body and idle air control valve to get them back in working order."
-            source: "Marble Falls Auto Center, Tyler Ellis; Edmunds, 'P0506', August 13, 2025 (Classification by Bob based on maintenance urgency)"
-          - action: "Test the idle air control system if equipped. If the vehicle uses an idle air control valve, it should be checked for sticking, clogging, or electrical failure."
-            source: "Marble Falls Auto Center, Tyler Ellis (Classification by Bob based on maintenance urgency)"
-          - action: "Inspect the mass airflow sensor. A dirty or failing airflow sensor can cause incorrect fuel calculations and unstable idle."
-            source: "Marble Falls Auto Center, Tyler Ellis (Classification by Bob based on maintenance urgency)"
-          - action: "Check the EVAP purge valve. A stuck-open purge valve can create rough idle, hard starts after fueling, or RPM fluctuation."
-            source: "Marble Falls Auto Center, Tyler Ellis (Classification by Bob based on maintenance urgency)"
-          - action: "Inspect ignition components. Spark plugs, ignition coils, and misfire data should be checked if the engine shakes or runs rough."
-            source: "Marble Falls Auto Center, Tyler Ellis (Classification by Bob based on maintenance urgency)"
-          - action: "Check fuel pressure and injector performance. Fuel delivery problems can cause idle instability, hesitation, and stalling."
-            source: "Marble Falls Auto Center, Tyler Ellis (Classification by Bob based on maintenance urgency)"
-          - action: "testing your vehicle's electrical system, and checking wires and connectors to ensure they aren't damaged."
-            source: "Edmunds, 'P0506', August 13, 2025 (Classification by Bob based on maintenance urgency)"
-        high:
-          - action: "If that doesn't work, you may need to repair or replace the idle air control valve."
-            source: "Edmunds, 'P0506', August 13, 2025 (Classification by Bob based on maintenance urgency)"

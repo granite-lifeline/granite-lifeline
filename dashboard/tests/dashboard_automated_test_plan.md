@@ -159,7 +159,7 @@ def test_signal_sort_order_abnormal_first():
         {"signal_name": "coolant_temp", "value": 95.0, "status": "NORMAL"},
         {"signal_name": "maf", "value": 28.5, "status": "ABNORMAL"},
         {"signal_name": "map", "value": 85.0, "status": "NORMAL"},
-        {"signal_name": "coolant_slope", "value": 5.2, "status": "ABNORMAL"},
+        {"signal_name": "ect_rate_180s", "value": 5.2, "status": "ABNORMAL"},
     ]
     
     # Act
@@ -316,10 +316,10 @@ def test_model_layer_output_valid_input():
     # Arrange
     valid_data = {
         "timestamp": "2026-06-16T12:00:00Z",
-        "anomaly_type": "cooling_system_stress",
+        "anomaly_type": "cooling_degradation",
         "risk_score": 86.0,
         "risk_level": "High",
-        "component": "cooling_system_stress",
+        "component": "cooling_degradation",
         "prediction_confidence": 0.88,
         "key_signals": [
             {
@@ -352,9 +352,9 @@ def test_model_layer_output_missing_required_field():
     # Arrange
     invalid_data = {
         # "timestamp": missing
-        "anomaly_type": "cooling_system_stress",
+        "anomaly_type": "cooling_degradation",
         "risk_score": 86.0,
-        "component": "cooling_system_stress",
+        "component": "cooling_degradation",
         "prediction_confidence": 0.88,
         "key_signals": []
     }
@@ -378,9 +378,9 @@ def test_model_layer_output_wrong_type():
     # Arrange
     invalid_data = {
         "timestamp": "2026-06-16T12:00:00Z",
-        "anomaly_type": "cooling_system_stress",
+        "anomaly_type": "cooling_degradation",
         "risk_score": "86.0",  # String instead of float
-        "component": "cooling_system_stress",
+        "component": "cooling_degradation",
         "prediction_confidence": 0.88,
         "key_signals": []
     }
@@ -408,9 +408,9 @@ def test_model_layer_output_risk_score_out_of_range():
     # Arrange
     invalid_data = {
         "timestamp": "2026-06-16T12:00:00Z",
-        "anomaly_type": "cooling_system_stress",
+        "anomaly_type": "cooling_degradation",
         "risk_score": 150.0,  # Out of range (should be 0-100)
-        "component": "cooling_system_stress",
+        "component": "cooling_degradation",
         "prediction_confidence": 0.88,
         "key_signals": []
     }
@@ -440,7 +440,7 @@ def test_report_layer_output_valid_input():
         "timestamp": "2026-06-16T12:00:00Z",
         "risk_score": 86.0,
         "risk_level": "High",
-        "component": "cooling_system_stress",
+        "component": "cooling_degradation",
         "prediction_confidence": 0.88,
         "key_signals": [
             {

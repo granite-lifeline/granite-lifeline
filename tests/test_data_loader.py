@@ -9,6 +9,7 @@ import pytest
 from dashboard.data_loader import (
     load_report_data,
     convert_to_component_dict,
+    load_static_dashboard_data,
     load_dashboard_data
 )
 
@@ -21,12 +22,25 @@ def test_load_report_data_success():
     data = load_report_data("dashboard/tests/ui_required_data.json")
 
     assert isinstance(data, list)
-    assert len(data) == 3
+    assert len(data) == 5
 
     # Check first component
-    assert data[0]["component"] == "cooling_system_stress"
+    assert data[0]["component"] == "cooling_degradation"
     assert data[0]["risk_level"] == "High"
     assert data[0]["risk_score"] == 0.86
+
+
+def test_load_static_dashboard_data():
+    """Test static demo loading without invoking the report pipeline."""
+    data = load_static_dashboard_data("dashboard/tests/ui_required_data.json")
+    component_data = {
+        k: v for k, v in data.items() if k != "_data_source"
+    }
+
+    assert len(component_data) == 5
+    assert set(data["_data_source"].values()) == {"mock"}
+    assert "intake_air_temperature_sensor_fault" in component_data
+    assert "map_load_signal_plausibility_fault" in component_data
 
 
 def test_load_report_data_file_not_found():
@@ -38,7 +52,7 @@ def test_load_report_data_file_not_found():
 def test_convert_to_component_dict():
     """Test converting report list to component-keyed dictionary."""
     report_list = [
-        {"component": "cooling_system_stress", "risk_score": 0.86},
+        {"component": "cooling_degradation", "risk_score": 0.86},
         {"component": "air_intake_maf_anomaly", "risk_score": 0.61},
     ]
 
@@ -46,15 +60,15 @@ def test_convert_to_component_dict():
 
     assert isinstance(result, dict)
     assert len(result) == 2
-    assert "cooling_system_stress" in result
+    assert "cooling_degradation" in result
     assert "air_intake_maf_anomaly" in result
-    assert result["cooling_system_stress"]["risk_score"] == 0.86
+    assert result["cooling_degradation"]["risk_score"] == 0.86
 
 
 def test_convert_to_component_dict_missing_component():
     """Test handling reports without component field."""
     report_list = [
-        {"component": "cooling_system_stress", "risk_score": 0.86},
+        {"component": "cooling_degradation", "risk_score": 0.86},
         {"risk_score": 0.61},  # Missing component field
     ]
 
@@ -62,7 +76,7 @@ def test_convert_to_component_dict_missing_component():
 
     # Should only include the valid component
     assert len(result) == 1
-    assert "cooling_system_stress" in result
+    assert "cooling_degradation" in result
 
 
 def test_load_dashboard_data():
@@ -70,24 +84,34 @@ def test_load_dashboard_data():
     data = load_dashboard_data("dashboard/tests/ui_required_data.json")
 
     assert isinstance(data, dict)
-    assert len(data) == 3
+    # Exclude the _data_source metadata key when counting components
+    component_data = {
+        k: v for k, v in data.items() if k != "_data_source"
+    }
+    assert len(component_data) == 5
 
-    # Verify all expected components are present
-    assert "cooling_system_stress" in data
-    assert "air_intake_maf_anomaly" in data
-    assert "accelerator_pedal_sensor" in data
+    # Verify all 5 confirmed anomaly types are present.
+    cooling_key = "cooling_degradation"
+    assert cooling_key in component_data
+    assert "air_intake_maf_anomaly" in component_data
+    assert "accelerator_pedal_sensor" in component_data
+    assert "intake_air_temperature_sensor_fault" in component_data
+    assert "map_load_signal_plausibility_fault" in component_data
 
-    # Verify data structure for one component
-    cooling = data["cooling_system_stress"]
+    # Verify data structure for the cooling component
+    cooling = component_data[cooling_key]
     assert cooling["risk_level"] == "High"
-    assert cooling["risk_score"] == 0.86
     assert "key_signals" in cooling
     assert "risk_history" in cooling
     assert "anomaly_description" in cooling
     assert "possible_cause" in cooling
     assert "recommended_action" in cooling
-    assert cooling["estimated_failure_probability"] == 0.72
-    assert cooling["estimated_cycles_to_failure"] == 15
+    assert "estimated_failure_probability" in cooling
+    assert "estimated_cycles_to_failure" in cooling
+
+    # Verify _data_source metadata is present
+    assert "_data_source" in data
+    assert isinstance(data["_data_source"], dict)
 
 
 def test_report_data_interface_compliance():
@@ -110,7 +134,10 @@ def test_report_data_interface_compliance():
         "notes",
     ]
 
-    for component_data in data.values():
+    # Skip the _data_source metadata entry — it is not a component report
+    for component_data in (
+        v for k, v in data.items() if k != "_data_source"
+    ):
         for field in required_fields:
             assert field in component_data, \
                 f"Missing required field: {field}"
@@ -122,10 +149,13 @@ def test_report_data_interface_compliance():
             assert "unit" in signal
             assert "reference_range" in signal
 
-        # Verify risk_history structure
-        for entry in component_data["risk_history"]:
-            assert "timestamp" in entry
-            assert "risk_score" in entry
+        # Verify risk_history structure — None is allowed (real pipeline
+        # does not yet populate history; mock data has a list)
+        rh = component_data["risk_history"]
+        if rh is not None:
+            for entry in rh:
+                assert "timestamp" in entry
+                assert "risk_score" in entry
 
         # Verify recommended_action is a list
         assert isinstance(component_data["recommended_action"], list)

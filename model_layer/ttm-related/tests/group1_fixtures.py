@@ -21,11 +21,30 @@ from model.input_validation import (  # noqa: E402
     PRODUCTION_FEATURE_REQUIRED_COLUMNS,
 )
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-PRODUCTION_FIXTURE_CSV = (
-    REPO_ROOT
-    / "data_layer/tests/fixtures/production_features.v1.fixture.csv"
+_FIXTURE_REL_PATH = Path(
+    "data_layer/tests/fixtures/production_features.v1.fixture.csv"
 )
+
+
+def _find_repo_root(start: Path) -> Path:
+    """Walk up from `start` to the checkout root.
+
+    `ttm-related/` sits directly at the repo root in the Model
+    Layer's working repo but is nested under `model_layer/` in the
+    main team repo, so the root can't be a fixed number of parents
+    above this file — locate it by the shared `data_layer/` fixture
+    instead.
+    """
+    for candidate in (start, *start.parents):
+        if (candidate / _FIXTURE_REL_PATH).exists():
+            return candidate
+    raise FileNotFoundError(
+        f"Could not locate {_FIXTURE_REL_PATH} above {start}"
+    )
+
+
+REPO_ROOT = _find_repo_root(Path(__file__).resolve())
+PRODUCTION_FIXTURE_CSV = REPO_ROOT / _FIXTURE_REL_PATH
 
 
 def load_production_fixture() -> pd.DataFrame:

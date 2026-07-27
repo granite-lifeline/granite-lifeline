@@ -43,7 +43,7 @@ except ImportError:  # direct script run: src/model is current package
         load_group1_features,
     )
 
-_REPO_ROOT = Path(__file__).resolve().parents[4]
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 _TTM_RELATED_DIR = Path(__file__).resolve().parents[2]
 
 DEFAULT_MANIFEST = (

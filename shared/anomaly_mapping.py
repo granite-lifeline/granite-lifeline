@@ -1,13 +1,12 @@
 """Shared anomaly type naming tables."""
 
-# The six current anomaly types follow docs/INTERFACE.md v0.9.
+# The five current anomaly types follow docs/INTERFACE.md v1.1.
 GROUND_KNOWLEDGE_ANOMALY_TYPES = [
     "cooling_degradation",
-    "intake_air_temperature_sensor_or_heat_soak_fault",
+    "intake_air_temperature_sensor_fault",
     "air_intake_maf_anomaly",
     "map_load_signal_plausibility_fault",
     "accelerator_pedal_sensor",
-    "idle_speed_control_or_surge_degradation",
 ]
 
 # GL-127 naming alignment table.
@@ -21,10 +20,9 @@ ANOMALY_TYPE_MAPPING_TABLE = [
         "legacy_alias": "cooling_system_stress",
     },
     {
-        "interface_name": "intake_air_temperature_sensor_or_heat_soak_fault",
-        "grounded_knowledge_key":
-            "intake_air_temperature_sensor_or_heat_soak_fault",
-        "dashboard_key": "intake_air_temperature_sensor_or_heat_soak_fault",
+        "interface_name": "intake_air_temperature_sensor_fault",
+        "grounded_knowledge_key": "intake_air_temperature_sensor_fault",
+        "dashboard_key": "intake_air_temperature_sensor_fault",
         "legacy_alias": None,
     },
     {
@@ -43,12 +41,6 @@ ANOMALY_TYPE_MAPPING_TABLE = [
         "interface_name": "accelerator_pedal_sensor",
         "grounded_knowledge_key": "accelerator_pedal_sensor",
         "dashboard_key": "accelerator_pedal_sensor",
-        "legacy_alias": None,
-    },
-    {
-        "interface_name": "idle_speed_control_or_surge_degradation",
-        "grounded_knowledge_key": "idle_speed_control_or_surge_degradation",
-        "dashboard_key": "idle_speed_control_or_surge_degradation",
         "legacy_alias": None,
     },
 ]
