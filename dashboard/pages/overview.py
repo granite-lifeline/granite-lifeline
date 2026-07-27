@@ -427,7 +427,9 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
 
     try:
         with st.spinner("Running analysis..."):
-            result = run_uploaded_csv_batch(csv_bytes)
+            result = run_uploaded_csv_batch(
+                csv_bytes, uploaded_file.name
+            )
     except TimeoutError:
         _show_pipeline_error(
             "Analysis Timed Out",
