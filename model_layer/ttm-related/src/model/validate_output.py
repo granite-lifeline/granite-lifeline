@@ -1,5 +1,5 @@
 """
-Validate Model Layer output JSON against INTERFACE.md v0.7.
+Validate Model Layer output JSON against INTERFACE.md v0.14.
 
 This script checks the output contract only: required fields, JSON
 types, enum values, and interface-level numeric ranges. It does not
@@ -36,9 +36,8 @@ ALLOWED_ANOMALY_TYPES = {
     "cooling_degradation",
     "air_intake_maf_anomaly",
     "accelerator_pedal_sensor",
-    "intake_air_temperature_sensor_or_heat_soak_fault",
+    "intake_air_temperature_sensor_fault",
     "map_load_signal_plausibility_fault",
-    "idle_speed_control_or_surge_degradation",
 }
 
 ALLOWED_RISK_LEVELS = {"Low", "Medium", "High"}
