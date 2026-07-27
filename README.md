@@ -71,8 +71,24 @@ The repository does not track the dataset itself (see `.gitignore`). Each team m
 
 ## Setup
 
-Run the dashboard locally:
+**Dashboard only (mock/demo data, no CSV analysis):**
 
 ```bash
 uv run streamlit run dashboard/app.py
 ```
+
+**Full local pipeline (real CSV upload → live Model Layer + Report Layer analysis):**
+
+`requirements.txt` includes torch/transformers for TTM inference, and report
+generation needs a local [Ollama](https://ollama.com) instance with the
+Granite LLM pulled. On macOS/Linux, `setup.sh` does all of this in one step
+(installs Python deps, installs Ollama if missing, pulls the model, starts
+the dashboard):
+
+```bash
+./setup.sh
+```
+
+Windows users: install dependencies with `pip install -r requirements.txt`,
+install [Ollama](https://ollama.com/download) and run `ollama pull
+granite4.1:8b`, then start the dashboard as above.
