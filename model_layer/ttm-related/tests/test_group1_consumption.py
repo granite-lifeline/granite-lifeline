@@ -1,12 +1,9 @@
 """
-Story 4 (Lucca): Group 1 feature-CSV consumption tests.
+Model input consumption tests for Data Layer production features.
 
-Evaluation-story evidence: characterises how the pipeline's Group 1
-loading path (Story 5 `load_group1_features` + `prepare_segment`,
-built on the shared Story 3 validation) behaves on mock Group 1
-`feature_dataset.csv` inputs — correct, missing-column, wrong-type,
-and too-short cases — and that segment selection keeps TTM windows
-inside one segment.
+Characterises how `load_group1_features` + `prepare_segment` behave
+on Data Layer `production_features.csv` v1 inputs: the tracked fixture,
+missing-column, wrong-type, stale-contract, and too-short cases.
 
 Run from ttm-related/:  ../.venv/bin/python -m pytest tests -v
 """
@@ -20,11 +17,12 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from group1_fixtures import (  # noqa: E402
+    PRODUCTION_FIXTURE_CSV,
     make_group1_frame,
     write_group1_csv,
 )
 from model.input_validation import (  # noqa: E402
-    GROUP1_REQUIRED_COLUMNS,
+    PRODUCTION_FEATURE_REQUIRED_COLUMNS,
 )
 from model.kit_residual_detector import (  # noqa: E402
     load_group1_features,
@@ -42,20 +40,28 @@ def consume_group1_csv(csv_path: Path):
 
 
 class TestGroup1Fixtures:
-    def test_correct_fixture_has_all_interface_columns(self):
+    def test_tracked_fixture_has_all_interface_columns(self):
+        frame = pd.read_csv(PRODUCTION_FIXTURE_CSV)
+        assert list(frame.columns) == PRODUCTION_FEATURE_REQUIRED_COLUMNS
+        assert len(frame.columns) == 46
+        assert len(frame) > 0
+
+    def test_generated_fixture_has_all_interface_columns(self):
         frame = make_group1_frame(rows=10)
-        assert list(frame.columns) == GROUP1_REQUIRED_COLUMNS
+        assert list(frame.columns) == PRODUCTION_FEATURE_REQUIRED_COLUMNS
         assert len(frame) == 10
 
-    def test_interface_column_count_is_41(self):
-        # INTERFACE.md v0.6 Section 1: 10 key/condition fields
-        # + 10 raw signals + 21 engineered features.
-        assert len(GROUP1_REQUIRED_COLUMNS) == 41
+    def test_interface_column_count_is_46(self):
+        # INTERFACE.md v0.13: 4 sample keys + 16 A-class
+        # context/raw columns + 24 B-class features + 2 provenance.
+        assert len(PRODUCTION_FEATURE_REQUIRED_COLUMNS) == 46
 
     def test_row_identity_fields_are_per_row(self):
         frame = make_group1_frame(rows=5)
         assert list(frame["row_in_segment"]) == [1, 2, 3, 4, 5]
         assert frame["timestamp"].is_unique
+        assert frame["dt_seconds"].eq(1.0).all()
+        assert frame["operating_state"].str.contains("__").any()
 
     def test_drop_columns_builds_missing_column_case(
         self, tmp_path
@@ -82,9 +88,13 @@ class TestGroup1Fixtures:
 class TestGroup1NormalConsumption:
     def test_correct_fixture_consumes_clean(self, tmp_path):
         path = write_group1_csv(
-            tmp_path / "feature_dataset.csv"
+            tmp_path / "production_features.csv"
         )
         _, notes = consume_group1_csv(path)
+        assert notes == []
+
+    def test_tracked_data_layer_fixture_consumes_clean(self):
+        _, notes = consume_group1_csv(PRODUCTION_FIXTURE_CSV)
         assert notes == []
 
     def test_extra_bookkeeping_columns_are_tolerated(
@@ -105,19 +115,24 @@ class TestGroup1NormalConsumption:
         from model.kit_residual_detector import MODEL_SIGNALS
 
         path = write_group1_csv(
-            tmp_path / "feature_dataset.csv"
+            tmp_path / "production_features.csv"
         )
         loaded, _ = consume_group1_csv(path)
         for signal in MODEL_SIGNALS:
             assert signal in loaded.columns
-        # Story 5: engineered features are consumed directly from
-        # Group 1's columns — nothing is recomputed internally.
-        assert "maf_map_cohesion" in loaded.columns
+        # B-class production features are consumed directly from
+        # Data Layer columns — nothing is recomputed internally.
+        assert "speed_density_maf_residual" in loaded.columns
         assert "accel_pedal_channel_delta" in loaded.columns
-        assert (
-            loaded["maf_map_cohesion"]
-            == make_group1_frame(rows=len(loaded))["maf_map_cohesion"]
-        ).all()
+        pd.testing.assert_series_equal(
+            loaded["speed_density_maf_residual"],
+            make_group1_frame(rows=len(loaded))[
+                "speed_density_maf_residual"
+            ],
+            check_names=False,
+            check_exact=False,
+            rtol=1e-12,
+        )
 
 
 class TestSegmentSelection:
@@ -194,13 +209,29 @@ class TestGroup1BadInput:
     ):
         path = write_group1_csv(
             tmp_path / "missing_feature.csv",
-            drop_columns=["coolant_slope", "idle_flag"],
+            drop_columns=["ect_rate_180s", "map_range_60s"],
         )
         with pytest.raises(ValueError) as excinfo:
             consume_group1_csv(path)
         message = str(excinfo.value)
-        assert "coolant_slope" in message
-        assert "idle_flag" in message
+        assert "ect_rate_180s" in message
+        assert "map_range_60s" in message
+
+    def test_nullable_dt_seconds_is_rejected(self, tmp_path):
+        path = write_group1_csv(tmp_path / "bad_dt.csv")
+        frame = pd.read_csv(path)
+        frame.loc[0, "dt_seconds"] = pd.NA
+        frame.to_csv(path, index=False)
+        with pytest.raises(ValueError, match="dt_seconds"):
+            consume_group1_csv(path)
+
+    def test_single_underscore_operating_state_is_rejected(self, tmp_path):
+        path = write_group1_csv(tmp_path / "bad_state.csv")
+        frame = pd.read_csv(path)
+        frame.loc[0, "operating_state"] = "post_warmup_steady_driving"
+        frame.to_csv(path, index=False)
+        with pytest.raises(ValueError, match="operating_state"):
+            consume_group1_csv(path)
 
     def test_wrong_type_raw_signal_raises_clear_error(
         self, tmp_path
