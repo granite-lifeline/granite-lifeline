@@ -9,30 +9,41 @@
 
 ## Why This Challenge Is Specific to This Project
 
-- **A risk score is useful to the system, but not to a normal car owner.** The user needs to know what is happening, how urgent it is, and what to do next — a number on its own answers none of that.
+- **A Model Layer output is a JSON object — `risk_score`, `anomaly_type`, `key_signals`.** On its own, a car owner cannot tell what is actually happening, how urgent it is, or what to do about it. Those numbers need a translator into plain language, not just a template — which is exactly why this stage needs an LLM at all, not a simple report generator.
 - **Generic LLM text is risky in this domain because it can hallucinate a mechanical cause, or word a prediction so confidently it reads as a confirmed fault.** In a diagnostic tool, an invented cause is not a cosmetic error — it can send an owner to fix the wrong thing or ignore a real one.
-- **The report must be grounded, cautious, and actionable at the same time.** It has to use the current sensor evidence, avoid unsupported claims, and stay understandable without any automotive expertise — three constraints a general-purpose chatbot answer does not have to satisfy together.
+- **The translation has to be grounded, understandable, and actionable at the same time.** It has to use the current sensor evidence, stay readable without any automotive expertise, and end in something the owner can actually do — three things a general-purpose chatbot answer does not have to satisfy together.
 
 ## Our Solution
 
-- **Model selection was empirical, not assumed.** We compared four Granite models (granite3.3:2b, granite3.3:8b, granite4.1:3b, granite4.1:8b) against a weighted five-dimension rubric (plain language 30%, grounding 25%, JSON reliability 20%, action quality 15%, hedging 10%). granite4.1:8b scored highest overall at 4.85/5.0, giving the strongest balance of JSON reliability, plain language, and useful actions.
-- **Before calling Granite, we convert the Model Layer output into a structured context**: component, risk level, risk score, confidence, key signals, failure projection fields, and Model Layer notes — so the LLM only ever reasons over data that actually exists.
-- **We use RAG with ChromaDB to retrieve fault knowledge for the predicted anomaly type.** The current contract covers five active anomaly types, stored as section-level documents, so each prompt layer retrieves only the knowledge it needs.
-- **Generation is split into a three-layer prompt chain**: Layer 1 explains what the data shows, Layer 2 explains possible causes, and Layer 3 returns 2–4 recommended actions — each layer is a separate, independently validated JSON call.
-- **Prediction confidence controls certainty of wording**, not just content: high confidence allows stronger language, while low confidence forces careful phrases such as "may indicate" and "could suggest."
+Two design decisions carry almost the whole story; everything else supports one of them.
+
+1. **Base architecture: a three-layer prompt chain, not one prompt.** Layer 1 explains what the data shows, Layer 2 explains the possible cause, Layer 3 returns 2–4 concrete recommended actions — each generated and validated as its own JSON object. This single structural choice already buys two things at once: an owner reads three short, separated answers instead of one blended paragraph (**understandable**), and "what to do" gets its own dedicated, format-enforced slot instead of being an afterthought (half of **actionable**).
+2. **Grounding: RAG retrieval over a curated fault-knowledge base (ChromaDB).** Layers 1–2 retrieve description-and-causes; Layer 3 retrieves risk-level-specific action guidance — all keyed by the Model Layer's already-confirmed `anomaly_type` via an exact metadata match, across five active anomaly types. This is what stops "possible cause" and "recommended action" from being the model's own guess (**credible**), and it's what turns Layer 3's action slot into specific, technically grounded steps instead of generic advice (the other half of **actionable**).
+3. **Certainty control: `prediction_confidence` drives wording strength, not just content.** High confidence allows clearer, more definite language; low confidence forces hedged phrases such as "may indicate" and "could suggest." This supports both **credible** (never overclaiming past what the evidence supports) and **understandable** (the owner's sense of urgency matches the model's actual certainty).
+4. **Guardrails live inside the prompt itself — reinforcing mechanisms 1–2, not a third mechanism.** Every prompt is hardened to never invent a missing failure-projection value (probability, date, mileage, cycle count), and to treat Model Layer notes as data-quality information only, never as mechanical-fault evidence.
+5. **Supporting evidence: the LLM itself was chosen empirically, not assumed.** We compared four Granite models (granite3.3:2b, granite3.3:8b, granite4.1:3b, granite4.1:8b) against a weighted five-dimension rubric (plain language 30%, grounding 25%, JSON reliability 20%, action quality 15%, hedging 10%) — granite4.1:8b scored highest at 4.85/5.0.
+
+**Credible / understandable / actionable are not three things we built — they are three outcomes we check for, produced jointly by mechanisms 1–2.** That mapping is exactly what the Evaluation section below verifies.
 
 ## Why Our Approach Is Better Than Alternatives
+
+Both mechanisms above were deliberate choices against the most obvious alternative — this is the defence for each, not a new topic.
 
 - **RAG is safer than fine-tuning the language model for this project.** Our automotive knowledge base can be inspected, updated, and traced back to a source document, while fine-tuning would bury that knowledge inside model weights and require far more labelled diagnostic text than we have.
 - **A three-layer prompt chain is more controllable than one large prompt.** It stops the model from mixing observation, cause, and action into one blended answer, and lets us validate each JSON output separately rather than accepting or rejecting an entire report at once.
 
 ## Evaluation
 
-- **Earlier RAG vs baseline evaluation used three fixed cooling-system scenarios**: a typical high-risk case (102°C, 87% confidence), an atypical medium-risk case (93°C — normal — but anomaly flagged, 51% confidence), and a contradictory low-risk case where coolant temperature was abnormal (108°C) but the risk level was Low (31% confidence).
-- **Overall result: the RAG-enhanced pipeline scored slightly higher than baseline, 0.95 vs 0.93 average.** Both pipelines scored a perfect 1.00 on factual grounding in all three scenarios, meaning both correctly used the risk score, confidence, and sensor values from the input context — RAG's gain came from elsewhere, not from fixing a grounding problem.
-- **RAG's main benefit was in low-confidence and mixed-signal cases.** It scored 1.00 on hedging appropriateness in both the atypical and contradictory scenarios, versus 0.60 for baseline. This matters directly for the challenge above: the report must not present a low-confidence prediction as a confirmed mechanical fault.
-- **We also compared metadata-filtered retrieval against semantic vector search.** Metadata filtering achieved 100% retrieval accuracy and was roughly 180x faster than semantic search, supporting the design choice: the Model Layer already provides a confirmed `anomaly_type`, so an exact metadata lookup is more reliable than a similarity search that can retrieve the wrong fault's knowledge. *(That comparison was run before the Data Layer retired two anomaly types from the executable enum — see Limitations.)*
-- **Honest limitation: our evaluation is partly automated and keyword-based.** It can check factual grounding, readability, hedging, and actionability at scale, but it cannot fully replace review by an automotive domain expert. The system should be presented as a decision-support tool, not a confirmed mechanical diagnosis.
+Evaluation checks whether mechanisms 1–2 actually delivered the three outcomes above — three lenses on the same RAG-vs-baseline comparison, not three separate tests.
+
+- **Setup: three fixed cooling-system scenarios** — a typical high-risk case (102°C, 87% confidence), an atypical medium-risk case (93°C — normal — but anomaly flagged, 51% confidence), and a contradictory low-risk case where coolant temperature was abnormal (108°C) but the risk level was Low (31% confidence).
+- **Credible — verified, no regression.** Both pipelines scored a perfect 1.00 on factual grounding in all three scenarios: every report correctly referenced the actual risk score, confidence, and sensor values from the input context.
+- **Understandable — mostly verified, one concrete regression.** RAG's readability matched or beat baseline in two of three scenarios, but dropped to 0.70 in the high-risk case because the retrieved snippet echoed the raw field name `coolant_temp` instead of "coolant temperature" — a specific, fixable failure of the grounding mechanism leaking into plain-language output.
+- **Actionable — real, and it shows the mechanism-dependency we flagged.** RAG's actionability also dropped to 0.70 in that same high-risk scenario — not for being vague, but for lacking urgency wording ("soon") despite giving a more technically specific action (checking the thermostat at ~82°C) than baseline's generic "see a mechanic soon." Actionability moved together with readability because both come from the same retrieved content: it inherited RAG's weakness in that scenario rather than failing independently.
+- **Where RAG won clearly: hedging in low-confidence cases.** RAG scored 1.00 on hedging appropriateness in both the atypical and contradictory scenarios, versus 0.60 for baseline — directly from the confidence-driven certainty control (mechanism 3).
+- **Overall: 0.95 (RAG) vs 0.93 (baseline)**, a modest but consistent edge concentrated exactly where grounding matters most — low-confidence and contradictory cases.
+- **Retrieval comparison: metadata-filtered exact match hit 100% accuracy and was roughly 180x faster than semantic search** — supporting mechanism 2's design choice: since `anomaly_type` is already confirmed by the Model Layer, an exact lookup beats a similarity guess that could retrieve the wrong fault's knowledge. *(That specific comparison predates the Data Layer's retirement of two anomaly types from the executable enum — see Limitations.)*
+- **Honest limitation: the evaluator is automated and keyword-based.** It can score grounding, readability, hedging, and actionability at scale, but it misjudges nuance in both directions (see Limitations) and cannot fully replace review by an automotive domain expert.
 
 ## References
 
@@ -44,7 +55,7 @@
 
 ## Visuals
 
-1. **Diagram 1 (core).** Model Layer risk score → context injection → ChromaDB fault knowledge retrieval → three-layer Granite prompt chain → owner-friendly diagnostic report.
+1. **Diagram 1 (core) — two mechanisms converging on three outcomes.** Two boxes on the left, "Three-layer prompt chain" and "RAG fault-knowledge retrieval (ChromaDB)", each with an arrow into the middle labelled with what it contributes; both converge into three outcome labels on the right — Credible, Understandable, Actionable — with Actionable shown fed by *both* boxes (not a third independent box) to make the mechanism-dependency point visually, not just verbally.
 2. **Diagram 2 (Evaluation visual).** A side-by-side baseline vs RAG table showing overall score, hedging score, and one example of generic advice versus a more grounded recommended action.
 3. **Optional small UI visual.** Dashboard detail page showing risk score, failure projection, key signals, diagnostic report, and data-quality notes.
 
@@ -78,6 +89,7 @@
 *(Say the first one unprompted — it's the honest core.)*
 
 - **Neither pipeline explicitly flags a contradictory signal to the owner.** In the contradictory scenario (coolant_temp ABNORMAL at 108°C, risk_level Low), neither the baseline nor the RAG report called out that the raw signal and the risk classification disagree — both wrote around it rather than naming the contradiction. This is a real gap, not just a scoring artefact.
+- **Actionability is not an independently engineered outcome — it inherits whatever the prompt chain and RAG grounding produce.** We have not built a dedicated safeguard to protect action quality on its own; when RAG's grounding regressed in the high-risk scenario, actionability regressed with it (0.70), even though the underlying action was more technically specific than baseline's. If we want actionability to be more robust, it needs its own mechanism, not a free ride on the other two.
 - **Report accuracy is bounded by the accuracy of the upstream risk score and anomaly type.** The Report Layer never sees raw sensor data or the Data Layer's proxy rules — it only reasons over the Model Layer's already-computed classification. If that classification is wrong, the report will narrate the wrong story fluently and confidently; the Report Layer has no independent way to catch that.
 - **The automated evaluator is keyword-based and has known blind spots.** It penalised the baseline for the negated phrase "no confirmed fault yet" as if it were overconfident, and penalised RAG's specific thermostat-check wording for lacking urgency words despite being more actionable in content. Both cases needed manual review to interpret correctly — automated scoring cannot fully replace a domain-expert read.
 - **The retrieval-method comparison (100% accuracy, ~180x speed advantage) predates the Data Layer's schema-v1 retirement of two anomaly types** (`electronic_throttle_tracking_fault`, `idle_speed_control_or_surge_degradation`). Metadata-filter retrieval is an exact-match lookup, so shrinking the collection to five types should not change the accuracy result — but the timing/accuracy numbers have not been re-measured on the current five-type knowledge base, only asserted by extension.
@@ -93,7 +105,7 @@
 
 1. **Why did you pick Granite over other LLM families (GPT, Claude, etc.)?**
 
-> We compared four Granite model sizes empirically rather than assuming bigger is better — granite3.3:2b, granite3.3:8b, granite4.1:3b, granite4.1:8b — across a weighted five-dimension rubric, and granite4.1:8b won at 4.85/5.0 with granite4.1:3b as a documented fallback at 4.55/5.0. *(If pushed on why the comparison set was Granite-only rather than including non-IBM models, defer to the project brief / IBM sponsorship constraint — confirm the exact wording with the team before the viva.)*
+> The LLM family itself was set by the client — IBM's brief requires the Granite model family, since IBM sponsors the project. What we chose ourselves is which Granite model: we compared four sizes empirically rather than assuming bigger is better — granite3.3:2b, granite3.3:8b, granite4.1:3b, granite4.1:8b — across a weighted five-dimension rubric, and granite4.1:8b won at 4.85/5.0 with granite4.1:3b as a documented fallback at 4.55/5.0.
 
 2. **Why RAG instead of fine-tuning the LLM on automotive knowledge?**
 
@@ -105,21 +117,25 @@
 
 4. **If the overall RAG score is barely higher than baseline (0.95 vs 0.93), what's the real benefit?**
 
-> The averages are close, but the improvement concentrates exactly where it matters: low-confidence and contradictory cases, where RAG scored 1.00 on hedging versus baseline's 0.60. Honest limitation: RAG actually scored lower in the high-risk scenario (0.85 vs 1.00) because a retrieved snippet leaked the raw field name `coolant_temp` into the output — grounding introduced a wording regression that still needs a prompt fix.
+> The averages are close, but the improvement concentrates exactly where it matters: low-confidence and contradictory cases, where RAG scored 1.00 on hedging versus baseline's 0.60. Honest limitation: RAG actually scored lower in the high-risk scenario (0.85 vs 1.00) because a retrieved snippet leaked the raw field name `coolant_temp` into the output, and its actionability score dropped in step (0.70) — grounding introduced a wording regression that dragged actionability down with it, because actionability isn't protected independently.
 
-5. **Why a three-layer prompt chain instead of one prompt?**
+5. **Isn't "actionable" just a label — what did you specifically build for it?**
+
+> Honestly, nothing built specifically for it. Actionability comes from Layer 3's dedicated, format-enforced slot for 2–4 concrete steps, combined with RAG retrieving risk-level-specific action guidance instead of generic advice — the same two mechanisms that produce "understandable" and "credible." Fact: this shows up directly in the evaluation — RAG's actionability score moved together with its readability score in the high-risk scenario, both dropping to 0.70, because both came from the same retrieved content. Honest limitation: we have no independent safeguard for actionability alone, so it rises and falls with the other two rather than being separately protected.
+
+6. **Why a three-layer prompt chain instead of one prompt?**
 
 > It keeps observation, cause, and action independently generated and validated as separate JSON objects, so the model can't blend "what's happening" with "what to do" into one unstructured answer, and a bad layer can be retried without discarding the whole report. Honest limitation: three sequential LLM calls means three times the latency and three separate chances for a JSON-parse failure per report versus one call — the pipeline covers this with per-layer retries, but it is a real complexity cost versus single-shot generation.
 
-6. **What happens with the "N% probability of failure within X trips" feature the brief asks for?**
+7. **What happens with the "N% probability of failure within X trips" feature the brief asks for?**
 
 > The prompt is hardened to never invent a probability, date, mileage, or cycle count when those Model Layer fields are null. Right now they are null in every report, because the Model Layer's trend estimator (Story 8) isn't built yet — so the report correctly says nothing rather than guessing, but that also means this specific client-facing feature doesn't exist yet, not just that it's hedged.
 
-7. **Does the LLM ever see raw sensor data or the Data Layer's proxy rules?**
+8. **Does the LLM ever see raw sensor data or the Data Layer's proxy rules?**
 
 > No — it only sees the Model Layer's already-computed output (risk score, key signals, notes) formatted as plain-text context; RAG retrieval is keyed on `anomaly_type` and `risk_level` metadata, never on raw signals. Honest limitation: this means report quality is entirely dependent on the Model Layer's classification being correct — the Report Layer has no independent way to catch an upstream misclassification.
 
-8. **What's the path to production — is this running on Ollama forever?**
+9. **What's the path to production — is this running on Ollama forever?**
 
 > Development runs on local Ollama serving granite4.1:8b; the plan is to migrate to IBM watsonx.ai for production, with authentication, rate limiting, and monitoring still open work. Honest limitation: none of the evaluation numbers above have been re-verified against a watsonx.ai-hosted model — they are all measured on local Ollama.
 
