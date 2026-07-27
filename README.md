@@ -9,6 +9,10 @@ language diagnostic report generation.
 
 [![Open Dashboard](https://img.shields.io/badge/Open%20Dashboard-granite--lifeline.streamlit.app-19c8b9?style=for-the-badge&logo=streamlit&logoColor=white)](https://granite-lifeline.streamlit.app)
 
+## Viva Presentation
+
+[![View Viva Slides](https://img.shields.io/badge/View%20Viva%20Slides-GitHub%20Pages-0f62fe?style=for-the-badge&logo=github&logoColor=white)](https://granite-lifeline.github.io/granite-lifeline/viva/slides/)
+
 ## Blog
 
 Project updates and sprint reflections are documented on our team blog:
@@ -52,6 +56,7 @@ Full field definitions for each arrow are in `docs/INTERFACE.md`.
 - `shared/` — cross-layer Pydantic interface models
 - `docs/INTERFACE.md` — field definitions across all layers
 - `docs/adr/` — architecture decision records
+- `docs/viva/slides/` — interactive viva presentation and visual assets
 
 ## Data Setup
 
