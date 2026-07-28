@@ -20,6 +20,7 @@ if (-not (Test-Path ".venv")) {
 & .\.venv\Scripts\Activate.ps1
 pip install --upgrade pip --quiet
 pip install -r requirements.txt
+pip install -r requirements-local.txt
 
 Write-Host "==> Installing Model Layer Python dependencies (includes torch - this can take a few minutes on first run)..."
 if (-not (Test-Path "model_layer\ttm-related\.venv")) {

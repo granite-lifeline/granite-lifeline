@@ -129,6 +129,8 @@ dashboard/
 - Python 3.9+
 - Virtual environment activated (see root README.md)
 - Dashboard dependencies installed from `requirements.txt`
+- For local live CSV analysis only: extra Report/Data dependencies installed
+  from `requirements-local.txt`
 - For live CSV analysis only: Model Layer dependencies installed from
   `model_layer/ttm-related/requirements.txt`
 - For live CSV analysis only: a local [Ollama](https://ollama.com) instance with `granite4.1:8b` pulled
@@ -403,6 +405,10 @@ JSON via `load_dashboard_data()` in `data_loader.py`. The file path defaults to
 `DASHBOARD_TEST_DATA` environment variable. This is what the public hosted
 demo (`granite-lifeline.streamlit.app`) runs, since it has no budget for
 hosted LLM/model inference (see `docs/viva/report_challenge.md` Limitations).
+Streamlit Cloud should deploy the lightweight `requirements.txt` environment
+and use Python 3.11 from the app's Advanced settings; local-only
+`requirements-local.txt` and Model Layer dependencies are intentionally kept
+out of the hosted dependency install.
 
 ### Live Mode (real CSV upload)
 
