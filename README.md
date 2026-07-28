@@ -94,6 +94,12 @@ the dashboard):
 ./setup.sh
 ```
 
-Windows users: install dependencies with `pip install -r requirements.txt`,
-install [Ollama](https://ollama.com/download) and run `ollama pull
-granite4.1:8b`, then start the dashboard as above.
+On Windows, `setup.ps1` does the same (installs Python deps, installs Ollama
+via `winget` if missing, pulls the model, starts the dashboard):
+
+```powershell
+.\setup.ps1
+```
+
+If script execution is blocked, run once as administrator:
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
