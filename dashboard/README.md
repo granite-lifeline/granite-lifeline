@@ -128,7 +128,9 @@ dashboard/
 
 - Python 3.9+
 - Virtual environment activated (see root README.md)
-- Dependencies installed from `requirements.txt` (now includes torch/transformers for Model Layer inference)
+- Dashboard dependencies installed from `requirements.txt`
+- For live CSV analysis only: Model Layer dependencies installed from
+  `model_layer/ttm-related/requirements.txt`
 - For live CSV analysis only: a local [Ollama](https://ollama.com) instance with `granite4.1:8b` pulled
 
 ### Installation

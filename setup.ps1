@@ -1,7 +1,7 @@
 # One-command local setup + launch for Granite Lifeline (Windows).
 #
-# Installs Python dependencies (including torch/transformers for the
-# Model Layer), installs Ollama if missing, pulls the Granite LLM, and
+# Installs dashboard dependencies, installs the Model Layer's dedicated
+# dependencies, installs Ollama if missing, pulls the Granite LLM, and
 # starts the dashboard. Safe to re-run - every step is idempotent.
 #
 # Usage (PowerShell): .\setup.ps1
@@ -13,13 +13,20 @@ Set-Location -Path $PSScriptRoot
 
 $OllamaModel = "granite4.1:8b"
 
-Write-Host "==> Installing Python dependencies (includes torch - this can take a few minutes on first run)..."
+Write-Host "==> Installing dashboard Python dependencies..."
 if (-not (Test-Path ".venv")) {
     python -m venv .venv
 }
 & .\.venv\Scripts\Activate.ps1
 pip install --upgrade pip --quiet
 pip install -r requirements.txt
+
+Write-Host "==> Installing Model Layer Python dependencies (includes torch - this can take a few minutes on first run)..."
+if (-not (Test-Path "model_layer\ttm-related\.venv")) {
+    python -m venv model_layer\ttm-related\.venv
+}
+& .\model_layer\ttm-related\.venv\Scripts\python.exe -m pip install --upgrade pip --quiet
+& .\model_layer\ttm-related\.venv\Scripts\python.exe -m pip install -r model_layer\ttm-related\requirements.txt
 
 Write-Host "==> Checking Ollama..."
 if (-not (Get-Command ollama -ErrorAction SilentlyContinue)) {

@@ -84,11 +84,12 @@ uv run streamlit run dashboard/app.py
 
 **Full local pipeline (real CSV upload → live Model Layer + Report Layer analysis):**
 
-`requirements.txt` includes torch/transformers for TTM inference, and report
-generation needs a local [Ollama](https://ollama.com) instance with the
-Granite LLM pulled. On macOS/Linux, `setup.sh` does all of this in one step
-(installs Python deps, installs Ollama if missing, pulls the model, starts
-the dashboard):
+`requirements.txt` contains the dashboard and report-layer dependencies used
+by the hosted demo. The full local CSV pipeline also needs the Model Layer's
+dedicated TTM environment and a local [Ollama](https://ollama.com) instance
+with the Granite LLM pulled. On macOS/Linux, `setup.sh` does all of this in
+one step (installs dashboard deps, installs Model Layer deps, installs Ollama
+if missing, pulls the model, starts the dashboard):
 
 ```bash
 ./setup.sh
