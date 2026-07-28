@@ -18,6 +18,7 @@ python3 -m venv .venv 2>/dev/null || true
 source .venv/bin/activate
 pip install --upgrade pip --quiet
 pip install -r requirements.txt
+pip install -r requirements-local.txt
 
 echo "==> Installing Model Layer Python dependencies (includes torch — this can take a few minutes on first run)..."
 python3 -m venv model_layer/ttm-related/.venv 2>/dev/null || true

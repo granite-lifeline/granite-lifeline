@@ -5,24 +5,13 @@ numpy==2.4.6
 streamlit>=1.28.0
 plotly>=5.0.0
 reportlab>=4.0.0
-requests==2.34.2
-
-# Report Layer / RAG dependencies used by local report generation
-chromadb>=0.4.0
-langchain-community>=0.0.20
-PyYAML==6.0.3
-langchain>=0.1.0
-
-# Data processing utilities used by dashboard upload validation and local
-# Data Layer execution.
-joblib==1.5.3
-scikit-learn==1.7.2
-scipy==1.17.1
 
 # Model Layer TTM dependencies are intentionally not installed in the
-# hosted dashboard environment. For local live CSV analysis, setup.sh /
-# setup.ps1 install model_layer/ttm-related/requirements.txt into the
-# Model Layer's dedicated virtual environment.
+# hosted dashboard environment. Report Layer RAG dependencies are also
+# kept out of this hosted-demo file because the public dashboard loads
+# static ReportLayerOutput JSON until a local CSV pipeline is configured.
+# For local live CSV analysis, setup.sh / setup.ps1 install
+# requirements-local.txt and model_layer/ttm-related/requirements.txt.
 
 # Development and testing
 pytest>=7.4.0
