@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # One-command local setup + launch for Granite Lifeline (macOS/Linux).
 #
-# Installs Python dependencies (including torch/transformers for the
-# Model Layer), installs Ollama if missing, pulls the Granite LLM, and
+# Installs dashboard dependencies, installs the Model Layer's dedicated
+# dependencies, installs Ollama if missing, pulls the Granite LLM, and
 # starts the dashboard. Safe to re-run — every step is idempotent.
 #
 # Windows users: follow the manual steps in README.md instead.
@@ -12,12 +12,17 @@ cd "$(dirname "$0")"
 
 OLLAMA_MODEL="granite4.1:8b"
 
-echo "==> Installing Python dependencies (includes torch — this can take a few minutes on first run)..."
+echo "==> Installing dashboard Python dependencies..."
 python3 -m venv .venv 2>/dev/null || true
 # shellcheck disable=SC1091
 source .venv/bin/activate
 pip install --upgrade pip --quiet
 pip install -r requirements.txt
+
+echo "==> Installing Model Layer Python dependencies (includes torch — this can take a few minutes on first run)..."
+python3 -m venv model_layer/ttm-related/.venv 2>/dev/null || true
+model_layer/ttm-related/.venv/bin/python -m pip install --upgrade pip --quiet
+model_layer/ttm-related/.venv/bin/python -m pip install -r model_layer/ttm-related/requirements.txt
 
 echo "==> Checking Ollama..."
 if ! command -v ollama >/dev/null 2>&1; then
