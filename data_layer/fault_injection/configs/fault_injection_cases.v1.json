@@ -1,0 +1,250 @@
+{
+  "config_version": "stage4_cases.v1",
+  "description": "Default synthetic fault-injection cases for proxy Stage 4 validation. Each case edits target signals in a copied run, then reruns proxy stages 50/60/61/70.",
+  "cases": [
+    {
+      "case_id": "1s1_coolant_slow_warmup",
+      "proxy_id": "cooling_degradation",
+      "expected_sub_check_id": "1-S1",
+      "expected_dtc_candidate_label": "P0128",
+      "expected_dtc_emitted": true,
+      "target_signal": "coolant_temp",
+      "selector": "warmup_episode",
+      "minimum_followup_seconds": 1800,
+      "strategy": "cap_max",
+      "replicates": 3,
+      "value": 65.0,
+      "severity_grid": [
+        {"severity_id": "near_target", "parameters": {"value": 78.0}},
+        {"severity_id": "moderate", "parameters": {"value": 72.0}},
+        {"severity_id": "strong", "parameters": {"value": 65.0}}
+      ],
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "1s2_coolant_overheat_high",
+      "proxy_id": "cooling_degradation",
+      "expected_sub_check_id": "1-S2",
+      "target_signal": "coolant_temp",
+      "selector": "post_warmup",
+      "replicates": 3,
+      "duration_seconds": 200,
+      "strategy": "set_constant",
+      "value": 106.0,
+      "severity_grid": [
+        {"severity_id": "below_threshold", "parameters": {"value": 104.0}},
+        {"severity_id": "at_threshold", "parameters": {"value": 105.0}},
+        {"severity_id": "strong", "parameters": {"value": 110.0}}
+      ],
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "1s3_coolant_rising_precursor",
+      "proxy_id": "cooling_degradation",
+      "expected_sub_check_id": "1-S3",
+      "target_signal": "coolant_temp",
+      "selector": "post_warmup",
+      "replicates": 3,
+      "duration_seconds": 220,
+      "strategy": "linear_ramp",
+      "start_value": 100.0,
+      "rate_per_min": 0.8,
+      "severity_grid": [
+        {"severity_id": "below_threshold", "parameters": {"start_value": 99.0, "rate_per_min": 0.3}},
+        {"severity_id": "at_threshold", "parameters": {"rate_per_min": 0.5}},
+        {"severity_id": "strong", "parameters": {"rate_per_min": 0.8}}
+      ],
+      "expected_result_state": "pending"
+    },
+    {
+      "case_id": "1s4_cold_start_ect_offset",
+      "proxy_id": "cooling_degradation",
+      "expected_sub_check_id": "1-S4",
+      "expected_dtc_candidate_label": "P0116",
+      "expected_dtc_emitted": false,
+      "target_signal": "coolant_temp",
+      "selector": "cold_start_ect",
+      "duration_seconds": 1,
+      "strategy": "relative_offset",
+      "reference_signal": "ambient_temp",
+      "replicates": 3,
+      "offset": 20.0,
+      "severity_grid": [
+        {"severity_id": "at_guard", "parameters": {"offset": 15.0}},
+        {"severity_id": "just_over", "parameters": {"offset": 16.0}},
+        {"severity_id": "strong", "parameters": {"offset": 25.0}}
+      ],
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "2s2_maf_under_read",
+      "proxy_id": "air_intake_maf_anomaly",
+      "expected_sub_check_id": "2-S2",
+      "target_signal": "maf",
+      "selector": "post_warmup_high_load",
+      "replicates": 3,
+      "duration_seconds": 15,
+      "strategy": "multiply",
+      "factor": 0.35,
+      "severity_grid": [
+        {"severity_id": "mild", "parameters": {"factor": 0.8}},
+        {"severity_id": "moderate", "parameters": {"factor": 0.6}},
+        {"severity_id": "strong", "parameters": {"factor": 0.35}}
+      ],
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "2s3b_maf_zero_while_firing",
+      "proxy_id": "air_intake_maf_anomaly",
+      "expected_sub_check_id": "2-S3b",
+      "target_signal": "maf",
+      "selector": "engine_firing",
+      "replicates": 3,
+      "duration_seconds": 12,
+      "strategy": "set_constant",
+      "value": 0.0,
+      "severity_grid": [
+        {"severity_id": "short", "parameters": {"duration_seconds": 5}},
+        {"severity_id": "boundary", "parameters": {"duration_seconds": 10}},
+        {"severity_id": "strong", "parameters": {"duration_seconds": 12}}
+      ],
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "3s1a_pedal_e_offset",
+      "proxy_id": "accelerator_pedal_sensor",
+      "expected_sub_check_id": "3-S1a",
+      "target_signal": "accel_pedal_e",
+      "selector": "pedal_lowmotion",
+      "replicates": 3,
+      "duration_seconds": 35,
+      "strategy": "add_offset",
+      "offset": 5.0,
+      "severity_grid": [
+        {"severity_id": "mild", "parameters": {"offset": 1.0}},
+        {"severity_id": "boundary", "parameters": {"offset": 2.0}},
+        {"severity_id": "strong", "parameters": {"offset": 5.0}}
+      ],
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "3s1b_pedal_extreme_delta",
+      "proxy_id": "accelerator_pedal_sensor",
+      "expected_sub_check_id": "3-S1b",
+      "target_signal": "accel_pedal_e",
+      "selector": "engine_firing",
+      "replicates": 3,
+      "duration_seconds": 3,
+      "strategy": "force_pedal_delta",
+      "delta": 70.0,
+      "severity_grid": [
+        {"severity_id": "below_threshold", "parameters": {"delta": 60.0}},
+        {"severity_id": "at_threshold", "parameters": {"delta": 65.0}},
+        {"severity_id": "strong", "parameters": {"delta": 70.0}}
+      ],
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "4s1_iat_frozen_context",
+      "proxy_id": "intake_air_temperature_sensor_fault",
+      "expected_sub_check_id": "4-S1",
+      "target_signal": "intake_temp",
+      "selector": "iat_context_change",
+      "replicates": 3,
+      "duration_seconds": 250,
+      "strategy": "freeze_to_first",
+      "severity_grid": [
+        {"severity_id": "short", "parameters": {"duration_seconds": 180}},
+        {"severity_id": "boundary", "parameters": {"duration_seconds": 240}},
+        {"severity_id": "strong", "parameters": {"duration_seconds": 300}}
+      ],
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "4s2_cold_start_iat_offset",
+      "proxy_id": "intake_air_temperature_sensor_fault",
+      "expected_sub_check_id": "4-S2",
+      "expected_dtc_candidate_label": "P0111",
+      "expected_dtc_emitted": false,
+      "target_signal": "intake_temp",
+      "selector": "cold_start_iat",
+      "duration_seconds": 1,
+      "strategy": "relative_offset",
+      "reference_signal": "ambient_temp",
+      "replicates": 3,
+      "offset": 12.0,
+      "severity_grid": [
+        {"severity_id": "at_guard", "parameters": {"offset": 7.0}},
+        {"severity_id": "just_over", "parameters": {"offset": 8.0}},
+        {"severity_id": "strong", "parameters": {"offset": 20.0}}
+      ],
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "4s3_iat_low_range",
+      "proxy_id": "intake_air_temperature_sensor_fault",
+      "expected_sub_check_id": "4-S3",
+      "target_signal": "intake_temp",
+      "selector": "engine_firing",
+      "replicates": 3,
+      "duration_seconds": 1,
+      "strategy": "set_constant",
+      "value": -41.0,
+      "severity_grid": [
+        {"severity_id": "inside_range", "parameters": {"value": -40.0}},
+        {"severity_id": "low_fault", "parameters": {"value": -41.0, "expected_dtc_candidate_label": "P0112"}},
+        {"severity_id": "high_fault", "parameters": {"value": 216.0, "expected_dtc_candidate_label": "P0113"}}
+      ],
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "5s1_map_suppressed_step_response",
+      "proxy_id": "map_load_signal_plausibility_fault",
+      "expected_sub_check_id": "5-S1",
+      "target_signal": "map",
+      "selector": "pedal_step_events",
+      "replicates": 3,
+      "event_count": 4,
+      "strategy": "suppress_map_step_response",
+      "severity_grid": [
+        {"severity_id": "insufficient_events", "parameters": {"event_count": 2}},
+        {"severity_id": "boundary", "parameters": {"event_count": 3}},
+        {"severity_id": "strong", "parameters": {"event_count": 4}}
+      ],
+      "expected_result_state": "triggered"
+    },
+    {
+      "case_id": "5s2_map_residual_high",
+      "proxy_id": "map_load_signal_plausibility_fault",
+      "expected_sub_check_id": "5-S2",
+      "target_signal": "maf",
+      "selector": "steady_driving",
+      "replicates": 3,
+      "duration_seconds": 45,
+      "strategy": "multiply",
+      "expected_result_state": "triggered",
+      "factor": 3.0,
+      "severity_grid": [
+        {"severity_id": "mild", "parameters": {"factor": 1.5}},
+        {"severity_id": "moderate", "parameters": {"factor": 2.0}},
+        {"severity_id": "strong", "parameters": {"factor": 3.0}}
+      ]
+    },
+    {
+      "case_id": "5s3_map_frozen_context",
+      "proxy_id": "map_load_signal_plausibility_fault",
+      "expected_sub_check_id": "5-S3",
+      "target_signal": "map",
+      "selector": "map_context_change",
+      "replicates": 3,
+      "duration_seconds": 250,
+      "strategy": "freeze_to_first",
+      "severity_grid": [
+        {"severity_id": "short", "parameters": {"duration_seconds": 180}},
+        {"severity_id": "boundary", "parameters": {"duration_seconds": 240}},
+        {"severity_id": "strong", "parameters": {"duration_seconds": 300}}
+      ],
+      "expected_result_state": "triggered"
+    }
+  ]
+}

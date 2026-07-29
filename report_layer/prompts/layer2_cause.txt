@@ -38,38 +38,32 @@ Rules:
 
 Examples:
 
-Bad example (electronic_throttle_tracking_fault, High risk):
-"TPS and accel_pedal_d both abnormal. Throttle body fault, ETC
-system failure, or wiring issue."
+Bad example (accelerator_pedal_sensor, High risk):
+"Pedal D/E mismatch. Accelerator sensor fault or wiring issue."
 
 Why this is wrong:
 - Uses raw field names (TPS, accel_pedal_d) and unexplained acronyms
-  (ETC)
+  without explaining what they mean
 - Lists causes without explanation or context
 - Telegraphic style not suitable for non-technical audience
 - Does not connect causes to the observed signal pattern
 - Does not use hedging language (presents as definite causes)
 
-Good example (electronic_throttle_tracking_fault, High risk):
-"This pattern may indicate an issue with how the electronic throttle
-system is responding to your accelerator pedal input. The throttle
-position (which controls how much air enters the engine) and the
-pedal sensor reading are both outside their normal ranges. Possible
-causes could include a throttle body issue (the valve that controls
-airflow), a problem with the electronic control system that links
-the pedal to the throttle, or a wiring connection fault. The data
-suggests a mismatch between what you're asking the car to do and
-what the throttle is actually doing."
+Good example (accelerator_pedal_sensor, High risk):
+"This pattern may indicate an issue with the accelerator pedal
+position sensor. Modern cars usually compare two pedal sensor
+channels for safety. In this case, the two pedal readings do not
+track each other as closely as expected, which could be related to a
+sensor-channel issue, a wiring or connector problem, or early sensor
+wear. The data suggests the car may not be getting a fully consistent
+signal about how far the pedal is being pressed."
 
 Why this works:
 - Uses hedging language throughout ("may indicate", "could include")
-- Explains technical components in parentheses (throttle body =
-  valve that controls airflow)
-- Connects causes to specific signal values (throttle position and
-  pedal sensor both abnormal)
+- Explains why the two pedal channels are compared
+- Connects causes to the observed pedal-channel mismatch
 - Uses plain language to explain the system behavior
-- Helps owner understand the relationship between pedal input and
-  throttle response
+- Helps owner understand why inconsistent pedal readings matter
 
 Bad example (accelerator_pedal_sensor, Low risk):
 "Dual pedal sensor channels show divergence. Sensor fault, wiring

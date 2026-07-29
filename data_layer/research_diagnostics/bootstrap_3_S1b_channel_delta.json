@@ -1,0 +1,9 @@
+{
+  "sub_check": "3-S1b_channel_delta",
+  "n_iterations": 1000,
+  "n_trips": 81,
+  "mean": 61.982,
+  "std": 2.2721,
+  "ci_lower_2.5": 54.9,
+  "ci_upper_97.5": 63.5
+}

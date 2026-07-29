@@ -1,0 +1,9 @@
+{
+  "sub_check": "2-S2_residual_P0.5",
+  "n_iterations": 1000,
+  "n_trips_used": 72,
+  "mean": -13.97,
+  "std": 0.5103,
+  "ci_lower_2.5": -15.304,
+  "ci_upper_97.5": -13.2472
+}

@@ -49,6 +49,18 @@ def test_invalid_anomaly_type_fails():
     assert any("anomaly_type is not allowed" in error for error in errors)
 
 
+def test_retired_anomaly_types_fail():
+    for retired in (
+        "intake_air_temperature_sensor_or_heat_soak_fault",
+        "idle_speed_control_or_surge_degradation",
+    ):
+        data = valid_output()
+        data["anomaly_type"] = retired
+        data["component"] = retired
+        errors = validate_output(data)
+        assert any("anomaly_type is not allowed" in error for error in errors)
+
+
 def test_component_must_equal_anomaly_type():
     data = valid_output()
     data["component"] = "air_intake_maf_anomaly"

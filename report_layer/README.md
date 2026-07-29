@@ -2,7 +2,7 @@
 
 **Owner:** Report Team
 **Status:** Active Development
-**Last Updated:** 2026-07-13
+**Last Updated:** 2026-07-28
 
 ---
 
@@ -22,7 +22,7 @@ Data Layer → Model Layer → Report Layer → Dashboard
 1. **Context Injection**: Format Model Layer output for LLM consumption
 2. **Report Generation**: Use Granite LLM to generate plain-language diagnostic reports
 3. **Pass-Through**: Forward Model Layer fields unchanged to Dashboard
-4. **History Management**: Maintain risk_history for trend visualization (planned)
+4. **History Management**: Build `risk_history` for trend visualization from the Model Layer's batch envelope (`{summary, windows}`) at request time — synthesized per request, not separately persisted
 5. **RAG Grounding**: Retrieve anomaly-specific fault knowledge and risk-level action guidance
 
 ### Generated Report Sections
@@ -58,21 +58,21 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | Failure Projection Context | GL-190, GL-192 | Inject estimated failure probability and cycles into prompts when available |
 | Prompt Rule Hardening | GL-213 | Enforce context-first grounding, strict JSON output, safe use of notes, and no invented failure projection values |
 | ADR 303 | GL-110 | Document RAG knowledge base design |
+| Report Generation Pipeline | GL-241–245 | `pipeline/report_generator.py::generate_report()` orchestrates the full three-layer chain against a live Ollama instance, with per-layer retry and a graceful empty-report fallback on failure (never raises) |
+| Dashboard Wiring | GL-365 | Dashboard's CSV-upload flow calls the real pipeline end-to-end (Data Layer → Model Layer subprocess → `generate_report()`); verified with a real, unmocked run producing a grounded report |
+| Timeout Surfacing Fix | GL-261 | Dashboard now detects `generate_report()`'s silent empty-report fallback and shows an "Analysis Timed Out" error card instead of rendering a blank report |
 
 ### [IN PROGRESS]
 
-| Component | Ticket | Status |
-|-----------|--------|--------|
-| Report Generation Pipeline | P0 | Production report generator still pending; evaluation chain exists in `scenario_evaluation.py` |
-| Risk History Storage | P0 | Persistent `risk_history` storage still pending |
+*(none — the P0 items previously listed here are complete; see Completed above)*
 
 ### [PLANNED]
 
 | Component | Priority | Description |
 |-----------|----------|-------------|
-| Dashboard Integration Follow-up | P1 | Dashboard loads ReportLayerOutput-shaped JSON; live pipeline output location still needs final wiring |
-| Unit Tests | P1 | Broaden coverage for context injection, prompt validation, and failure projection cases |
-| Integration Tests | P1 | End-to-end pipeline testing |
+| Unit Tests | P1 | Broaden coverage for `report_generator.py`'s retry logic, timeout handling, and multi-layer failure paths |
+| Integration Tests | P1 | Automated (mocked) end-to-end test for the Data → Model → Report → Dashboard chain — currently only verified once by hand |
+| Retrieval Re-verification | P1 | Re-run the metadata-filter vs. semantic-search comparison on the current 5-type knowledge base (existing 100%/~180x numbers predate the retirement of two anomaly types) |
 
 ---
 
@@ -106,7 +106,7 @@ ReportLayerOutput (to Dashboard)
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
 | LLM | IBM Granite 4.1:8b | Report generation |
-| Inference | Ollama (dev) / watsonx.ai (prod) | LLM serving |
+| Inference | Ollama (local only) | LLM serving — a hosted/production inference path (IBM watsonx.ai, Replicate) was scoped but not pursued: no watsonx access and no project budget for paid hosted inference or a self-hosted server (see `docs/viva/report_challenge.md` Limitations) |
 | Data Models | Pydantic | Type-safe data contracts |
 | HTTP Client | requests | Ollama API communication |
 
@@ -138,6 +138,7 @@ report_layer/
 ├── pipeline/                       # Core logic
 │   ├── __init__.py
 │   ├── context_injection.py        # Format Model Layer output + RAG integration
+│   ├── report_generator.py         # generate_report(): production three-layer chain (GL-241–245)
 │   ├── prompt_chain_validator.py   # Validate prompt chain outputs
 │   └── scenario_evaluation.py      # GL-30 scenario testing script
 ├── prompts/                        # LLM prompt templates
@@ -147,6 +148,7 @@ report_layer/
 ├── rag/                            # RAG knowledge base (GL-110)
 │   ├── knowledge_indexer.py        # ChromaDB indexer
 │   ├── rag_retriever.py            # Metadata-filtered retrieval
+│   ├── symptom_knowledge_indexer.py # Document-level chunking variant (GL-156 comparison)
 │   └── chroma_db/                  # ChromaDB storage (gitignored)
 ├── tests/                          # Unit tests
 │   └── .gitkeep
@@ -499,39 +501,22 @@ See `docs/checklist.md` for full quality checklist.
 
 ## Remaining Work
 
-**1. Production Report Generation Pipeline** (P0)
-- `pipeline/report_generator.py`: Orchestrate three-layer Granite LLM chain
-- Integrate with granite4.1:8b via Ollama API
-- Handle error cases and retries
-- Validate output against schema
-
-**2. Risk History Storage** (P0)
-- `storage/history_manager.py`: Manage risk_history persistence
-- Append `{timestamp, risk_score}` entries on each inference
-- Retrieve historical data for Dashboard trend visualization
-- Implement efficient storage (SQLite or JSON file)
-
-**3. Unit Tests and Prompt Regression Tests** (P1)
-- Test `context_injection.py` with v0.7 inputs
+**1. Unit Tests and Prompt Regression Tests** (P1)
+- Broaden `report_generator.py` coverage: multi-layer failure, partial failure, and the GL-261 fallback-detection path
 - Test Failure Projection present/null cases
 - Test Model Layer Notes are treated as data-quality notes only
-- Test prompt template variable substitution
 - Mock Ollama API for testing without live calls
-- Test atypical and contradictory scenario handling
 
-**4. Integration Tests** (P1)
-- End-to-end pipeline testing
-- Model Layer → Report Layer → Dashboard flow
-- Error handling and retry logic
+**2. Integration Tests** (P1)
+- Automated (mocked) end-to-end test for Data Layer → Model Layer → Report Layer → Dashboard — currently only verified once by hand with real data (real KIT CSV, real TTM inference, real Ollama call)
 - Performance benchmarks
 
-### Future Enhancements
+**3. Retrieval Re-verification** (P1)
+- Re-run the metadata-filter vs. semantic-search comparison (`rag_baseline_comparison_table.md` §6) on the current 5-type knowledge base — the existing 100% accuracy / ~180x speed numbers were measured before two anomaly types were retired from the executable enum
 
-**Production Deployment** (P3)
-- Migrate from Ollama to IBM watsonx.ai
-- API authentication and rate limiting
-- Monitoring and logging
-- A/B testing framework
+### Deliberately Out of Scope
+
+**Hosted/zero-install deployment** — considered (IBM watsonx.ai, Replicate's hosted `ibm-granite/granite-4.1-8b`) but not pursued: no IBM watsonx.ai access, and this is an unfunded summer project with no budget for paid hosted inference or a self-hosted server. The public dashboard demo shows curated pre-computed reports instead of live inference; the real upload-your-own-CSV pipeline is a documented local run (`setup.sh` / `setup.ps1`). See `docs/viva/report_challenge.md` Limitations for the full reasoning.
 
 ---
 

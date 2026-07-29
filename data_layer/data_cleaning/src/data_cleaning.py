@@ -2,45 +2,49 @@
 
 The cleaning core returns an enriched DataFrame.
 This wrapper writes the model-facing cleaned CSV
-and keeps theenriched intermediate CSV for the quality-audit step.
+and keeps the enriched intermediate CSV for the quality-audit step.
 """
 
 from __future__ import annotations
 
 import argparse
 import logging
-from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
-from cleaning_core import (
-    LOGGER,
-    CleaningError,
-    build_output_columns,
-    clean_dataset_enriched,
-    load_config,
-)
-from project_paths import CONFIG_PATH, REPO_ROOT
-from project_paths import CLEANED_DATASET, ENRICHED_DATASET
-
-
-def _resolve_optional_path(
-        path: str | Path | None, default_path: Path
-) -> Path:
-    """Resolve a CLI override or fall back to the project path."""
-    return Path(path).expanduser().resolve() if path else default_path
+try:  # Package import for tests and shared Data Layer entry points.
+    from .cleaning_core import (
+        LOGGER,
+        CleaningError,
+        build_output_columns,
+        clean_dataset_enriched,
+        load_config,
+    )
+    from .project_paths import (
+        CONFIG_PATH, REPO_ROOT, RunLayout, build_run_layout
+    )
+except ImportError:  # Direct execution: python data_cleaning.py ...
+    from cleaning_core import (
+        LOGGER,
+        CleaningError,
+        build_output_columns,
+        clean_dataset_enriched,
+        load_config,
+    )
+    from project_paths import (
+        CONFIG_PATH, REPO_ROOT, RunLayout, build_run_layout
+    )
 
 
 def run_cleaning(
     config: dict[str, Any],
-    output_csv: str | Path | None = None,
-    enriched_csv: str | Path | None = None,
+    run_layout: RunLayout,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     """Run cleaning, write enriched CSV, and return the model table."""
     output_config = config["output"]
-    output_target = _resolve_optional_path(output_csv, CLEANED_DATASET)
-    enriched_target = _resolve_optional_path(enriched_csv, ENRICHED_DATASET)
+    output_target = run_layout.cleaned_dataset
+    enriched_target = run_layout.cleaning_enriched
 
     # Run the deterministic core cleaning flow once so outputs stay aligned.
     enriched, summary = clean_dataset_enriched(
@@ -72,10 +76,10 @@ def run_cleaning(
     # Return an English summary that downstream notebooks and logs can display.
     summary.update(
         {
-            "output_csv": str(output_target.resolve()),
+            "output_csv": run_layout.run_relative_posix(output_target),
             "output_rows": int(len(model_output)),
             "output_columns": list(model_output.columns),
-            "enriched_csv": str(enriched_target.resolve()),
+            "enriched_csv": run_layout.run_relative_posix(enriched_target),
             "enriched_rows": int(len(enriched)),
             "enriched_columns": list(enriched.columns),
         }
@@ -98,12 +102,12 @@ def build_argument_parser() -> argparse.ArgumentParser:
         help="Override input.directory from the configuration file.",
     )
     parser.add_argument(
-        "--output",
-        help="Override the cleaned model CSV path.",
-    )
-    parser.add_argument(
-        "--enriched-output",
-        help="Override the enriched intermediate CSV path.",
+        "--run-dir",
+        required=True,
+        help=(
+            "Explicit run directory under data/processed/runs/<run_id>. "
+            "All cleaning outputs are written inside this run."
+        ),
     )
     parser.add_argument(
         "--log-level",
@@ -122,13 +126,10 @@ def main() -> int:
     )
     try:
         config = load_config(args.config)
+        run_layout = build_run_layout(args.run_dir)
         if args.input_dir:
             config["input"]["directory"] = args.input_dir
-        _, report = run_cleaning(
-            config,
-            output_csv=args.output,
-            enriched_csv=args.enriched_output,
-        )
+        _, report = run_cleaning(config, run_layout)
     except (CleaningError, OSError, pd.errors.ParserError) as exc:
         LOGGER.error("%s", exc)
         return 1
