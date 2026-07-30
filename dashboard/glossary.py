@@ -15,8 +15,10 @@ except Exception:
         "maf": "Mass Airflow",
         "map": "Manifold Air Pressure",
         "intake_temp": "Intake Air Temperature",
+        "intake_air_temp": "Intake Air Temperature",
         "intake_temp_stability": "Intake Temperature Stability",
         "ambient_temp": "Ambient Temperature",
+        "ambient_air_temp": "Ambient Air Temperature",
         "intake_ambient_delta": "Intake-Ambient Temperature Difference",
         "segment_gap_seconds": "Segment Gap",
         "speed_std_120s": "Vehicle Speed Variation",
@@ -30,6 +32,7 @@ except Exception:
         ),
         "engine_on_flag": "Engine Running Indicator",
         "tps": "Throttle Position",
+        "throttle_position": "Throttle Position",
         "rpm": "Engine RPM",
         "rpm_slope": "RPM Rate of Change",
         "rpm_std_120s": "RPM Variation",
@@ -73,12 +76,20 @@ SIGNAL_TOOLTIPS = {
         "Intake air temperature - measures the temperature of air entering "
         "the engine."
     ),
+    "intake_air_temp": (
+        "Intake air temperature - measures the temperature of air entering "
+        "the engine."
+    ),
     "intake_temp_stability": (
         "Intake temperature stability - shows whether intake air temperature "
         "is changing smoothly or unusually."
     ),
     "ambient_temp": (
         "Ambient temperature - outside air temperature around the vehicle."
+    ),
+    "ambient_air_temp": (
+        "Ambient air temperature - outside air temperature around the "
+        "vehicle."
     ),
     "intake_ambient_delta": (
         "Intake-ambient temperature difference - compares intake air "
@@ -118,6 +129,9 @@ SIGNAL_TOOLTIPS = {
         "Engine running indicator - shows whether the engine appears to be on."
     ),
     "tps": (
+        "Throttle position - shows how open the throttle is."
+    ),
+    "throttle_position": (
         "Throttle position - shows how open the throttle is."
     ),
     "rpm": (
