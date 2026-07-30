@@ -57,6 +57,18 @@ FEATURE_STAGE_FILES = (
     ("41", "41_production_feature_assembler.py",
      "run_production_feature_assembler"),
 )
+# Proxy evidence and decision stages.  These run only when the caller
+# opts in: the batch/CLI path stays feature-only, while the Dashboard
+# upload path enables them so `proxy_decisions.csv` is reachable from a
+# live single-CSV run.  `run_fault_injection.py` keeps its own copy of
+# this list because it reruns these stages on injected copies.
+PROXY_STAGE_FILES = (
+    ("50", "50_rule_state_builder.py", "run_rule_state_builder"),
+    ("60", "60_event_evidence_builder.py", "run_event_evidence_builder"),
+    ("61", "61_duration_evidence_builder.py",
+     "run_duration_evidence_builder"),
+    ("70", "70_proxy_decision_builder.py", "run_proxy_decision_builder"),
+)
 
 
 class DataPipelineError(RuntimeError):
@@ -69,12 +81,16 @@ def _utc_now() -> str:
     )
 
 
-def _load_stage_module(filename: str) -> ModuleType:
-    path = REPO_ROOT / "data_layer/feature_engineering/src" / filename
+def _load_stage_module(
+    filename: str,
+    *,
+    source_dir: str = "data_layer/feature_engineering/src",
+) -> ModuleType:
+    path = REPO_ROOT / source_dir / filename
     name = f"data_layer_public_{filename.removesuffix('.py')}"
     spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
-        raise DataPipelineError(f"Cannot load feature stage: {path}.")
+        raise DataPipelineError(f"Cannot load pipeline stage: {path}.")
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
     spec.loader.exec_module(module)
@@ -193,8 +209,16 @@ def run_data_pipeline(
     config_path: str | Path = DEFAULT_CONFIG,
     input_dir: str | Path | None = None,
     creation_time_utc: str | None = None,
+    include_proxy: bool = False,
 ) -> dict[str, Any]:
-    """Run cleaning -> operating conditions -> 00/10/20/30/40/41."""
+    """Run cleaning -> operating conditions -> 00/10/20/30/40/41.
+
+    With ``include_proxy`` the proxy evidence and decision stages
+    50/60/61/70 run afterwards in the same run directory, adding
+    ``proxy_decisions_path`` and ``proxy_stage_ids`` to the summary and
+    the four proxy manifests to ``stage_manifests``.  It defaults to
+    ``False`` so the batch and CLI paths stay feature-only.
+    """
 
     timestamp = creation_time_utc or _utc_now()
     config_target = Path(config_path).expanduser().resolve()
@@ -225,6 +249,17 @@ def run_data_pipeline(
         function = getattr(module, function_name)
         stage_results[stage] = function(layout, creation_time_utc=timestamp)
 
+    proxy_results: dict[str, Any] = {}
+    if include_proxy:
+        for stage, filename, function_name in PROXY_STAGE_FILES:
+            module = _load_stage_module(
+                filename, source_dir="data_layer/proxy_failure/src"
+            )
+            function = getattr(module, function_name)
+            proxy_results[stage] = function(
+                layout, creation_time_utc=timestamp
+            )
+
     manifest_paths = [
         layout.cleaning_stage_manifest,
         layout.operating_conditions_manifest,
@@ -235,6 +270,13 @@ def run_data_pipeline(
         layout.calibrated_features_manifest,
         layout.production_feature_manifest,
     ]
+    if include_proxy:
+        manifest_paths += [
+            layout.rule_state_manifest,
+            layout.event_evidence_manifest,
+            layout.duration_evidence_manifest,
+            layout.proxy_decision_manifest,
+        ]
     for path in manifest_paths:
         if not path.is_file():
             raise DataPipelineError(
@@ -262,6 +304,17 @@ def run_data_pipeline(
         # run-relative fields above are unchanged for compatibility.
         "run_dir_path": str(layout.run_dir),
         "production_features_path": str(layout.production_features),
+        **(
+            {
+                "proxy_stage_ids": list(proxy_results),
+                "proxy_decisions": layout.run_relative_posix(
+                    layout.proxy_decisions
+                ),
+                "proxy_decisions_path": str(layout.proxy_decisions),
+            }
+            if include_proxy
+            else {}
+        ),
     }
 
 
@@ -271,6 +324,7 @@ def run_data_pipeline_for_upload(
     run_id: str | None = None,
     repo_root: str | Path = REPO_ROOT,
     config_path: str | Path = DEFAULT_CONFIG,
+    include_proxy: bool = True,
 ) -> dict[str, Any]:
     """Run the online pipeline for one uploaded KIT OBD-II CSV file.
 
@@ -289,6 +343,11 @@ def run_data_pipeline_for_upload(
     failure.  On success, returns the :func:`run_data_pipeline`
     summary, whose ``production_features_path`` field is the absolute
     path handed to the Model Layer.
+
+    ``include_proxy`` defaults to ``True`` here, unlike the batch
+    entry point: an uploaded run also produces
+    ``proxy_decisions.csv``, whose absolute path is returned as
+    ``proxy_decisions_path``.  Pass ``False`` to stop at stage 41.
     """
 
     source = Path(csv_path).expanduser().resolve(strict=False)
@@ -304,7 +363,10 @@ def run_data_pipeline_for_upload(
     try:
         shutil.copyfile(source, staging_dir / source.name)
         return run_data_pipeline(
-            layout, config_path=config_path, input_dir=staging_dir
+            layout,
+            config_path=config_path,
+            input_dir=staging_dir,
+            include_proxy=include_proxy,
         )
     finally:
         shutil.rmtree(staging_dir, ignore_errors=True)
@@ -322,6 +384,11 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--input-dir", help="Optional raw KIT CSV input directory override.")
     parser.add_argument("--config", default=str(DEFAULT_CONFIG))
+    parser.add_argument(
+        "--include-proxy",
+        action="store_true",
+        help="Also run proxy stages 50/60/61/70 after stage 41.",
+    )
     return parser
 
 
@@ -332,7 +399,10 @@ def main() -> int:
     try:
         layout = RunLayout.for_run_id(run_id, repo_root=REPO_ROOT)
         summary = run_data_pipeline(
-            layout, config_path=args.config, input_dir=args.input_dir
+            layout,
+            config_path=args.config,
+            input_dir=args.input_dir,
+            include_proxy=args.include_proxy,
         )
     except (
         DataPipelineError, OSError, KeyError, TypeError, ValueError

@@ -159,11 +159,12 @@ def test_upload_adapter_stages_file_and_cleans_up(
     path = _write_kit_csv(tmp_path)
     observed: dict = {}
 
-    def fake_pipeline(layout, *, config_path, input_dir):
+    def fake_pipeline(layout, *, config_path, input_dir, include_proxy):
         staged = sorted(p.name for p in Path(input_dir).iterdir())
         observed["layout"] = layout
         observed["input_dir"] = Path(input_dir)
         observed["staged_names"] = staged
+        observed["include_proxy"] = include_proxy
         return {"sentinel": True}
 
     monkeypatch.setattr(run_pipeline, "run_data_pipeline", fake_pipeline)
@@ -176,6 +177,9 @@ def test_upload_adapter_stages_file_and_cleans_up(
     assert observed["layout"].run_id == "upload-test-01"
     assert observed["layout"].repo_root == tmp_path.resolve()
     assert not observed["input_dir"].exists()
+    # The upload path enables proxy stages by default so that
+    # proxy_decisions.csv is reachable from a live single-CSV run.
+    assert observed["include_proxy"] is True
 
 
 def test_default_upload_run_id_uses_upload_prefix(
@@ -183,7 +187,7 @@ def test_default_upload_run_id_uses_upload_prefix(
 ) -> None:
     path = _write_kit_csv(tmp_path)
 
-    def fake_pipeline(layout, *, config_path, input_dir):
+    def fake_pipeline(layout, *, config_path, input_dir, include_proxy):
         return {"run_id": layout.run_id}
 
     monkeypatch.setattr(run_pipeline, "run_data_pipeline", fake_pipeline)
