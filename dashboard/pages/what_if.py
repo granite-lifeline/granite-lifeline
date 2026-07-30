@@ -1366,14 +1366,14 @@ def show_what_if_page() -> None:
             margin="16px 0 20px",
         )
         # Step indicator
-        + f'<div class="wi-steps">'
-        f'<div class="wi-step"><span class="wi-step-num">1</span>'
-        f'<span class="wi-step-lbl">Pick a scenario</span></div>'
-        f'<div class="wi-step"><span class="wi-step-num">2</span>'
-        f'<span class="wi-step-lbl">Fine-tune sliders</span></div>'
-        f'<div class="wi-step"><span class="wi-step-num">3</span>'
-        f'<span class="wi-step-lbl">See the impact</span></div>'
-        f'</div>',
+        + '<div class="wi-steps">'
+        '<div class="wi-step"><span class="wi-step-num">1</span>'
+        '<span class="wi-step-lbl">Pick a scenario</span></div>'
+        '<div class="wi-step"><span class="wi-step-num">2</span>'
+        '<span class="wi-step-lbl">Fine-tune sliders</span></div>'
+        '<div class="wi-step"><span class="wi-step-num">3</span>'
+        '<span class="wi-step-lbl">See the impact</span></div>'
+        '</div>',
         unsafe_allow_html=True,
     )
 

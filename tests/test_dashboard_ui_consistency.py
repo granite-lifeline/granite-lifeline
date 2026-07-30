@@ -115,7 +115,9 @@ def test_export_panel_keeps_downloads_available_when_selection_is_empty():
     """GL-383: empty component selection falls back to all components."""
     src = _read("dashboard/pages/overview.py")
 
-    fallback_index = src.index("selected_component_keys = list(component_keys)")
+    fallback_index = src.index(
+        "selected_component_keys = list(component_keys)"
+    )
     components_index = src.index("selected_components = [")
     summary_index = src.index("summary_html = (")
 

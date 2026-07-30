@@ -7,10 +7,6 @@ from pathlib import Path
 
 import pytest
 
-dashboard_dir = str(Path("dashboard").resolve())
-if dashboard_dir not in sys.path:
-    sys.path.insert(0, dashboard_dir)
-
 from dashboard.export_helper import (
     CSV_COLUMNS,
     DEFAULT_EXPORT_SECTIONS,
@@ -30,7 +26,6 @@ from dashboard.export_helper import (
     get_export_section_options,
     get_signal_status,
 )
-from dashboard.pages.overview import _build_zip_bytes
 
 
 def _sample_component():
@@ -210,6 +205,12 @@ def test_build_key_signals_csv_bytes_returns_utf8_bytes():
 
 def test_export_zip_contains_each_selected_component_csv():
     """GL-383: multi-component export ZIP keeps every component file."""
+    dashboard_dir = str(Path("dashboard").resolve())
+    if dashboard_dir not in sys.path:
+        sys.path.insert(0, dashboard_dir)
+
+    from dashboard.pages.overview import _build_zip_bytes
+
     files = []
     for idx in range(5):
         component = {

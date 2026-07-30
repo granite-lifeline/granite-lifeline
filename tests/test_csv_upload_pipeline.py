@@ -124,7 +124,10 @@ def test_csv_upload_ui_missing_columns_lists_required_fields(monkeypatch):
 def test_csv_upload_ui_success_stores_dashboard_data_and_reruns(monkeypatch):
     overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
     upload_df = pd.DataFrame(
-        [{column: row_idx for column in REQUIRED_COLUMNS} for row_idx in range(700)]
+        [
+            {column: row_idx for column in REQUIRED_COLUMNS}
+            for row_idx in range(700)
+        ]
     )
     csv_bytes = upload_df.to_csv(index=False).encode("utf-8")
     dashboard_result = {
@@ -145,7 +148,9 @@ def test_csv_upload_ui_success_stores_dashboard_data_and_reruns(monkeypatch):
     monkeypatch.setattr(
         overview, "run_uploaded_csv_batch", fake_run_uploaded_csv_batch
     )
-    monkeypatch.setattr(overview.st, "spinner", lambda label: _FakeSpinner(label))
+    monkeypatch.setattr(
+        overview.st, "spinner", lambda label: _FakeSpinner(label)
+    )
     monkeypatch.setattr(overview.st, "rerun", lambda: rerun_calls.append(True))
 
     overview._handle_uploaded_csv_submit(
@@ -312,7 +317,6 @@ def test_run_uploaded_csv_batch_passes_production_features_to_model(
         "load_model_output_for_dashboard",
         fake_load_model_output_for_dashboard,
     )
-
 
     dashboard_data = run_uploaded_csv_batch(
         b"Time\n12:00:00.000\n",

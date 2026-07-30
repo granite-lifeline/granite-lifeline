@@ -104,4 +104,3 @@ def test_dashboard_readme_uses_current_demo_readiness_language():
     assert "INTERFACE.md v0.7" not in src
     assert "Six-Type" not in src
     assert "6 current anomaly types" not in src
-

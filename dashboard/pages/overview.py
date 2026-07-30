@@ -1098,8 +1098,9 @@ def _show_dashboard_export_controls(
                     key="export_dropdown_components",
                     use_container_width=True,
                 ):
-                    st.session_state["overview_component_dropdown_open"] = (
-                        not st.session_state["overview_component_dropdown_open"]
+                    dropdown_key = "overview_component_dropdown_open"
+                    st.session_state[dropdown_key] = (
+                        not st.session_state[dropdown_key]
                     )
                     st.rerun()
 
