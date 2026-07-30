@@ -174,6 +174,25 @@ def test_overview_page_has_pdf_and_csv_export_controls():
     assert '"Download CSV"' in src
 
 
+def test_overview_export_workflow_has_quick_download_then_options():
+    """Test GL-380 keeps downloads visible before advanced filters."""
+    src = _overview_text()
+
+    assert "overview_export_options_open" in src
+    assert "Ready to download" in src
+    assert "export-quick-summary" in src
+    assert "Customize export options" in src
+    assert "export_options_toggle" in src
+    assert "section_key in DEFAULT_EXPORT_SECTIONS" in src
+
+    download_index = src.index("overview_download_pdf")
+    options_index = src.index("export_options_toggle")
+    component_filter_index = src.index("export_dropdown_components")
+
+    assert download_index < options_index
+    assert options_index < component_filter_index
+
+
 def test_light_and_dark_theme_tokens_support_failure_prediction_card():
     """Test light and dark themes both include card styling tokens."""
     theme_module = load_dashboard_app_module()

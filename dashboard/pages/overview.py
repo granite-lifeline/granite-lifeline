@@ -21,6 +21,7 @@ from csv_pipeline import (
 from data_store import get_data_source, get_mock_data, get_overview_components
 from export_helper import (
     CSV_COLUMNS,
+    DEFAULT_EXPORT_SECTIONS,
     EXPORT_SECTION_LABELS,
     build_diagnostic_pdf_bytes,
     build_key_signals_csv_bytes,
@@ -666,6 +667,7 @@ def _show_dashboard_export_controls(
 
     section_keys = list(EXPORT_SECTION_LABELS.keys())
     column_keys = list(CSV_COLUMNS)
+    _set_default_state("overview_export_options_open", False)
     _set_default_state("overview_component_dropdown_open", False)
     _set_default_state("overview_pdf_dropdown_open", False)
     _set_default_state("overview_csv_dropdown_open", False)
@@ -674,7 +676,7 @@ def _show_dashboard_export_controls(
     for section_key in section_keys:
         _set_default_state(
             f"overview_pdf_choice_{section_key}",
-            True,
+            section_key in DEFAULT_EXPORT_SECTIONS,
         )
     for column_key in column_keys:
         _set_default_state(f"overview_csv_choice_{column_key}", True)
@@ -698,6 +700,27 @@ def _show_dashboard_export_controls(
         .st-key-dashboard_export_panel
             [class*="st-key-overview_component_choice_"] {{
             margin-bottom: 0 !important;
+        }}
+        .export-quick-summary {{
+            align-items: center;
+            background: {tokens["surface_alt"]};
+            border: 1px solid {tokens["border"]};
+            border-radius: 10px;
+            color: {tokens["text_secondary"]};
+            display: flex;
+            flex-wrap: wrap;
+            font-size: 12px;
+            gap: 8px;
+            justify-content: space-between;
+            margin: 0 0 10px 0;
+            padding: 10px 12px;
+        }}
+        .export-quick-summary strong {{
+            color: {tokens["text"]};
+            font-weight: 700;
+        }}
+        .export-quick-summary span {{
+            white-space: nowrap;
         }}
         .st-key-dashboard_export_panel
             [class*="st-key-export_dropdown_"] button {{
@@ -734,106 +757,6 @@ def _show_dashboard_export_controls(
                 f"overview_component_choice_{component_key}"
             )
         ]
-        selected_sections = [
-            section_key for section_key in section_keys
-            if st.session_state.get(f"overview_pdf_choice_{section_key}")
-        ]
-        selected_columns = [
-            column_key for column_key in column_keys
-            if st.session_state.get(f"overview_csv_choice_{column_key}")
-        ]
-
-        open_text = (
-            "^" if st.session_state["overview_component_dropdown_open"]
-            else "v"
-        )
-        component_label = (
-            f"Report components "
-            f"({len(selected_component_keys)}/{len(component_keys)}) "
-            f"{open_text}"
-        )
-        if st.button(
-            component_label,
-            key="export_dropdown_components",
-            use_container_width=True,
-        ):
-            st.session_state["overview_component_dropdown_open"] = (
-                not st.session_state["overview_component_dropdown_open"]
-            )
-            st.rerun()
-
-        if st.session_state["overview_component_dropdown_open"]:
-            st.markdown("Report components")
-            component_cols = st.columns(3, gap="small")
-            for idx, component_key in enumerate(component_keys):
-                with component_cols[idx % 3]:
-                    st.checkbox(
-                        _component_label(component_key),
-                        key=f"overview_component_choice_{component_key}",
-                    )
-
-        filter_col_1, filter_col_2 = st.columns(2, gap="small")
-        with filter_col_1:
-            open_text = (
-                "^" if st.session_state["overview_pdf_dropdown_open"]
-                else "v"
-            )
-            pdf_label = (
-                f"PDF sections ({len(selected_sections)}/{len(section_keys)}) "
-                f"{open_text}"
-            )
-            if st.button(
-                pdf_label,
-                key="export_dropdown_pdf",
-                use_container_width=True,
-            ):
-                st.session_state["overview_pdf_dropdown_open"] = (
-                    not st.session_state["overview_pdf_dropdown_open"]
-                )
-                st.rerun()
-
-            if st.session_state["overview_pdf_dropdown_open"]:
-                st.markdown("PDF sections")
-                for section_key in section_keys:
-                    st.checkbox(
-                        EXPORT_SECTION_LABELS.get(section_key, section_key),
-                        key=f"overview_pdf_choice_{section_key}",
-                    )
-
-        with filter_col_2:
-            open_text = (
-                "^" if st.session_state["overview_csv_dropdown_open"]
-                else "v"
-            )
-            csv_label = (
-                f"CSV columns ({len(selected_columns)}/{len(column_keys)}) "
-                f"{open_text}"
-            )
-            if st.button(
-                csv_label,
-                key="export_dropdown_csv",
-                use_container_width=True,
-            ):
-                st.session_state["overview_csv_dropdown_open"] = (
-                    not st.session_state["overview_csv_dropdown_open"]
-                )
-                st.rerun()
-
-            if st.session_state["overview_csv_dropdown_open"]:
-                st.markdown("CSV columns")
-                for column_key in column_keys:
-                    label = column_key.replace("_", " ").title()
-                    st.checkbox(
-                        label,
-                        key=f"overview_csv_choice_{column_key}",
-                    )
-
-        selected_component_keys = [
-            component_key for component_key in component_keys
-            if st.session_state.get(
-                f"overview_component_choice_{component_key}"
-            )
-        ]
         selected_components = [
             component_lookup[component_key]
             for component_key in selected_component_keys
@@ -862,120 +785,233 @@ def _show_dashboard_export_controls(
             column_key.replace("_", " ").title()
             for column_key in selected_columns
         ]
-        pdf_col, csv_col = st.columns(2, gap="small")
+        summary_html = (
+            '<div class="export-quick-summary">'
+            '<strong>Ready to download</strong>'
+            f'<span>{len(selected_component_keys)} component(s)</span>'
+            f'<span>{len(selected_sections)} PDF section(s)</span>'
+            f'<span>{len(selected_columns)} CSV column(s)</span>'
+            '</div>'
+        )
+        st.markdown(summary_html, unsafe_allow_html=True)
 
         if not selected_components:
             st.warning("Select at least one component to export.")
-            return
+        else:
+            pdf_col, csv_col = st.columns(2, gap="small")
+            with pdf_col:
+                try:
+                    if len(selected_components) == 1:
+                        pdf_data = build_diagnostic_pdf_bytes(
+                            selected_components[0],
+                            selected_sections=selected_sections,
+                        )
+                        pdf_file_name = _make_export_file_name(
+                            component_names,
+                            pdf_detail_names,
+                            download_date,
+                            "diagnostic_report",
+                            "pdf",
+                        )
+                        pdf_mime = "application/pdf"
+                        pdf_label = "Download PDF"
+                    else:
+                        pdf_files = [
+                            (
+                                _make_export_file_name(
+                                    [_component_label(
+                                        component_data.get("component", "")
+                                    )],
+                                    pdf_detail_names,
+                                    download_date,
+                                    "diagnostic_report",
+                                    "pdf",
+                                ),
+                                build_diagnostic_pdf_bytes(
+                                    component_data,
+                                    selected_sections=selected_sections,
+                                ),
+                            )
+                            for component_data in selected_components
+                        ]
+                        pdf_data = _build_zip_bytes(pdf_files)
+                        pdf_file_name = _make_export_file_name(
+                            component_names,
+                            pdf_detail_names,
+                            download_date,
+                            "pdf_reports",
+                            "zip",
+                        )
+                        pdf_mime = "application/zip"
+                        pdf_label = "Download PDF ZIP"
+                    st.download_button(
+                        pdf_label,
+                        data=pdf_data,
+                        file_name=pdf_file_name,
+                        mime=pdf_mime,
+                        key="overview_download_pdf",
+                        use_container_width=True,
+                    )
+                except RuntimeError as err:
+                    st.error(str(err))
 
-        with pdf_col:
-            try:
+            with csv_col:
                 if len(selected_components) == 1:
-                    pdf_data = build_diagnostic_pdf_bytes(
+                    csv_data = build_key_signals_csv_bytes(
                         selected_components[0],
-                        selected_sections=selected_sections,
+                        selected_columns=selected_columns,
                     )
-                    pdf_file_name = _make_export_file_name(
+                    csv_file_name = _make_export_file_name(
                         component_names,
-                        pdf_detail_names,
+                        csv_detail_names,
                         download_date,
-                        "diagnostic_report",
-                        "pdf",
+                        "key_signals",
+                        "csv",
                     )
-                    pdf_mime = "application/pdf"
-                    pdf_label = "Download PDF"
+                    csv_mime = "text/csv"
+                    csv_label = "Download CSV"
                 else:
-                    pdf_files = [
+                    csv_files = [
                         (
                             _make_export_file_name(
                                 [_component_label(
                                     component_data.get("component", "")
                                 )],
-                                pdf_detail_names,
+                                csv_detail_names,
                                 download_date,
-                                "diagnostic_report",
-                                "pdf",
+                                "key_signals",
+                                "csv",
                             ),
-                            build_diagnostic_pdf_bytes(
+                            build_key_signals_csv_bytes(
                                 component_data,
-                                selected_sections=selected_sections,
+                                selected_columns=selected_columns,
                             ),
                         )
                         for component_data in selected_components
                     ]
-                    pdf_data = _build_zip_bytes(pdf_files)
-                    pdf_file_name = _make_export_file_name(
+                    csv_data = _build_zip_bytes(csv_files)
+                    csv_file_name = _make_export_file_name(
                         component_names,
-                        pdf_detail_names,
+                        csv_detail_names,
                         download_date,
-                        "pdf_reports",
+                        "csv_reports",
                         "zip",
                     )
-                    pdf_mime = "application/zip"
-                    pdf_label = "Download PDF ZIP"
+                    csv_mime = "application/zip"
+                    csv_label = "Download CSV ZIP"
                 st.download_button(
-                    pdf_label,
-                    data=pdf_data,
-                    file_name=pdf_file_name,
-                    mime=pdf_mime,
-                    key="overview_download_pdf",
+                    csv_label,
+                    data=csv_data,
+                    file_name=csv_file_name,
+                    mime=csv_mime,
+                    key="overview_download_csv",
                     use_container_width=True,
                 )
-            except RuntimeError as err:
-                st.error(str(err))
 
-        with csv_col:
-            if len(selected_components) == 1:
-                csv_data = build_key_signals_csv_bytes(
-                    selected_components[0],
-                    selected_columns=selected_columns,
-                )
-                csv_file_name = _make_export_file_name(
-                    component_names,
-                    csv_detail_names,
-                    download_date,
-                    "key_signals",
-                    "csv",
-                )
-                csv_mime = "text/csv"
-                csv_label = "Download CSV"
-            else:
-                csv_files = [
-                    (
-                        _make_export_file_name(
-                            [_component_label(
-                                component_data.get("component", "")
-                            )],
-                            csv_detail_names,
-                            download_date,
-                            "key_signals",
-                            "csv",
-                        ),
-                        build_key_signals_csv_bytes(
-                            component_data,
-                            selected_columns=selected_columns,
-                        ),
-                    )
-                    for component_data in selected_components
-                ]
-                csv_data = _build_zip_bytes(csv_files)
-                csv_file_name = _make_export_file_name(
-                    component_names,
-                    csv_detail_names,
-                    download_date,
-                    "csv_reports",
-                    "zip",
-                )
-                csv_mime = "application/zip"
-                csv_label = "Download CSV ZIP"
-            st.download_button(
-                csv_label,
-                data=csv_data,
-                file_name=csv_file_name,
-                mime=csv_mime,
-                key="overview_download_csv",
-                use_container_width=True,
+        options_label = (
+            "Hide export options"
+            if st.session_state["overview_export_options_open"]
+            else "Customize export options"
+        )
+        if st.button(
+            options_label,
+            key="export_options_toggle",
+            use_container_width=True,
+        ):
+            st.session_state["overview_export_options_open"] = (
+                not st.session_state["overview_export_options_open"]
             )
+            st.rerun()
+
+        if st.session_state["overview_export_options_open"]:
+            open_text = (
+                "^" if st.session_state["overview_component_dropdown_open"]
+                else "v"
+            )
+            component_label = (
+                f"Report components "
+                f"({len(selected_component_keys)}/{len(component_keys)}) "
+                f"{open_text}"
+            )
+            if st.button(
+                component_label,
+                key="export_dropdown_components",
+                use_container_width=True,
+            ):
+                st.session_state["overview_component_dropdown_open"] = (
+                    not st.session_state["overview_component_dropdown_open"]
+                )
+                st.rerun()
+
+            if st.session_state["overview_component_dropdown_open"]:
+                st.markdown("Report components")
+                component_cols = st.columns(3, gap="small")
+                for idx, component_key in enumerate(component_keys):
+                    with component_cols[idx % 3]:
+                        st.checkbox(
+                            _component_label(component_key),
+                            key=f"overview_component_choice_{component_key}",
+                        )
+
+            filter_col_1, filter_col_2 = st.columns(2, gap="small")
+            with filter_col_1:
+                open_text = (
+                    "^" if st.session_state["overview_pdf_dropdown_open"]
+                    else "v"
+                )
+                pdf_label = (
+                    f"PDF sections "
+                    f"({len(selected_sections)}/{len(section_keys)}) "
+                    f"{open_text}"
+                )
+                if st.button(
+                    pdf_label,
+                    key="export_dropdown_pdf",
+                    use_container_width=True,
+                ):
+                    st.session_state["overview_pdf_dropdown_open"] = (
+                        not st.session_state["overview_pdf_dropdown_open"]
+                    )
+                    st.rerun()
+
+                if st.session_state["overview_pdf_dropdown_open"]:
+                    st.markdown("PDF sections")
+                    for section_key in section_keys:
+                        st.checkbox(
+                            EXPORT_SECTION_LABELS.get(
+                                section_key, section_key
+                            ),
+                            key=f"overview_pdf_choice_{section_key}",
+                        )
+
+            with filter_col_2:
+                open_text = (
+                    "^" if st.session_state["overview_csv_dropdown_open"]
+                    else "v"
+                )
+                csv_label = (
+                    f"CSV columns "
+                    f"({len(selected_columns)}/{len(column_keys)}) "
+                    f"{open_text}"
+                )
+                if st.button(
+                    csv_label,
+                    key="export_dropdown_csv",
+                    use_container_width=True,
+                ):
+                    st.session_state["overview_csv_dropdown_open"] = (
+                        not st.session_state["overview_csv_dropdown_open"]
+                    )
+                    st.rerun()
+
+                if st.session_state["overview_csv_dropdown_open"]:
+                    st.markdown("CSV columns")
+                    for column_key in column_keys:
+                        label = column_key.replace("_", " ").title()
+                        st.checkbox(
+                            label,
+                            key=f"overview_csv_choice_{column_key}",
+                        )
 
 
 def show_mock_data_warning(tokens: dict) -> None:
