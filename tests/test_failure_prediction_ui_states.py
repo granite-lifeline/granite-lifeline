@@ -193,6 +193,32 @@ def test_overview_export_workflow_has_quick_download_then_options():
     assert options_index < component_filter_index
 
 
+def test_overview_export_panel_ui_has_cards_and_options_panel():
+    """Test GL-381 export panel has polished download and options UI."""
+    src = _overview_text()
+
+    assert "def _export_download_card_html" in src
+    assert "export-download-card" in src
+    assert "export-download-icon" in src
+    assert "export-download-title" in src
+    assert "export-download-meta" in src
+    assert "Diagnostic report" in src
+    assert "Key signals table" in src
+    assert "csv_card_meta" in src
+    assert "pdf_card_meta" in src
+    assert '"activity",' in src
+    assert '"table",' not in src
+
+    assert ".st-key-overview_download_pdf button" in src
+    assert ".st-key-overview_download_csv button" in src
+    assert src.count('background: {tokens["accent"]} !important;') >= 2
+    assert src.count('color: {tokens["accent_contrast"]} !important;') >= 4
+    assert ".st-key-export_options_toggle button" in src
+    assert ".st-key-export_options_panel" in src
+    assert 'st.container(key="export_options_panel")' in src
+    assert '<div class="export-options-title">Export options</div>' in src
+
+
 def test_light_and_dark_theme_tokens_support_failure_prediction_card():
     """Test light and dark themes both include card styling tokens."""
     theme_module = load_dashboard_app_module()
