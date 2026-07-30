@@ -19,7 +19,9 @@ from data_layer.pipeline_data.paths import RunLayout
 from data_layer.pipeline_data.upload_contract import (
     MIN_UPLOAD_ROWS,
     UploadRejected,
+    longest_segment_rows,
     validate_upload_csv,
+    validate_usable_segment,
 )
 from data_layer.tests.pipeline_data_test import (
     test_public_pipeline_contract as public_contract,
@@ -46,23 +48,44 @@ KIT_HEADER = [
 ]
 
 
+#: One 1 Hz row per second, so a valid fixture must clear both the row
+#: floor and the duration floor: N rows span N-1 seconds.
+VALID_ROWS = MIN_UPLOAD_ROWS + 1
+
+
 def _write_kit_csv(
     directory: Path,
     *,
     name: str = VALID_KIT_NAME,
     header: list[str] | None = None,
-    rows: int = MIN_UPLOAD_ROWS,
+    rows: int = VALID_ROWS,
 ) -> Path:
     columns = KIT_HEADER if header is None else header
     lines = [",".join(columns)]
     for index in range(rows):
-        second = index % 60
-        minute = (index // 60) % 60
-        time_value = f"12:{minute:02d}:{second:02d}.0"
+        hour, remainder = divmod(index, 3600)
+        minute, second = divmod(remainder, 60)
+        time_value = f"{hour + 10:02d}:{minute:02d}:{second:02d}.0"
         lines.append(
             ",".join([time_value] + ["1.0"] * (len(columns) - 1))
         )
     path = directory / name
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
+
+
+def _write_production_stub(
+    directory: Path, *, rows: int = VALID_ROWS
+) -> Path:
+    """Minimal production_features.csv with one usable segment."""
+
+    path = directory / "production_features.csv"
+    lines = ["timestamp,trip_id,segment_id"]
+    lines += [
+        f"2019-05-06T10:00:{index % 60:02d}Z,trip_0001,"
+        "trip_0001_seg_001"
+        for index in range(rows)
+    ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return path
 
@@ -107,6 +130,101 @@ def test_short_upload_is_rejected_with_too_few_rows(
         validate_upload_csv(path, config)
     assert excinfo.value.code == "too_few_rows"
     assert str(MIN_UPLOAD_ROWS - 1) in str(excinfo.value)
+
+
+def test_short_duration_is_rejected_even_with_enough_rows(
+    tmp_path: Path, config: dict
+) -> None:
+    """Row count alone cannot express a duration requirement.
+
+    KIT files are sampled at 6-12 Hz, so a file can carry thousands of
+    raw rows and still cover under a minute of driving.
+    """
+
+    columns = KIT_HEADER
+    lines = [",".join(columns)]
+    for index in range(4000):          # well past MIN_UPLOAD_ROWS
+        second, fraction = divmod(index, 10)
+        time_value = f"10:00:{second % 60:02d}.{fraction}"
+        lines.append(",".join([time_value] + ["1.0"] * (len(columns) - 1)))
+    path = tmp_path / VALID_KIT_NAME
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    with pytest.raises(UploadRejected) as excinfo:
+        validate_upload_csv(path, config)
+    assert excinfo.value.code == "too_few_rows"
+    assert "seconds" in str(excinfo.value)
+
+
+def test_unparsable_time_does_not_reject_at_intake(
+    tmp_path: Path, config: dict
+) -> None:
+    """Timestamp validation belongs to cleaning, which has context."""
+
+    columns = KIT_HEADER
+    lines = [",".join(columns)]
+    for _ in range(VALID_ROWS):
+        lines.append(",".join(["not-a-time"] + ["1.0"] * (len(columns) - 1)))
+    path = tmp_path / VALID_KIT_NAME
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    assert validate_upload_csv(path, config) is None
+
+
+def test_fragmented_run_is_rejected_as_no_usable_segment(
+    tmp_path: Path
+) -> None:
+    """A recording split into short pieces has no usable window."""
+
+    path = tmp_path / "production_features.csv"
+    lines = ["timestamp,trip_id,segment_id"]
+    for segment in range(4):           # 4 x 200 rows: none reaches 700
+        for index in range(200):
+            lines.append(
+                f"2019-05-06T10:00:{index % 60:02d}Z,trip_0001,"
+                f"trip_0001_seg_{segment:03d}"
+            )
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    assert longest_segment_rows(path) == 200
+    with pytest.raises(UploadRejected) as excinfo:
+        validate_usable_segment(path, run_id="frag-run")
+    assert excinfo.value.code == "no_usable_segment"
+    assert "200" in str(excinfo.value)
+    assert "frag-run" in str(excinfo.value)
+
+
+def test_single_long_segment_passes_usable_segment_check(
+    tmp_path: Path
+) -> None:
+    stub = _write_production_stub(tmp_path)
+    assert longest_segment_rows(stub) == VALID_ROWS
+    assert validate_usable_segment(stub) is None
+
+
+def test_stage_failure_is_wrapped_as_data_pipeline_error(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Callers are documented to receive DataPipelineError."""
+
+    path = _write_kit_csv(tmp_path)
+
+    class StageSpecificError(RuntimeError):
+        pass
+
+    def exploding_pipeline(layout, *, config_path, input_dir,
+                           include_proxy):
+        raise StageSpecificError("simulated stage contract failure")
+
+    monkeypatch.setattr(
+        run_pipeline, "run_data_pipeline", exploding_pipeline
+    )
+    with pytest.raises(run_pipeline.DataPipelineError) as excinfo:
+        run_pipeline.run_data_pipeline_for_upload(
+            path, run_id="wrap-test", repo_root=tmp_path
+        )
+    assert "wrap-test" in str(excinfo.value)
+    assert isinstance(excinfo.value.__cause__, StageSpecificError)
 
 
 def test_empty_or_missing_file_is_rejected_as_unreadable(
@@ -159,20 +277,22 @@ def test_upload_adapter_stages_file_and_cleans_up(
     path = _write_kit_csv(tmp_path)
     observed: dict = {}
 
+    stub = _write_production_stub(tmp_path)
+
     def fake_pipeline(layout, *, config_path, input_dir, include_proxy):
         staged = sorted(p.name for p in Path(input_dir).iterdir())
         observed["layout"] = layout
         observed["input_dir"] = Path(input_dir)
         observed["staged_names"] = staged
         observed["include_proxy"] = include_proxy
-        return {"sentinel": True}
+        return {"sentinel": True, "production_features_path": str(stub)}
 
     monkeypatch.setattr(run_pipeline, "run_data_pipeline", fake_pipeline)
     result = run_pipeline.run_data_pipeline_for_upload(
         path, run_id="upload-test-01", repo_root=tmp_path
     )
 
-    assert result == {"sentinel": True}
+    assert result["sentinel"] is True
     assert observed["staged_names"] == [VALID_KIT_NAME]
     assert observed["layout"].run_id == "upload-test-01"
     assert observed["layout"].repo_root == tmp_path.resolve()
@@ -187,8 +307,13 @@ def test_default_upload_run_id_uses_upload_prefix(
 ) -> None:
     path = _write_kit_csv(tmp_path)
 
+    stub = _write_production_stub(tmp_path)
+
     def fake_pipeline(layout, *, config_path, input_dir, include_proxy):
-        return {"run_id": layout.run_id}
+        return {
+            "run_id": layout.run_id,
+            "production_features_path": str(stub),
+        }
 
     monkeypatch.setattr(run_pipeline, "run_data_pipeline", fake_pipeline)
     result = run_pipeline.run_data_pipeline_for_upload(

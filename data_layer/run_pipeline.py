@@ -32,6 +32,7 @@ from data_layer.pipeline_data.paths import RunLayout, repo_relative_posix
 from data_layer.pipeline_data.upload_contract import (
     UploadRejected,
     validate_upload_csv,
+    validate_usable_segment,
 )
 
 
@@ -203,6 +204,30 @@ def _write_upstream_manifests(
     write_json_atomic(layout.operating_conditions_manifest, operating_manifest)
 
 
+def _run_stage(
+    stage_id: str,
+    function: Any,
+    layout: RunLayout,
+    timestamp: str,
+) -> Any:
+    """Execute one stage, normalising failures to DataPipelineError.
+
+    Stage modules raise their own contract errors (for example
+    ``RuleStateContractError``).  Callers are documented to receive
+    :class:`DataPipelineError`, so the original exception is wrapped
+    and chained rather than allowed to escape unrecognised.
+    """
+
+    try:
+        return function(layout, creation_time_utc=timestamp)
+    except DataPipelineError:
+        raise
+    except Exception as exc:
+        raise DataPipelineError(
+            f"Stage {stage_id} failed for run '{layout.run_id}': {exc}"
+        ) from exc
+
+
 def run_data_pipeline(
     layout: RunLayout,
     *,
@@ -247,7 +272,9 @@ def run_data_pipeline(
     for stage, filename, function_name in FEATURE_STAGE_FILES:
         module = _load_stage_module(filename)
         function = getattr(module, function_name)
-        stage_results[stage] = function(layout, creation_time_utc=timestamp)
+        stage_results[stage] = _run_stage(
+            stage, function, layout, timestamp
+        )
 
     proxy_results: dict[str, Any] = {}
     if include_proxy:
@@ -256,8 +283,8 @@ def run_data_pipeline(
                 filename, source_dir="data_layer/proxy_failure/src"
             )
             function = getattr(module, function_name)
-            proxy_results[stage] = function(
-                layout, creation_time_utc=timestamp
+            proxy_results[stage] = _run_stage(
+                stage, function, layout, timestamp
             )
 
     manifest_paths = [
@@ -344,6 +371,12 @@ def run_data_pipeline_for_upload(
     summary, whose ``production_features_path`` field is the absolute
     path handed to the Model Layer.
 
+    After the pipeline completes, the cleaned output must contain at
+    least one contiguous segment of >= 700 rows (INTERFACE.md §1.5);
+    otherwise :class:`UploadRejected` is raised with code
+    ``no_usable_segment``.  The run directory is kept in that case so
+    the result can be inspected.
+
     ``include_proxy`` defaults to ``True`` here, unlike the batch
     entry point: an uploaded run also produces
     ``proxy_decisions.csv``, whose absolute path is returned as
@@ -362,14 +395,34 @@ def run_data_pipeline_for_upload(
     staging_dir = Path(tempfile.mkdtemp(prefix="gl_upload_"))
     try:
         shutil.copyfile(source, staging_dir / source.name)
-        return run_data_pipeline(
-            layout,
-            config_path=config_path,
-            input_dir=staging_dir,
-            include_proxy=include_proxy,
-        )
+        try:
+            summary = run_data_pipeline(
+                layout,
+                config_path=config_path,
+                input_dir=staging_dir,
+                include_proxy=include_proxy,
+            )
+        except DataPipelineError:
+            raise
+        except Exception as exc:
+            # Honour the documented contract: pipeline failures reach
+            # the caller as DataPipelineError, whatever stage raised.
+            raise DataPipelineError(
+                f"Pipeline stage failed for run '{layout.run_id}': "
+                f"{exc}"
+            ) from exc
     finally:
         shutil.rmtree(staging_dir, ignore_errors=True)
+
+    # Post-run acceptance: the Model Layer needs one contiguous
+    # segment of >= 700 cleaned 1 Hz rows; a fragmented recording can
+    # pass every intake heuristic and still fail this.  The run
+    # directory is kept for inspection and named in the message.
+    validate_usable_segment(
+        Path(summary["production_features_path"]),
+        run_id=layout.run_id,
+    )
+    return summary
 
 
 def build_argument_parser() -> argparse.ArgumentParser:
