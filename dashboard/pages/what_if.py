@@ -19,6 +19,7 @@ try:
         hex_to_rgba,
         lucide_icon,
     )
+    from ui_components import empty_state_html, page_title_html
 except ImportError:  # package import during tests
     from dashboard.anomaly_display import COMPONENT_DISPLAY_NAMES
     from dashboard.data_store import get_overview_components
@@ -29,6 +30,7 @@ except ImportError:  # package import during tests
         hex_to_rgba,
         lucide_icon,
     )
+    from dashboard.ui_components import empty_state_html, page_title_html
 
 
 # ---------------------------------------------------------------------------
@@ -665,8 +667,12 @@ def _render_page_styles(tokens: dict) -> None:
             padding-left: 20px;
         }}
         .wi-col-hdr.right {{
-            text-align: right;
-            padding-right: 18px;
+            align-items: center;
+            display: flex;
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+            text-align: center;
         }}
         /* Data rows — Option B: name | change | risk */
         .wi-row {{
@@ -718,6 +724,7 @@ def _render_page_styles(tokens: dict) -> None:
         }}
         /* Change cell (Option B): "48% → 72%" inline flow */
         .wi-cell-change {{
+            align-items: center;
             border-right: 1px solid {T["border"]};
             display: flex;
             flex-direction: column;
@@ -728,7 +735,9 @@ def _render_page_styles(tokens: dict) -> None:
             align-items: baseline;
             display: flex;
             gap: 5px;
+            justify-content: center;
             line-height: 1;
+            width: 100%;
         }}
         .wi-change-from {{
             color: {T["text_secondary"]};
@@ -747,7 +756,7 @@ def _render_page_styles(tokens: dict) -> None:
             line-height: 1;
         }}
         .wi-change-badge {{
-            align-self: flex-start;
+            align-self: center;
             border-radius: 999px;
             font-family: {FONT_MONO};
             font-size: 11px;
@@ -773,30 +782,43 @@ def _render_page_styles(tokens: dict) -> None:
             font-size: 10px;
             margin-top: 3px;
             opacity: 0.7;
+            text-align: center;
         }}
         /* Risk cell */
         .wi-cell-risk {{
-            align-items: flex-end;
+            align-items: center;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding: 14px 18px 14px 10px;
+            padding: 14px 0;
+        }}
+        .wi-level-stack {{
+            align-items: center;
+            display: flex;
+            flex-direction: column;
+            width: 78px;
         }}
         .wi-pill {{
             border-radius: 999px;
+            box-sizing: border-box;
             color: #fff;
             display: inline-block;
             font-size: 11px;
             font-weight: 700;
+            min-width: 78px;
             padding: 3px 10px;
+            text-align: center;
         }}
         .wi-bar-track {{
+            align-items: center;
             background: {T["surface_alt"]};
             border-radius: 999px;
+            display: flex;
             height: 4px;
+            justify-content: flex-start;
             margin-top: 7px;
             overflow: hidden;
-            width: 56px;
+            width: 78px;
         }}
         .wi-bar-fill {{
             border-radius: 999px;
@@ -862,11 +884,13 @@ def _render_page_styles(tokens: dict) -> None:
             padding: 0 12px;
         }}
         .wi-step:not(:last-child)::after {{
-            color: {T["border"]};
+            color: {T["text_secondary"]};
             content: "\\2192";
-            font-size: 14px;
+            font-size: 16px;
+            font-weight: 700;
             line-height: 1;
             margin-left: 12px;
+            opacity: 0.75;
         }}
         .wi-step-num {{
             align-items: center;
@@ -907,21 +931,32 @@ def _render_page_styles(tokens: dict) -> None:
 
         /* Back button */
         .st-key-what_if_back_btn button {{
-            background: transparent !important;
-            border: 1px solid {T["border"]} !important;
-            border-radius: 10px !important;
-            color: {T["text"]} !important;
-            font-size: 13px !important;
+            background: {hex_to_rgba(T["accent"], 0.10)} !important;
+            border: 1.5px solid {T["accent"]} !important;
+            border-radius: 14px !important;
+            color: {T["accent"]} !important;
+            font-size: 18px !important;
             font-weight: 600 !important;
-            padding: 6px 14px !important;
+            min-height: 52px !important;
+            padding: 0 28px !important;
+            width: 100% !important;
         }}
         .st-key-what_if_back_btn button:hover {{
+            background: {T["accent"]} !important;
             border-color: {T["accent"]} !important;
+            color: {T["accent_contrast"]} !important;
+        }}
+        .st-key-what_if_back_btn button:active {{
+            background: {T["accent"]} !important;
+            color: {T["accent_contrast"]} !important;
+            transform: scale(0.98) !important;
+        }}
+        .st-key-what_if_back_btn button * {{
             color: {T["accent"]} !important;
         }}
-        .st-key-what_if_back_btn button *,
-        .st-key-what_if_back_btn button:hover * {{
-            color: inherit !important;
+        .st-key-what_if_back_btn button:hover *,
+        .st-key-what_if_back_btn button:active * {{
+            color: {T["accent_contrast"]} !important;
         }}
 
         /* Reset button */
@@ -953,7 +988,8 @@ def _render_page_styles(tokens: dict) -> None:
             .wi-row {{ grid-template-columns: 1fr 80px 80px 80px; }}
             .wi-cell-name {{ padding: 14px; }}
             .wi-cell {{ padding: 14px 8px; }}
-            .wi-cell-risk {{ padding: 14px 10px 14px 8px; }}
+            .wi-cell-risk {{ padding: 14px 0; }}
+            .wi-level-stack {{ width: 78px; }}
         }}
         @media (max-width: 540px) {{
             .wi-row {{ grid-template-columns: 1fr; }}
@@ -962,8 +998,8 @@ def _render_page_styles(tokens: dict) -> None:
                 border-bottom: 1px solid {T["border"]};
             }}
             .wi-cell {{ border-right: none; text-align: left; }}
-            .wi-cell-risk {{ align-items: flex-start; }}
-            .wi-bar-track {{ width: 100%; }}
+            .wi-cell-risk {{ align-items: center; }}
+            .wi-bar-track {{ width: 78px; }}
         }}
 
         {slider_rules}
@@ -1092,11 +1128,13 @@ def _component_row_html(
 
         # Risk level + bar
         '<div class="wi-cell-risk">'
+        '<div class="wi-level-stack">'
         f'<span class="wi-pill" style="background:{level_color};">'
         f'{html.escape(level)}</span>'
         '<div class="wi-bar-track"><div class="wi-bar-fill" '
         f'style="width:{projected_pct}%;background:{level_color};">'
         '</div></div>'
+        '</div>'
         '</div>'
 
         '</div>'
@@ -1251,22 +1289,23 @@ def show_what_if_page() -> None:
     # ── Nav bar ─────────────────────────────────────────────────────────────
     nav_l, _gap = st.columns([3, 7])
     with nav_l:
-        if st.button("← Back to Dashboard", key="what_if_back_btn"):
+        if st.button("← Back to Overview", key="what_if_back_btn"):
             st.session_state["page"] = "overview"
             st.rerun()
 
     # ── Page title ───────────────────────────────────────────────────────────
     st.markdown(
-        f'<div style="text-align:center;margin:16px 0 20px;">'
-        f'<h1 style="color:{tokens["text"]};font-size:26px;font-weight:800;'
-        f'line-height:1.2;margin:0;">What if I drive differently?</h1>'
-        f'<p style="color:{tokens["text_secondary"]};font-size:13px;'
-        f'margin:6px auto 0;max-width:480px;line-height:1.5;">'
-        'Pick a scenario to instantly see the impact, '
-        'or fine-tune with the sliders.</p>'
-        f'</div>'
+        page_title_html(
+            "What if I drive differently?",
+            tokens,
+            subtitle=(
+                "Pick a scenario to instantly see the impact, or "
+                "fine-tune with the sliders."
+            ),
+            margin="16px 0 20px",
+        )
         # Step indicator
-        f'<div class="wi-steps">'
+        + f'<div class="wi-steps">'
         f'<div class="wi-step"><span class="wi-step-num">1</span>'
         f'<span class="wi-step-lbl">Pick a scenario</span></div>'
         f'<div class="wi-step"><span class="wi-step-num">2</span>'
@@ -1441,9 +1480,14 @@ def show_what_if_page() -> None:
     # ── Results ──
     with result_col:
         if not rows:
-            st.info(
-                "No component data yet. "
-                "Upload a CSV on the main dashboard to get started."
+            st.markdown(
+                empty_state_html(
+                    "No component data yet",
+                    "Upload a CSV on the main dashboard to get started.",
+                    tokens,
+                    margin="0 auto",
+                ),
+                unsafe_allow_html=True,
             )
         else:
             # Summary banner

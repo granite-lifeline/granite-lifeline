@@ -39,6 +39,9 @@ from theme import (
 )
 from ui_components import (
     danger_card_html,
+    empty_state_html,
+    page_title_html,
+    section_heading_html,
     show_footer,
     warning_banner_html,
 )
@@ -717,9 +720,11 @@ def _show_dashboard_export_controls(
 
     with st.container(key="dashboard_export_panel"):
         st.markdown(
-            f'<div style="text-align:center;color:{tokens["text"]};'
-            'font-size:16px;font-weight:700;margin-bottom:10px;">'
-            'Export Report</div>',
+            section_heading_html(
+                "Export Report",
+                lucide_icon("file-text", size=20, color=tokens["accent"]),
+                side_width=20,
+            ),
             unsafe_allow_html=True,
         )
 
@@ -1026,15 +1031,15 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
 
     # ── Hero text ──
     st.markdown(
-        f'<div style="text-align:center;max-width:560px;'
-        f'margin:0 auto 32px auto;">'
-        f'<h1 style="font-size:clamp(24px,4vw,36px);font-weight:700;'
-        f'color:{tokens["text"]};margin:0 0 12px 0;line-height:1.2;">'
-        'Vehicle Health Analysis</h1>'
-        f'<p style="font-size:15px;color:{tokens["text_secondary"]};'
-        'line-height:1.6;margin:0;">'
-        'Upload your OBD-II drive data to get a full health diagnostic report.'
-        '</p></div>',
+        page_title_html(
+            "Vehicle Health Analysis",
+            tokens,
+            subtitle=(
+                "Upload your OBD-II drive data to get a full health "
+                "diagnostic report."
+            ),
+            margin="0 auto 32px auto",
+        ),
         unsafe_allow_html=True,
     )
 
@@ -1306,7 +1311,6 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
             st.rerun()
     with title_col:
         with st.container(key="page_title_block"):
-            st.title("Vehicle Health Status")
             latest = max(
                 (c.get("timestamp", "") for c in mock_data.values()),
                 default="",
@@ -1318,9 +1322,17 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
                     ).strftime("%Y-%m-%d %H:%M")
                 except Exception:
                     fmt = latest
-                st.caption(f"Last checked: {fmt}")
             else:
-                st.caption("Last checked: N/A")
+                fmt = "N/A"
+            st.markdown(
+                page_title_html(
+                    "Vehicle Health Status",
+                    tokens,
+                    subtitle=f"Last checked: {fmt}",
+                    margin="0 auto 4px auto",
+                ),
+                unsafe_allow_html=True,
+            )
         st.markdown(
             """
             <style>
@@ -1348,21 +1360,14 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
         _show_theme_toggle(dark_mode, tokens)
 
     if not mock_data:
-        info_icon = lucide_icon(
-            "info", size=20, color=tokens["text_secondary"]
-        )
         st.markdown(
-            f'<div style="background:'
-            f'{hex_to_rgba(tokens["text_secondary"], 0.08)};'
-            f'border:1px solid '
-            f'{hex_to_rgba(tokens["text_secondary"], 0.20)};'
-            'border-radius:14px;padding:24px 16px;margin:16px 0;'
-            f'color:{tokens["text_secondary"]};'
-            'display:flex;align-items:center;justify-content:center;'
-            'gap:14px;">'
-            f'{info_icon}'
-            f'<span style="font-weight:600;color:{tokens["text_secondary"]};">'
-            'No components to display</span></div>',
+            empty_state_html(
+                "No components to display",
+                "Upload a valid OBD-II CSV file or explore with demo data.",
+                tokens,
+                max_width="700px",
+                margin="16px auto",
+            ),
             unsafe_allow_html=True,
         )
         return

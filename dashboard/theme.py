@@ -62,6 +62,9 @@ FONT_SANS = (
     "'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
 )
 FONT_MONO = "'IBM Plex Mono', 'SF Mono', Consolas, monospace"
+RADIUS_CARD = "12px"
+RADIUS_PANEL = "10px"
+RADIUS_PILL = "999px"
 
 
 # ---------------------------------------------------------------------------
@@ -395,6 +398,67 @@ def apply_theme(dark_mode: bool) -> None:
             letter-spacing: 0.5px !important;
             text-transform: uppercase !important;
             margin-bottom: 12px !important;
+        }}
+        .gl-page-title {{
+            margin: 0 !important;
+            color: {tokens["text"]} !important;
+            font-size: 28px !important;
+            font-weight: 800 !important;
+            line-height: 1.2 !important;
+            text-align: center !important;
+        }}
+        .gl-page-subtitle {{
+            color: {tokens["text_secondary"]} !important;
+            font-size: 13px !important;
+            line-height: 1.55 !important;
+            margin: 8px auto 0 auto !important;
+            max-width: 560px !important;
+            text-align: center !important;
+        }}
+        .gl-section-heading {{
+            align-items: center !important;
+            display: flex !important;
+            justify-content: center !important;
+            gap: 12px !important;
+            margin: 0 0 16px 0 !important;
+        }}
+        .gl-section-heading h2 {{
+            margin: 0 !important;
+        }}
+        .gl-glass-panel {{
+            background: {tokens["glass_surface"]} !important;
+            backdrop-filter: blur(24px) saturate(160%) !important;
+            -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+            border: 1px solid {tokens["glass_border"]} !important;
+            border-radius: {RADIUS_CARD} !important;
+            box-shadow: 0 2px 12px {tokens["shadow"]} !important;
+        }}
+        .gl-empty-state {{
+            align-items: flex-start !important;
+            background: {hex_to_rgba(tokens["text_secondary"], 0.08)}
+                !important;
+            border: 1px solid
+                {hex_to_rgba(tokens["text_secondary"], 0.20)} !important;
+            border-radius: {RADIUS_CARD} !important;
+            box-shadow: 0 2px 8px {tokens["shadow"]} !important;
+            box-sizing: border-box !important;
+            display: flex !important;
+            gap: 12px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            padding: 16px 20px !important;
+        }}
+        .gl-empty-state-title {{
+            color: {tokens["text"]} !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            line-height: 1.35 !important;
+            margin-bottom: 4px !important;
+        }}
+        .gl-empty-state-message {{
+            color: {tokens["text_secondary"]} !important;
+            font-size: 14px !important;
+            line-height: 1.5 !important;
         }}
     </style>
     """

@@ -105,11 +105,11 @@ def test_failure_prediction_uses_top_summary_banner_layout():
     src = _detail_text()
 
     incomplete_index = src.index("Incomplete Data")
-    heading_index = src.index("Failure Prediction</h2>")
+    heading_index = src.index('"Failure Prediction", failure_icon')
     card_call_index = src.index("_render_failure_prediction")
     risk_index = src.index('"Risk Score"')
 
-    assert "grid-template-columns:24px auto 24px" in src
+    assert "section_heading_html(" in src
     assert incomplete_index < heading_index
     assert card_call_index < risk_index
 
@@ -152,7 +152,7 @@ def test_overview_page_has_pdf_and_csv_export_controls():
     assert "_show_dashboard_export_controls(sorted_components, tokens)" in src
     assert "build_diagnostic_pdf_bytes" in src
     assert "build_key_signals_csv_bytes" in src
-    assert "Export Report</div>" in src
+    assert 'section_heading_html(\n                "Export Report"' in src
     assert "Report components" in src
     assert "export_dropdown_components" in src
     assert "export_dropdown_pdf" in src

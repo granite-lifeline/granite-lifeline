@@ -24,6 +24,9 @@ from theme import (
     svg_data_uri,
 )
 from ui_components import (
+    empty_state_html,
+    page_title_html,
+    section_heading_html,
     show_divider,
     show_footer,
     show_icon_heading,
@@ -146,20 +149,14 @@ def _render_gauge(
     """Risk score gauge chart."""
     risk_level = component_data.get("risk_level")
     if risk_level not in {"High", "Medium", "Low"}:
-        info = lucide_icon("info", size=20, color=tokens["text_secondary"])
         st.markdown(
-            f'<div style="display:flex;justify-content:center;width:100%;">'
-            f'<div style="background:'
-            f'{hex_to_rgba(tokens["text_secondary"], 0.08)};'
-            f'border:1px solid '
-            f'{hex_to_rgba(tokens["text_secondary"], 0.20)};'
-            'border-radius:12px;padding:18px 20px;margin:28px 0;'
-            'max-width:420px;display:flex;align-items:center;gap:12px;">'
-            f'<div style="display:flex;align-items:center;flex-shrink:0;">'
-            f'{info}</div>'
-            f'<div style="color:{tokens["text"]};font-size:14px;'
-            'line-height:1.5;">No risk score is available for this '
-            'component yet.</div></div></div>',
+            empty_state_html(
+                "No risk score available",
+                "This component does not have a model risk score yet.",
+                tokens,
+                max_width="420px",
+                margin="28px auto",
+            ),
             unsafe_allow_html=True,
         )
         return
@@ -224,20 +221,12 @@ def _render_trend(
 ) -> None:
     """Risk trend line chart."""
     if len(trend) < 2:
-        info = lucide_icon("info", size=20, color=tokens["text_secondary"])
         st.markdown(
-            f'<div style="display:flex;justify-content:center;width:100%;">'
-            f'<div style="background:'
-            f'{hex_to_rgba(tokens["text_secondary"], 0.08)};'
-            f'border:1px solid '
-            f'{hex_to_rgba(tokens["text_secondary"], 0.20)};'
-            'border-radius:12px;padding:16px 20px;margin:12px 0;'
-            'max-width:600px;display:flex;align-items:center;gap:12px;">'
-            f'<div style="display:flex;align-items:center;flex-shrink:0;">'
-            f'{info}</div>'
-            f'<div style="color:{tokens["text"]};font-size:14px;'
-            'line-height:1.5;">Not enough data yet to show a trend.</div>'
-            '</div></div>',
+            empty_state_html(
+                "Trend not available",
+                "Not enough data yet to show a risk score trend.",
+                tokens,
+            ),
             unsafe_allow_html=True,
         )
         return
@@ -301,20 +290,12 @@ def _render_signals(
     """Key signals table."""
     key_signals = component_data.get("key_signals") or []
     if not key_signals:
-        info = lucide_icon("info", size=20, color=tokens["text_secondary"])
         st.markdown(
-            f'<div style="display:flex;justify-content:center;width:100%;">'
-            f'<div style="background:'
-            f'{hex_to_rgba(tokens["text_secondary"], 0.08)};'
-            f'border:1px solid '
-            f'{hex_to_rgba(tokens["text_secondary"], 0.20)};'
-            'border-radius:12px;padding:16px 20px;margin:12px 0;'
-            'max-width:600px;display:flex;align-items:center;gap:12px;">'
-            f'<div style="display:flex;align-items:center;flex-shrink:0;">'
-            f'{info}</div>'
-            f'<div style="color:{tokens["text"]};font-size:14px;'
-            'line-height:1.5;">No signal data available for this component.'
-            '</div></div></div>',
+            empty_state_html(
+                "No signal data available",
+                "This component does not have key signal readings yet.",
+                tokens,
+            ),
             unsafe_allow_html=True,
         )
         return
@@ -516,9 +497,7 @@ def render_component_detail(
     display_name = COMPONENT_DISPLAY_NAMES.get(component_id, component_id)
 
     st.markdown(
-        f'<div style="display:flex;align-items:center;'
-        f'justify-content:center;margin-bottom:24px;">'
-        f'<h1 style="margin:0;display:inline;">{display_name}</h1></div>',
+        page_title_html(display_name, tokens, margin="8px 0 24px"),
         unsafe_allow_html=True,
     )
 
@@ -544,25 +523,15 @@ def render_component_detail(
         if missing_sections:
             parts.append(f"missing {', '.join(missing_sections)}")
         msg = "This component has " + " and ".join(parts) + "."
-        info_icon = lucide_icon(
-            "info", size=20, color=tokens["text_secondary"]
-        )
         st.markdown(
-            f'<div style="background:'
-            f'{hex_to_rgba(tokens["text_secondary"], 0.08)};'
-            f'border:1px solid '
-            f'{hex_to_rgba(tokens["text_secondary"], 0.20)};'
-            'border-radius:12px;padding:16px 20px;'
-            'margin:0 auto 24px auto;max-width:700px;'
-            'display:flex;align-items:flex-start;gap:12px;">'
-            f'{info_icon}'
-            '<div style="flex:1;">'
-            f'<div style="font-weight:600;color:{tokens["text"]};'
-            'margin-bottom:4px;">Incomplete Data</div>'
-            f'<div style="color:{tokens["text_secondary"]};'
-            f'font-size:14px;line-height:1.5;">{msg} Some visualizations '
-            'and information may not be available.</div>'
-            '</div></div>',
+            empty_state_html(
+                "Incomplete Data",
+                f"{msg} Some visualizations and information may not be "
+                "available.",
+                tokens,
+                max_width="700px",
+                margin="0 auto 24px auto",
+            ),
             unsafe_allow_html=True,
         )
 
@@ -571,14 +540,7 @@ def render_component_detail(
     fi_color = tokens["accent"] if pred_has_value else tokens["text_secondary"]
     failure_icon = lucide_icon("alert-triangle", size=24, color=fi_color)
     st.markdown(
-        '<div style="display:flex;align-items:center;'
-        'justify-content:center;margin-bottom:16px;">'
-        '<div style="display:grid;grid-template-columns:24px auto 24px;'
-        'align-items:center;column-gap:20px;">'
-        f'<div style="display:flex;">{failure_icon}</div>'
-        '<h2 style="margin:0;">Failure Prediction</h2>'
-        '<div style="width:24px;"></div>'
-        '</div></div>',
+        section_heading_html("Failure Prediction", failure_icon),
         unsafe_allow_html=True,
     )
     _render_failure_prediction(component_data, tokens)
@@ -664,14 +626,54 @@ def show_detail_page() -> None:
     dark_mode = st.session_state.get("dark_mode", False)
     tokens = THEME_TOKENS["dark" if dark_mode else "light"]
 
+    st.markdown(
+        f"""
+        <style>
+        .st-key-detail_back_btn button,
+        .st-key-detail_missing_back_btn button {{
+            background: {hex_to_rgba(tokens["accent"], 0.10)} !important;
+            border: 1.5px solid {tokens["accent"]} !important;
+            border-radius: 14px !important;
+            color: {tokens["accent"]} !important;
+            font-size: 18px !important;
+            font-weight: 600 !important;
+            min-height: 52px !important;
+            min-width: 240px !important;
+            padding: 0 28px !important;
+        }}
+        .st-key-detail_back_btn button:hover,
+        .st-key-detail_missing_back_btn button:hover {{
+            background: {tokens["accent"]} !important;
+            border-color: {tokens["accent"]} !important;
+            color: {tokens["accent_contrast"]} !important;
+        }}
+        .st-key-detail_back_btn button:active,
+        .st-key-detail_missing_back_btn button:active {{
+            background: {tokens["accent"]} !important;
+            color: {tokens["accent_contrast"]} !important;
+            transform: scale(0.98) !important;
+        }}
+        .st-key-detail_back_btn button *,
+        .st-key-detail_back_btn button:hover *,
+        .st-key-detail_back_btn button:active *,
+        .st-key-detail_missing_back_btn button *,
+        .st-key-detail_missing_back_btn button:hover *,
+        .st-key-detail_missing_back_btn button:active * {{
+            color: inherit !important;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     if not component_key or component_key not in component_lookup:
         st.error("Component not found.")
-        if st.button("\u2190 Back to Overview"):
+        if st.button("\u2190 Back to Overview", key="detail_missing_back_btn"):
             st.session_state["page"] = "overview"
             st.rerun()
         return
 
-    if st.button("\u2190 Back to Overview"):
+    if st.button("\u2190 Back to Overview", key="detail_back_btn"):
         st.session_state["page"] = "overview"
         st.rerun()
 
