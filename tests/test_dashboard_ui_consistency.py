@@ -89,7 +89,8 @@ def test_what_if_level_pill_centered_and_bar_left_filled():
     assert "min-width: 78px;" in src
     assert "width: 78px;" in src
     assert "display: flex;" in src
-    assert ".wi-cell-risk {{ align-items: center; }}" in src
+    assert ".wi-cell-risk {{" in src
+    assert "align-items: center;" in src
     assert ".wi-bar-track {{ width: 78px; }}" in src
     assert "justify-content: flex-start;" in src
     assert ".wi-col-hdr.right {" in src
@@ -103,6 +104,24 @@ def test_what_if_step_arrows_are_visible():
     assert 'color: {T["text_secondary"]};' in src
     assert "font-size: 16px;" in src
     assert "font-weight: 700;" in src
+
+
+def test_what_if_layout_has_refined_sections_and_responsive_grid():
+    src = _read("dashboard/pages/what_if.py")
+
+    assert ".wi-section-row {" in src
+    assert ".wi-section-meta {" in src
+    assert '<div class="wi-section-meta">5 presets</div>' in src
+    assert "height: 132px;" in src
+    assert "min-height: 36px !important;" in src
+    assert "position: sticky;" in src
+    assert "top: 18px;" in src
+    assert "st.columns([1.05, 1.7], gap=\"large\")" in src
+    assert "minmax(140px, 1fr)" in src
+    assert "minmax(112px, 128px)" in src
+    assert ".wi-col-headers {{ display: none; }}" in src
+    assert ".wi-cell-change {{" in src
+    assert "align-items: flex-start;" in src
 
 
 def test_what_if_back_button_uses_light_blue_then_deep_blue_hover():

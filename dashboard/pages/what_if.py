@@ -465,23 +465,35 @@ def _render_page_styles(tokens: dict) -> None:
         .wi-shell {{
             max-width: 1140px;
             margin: 0 auto;
+            padding: 0 12px;
         }}
 
         /* ── Section divider ── */
         .wi-divider {{
             border: none;
             border-top: 1px solid {T["border"]};
-            margin: 24px 0;
+            margin: 22px 0 26px;
         }}
 
         /* ── Section heading ── */
+        .wi-section-row {{
+            align-items: center;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }}
         .wi-section-head {{
             color: {T["text_secondary"]};
             font-size: 11px;
             font-weight: 700;
             letter-spacing: 0.6px;
-            margin-bottom: 12px;
             text-transform: uppercase;
+        }}
+        .wi-section-meta {{
+            color: {T["text_secondary"]};
+            font-size: 11px;
+            font-weight: 600;
+            opacity: 0.72;
         }}
 
         /* ── Scenario card (pure HTML, rendered via st.markdown) ── */
@@ -494,6 +506,7 @@ def _render_page_styles(tokens: dict) -> None:
             display: flex;
             flex-direction: column;
             gap: 0;
+            height: 132px;
             min-height: 120px;
             padding: 14px 12px 12px 12px;
             position: relative;
@@ -522,6 +535,7 @@ def _render_page_styles(tokens: dict) -> None:
             font-size: 13px;
             font-weight: 700;
             line-height: 1.3;
+            min-height: 34px;
         }}
         .wi-sc-desc {{
             color: {T["text_secondary"]};
@@ -534,12 +548,14 @@ def _render_page_styles(tokens: dict) -> None:
             background: {hex_to_rgba(T["accent"], 0.15)};
             border-radius: 999px;
             color: {T["accent"]};
-            display: inline-block;
+            display: block;
             font-size: 10px;
             font-weight: 700;
             letter-spacing: 0.3px;
-            margin-top: 7px;
             padding: 2px 8px;
+            position: absolute;
+            right: 10px;
+            top: 10px;
             text-transform: uppercase;
         }}
 
@@ -559,7 +575,7 @@ def _render_page_styles(tokens: dict) -> None:
             display: flex !important;
             font-size: 12px !important;
             font-weight: 700 !important;
-            height: 34px !important;
+            min-height: 36px !important;
             justify-content: center !important;
             line-height: 1 !important;
             margin-top: 8px !important;
@@ -634,6 +650,10 @@ def _render_page_styles(tokens: dict) -> None:
             border-radius: 16px;
             box-shadow: 0 2px 12px {T["shadow"]};
             overflow: hidden;
+        }}
+        .wi-breakdown,
+        .wi-breakdown * {{
+            box-sizing: border-box;
         }}
         /* Title bar */
         .wi-breakdown-head {{
@@ -928,6 +948,15 @@ def _render_page_styles(tokens: dict) -> None:
             div[data-testid="stColumn"] > div {{
             min-width: 0 !important;
         }}
+        .st-key-wi_scenario_picker
+            div[data-testid="stHorizontalBlock"]::-webkit-scrollbar {{
+            height: 6px;
+        }}
+        .st-key-wi_scenario_picker
+            div[data-testid="stHorizontalBlock"]::-webkit-scrollbar-thumb {{
+            background: {hex_to_rgba(T["text_secondary"], 0.30)};
+            border-radius: 999px;
+        }}
 
         /* Back button */
         .st-key-what_if_back_btn button {{
@@ -977,6 +1006,12 @@ def _render_page_styles(tokens: dict) -> None:
         }}
 
         /* ── Responsive ── */
+        @media (min-width: 900px) {{
+            .st-key-wi_controls_box {{
+                position: sticky;
+                top: 18px;
+            }}
+        }}
         @media (max-width: 760px) {{
             .st-key-wi_scenario_picker
                 div[data-testid="stHorizontalBlock"] {{
@@ -985,20 +1020,46 @@ def _render_page_styles(tokens: dict) -> None:
                 overflow-x: auto !important;
                 padding-bottom: 4px !important;
             }}
-            .wi-row {{ grid-template-columns: 1fr 80px 80px 80px; }}
+            .wi-section-row {{
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 3px;
+            }}
+            .wi-col-headers,
+            .wi-row {{
+                grid-template-columns:
+                    minmax(140px, 1fr) minmax(112px, 128px) 88px;
+            }}
             .wi-cell-name {{ padding: 14px; }}
-            .wi-cell {{ padding: 14px 8px; }}
+            .wi-cell-change {{ padding: 14px 10px; }}
             .wi-cell-risk {{ padding: 14px 0; }}
             .wi-level-stack {{ width: 78px; }}
         }}
         @media (max-width: 540px) {{
+            .wi-col-headers {{ display: none; }}
             .wi-row {{ grid-template-columns: 1fr; }}
             .wi-cell-name {{
                 border-right: none;
                 border-bottom: 1px solid {T["border"]};
             }}
-            .wi-cell {{ border-right: none; text-align: left; }}
-            .wi-cell-risk {{ align-items: center; }}
+            .wi-cell-change {{
+                align-items: flex-start;
+                border-right: none;
+                border-bottom: 1px solid {T["border"]};
+                padding: 14px;
+                text-align: left;
+            }}
+            .wi-change-flow,
+            .wi-change-range {{
+                justify-content: flex-start;
+                text-align: left;
+            }}
+            .wi-change-badge {{ align-self: flex-start; }}
+            .wi-cell-risk {{
+                align-items: flex-start;
+                padding: 14px;
+            }}
+            .wi-level-stack {{ align-items: flex-start; }}
             .wi-bar-track {{ width: 78px; }}
         }}
 
@@ -1319,7 +1380,10 @@ def show_what_if_page() -> None:
     # ── Scenario picker ──────────────────────────────────────────────────────
     # Single row of 5 columns. Each card has a normal visible button below it.
     st.markdown(
-        '<div class="wi-section-head">Choose a scenario</div>',
+        '<div class="wi-section-row">'
+        '<div class="wi-section-head">Choose a scenario</div>'
+        '<div class="wi-section-meta">5 presets</div>'
+        '</div>',
         unsafe_allow_html=True,
     )
     with st.container(key="wi_scenario_picker"):
@@ -1342,7 +1406,7 @@ def show_what_if_page() -> None:
     st.markdown('<hr class="wi-divider">', unsafe_allow_html=True)
 
     # ── Two-column layout: controls left, results right ──────────────────────
-    ctrl_col, result_col = st.columns([1, 1.75], gap="large")
+    ctrl_col, result_col = st.columns([1.05, 1.7], gap="large")
 
     # ── Controls — use st.container so CSS can target the real DOM wrapper ──
     with ctrl_col:
