@@ -2,7 +2,7 @@
 
 **Owner:** Report Team  
 **Status:** Active Development  
-**Last Updated:** 2026-07-28
+**Last Updated:** 2026-07-30
 
 ---
 
@@ -42,15 +42,16 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | Diagnostic Report Display | GL-41 | anomaly_description, possible_cause, recommended_action cards |
 | Key Signals Table | GL-41 | ABNORMAL/NORMAL signal rows with reference range |
 | Report Layer Integration | GL-41 | Loads ReportLayerOutput via data_loader.py; MOCK_DATA_FALLBACK retained |
-| Failure Prediction Data Support | GL-198 | Loads estimated_failure_probability, estimated_cycles_to_failure, notes from INTERFACE.md v0.7 test data |
+| Failure Prediction Data Support | GL-198 | Loads estimated_failure_probability, estimated_cycles_to_failure, and notes from the current ReportLayerOutput contract |
 | Failure Prediction UI Display | GL-278/GL-280 | Shows failure probability card and Data Quality Notes on the detail page |
-| Six-Type Component Display Mapping | GL-273 | Maps all 6 current anomaly types to owner-friendly display names; legacy cooling_system_stress alias retained |
+| Five-Type Component Display Mapping | GL-273/GL-384 | Maps all 5 current anomaly types to owner-friendly display names; legacy cooling_system_stress alias retained |
 | PDF / CSV Export | GL-343 to GL-348 | Overview-page export panel with component filters, PDF section filters, CSV column filters, ZIP downloads, local PDF template, and tests |
 | Module Split | GL-255 | `app.py` (2581 lines) split into `theme.py`, `ui_components.py`, `data_store.py`, and `pages/{overview,detail,what_if}.py` |
 | CSV Upload Pipeline | GL-256 to GL-262 | Upload validation (KIT column/row checks), user-friendly error cards, and end-to-end wiring to Data Layer + Model Layer + Report Layer |
 | Live Model Layer Integration | GL-365 | `csv_pipeline.py` invokes the Model Layer's `kit_residual_detector.py --batch` as a subprocess per INTERFACE.md §2.5's documented CLI/error contract; verified with a real, unmocked run producing a live report |
 | What-If Analysis Page | — | Scenario cards, driving-style sliders, per-component risk projection, uncertainty range |
 | Signal Tooltips | — | `glossary.py`; plain-language tooltips for technical signal names |
+| Demo Readiness Check | GL-384 | Final dashboard/report demo checklist, expected outputs, known limitations, and regression command set |
 
 ### [PLANNED]
 
@@ -233,7 +234,7 @@ streamlit run dashboard/app.py --server.runOnSave true
 
 The dashboard implements a single "Pro" theme (minimalist, IBM Carbon Design
 System-inspired) with light/dark mode variants, defined as a token dict
-(`THEME_TOKENS` in `app.py`) rather than duplicated CSS per mode:
+(`THEME_TOKENS` in `theme.py`) rather than duplicated CSS per mode:
 
 **Light Mode (Default)**
 
@@ -269,7 +270,7 @@ Theme state is stored in `st.session_state["dark_mode"]` and persists across pag
 The dashboard loads `ReportLayerOutput` JSON via `data_loader.py`. A
 `MOCK_DATA_FALLBACK` dict is retained in `app.py` for offline development.
 
-**Live Data Schema (INTERFACE.md v0.7):**
+**Live Data Schema (current `docs/INTERFACE.md` contract):**
 ```python
 {
     "timestamp": str,                       # ISO 8601
@@ -355,6 +356,33 @@ Manual checks:
 - Confirm the PDF risk block does not overlap in Preview or the browser PDF
   viewer
 
+### Demo Readiness
+
+GL-384 keeps the final demonstration focused on owner-facing workflows rather
+than implementation details. The current demo path is documented in
+`dashboard/tests/demo_readiness_check.md` and covers:
+
+- Hosted/demo-data launch path
+- Overview page risk prioritization and component navigation
+- Detail page failure prediction, notes, trend, key signals, and report text
+- What-If scenario flow
+- PDF / CSV export flow
+- Empty/error states for CSV upload and missing data
+- Known limitations to disclose during the viva/demo
+
+Recommended pre-demo command:
+
+```bash
+python -m pytest \
+  tests/test_dashboard.py \
+  tests/test_export_helper.py \
+  tests/test_csv_upload_pipeline.py \
+  tests/test_failure_prediction_ui_states.py \
+  tests/test_dashboard_ui_consistency.py \
+  tests/test_dashboard_what_if.py \
+  tests/test_demo_readiness.py
+```
+
 ---
 
 ## Development Guidelines
@@ -421,7 +449,7 @@ prefers this over the static file whenever it's present. This requires local
 Ollama + Model Layer's Python dependencies (see Getting Started above); it
 has been verified end-to-end with a real KIT CSV producing a real report.
 
-**Consumed Fields from ReportLayerOutput (INTERFACE.md v0.7):**
+**Consumed Fields from ReportLayerOutput (current `docs/INTERFACE.md` contract):**
 - `timestamp`, `risk_score`, `risk_level`, `component`
 - `prediction_confidence`, `key_signals`
 - `anomaly_description`, `possible_cause`, `recommended_action`

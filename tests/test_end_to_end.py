@@ -12,6 +12,8 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from dashboard.data_loader import load_dashboard_data  # noqa: E402
+from dashboard.anomaly_display import COMPONENT_DISPLAY_NAMES  # noqa: E402
+from dashboard.glossary import SIGNAL_DISPLAY_NAMES  # noqa: E402
 
 
 def test_complete_data_flow():
@@ -166,33 +168,11 @@ def test_display_name_mapping():
     """Test that component and signal IDs can be mapped to display names."""
     data = load_dashboard_data("dashboard/tests/ui_required_data.json")
 
-    # Component display names — includes both the canonical key used by
-    # real pipeline output and the legacy mock key (GL-127 alignment).
-    component_names = {
-        "cooling_degradation": "Cooling System",
-        "air_intake_maf_anomaly": "Air Intake System",
-        "accelerator_pedal_sensor": "Accelerator Pedal",
-        "intake_air_temperature_sensor_fault": "Intake Air Temperature",
-        "map_load_signal_plausibility_fault": "Manifold Pressure Signal",
-    }
-
-    # Signal display names (from dashboard/app.py)
-    signal_names = {
-        "coolant_temp": "Coolant Temperature",
-        "ect_rate_180s": "Coolant Temperature Rise Rate",
-        "maf": "Mass Airflow",
-        "map": "Intake Pressure",
-        "accel_pedal_d": "Pedal Sensor D",
-        "accel_pedal_e": "Pedal Sensor E",
-        "rpm": "Engine RPM",
-        "speed": "Vehicle Speed",
-    }
-
     # Verify all components can be mapped (skip _data_source metadata key)
     for component_id in data.keys():
         if component_id == "_data_source":
             continue
-        assert component_id in component_names, \
+        assert component_id in COMPONENT_DISPLAY_NAMES, \
             f"Missing display name mapping for: {component_id}"
 
     # Verify all signals can be mapped (skip _data_source metadata key)
@@ -201,7 +181,7 @@ def test_display_name_mapping():
             continue
         for signal in component_data["key_signals"]:
             signal_id = signal["feature"]
-            assert signal_id in signal_names, \
+            assert signal_id in SIGNAL_DISPLAY_NAMES, \
                 f"Missing display name mapping for signal: {signal_id}"
 
     print("PASS: Display name mapping valid")
