@@ -931,7 +931,7 @@ def _render_page_styles(tokens: dict) -> None:
 
         /* Back button */
         .st-key-what_if_back_btn button {{
-            background: {hex_to_rgba(T["accent"], 0.10)} !important;
+            background: {T["accent_subtle"]} !important;
             border: 1.5px solid {T["accent"]} !important;
             border-radius: 14px !important;
             color: {T["accent"]} !important;
@@ -942,12 +942,12 @@ def _render_page_styles(tokens: dict) -> None:
             width: 100% !important;
         }}
         .st-key-what_if_back_btn button:hover {{
-            background: {T["accent"]} !important;
-            border-color: {T["accent"]} !important;
+            background: {T["accent_hover"]} !important;
+            border-color: {T["accent_hover"]} !important;
             color: {T["accent_contrast"]} !important;
         }}
         .st-key-what_if_back_btn button:active {{
-            background: {T["accent"]} !important;
+            background: {T["accent_hover"]} !important;
             color: {T["accent_contrast"]} !important;
             transform: scale(0.98) !important;
         }}

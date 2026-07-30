@@ -182,6 +182,9 @@ def test_light_and_dark_theme_tokens_support_failure_prediction_card():
         "glass_border",
         "shadow",
         "accent",
+        "accent_hover",
+        "accent_subtle",
+        "focus",
         "text",
         "text_secondary",
     ]

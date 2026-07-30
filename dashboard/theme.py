@@ -18,42 +18,50 @@ import streamlit as st
 
 THEME_TOKENS: dict[str, dict[str, str]] = {
     "light": {
-        "bg": "#f5f5f7",
+        # IBM Carbon white theme foundations.
+        "bg": "#f4f4f4",
         "surface": "#ffffff",
-        "surface_alt": "#f5f5f7",
-        "border": "#d2d2d7",
-        "text": "#1d1d1f",
-        "text_secondary": "#6e6e73",
+        "surface_alt": "#f4f4f4",
+        "border": "#e0e0e0",
+        "text": "#161616",
+        "text_secondary": "#525252",
         "accent": "#0f62fe",
+        "accent_hover": "#0043ce",
+        "accent_subtle": "#edf5ff",
         "accent_contrast": "#ffffff",
-        "shadow": "rgba(0, 0, 0, 0.06)",
+        "focus": "#0f62fe",
+        "shadow": "rgba(0, 0, 0, 0.08)",
         "risk_high": "#da1e28",
         "risk_medium": "#ff832b",
         "risk_low": "#24a148",
         "danger_bg": "#fff1f1",
         "danger_border": "#ffd7d9",
         "danger_text": "#a2191f",
-        "glass_surface": "rgba(255, 255, 255, 0.72)",
-        "glass_border": "rgba(0, 0, 0, 0.07)",
+        "glass_surface": "rgba(255, 255, 255, 0.82)",
+        "glass_border": "rgba(22, 22, 22, 0.10)",
     },
     "dark": {
-        "bg": "#1c1c1e",
-        "surface": "#2c2c2e",
-        "surface_alt": "#252527",
-        "border": "#3a3a3c",
-        "text": "#f5f5f7",
-        "text_secondary": "#98989d",
-        "accent": "#4589ff",
-        "accent_contrast": "#ffffff",
-        "shadow": "rgba(0, 0, 0, 0.32)",
+        # IBM Carbon g100-like dark theme foundations.
+        "bg": "#161616",
+        "surface": "#262626",
+        "surface_alt": "#393939",
+        "border": "#525252",
+        "text": "#f4f4f4",
+        "text_secondary": "#c6c6c6",
+        "accent": "#78a9ff",
+        "accent_hover": "#a6c8ff",
+        "accent_subtle": "#001d6c",
+        "accent_contrast": "#161616",
+        "focus": "#ffffff",
+        "shadow": "rgba(0, 0, 0, 0.42)",
         "risk_high": "#fa4d56",
         "risk_medium": "#ff832b",
         "risk_low": "#42be65",
-        "danger_bg": "#2c1618",
-        "danger_border": "#5e2125",
+        "danger_bg": "#2d0709",
+        "danger_border": "#750e13",
         "danger_text": "#ff8389",
-        "glass_surface": "rgba(44, 44, 46, 0.60)",
-        "glass_border": "rgba(255, 255, 255, 0.10)",
+        "glass_surface": "rgba(38, 38, 38, 0.72)",
+        "glass_border": "rgba(244, 244, 244, 0.16)",
     },
 }
 
@@ -262,8 +270,8 @@ def apply_theme(dark_mode: bool) -> None:
     )
 
     blob_alpha = (
-        (0.28, 0.22, 0.16, 0.20)
-        if dark_mode else (0.10, 0.08, 0.07, 0.08)
+        (0.20, 0.15, 0.12, 0.14)
+        if dark_mode else (0.08, 0.05, 0.04, 0.05)
     )
     blob_css = (
         f"radial-gradient(circle at 12% 8%, "
@@ -336,7 +344,7 @@ def apply_theme(dark_mode: bool) -> None:
             font-size: 13px !important;
         }}
         .stButton > button {{
-            background: {hex_to_rgba(tokens["accent"], 0.08)} !important;
+            background: {tokens["accent_subtle"]} !important;
             backdrop-filter: blur(8px) !important;
             -webkit-backdrop-filter: blur(8px) !important;
             color: {tokens["accent"]} !important;
@@ -350,13 +358,13 @@ def apply_theme(dark_mode: bool) -> None:
             transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
         }}
         .stButton > button:hover {{
-            background: {tokens["accent"]} !important;
+            background: {tokens["accent_hover"]} !important;
             color: {tokens["accent_contrast"]} !important;
         }}
         .stButton > button * {{ color: inherit !important; }}
         .stButton > button:active {{ transform: scale(0.97) !important; }}
         .stButton > button:focus-visible {{
-            outline: 2px solid {tokens["accent"]} !important;
+            outline: 2px solid {tokens["focus"]} !important;
             outline-offset: 2px !important;
         }}
         [data-testid="stMetricValue"] {{

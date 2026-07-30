@@ -631,7 +631,7 @@ def show_detail_page() -> None:
         <style>
         .st-key-detail_back_btn button,
         .st-key-detail_missing_back_btn button {{
-            background: {hex_to_rgba(tokens["accent"], 0.10)} !important;
+            background: {tokens["accent_subtle"]} !important;
             border: 1.5px solid {tokens["accent"]} !important;
             border-radius: 14px !important;
             color: {tokens["accent"]} !important;
@@ -643,13 +643,13 @@ def show_detail_page() -> None:
         }}
         .st-key-detail_back_btn button:hover,
         .st-key-detail_missing_back_btn button:hover {{
-            background: {tokens["accent"]} !important;
-            border-color: {tokens["accent"]} !important;
+            background: {tokens["accent_hover"]} !important;
+            border-color: {tokens["accent_hover"]} !important;
             color: {tokens["accent_contrast"]} !important;
         }}
         .st-key-detail_back_btn button:active,
         .st-key-detail_missing_back_btn button:active {{
-            background: {tokens["accent"]} !important;
+            background: {tokens["accent_hover"]} !important;
             color: {tokens["accent_contrast"]} !important;
             transform: scale(0.98) !important;
         }}

@@ -1,4 +1,4 @@
-"""Source checks for GL-377 Dashboard UI consistency work."""
+"""Source checks for Dashboard UI consistency and Carbon theme work."""
 
 from pathlib import Path
 
@@ -18,6 +18,38 @@ def test_theme_defines_shared_dashboard_ui_classes():
         "gl-empty-state",
     ]:
         assert class_name in src
+
+
+def test_theme_uses_ibm_carbon_palette_tokens():
+    src = _read("dashboard/theme.py")
+
+    for token in [
+        '"bg": "#f4f4f4"',
+        '"surface_alt": "#f4f4f4"',
+        '"border": "#e0e0e0"',
+        '"text": "#161616"',
+        '"text_secondary": "#525252"',
+        '"accent": "#0f62fe"',
+        '"accent_hover": "#0043ce"',
+        '"accent_subtle": "#edf5ff"',
+        '"focus": "#0f62fe"',
+        '"bg": "#161616"',
+        '"surface": "#262626"',
+        '"surface_alt": "#393939"',
+        '"border": "#525252"',
+        '"text": "#f4f4f4"',
+        '"accent": "#78a9ff"',
+        '"accent_hover": "#a6c8ff"',
+    ]:
+        assert token in src
+
+
+def test_global_buttons_use_carbon_hover_and_focus_tokens():
+    src = _read("dashboard/theme.py")
+
+    assert 'background: {tokens["accent_subtle"]} !important;' in src
+    assert 'background: {tokens["accent_hover"]} !important;' in src
+    assert 'outline: 2px solid {tokens["focus"]} !important;' in src
 
 
 def test_reusable_ui_helpers_cover_title_heading_and_empty_state():
@@ -78,13 +110,14 @@ def test_what_if_back_button_uses_light_blue_then_deep_blue_hover():
 
     assert "← Back to Overview" in src
     assert ".st-key-what_if_back_btn button {" in src
-    assert 'background: {hex_to_rgba(T["accent"], 0.10)} !important;' in src
+    assert 'background: {T["accent_subtle"]} !important;' in src
     assert 'border: 1.5px solid {T["accent"]} !important;' in src
     assert 'color: {T["accent"]} !important;' in src
     assert ".st-key-what_if_back_btn button * {" in src
     assert ".st-key-what_if_back_btn button:hover" in src
     assert ".st-key-what_if_back_btn button:hover *" in src
-    assert 'background: {T["accent"]} !important;' in src
+    assert 'background: {T["accent_hover"]} !important;' in src
+    assert 'border-color: {T["accent_hover"]} !important;' in src
     assert 'color: {T["accent_contrast"]} !important;' in src
     assert ".st-key-what_if_back_btn button:active" in src
 
@@ -95,8 +128,9 @@ def test_detail_back_button_uses_light_blue_then_deep_blue_hover():
     assert 'key="detail_back_btn"' in src
     assert 'key="detail_missing_back_btn"' in src
     assert ".st-key-detail_back_btn button" in src
-    assert 'background: {hex_to_rgba(tokens["accent"], 0.10)} !important;' in src
+    assert 'background: {tokens["accent_subtle"]} !important;' in src
     assert 'border: 1.5px solid {tokens["accent"]} !important;' in src
     assert '.st-key-detail_back_btn button:hover' in src
-    assert 'background: {tokens["accent"]} !important;' in src
+    assert 'background: {tokens["accent_hover"]} !important;' in src
+    assert 'border-color: {tokens["accent_hover"]} !important;' in src
     assert 'color: {tokens["accent_contrast"]} !important;' in src
