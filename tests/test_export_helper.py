@@ -1,5 +1,16 @@
 """Tests for dashboard export data helpers."""
 
+import io
+import sys
+import zipfile
+from pathlib import Path
+
+import pytest
+
+dashboard_dir = str(Path("dashboard").resolve())
+if dashboard_dir not in sys.path:
+    sys.path.insert(0, dashboard_dir)
+
 from dashboard.export_helper import (
     CSV_COLUMNS,
     DEFAULT_EXPORT_SECTIONS,
@@ -19,6 +30,7 @@ from dashboard.export_helper import (
     get_export_section_options,
     get_signal_status,
 )
+from dashboard.pages.overview import _build_zip_bytes
 
 
 def _sample_component():
@@ -196,6 +208,30 @@ def test_build_key_signals_csv_bytes_returns_utf8_bytes():
     assert csv_bytes.decode("utf-8").startswith("feature,value")
 
 
+def test_export_zip_contains_each_selected_component_csv():
+    """GL-383: multi-component export ZIP keeps every component file."""
+    files = []
+    for idx in range(5):
+        component = {
+            **_sample_component(),
+            "component": f"component_{idx}",
+        }
+        files.append((
+            f"component_{idx}_key_signals.csv",
+            build_key_signals_csv_bytes(component),
+        ))
+
+    zip_bytes = _build_zip_bytes(files)
+
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zip_file:
+        names = sorted(zip_file.namelist())
+        assert names == [f"component_{i}_key_signals.csv" for i in range(5)]
+        for name in names:
+            csv_text = zip_file.read(name).decode("utf-8")
+            assert csv_text.startswith("feature,value,unit")
+            assert "coolant_temp" in csv_text
+
+
 def test_build_csv_file_name_uses_component_and_timestamp():
     """Test CSV filename is simple and stable for download."""
     file_name = build_csv_file_name(_sample_component())
@@ -220,6 +256,22 @@ def test_build_diagnostic_pdf_bytes_returns_pdf_file():
 
     assert pdf_bytes.startswith(b"%PDF")
     assert len(pdf_bytes) > 1000
+
+
+def test_build_diagnostic_pdf_bytes_contains_key_report_text():
+    """GL-383: PDF export keeps the important user-facing report text."""
+    pypdf = pytest.importorskip("pypdf")
+    pdf_bytes = build_diagnostic_pdf_bytes(_sample_component())
+
+    reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+    text = "\n".join(page.extract_text() or "" for page in reader.pages)
+
+    assert PDF_TITLE in text
+    assert "Cooling System" in text
+    assert "86%" in text
+    assert "High" in text
+    assert "Coolant Temperature" in text
+    assert "Coolant temperature is high." in text
 
 
 def test_build_diagnostic_pdf_bytes_accepts_section_filter():

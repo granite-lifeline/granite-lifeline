@@ -241,6 +241,17 @@ def test_empty_and_error_states_use_shared_polished_components():
     assert 'st.error("Component not found.")' not in detail_src
 
 
+def test_detail_empty_sections_have_user_facing_empty_states():
+    """GL-383: detail page covers missing trend and signal sections."""
+    src = _detail_text()
+
+    assert "Incomplete Data" in src
+    assert "Trend not available" in src
+    assert "No signal data available" in src
+    assert "Risk Trend data" in src
+    assert "Key Signals data" in src
+
+
 def test_light_and_dark_theme_tokens_support_failure_prediction_card():
     """Test light and dark themes both include card styling tokens."""
     theme_module = load_dashboard_app_module()

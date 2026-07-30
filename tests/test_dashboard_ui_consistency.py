@@ -1,10 +1,32 @@
 """Source checks for Dashboard UI consistency and Carbon theme work."""
 
+import re
+import sys
 from pathlib import Path
+
+from dashboard.theme import ICONS
 
 
 def _read(path: str) -> str:
     return Path(path).read_text(encoding="utf-8")
+
+
+def _dashboard_python_sources() -> list[Path]:
+    return sorted(Path("dashboard").rglob("*.py"))
+
+
+def test_streamlit_app_routes_import_cleanly():
+    """GL-383: app entry point can import every Dashboard route."""
+    dashboard_dir = str(Path("dashboard").resolve())
+    if dashboard_dir not in sys.path:
+        sys.path.insert(0, dashboard_dir)
+
+    import dashboard.app as app
+
+    assert callable(app.main)
+    assert callable(app.show_overview_page)
+    assert callable(app.show_detail_page)
+    assert callable(app.show_what_if_page)
 
 
 def test_theme_defines_shared_dashboard_ui_classes():
@@ -60,6 +82,18 @@ def test_reusable_ui_helpers_cover_title_heading_and_empty_state():
     assert "def empty_state_html" in src
 
 
+def test_literal_lucide_icons_are_registered():
+    """GL-383: prevent runtime KeyError from unregistered icon names."""
+    missing: list[str] = []
+    for path in _dashboard_python_sources():
+        src = path.read_text(encoding="utf-8")
+        for icon_name in re.findall(r'lucide_icon\(\s*"([^"]+)"', src):
+            if icon_name not in ICONS:
+                missing.append(f"{path}:{icon_name}")
+
+    assert missing == []
+
+
 def test_main_dashboard_pages_use_shared_consistency_helpers():
     overview_src = _read("dashboard/pages/overview.py")
     detail_src = _read("dashboard/pages/detail.py")
@@ -75,6 +109,45 @@ def test_main_dashboard_pages_use_shared_consistency_helpers():
 
     assert "section_heading_html(" in overview_src
     assert "section_heading_html(" in detail_src
+
+
+def test_export_panel_keeps_downloads_available_when_selection_is_empty():
+    """GL-383: empty component selection falls back to all components."""
+    src = _read("dashboard/pages/overview.py")
+
+    fallback_index = src.index("selected_component_keys = list(component_keys)")
+    components_index = src.index("selected_components = [")
+    summary_index = src.index("summary_html = (")
+
+    assert fallback_index < components_index
+    assert fallback_index < summary_index
+    assert "No export components selected" not in src
+
+
+def test_export_download_buttons_share_primary_visual_style():
+    """GL-383: PDF and CSV export buttons stay visually consistent."""
+    src = _read("dashboard/pages/overview.py")
+
+    pdf_rule = src.index(".st-key-overview_download_pdf button {{")
+    csv_rule = src.index(".st-key-overview_download_csv button {{")
+
+    for rule_start in [pdf_rule, csv_rule]:
+        rule = src[rule_start: rule_start + 260]
+        assert 'background: {tokens["accent"]} !important;' in rule
+        assert 'border: 1.5px solid {tokens["accent"]} !important;' in rule
+        assert 'color: {tokens["accent_contrast"]} !important;' in rule
+
+
+def test_key_empty_and_error_states_do_not_use_bare_streamlit_alerts():
+    """GL-383: polished states remain on shared Dashboard components."""
+    overview_src = _read("dashboard/pages/overview.py")
+    detail_src = _read("dashboard/pages/detail.py")
+
+    assert "Choose a CSV file first" in overview_src
+    assert "PDF export unavailable" in overview_src
+    assert "Component not found" in detail_src
+    assert 'st.warning("Please select a CSV file' not in overview_src
+    assert 'st.error("Component not found.")' not in detail_src
 
 
 def test_what_if_level_pill_centered_and_bar_left_filled():
