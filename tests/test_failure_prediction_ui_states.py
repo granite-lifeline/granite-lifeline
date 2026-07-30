@@ -219,6 +219,28 @@ def test_overview_export_panel_ui_has_cards_and_options_panel():
     assert '<div class="export-options-title">Export options</div>' in src
 
 
+def test_empty_and_error_states_use_shared_polished_components():
+    """Test GL-382 replaces bare Streamlit warnings/errors in key flows."""
+    overview_src = _overview_text()
+    detail_src = _detail_text()
+
+    assert "Choose a CSV file first" in overview_src
+    assert "PDF export unavailable" in overview_src
+    assert "Component not found" in detail_src
+    assert "selected_component_keys = list(component_keys)" in overview_src
+
+    assert "empty_state_html(" in overview_src
+    assert "danger_card_html(" in overview_src
+    assert "empty_state_html(" in detail_src
+
+    assert "Please select a CSV file before clicking Run Analysis." not in (
+        overview_src
+    )
+    assert "Select at least one component to export." not in overview_src
+    assert "No export components selected" not in overview_src
+    assert 'st.error("Component not found.")' not in detail_src
+
+
 def test_light_and_dark_theme_tokens_support_failure_prediction_card():
     """Test light and dark themes both include card styling tokens."""
     theme_module = load_dashboard_app_module()

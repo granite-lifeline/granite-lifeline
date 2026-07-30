@@ -667,7 +667,18 @@ def show_detail_page() -> None:
     )
 
     if not component_key or component_key not in component_lookup:
-        st.error("Component not found.")
+        st.markdown(
+            empty_state_html(
+                "Component not found",
+                "Return to the overview and choose one of the available "
+                "vehicle components.",
+                tokens,
+                icon_name="info",
+                max_width="640px",
+                margin="12px auto 18px auto",
+            ),
+            unsafe_allow_html=True,
+        )
         if st.button("\u2190 Back to Overview", key="detail_missing_back_btn"):
             st.session_state["page"] = "overview"
             st.rerun()

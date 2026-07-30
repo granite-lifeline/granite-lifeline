@@ -361,7 +361,17 @@ def _show_pipeline_error(title: str, message: str, tokens: dict) -> None:
 def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
     """Validate an uploaded CSV and run the dashboard upload pipeline."""
     if uploaded_file is None:
-        st.warning("Please select a CSV file before clicking Run Analysis.")
+        st.markdown(
+            empty_state_html(
+                "Choose a CSV file first",
+                "Select an OBD-II CSV file, then run the analysis again.",
+                tokens,
+                icon_name="help-circle",
+                max_width="560px",
+                margin="12px auto 0 auto",
+            ),
+            unsafe_allow_html=True,
+        )
         return
 
     csv_bytes = uploaded_file.getvalue()
@@ -866,6 +876,8 @@ def _show_dashboard_export_controls(
                 f"overview_component_choice_{component_key}"
             )
         ]
+        if not selected_component_keys:
+            selected_component_keys = list(component_keys)
         selected_components = [
             component_lookup[component_key]
             for component_key in selected_component_keys
@@ -904,148 +916,152 @@ def _show_dashboard_export_controls(
         )
         st.markdown(summary_html, unsafe_allow_html=True)
 
-        if not selected_components:
-            st.warning("Select at least one component to export.")
-        else:
-            pdf_col, csv_col = st.columns(2, gap="small")
-            with pdf_col:
-                try:
-                    if len(selected_components) == 1:
-                        pdf_data = build_diagnostic_pdf_bytes(
-                            selected_components[0],
-                            selected_sections=selected_sections,
-                        )
-                        pdf_file_name = _make_export_file_name(
-                            component_names,
-                            pdf_detail_names,
-                            download_date,
-                            "diagnostic_report",
-                            "pdf",
-                        )
-                        pdf_mime = "application/pdf"
-                        pdf_label = "Download PDF"
-                        pdf_card_meta = (
-                            f"{len(selected_sections)} section(s), PDF file"
-                        )
-                    else:
-                        pdf_files = [
-                            (
-                                _make_export_file_name(
-                                    [_component_label(
-                                        component_data.get("component", "")
-                                    )],
-                                    pdf_detail_names,
-                                    download_date,
-                                    "diagnostic_report",
-                                    "pdf",
-                                ),
-                                build_diagnostic_pdf_bytes(
-                                    component_data,
-                                    selected_sections=selected_sections,
-                                ),
-                            )
-                            for component_data in selected_components
-                        ]
-                        pdf_data = _build_zip_bytes(pdf_files)
-                        pdf_file_name = _make_export_file_name(
-                            component_names,
-                            pdf_detail_names,
-                            download_date,
-                            "pdf_reports",
-                            "zip",
-                        )
-                        pdf_mime = "application/zip"
-                        pdf_label = "Download PDF ZIP"
-                        pdf_card_meta = (
-                            f"{len(selected_components)} reports, ZIP file"
-                        )
-                    st.markdown(
-                        _export_download_card_html(
-                            "Diagnostic report",
-                            pdf_card_meta,
-                            "file-text",
-                            tokens,
-                        ),
-                        unsafe_allow_html=True,
-                    )
-                    st.download_button(
-                        pdf_label,
-                        data=pdf_data,
-                        file_name=pdf_file_name,
-                        mime=pdf_mime,
-                        key="overview_download_pdf",
-                        use_container_width=True,
-                    )
-                except RuntimeError as err:
-                    st.error(str(err))
-
-            with csv_col:
+        pdf_col, csv_col = st.columns(2, gap="small")
+        with pdf_col:
+            try:
                 if len(selected_components) == 1:
-                    csv_data = build_key_signals_csv_bytes(
+                    pdf_data = build_diagnostic_pdf_bytes(
                         selected_components[0],
-                        selected_columns=selected_columns,
+                        selected_sections=selected_sections,
                     )
-                    csv_file_name = _make_export_file_name(
+                    pdf_file_name = _make_export_file_name(
                         component_names,
-                        csv_detail_names,
+                        pdf_detail_names,
                         download_date,
-                        "key_signals",
-                        "csv",
+                        "diagnostic_report",
+                        "pdf",
                     )
-                    csv_mime = "text/csv"
-                    csv_label = "Download CSV"
-                    csv_card_meta = (
-                        f"{len(selected_columns)} column(s), CSV file"
+                    pdf_mime = "application/pdf"
+                    pdf_label = "Download PDF"
+                    pdf_card_meta = (
+                        f"{len(selected_sections)} section(s), PDF file"
                     )
                 else:
-                    csv_files = [
+                    pdf_files = [
                         (
                             _make_export_file_name(
                                 [_component_label(
                                     component_data.get("component", "")
                                 )],
-                                csv_detail_names,
+                                pdf_detail_names,
                                 download_date,
-                                "key_signals",
-                                "csv",
+                                "diagnostic_report",
+                                "pdf",
                             ),
-                            build_key_signals_csv_bytes(
+                            build_diagnostic_pdf_bytes(
                                 component_data,
-                                selected_columns=selected_columns,
+                                selected_sections=selected_sections,
                             ),
                         )
                         for component_data in selected_components
                     ]
-                    csv_data = _build_zip_bytes(csv_files)
-                    csv_file_name = _make_export_file_name(
+                    pdf_data = _build_zip_bytes(pdf_files)
+                    pdf_file_name = _make_export_file_name(
                         component_names,
-                        csv_detail_names,
+                        pdf_detail_names,
                         download_date,
-                        "csv_reports",
+                        "pdf_reports",
                         "zip",
                     )
-                    csv_mime = "application/zip"
-                    csv_label = "Download CSV ZIP"
-                    csv_card_meta = (
-                        f"{len(selected_components)} tables, ZIP file"
+                    pdf_mime = "application/zip"
+                    pdf_label = "Download PDF ZIP"
+                    pdf_card_meta = (
+                        f"{len(selected_components)} reports, ZIP file"
                     )
                 st.markdown(
                     _export_download_card_html(
-                        "Key signals table",
-                        csv_card_meta,
-                        "activity",
+                        "Diagnostic report",
+                        pdf_card_meta,
+                        "file-text",
                         tokens,
                     ),
                     unsafe_allow_html=True,
                 )
                 st.download_button(
-                    csv_label,
-                    data=csv_data,
-                    file_name=csv_file_name,
-                    mime=csv_mime,
-                    key="overview_download_csv",
+                    pdf_label,
+                    data=pdf_data,
+                    file_name=pdf_file_name,
+                    mime=pdf_mime,
+                    key="overview_download_pdf",
                     use_container_width=True,
                 )
+            except RuntimeError as err:
+                st.markdown(
+                    danger_card_html(
+                        "PDF export unavailable",
+                        _error_paragraph(str(err), tokens),
+                        tokens,
+                    ),
+                    unsafe_allow_html=True,
+                )
+
+        with csv_col:
+            if len(selected_components) == 1:
+                csv_data = build_key_signals_csv_bytes(
+                    selected_components[0],
+                    selected_columns=selected_columns,
+                )
+                csv_file_name = _make_export_file_name(
+                    component_names,
+                    csv_detail_names,
+                    download_date,
+                    "key_signals",
+                    "csv",
+                )
+                csv_mime = "text/csv"
+                csv_label = "Download CSV"
+                csv_card_meta = (
+                    f"{len(selected_columns)} column(s), CSV file"
+                )
+            else:
+                csv_files = [
+                    (
+                        _make_export_file_name(
+                            [_component_label(
+                                component_data.get("component", "")
+                            )],
+                            csv_detail_names,
+                            download_date,
+                            "key_signals",
+                            "csv",
+                        ),
+                        build_key_signals_csv_bytes(
+                            component_data,
+                            selected_columns=selected_columns,
+                        ),
+                    )
+                    for component_data in selected_components
+                ]
+                csv_data = _build_zip_bytes(csv_files)
+                csv_file_name = _make_export_file_name(
+                    component_names,
+                    csv_detail_names,
+                    download_date,
+                    "csv_reports",
+                    "zip",
+                )
+                csv_mime = "application/zip"
+                csv_label = "Download CSV ZIP"
+                csv_card_meta = (
+                    f"{len(selected_components)} tables, ZIP file"
+                )
+            st.markdown(
+                _export_download_card_html(
+                    "Key signals table",
+                    csv_card_meta,
+                    "activity",
+                    tokens,
+                ),
+                unsafe_allow_html=True,
+            )
+            st.download_button(
+                csv_label,
+                data=csv_data,
+                file_name=csv_file_name,
+                mime=csv_mime,
+                key="overview_download_csv",
+                use_container_width=True,
+            )
 
         options_label = (
             "Hide export options"
