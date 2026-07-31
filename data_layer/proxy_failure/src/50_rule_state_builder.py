@@ -59,6 +59,36 @@ EVIDENCE_VALUE_COLUMNS = [
     "intake_temp_stability", "ect_rate_180s", "map_range_60s",
 ]
 
+# Ordered episode-grain contract for engine_start_rule_state.csv.  An
+# upload may legitimately contain no observed engine start (a mid-drive
+# recording), and an empty record list would otherwise produce a
+# zero-column frame whose CSV carries no header, which script 70 cannot
+# parse.  Declaring the columns keeps the artifact readable at zero rows.
+ENGINE_START_RULE_STATE_COLUMNS = [
+    "engine_start_episode_id",
+    "trip_id",
+    "segment_id",
+    "start_timestamp",
+    "end_timestamp",
+    "episode_duration_seconds",
+    "termination_reason",
+    "ect_start",
+    "aat_start",
+    "s1s1_start_quality_valid",
+    "s1s1_eligible",
+    "ambient_bin",
+    "budget_seconds",
+    "budget_in_domain",
+    "time_to_target_79c",
+    "time_to_target_79c_is_right_censored",
+    "time_to_target_79c_censor_time_s",
+    "maf_integral_at_expiry",
+    "heat_guard_passed",
+    "s1s4_evaluable",
+    "s1s4_exceed",
+    "s1s4_not_evaluable_reason",
+]
+
 
 class RuleStateContractError(RuntimeError):
     """Raised when script 50 inputs violate the frozen contract."""
@@ -725,6 +755,8 @@ def build_engine_start_rule_state(
         record["s1s4_not_evaluable_reason"] = s1s4_reason
         records.append(record)
 
+    if not records:
+        return pd.DataFrame(columns=ENGINE_START_RULE_STATE_COLUMNS)
     return pd.DataFrame.from_records(records)
 
 
