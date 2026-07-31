@@ -56,6 +56,17 @@ from ui_components import (
 CSV_ANALYSIS_RUNNING_KEY = "csv_analysis_running"
 
 
+def _set_csv_analysis_running(is_running: bool) -> None:
+    st.session_state[CSV_ANALYSIS_RUNNING_KEY] = is_running
+
+
+def _recover_csv_analysis_running_state() -> bool:
+    """Clear stale loading state left by an interrupted previous run."""
+    if st.session_state.get(CSV_ANALYSIS_RUNNING_KEY, False):
+        _set_csv_analysis_running(False)
+    return False
+
+
 def _show_theme_toggle(dark_mode: bool, tokens: dict) -> None:
     """Render the dark/light-mode icon button."""
     st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
@@ -498,67 +509,71 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
         )
         return
 
-    st.session_state[CSV_ANALYSIS_RUNNING_KEY] = True
+    _set_csv_analysis_running(True)
     _show_csv_analysis_loading(tokens)
 
+    should_rerun = False
     try:
-        with st.spinner("Analysing CSV..."):
-            result = run_uploaded_csv_batch(
-                csv_bytes, uploaded_file.name
+        try:
+            with st.spinner("Analysing CSV..."):
+                result = run_uploaded_csv_batch(
+                    csv_bytes, uploaded_file.name
+                )
+        except TimeoutError:
+            _show_pipeline_error(
+                "Analysis Timed Out",
+                "The analysis pipeline timed out. Please try uploading a "
+                "shorter drive session.",
+                tokens,
             )
-    except TimeoutError:
-        st.session_state[CSV_ANALYSIS_RUNNING_KEY] = False
-        _show_pipeline_error(
-            "Analysis Timed Out",
-            "The analysis pipeline timed out. Please try uploading a "
-            "shorter drive session.",
-            tokens,
-        )
-        return
-    except ModelBatchRunnerUnavailable as exc:
-        st.session_state[CSV_ANALYSIS_RUNNING_KEY] = False
-        _show_pipeline_error("Model Analysis Unavailable", str(exc), tokens)
-        return
-    except UploadedCsvPipelineError as exc:
-        st.session_state[CSV_ANALYSIS_RUNNING_KEY] = False
-        _show_pipeline_error("Analysis Unavailable", str(exc), tokens)
-        return
-    except Exception as exc:
-        st.session_state[CSV_ANALYSIS_RUNNING_KEY] = False
-        _show_pipeline_error(
-            "Analysis Unavailable",
-            f"The analysis pipeline could not complete. {exc}",
-            tokens,
-        )
-        return
+            return
+        except ModelBatchRunnerUnavailable as exc:
+            _show_pipeline_error(
+                "Model Analysis Unavailable", str(exc), tokens
+            )
+            return
+        except UploadedCsvPipelineError as exc:
+            _show_pipeline_error("Analysis Unavailable", str(exc), tokens)
+            return
+        except Exception as exc:
+            _show_pipeline_error(
+                "Analysis Unavailable",
+                f"The analysis pipeline could not complete. {exc}",
+                tokens,
+            )
+            return
 
-    # report_generator.generate_report() never raises — an LLM timeout or
-    # connection failure surfaces as an empty anomaly_description instead
-    # of an exception, so detect that fallback here rather than in a
-    # (never-triggered) except clause above.
-    components = {k: v for k, v in result.items() if k != "_data_source"}
-    if not components or all(
-        not c.get("anomaly_description") for c in components.values()
-    ):
-        st.session_state[CSV_ANALYSIS_RUNNING_KEY] = False
-        _show_pipeline_error(
-            "Analysis Timed Out",
-            "The diagnostic report could not be generated in time. "
-            "Please try again or upload a shorter drive session.",
-            tokens,
-        )
-        return
+        # report_generator.generate_report() never raises — an LLM
+        # timeout or connection failure surfaces as an empty
+        # anomaly_description instead of an exception, so detect that
+        # fallback here rather than in a never-triggered except clause.
+        components = {k: v for k, v in result.items() if k != "_data_source"}
+        if not components or all(
+            not c.get("anomaly_description") for c in components.values()
+        ):
+            _show_pipeline_error(
+                "Analysis Timed Out",
+                "The diagnostic report could not be generated in time. "
+                "Please try again or upload a shorter drive session.",
+                tokens,
+            )
+            return
 
-    st.session_state["dashboard_data"] = result
-    st.session_state["validated_df"] = df
-    st.session_state["dashboard_mode"] = "dashboard"
-    st.session_state[CSV_ANALYSIS_RUNNING_KEY] = False
-    st.rerun()
+        st.session_state["dashboard_data"] = result
+        st.session_state["validated_df"] = df
+        st.session_state["dashboard_mode"] = "dashboard"
+        should_rerun = True
+    finally:
+        _set_csv_analysis_running(False)
+
+    if should_rerun:
+        st.rerun()
 
 
 def _show_csv_uploader(tokens: dict) -> None:
     """CSV upload section with inline validation feedback (re-upload
     in dashboard)."""
+    _recover_csv_analysis_running_state()
     st.markdown(
         f"""
         <style>
@@ -1291,6 +1306,8 @@ def show_mock_data_warning(tokens: dict) -> None:
 
 def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
     """Centered upload card with a secondary demo-data link."""
+    _recover_csv_analysis_running_state()
+
     # ── Minimal nav bar: brand left, theme toggle right ──
     nav_left, nav_right = st.columns([10, 1])
     with nav_left:

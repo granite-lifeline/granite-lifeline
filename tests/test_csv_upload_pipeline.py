@@ -69,6 +69,16 @@ class _FakeSpinner:
         return False
 
 
+def _valid_csv_bytes(rows: int = 700) -> bytes:
+    upload_df = pd.DataFrame(
+        [
+            {column: row_idx for column in REQUIRED_COLUMNS}
+            for row_idx in range(rows)
+        ]
+    )
+    return upload_df.to_csv(index=False).encode("utf-8")
+
+
 def _capture_overview_markdown(monkeypatch):
     import dashboard.pages.overview as overview
     from dashboard.theme import THEME_TOKENS
@@ -123,13 +133,7 @@ def test_csv_upload_ui_missing_columns_lists_required_fields(monkeypatch):
 
 def test_csv_upload_ui_success_stores_dashboard_data_and_reruns(monkeypatch):
     overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
-    upload_df = pd.DataFrame(
-        [
-            {column: row_idx for column in REQUIRED_COLUMNS}
-            for row_idx in range(700)
-        ]
-    )
-    csv_bytes = upload_df.to_csv(index=False).encode("utf-8")
+    csv_bytes = _valid_csv_bytes()
     dashboard_result = {
         "cooling_degradation": {
             **_model_output(),
@@ -173,6 +177,64 @@ def test_csv_upload_ui_success_stores_dashboard_data_and_reruns(monkeypatch):
     assert "Analysing your CSV..." in "".join(rendered)
     assert "Data Layer, Model Layer, and Report Layer" in "".join(rendered)
     assert "Analysis Unavailable" not in "".join(rendered)
+
+
+def test_csv_upload_failure_recovers_running_state(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+    csv_bytes = _valid_csv_bytes()
+
+    def fake_run_uploaded_csv_batch(body: bytes, file_name: str) -> dict:
+        raise UploadedCsvPipelineError("Pipeline failed during model run.")
+
+    monkeypatch.setattr(
+        overview, "run_uploaded_csv_batch", fake_run_uploaded_csv_batch
+    )
+    monkeypatch.setattr(
+        overview.st, "spinner", lambda label: _FakeSpinner(label)
+    )
+
+    overview._handle_uploaded_csv_submit(
+        _FakeUpload(csv_bytes, "valid-drive.csv"), tokens
+    )
+
+    html = "".join(rendered)
+    assert overview.st.session_state["csv_analysis_running"] is False
+    assert "Analysing your CSV..." in html
+    assert "Analysis Unavailable" in html
+    assert "Pipeline failed during model run." in html
+
+
+def test_csv_upload_empty_report_recovers_running_state(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+    csv_bytes = _valid_csv_bytes()
+
+    monkeypatch.setattr(
+        overview,
+        "run_uploaded_csv_batch",
+        lambda body, file_name: {"_data_source": {}},
+    )
+    monkeypatch.setattr(
+        overview.st, "spinner", lambda label: _FakeSpinner(label)
+    )
+
+    overview._handle_uploaded_csv_submit(
+        _FakeUpload(csv_bytes, "valid-drive.csv"), tokens
+    )
+
+    html = "".join(rendered)
+    assert overview.st.session_state["csv_analysis_running"] is False
+    assert "Analysis Timed Out" in html
+    assert "diagnostic report could not be generated" in html
+
+
+def test_stale_csv_loading_state_is_cleared(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+    overview.st.session_state["csv_analysis_running"] = True
+
+    assert overview._recover_csv_analysis_running_state() is False
+
+    assert overview.st.session_state["csv_analysis_running"] is False
+    assert rendered == []
 
 
 def test_csv_validator_accepts_required_columns_and_aliases():
