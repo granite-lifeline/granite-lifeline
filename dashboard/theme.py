@@ -293,6 +293,10 @@ def apply_theme(dark_mode: bool) -> None:
     <style>
         section[data-testid="stSidebar"] {{ display: none !important; }}
         header[data-testid="stHeader"]   {{ display: none !important; }}
+        [data-testid="stDecoration"],
+        [data-testid="stStatusWidget"] {{
+            display: none !important;
+        }}
         [data-testid="stAppViewContainer"] {{
             background-color: {tokens["bg"]} !important;
             background-image: {blob_css} !important;

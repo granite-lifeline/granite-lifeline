@@ -9,7 +9,7 @@ import sys
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Callable, Dict, Optional
 from uuid import uuid4
 
 try:
@@ -34,6 +34,7 @@ MODEL_LAYER_VENV_PYTHON = (
 # both are the pipeline's "slow AI call" thresholds. Estimated, not
 # measured; tune once real TTM batch-run timings are available.
 MODEL_LAYER_TIMEOUT_SECONDS = 120
+ProgressCallback = Callable[[int, str], None]
 
 
 class UploadedCsvPipelineError(RuntimeError):
@@ -169,8 +170,19 @@ def _run_data_layer(raw_csv_path: Path) -> Path:
     return production_path
 
 
+def _emit_progress(
+    progress_callback: Optional[ProgressCallback],
+    percent: int,
+    message: str,
+) -> None:
+    if progress_callback is not None:
+        progress_callback(percent, message)
+
+
 def run_uploaded_csv_batch(
-    csv_bytes: bytes, original_filename: str
+    csv_bytes: bytes,
+    original_filename: str,
+    progress_callback: Optional[ProgressCallback] = None,
 ) -> Dict[str, Any]:
     """
     Run uploaded raw CSV bytes through Data Layer and Model Layer.
@@ -187,8 +199,16 @@ def run_uploaded_csv_batch(
 
     with tempfile.TemporaryDirectory(prefix="granite_upload_") as temp_dir:
         raw_path = Path(temp_dir) / original_filename
+        _emit_progress(progress_callback, 10, "Analyzing data...")
         raw_path.write_bytes(csv_bytes)
 
+        _emit_progress(progress_callback, 35, "Analyzing data...")
         production_features = _run_data_layer(raw_path)
+        _emit_progress(progress_callback, 65, "Analyzing data...")
         model_output = _run_model_layer(production_features)
-        return load_model_output_for_dashboard(model_output, "uploaded")
+        _emit_progress(progress_callback, 90, "Analyzing data...")
+        dashboard_data = load_model_output_for_dashboard(
+            model_output, "uploaded"
+        )
+        _emit_progress(progress_callback, 100, "Analyzing data...")
+        return dashboard_data

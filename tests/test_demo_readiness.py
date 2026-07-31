@@ -87,9 +87,29 @@ def test_demo_readiness_checklist_documents_run_route_and_limits():
         "Explore with demo data",
         "What-If",
         "PDF / CSV",
+        "CSV upload",
+        "percentage progress ring",
+        "Analyzing data...",
         "five current anomaly types",
         "local Ollama",
         "placeholder scores",
+    ]:
+        assert required_text in src
+
+
+def test_demo_readiness_checklist_covers_csv_loading_recovery():
+    """GL-388: live CSV loading demo should cover success and recovery."""
+    src = DEMO_CHECK_PATH.read_text(encoding="utf-8")
+
+    for required_text in [
+        "CSV Loading State Demo Checklist",
+        "`Run Analysis` clicked",
+        "`Analysing...`",
+        "no duplicate file-row `Upload` button",
+        "Pipeline succeeds",
+        "Pipeline fails or times out",
+        "Browser refresh during loading",
+        "stale loading state is cleared",
     ]:
         assert required_text in src
 
@@ -99,7 +119,9 @@ def test_dashboard_readme_uses_current_demo_readiness_language():
     src = DASHBOARD_README_PATH.read_text(encoding="utf-8")
 
     assert "Five-Type Component Display Mapping" in src
+    assert "CSV Analysis Loading State" in src
     assert "Demo Readiness Check" in src
+    assert "percentage progress ring" in src
     assert "tests/test_demo_readiness.py" in src
     assert "INTERFACE.md v0.7" not in src
     assert "Six-Type" not in src

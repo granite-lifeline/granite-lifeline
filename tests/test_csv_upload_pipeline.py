@@ -69,6 +69,24 @@ class _FakeSpinner:
         return False
 
 
+class _FakeEmpty:
+    def __init__(self, rendered: list[str]):
+        self.rendered = rendered
+
+    def markdown(self, body, **kwargs):
+        self.rendered.append(str(body))
+
+
+def _valid_csv_bytes(rows: int = 700) -> bytes:
+    upload_df = pd.DataFrame(
+        [
+            {column: row_idx for column in REQUIRED_COLUMNS}
+            for row_idx in range(rows)
+        ]
+    )
+    return upload_df.to_csv(index=False).encode("utf-8")
+
+
 def _capture_overview_markdown(monkeypatch):
     import dashboard.pages.overview as overview
     from dashboard.theme import THEME_TOKENS
@@ -79,6 +97,7 @@ def _capture_overview_markdown(monkeypatch):
         "markdown",
         lambda body, **kwargs: rendered.append(str(body)),
     )
+    monkeypatch.setattr(overview.st, "empty", lambda: _FakeEmpty(rendered))
     monkeypatch.setattr(
         overview.st,
         "warning",
@@ -123,13 +142,7 @@ def test_csv_upload_ui_missing_columns_lists_required_fields(monkeypatch):
 
 def test_csv_upload_ui_success_stores_dashboard_data_and_reruns(monkeypatch):
     overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
-    upload_df = pd.DataFrame(
-        [
-            {column: row_idx for column in REQUIRED_COLUMNS}
-            for row_idx in range(700)
-        ]
-    )
-    csv_bytes = upload_df.to_csv(index=False).encode("utf-8")
+    csv_bytes = _valid_csv_bytes()
     dashboard_result = {
         "cooling_degradation": {
             **_model_output(),
@@ -140,9 +153,14 @@ def test_csv_upload_ui_success_stores_dashboard_data_and_reruns(monkeypatch):
     calls: dict[str, object] = {}
     rerun_calls: list[bool] = []
 
-    def fake_run_uploaded_csv_batch(body: bytes, file_name: str) -> dict:
+    def fake_run_uploaded_csv_batch(
+        body: bytes, file_name: str, progress_callback=None
+    ) -> dict:
         calls["body"] = body
         calls["file_name"] = file_name
+        calls["progress_callback"] = progress_callback is not None
+        if progress_callback is not None:
+            progress_callback(65, "Analyzing data...")
         return dashboard_result
 
     monkeypatch.setattr(
@@ -151,18 +169,95 @@ def test_csv_upload_ui_success_stores_dashboard_data_and_reruns(monkeypatch):
     monkeypatch.setattr(
         overview.st, "spinner", lambda label: _FakeSpinner(label)
     )
+    monkeypatch.setattr(
+        overview.st,
+        "progress",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("fake progress bar should not be used")
+        ),
+    )
     monkeypatch.setattr(overview.st, "rerun", lambda: rerun_calls.append(True))
 
     overview._handle_uploaded_csv_submit(
         _FakeUpload(csv_bytes, "valid-drive.csv"), tokens
     )
 
-    assert calls == {"body": csv_bytes, "file_name": "valid-drive.csv"}
+    assert calls == {
+        "body": csv_bytes,
+        "file_name": "valid-drive.csv",
+        "progress_callback": True,
+    }
     assert overview.st.session_state["dashboard_data"] == dashboard_result
     assert len(overview.st.session_state["validated_df"]) == 700
     assert overview.st.session_state["dashboard_mode"] == "dashboard"
+    assert overview.st.session_state["csv_analysis_running"] is False
     assert rerun_calls == [True]
+    assert "Analysing your CSV..." in "".join(rendered)
+    assert "65%" in "".join(rendered)
+    assert "Analyzing data..." in "".join(rendered)
     assert "Analysis Unavailable" not in "".join(rendered)
+
+
+def test_csv_upload_failure_recovers_running_state(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+    csv_bytes = _valid_csv_bytes()
+
+    def fake_run_uploaded_csv_batch(
+        body: bytes, file_name: str, progress_callback=None
+    ) -> dict:
+        if progress_callback is not None:
+            progress_callback(35, "Analyzing data...")
+        raise UploadedCsvPipelineError("Pipeline failed during model run.")
+
+    monkeypatch.setattr(
+        overview, "run_uploaded_csv_batch", fake_run_uploaded_csv_batch
+    )
+    monkeypatch.setattr(
+        overview.st, "spinner", lambda label: _FakeSpinner(label)
+    )
+
+    overview._handle_uploaded_csv_submit(
+        _FakeUpload(csv_bytes, "valid-drive.csv"), tokens
+    )
+
+    html = "".join(rendered)
+    assert overview.st.session_state["csv_analysis_running"] is False
+    assert "Analysing your CSV..." in html
+    assert "Analysis Unavailable" in html
+    assert "Pipeline failed during model run." in html
+
+
+def test_csv_upload_empty_report_recovers_running_state(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+    csv_bytes = _valid_csv_bytes()
+
+    monkeypatch.setattr(
+        overview,
+        "run_uploaded_csv_batch",
+        lambda body, file_name, progress_callback=None: {"_data_source": {}},
+    )
+    monkeypatch.setattr(
+        overview.st, "spinner", lambda label: _FakeSpinner(label)
+    )
+
+    overview._handle_uploaded_csv_submit(
+        _FakeUpload(csv_bytes, "valid-drive.csv"), tokens
+    )
+
+    html = "".join(rendered)
+    assert overview.st.session_state["csv_analysis_running"] is False
+    assert "Analysis Timed Out" in html
+    assert "diagnostic report could not be generated" in html
+
+
+def test_stale_csv_loading_state_is_cleared(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+    overview.st.session_state["csv_analysis_running"] = True
+
+    assert overview._recover_csv_analysis_running_state() is False
+
+    assert overview.st.session_state["csv_analysis_running"] is False
+    assert rendered == []
 
 
 def test_csv_validator_accepts_required_columns_and_aliases():
@@ -333,4 +428,43 @@ def test_run_uploaded_csv_batch_passes_production_features_to_model(
     assert dashboard_data["_data_source"]["cooling_degradation"] == "uploaded"
     assert dashboard_data["cooling_degradation"]["risk_history"] == [
         {"timestamp": "2026-07-20T12:00:00Z", "risk_score": 0.7}
+    ]
+
+
+def test_run_uploaded_csv_batch_reports_progress(monkeypatch, tmp_path: Path):
+    import dashboard.csv_pipeline as csv_pipeline
+
+    production_features = tmp_path / "production_features.csv"
+    production_features.write_text("timestamp,rpm\n2026-07-20T12:00:00Z,900\n")
+
+    monkeypatch.setattr(
+        csv_pipeline, "_run_data_layer", lambda input_path: production_features
+    )
+    monkeypatch.setattr(
+        csv_pipeline,
+        "_run_model_layer",
+        lambda csv_path: {"summary": _model_output(), "windows": []},
+    )
+    monkeypatch.setattr(
+        csv_pipeline,
+        "load_model_output_for_dashboard",
+        lambda model_output, source: {"cooling_degradation": _model_output()},
+    )
+
+    progress_events: list[tuple[int, str]] = []
+
+    run_uploaded_csv_batch(
+        b"Time\n12:00:00.000\n",
+        "2018-03-01_Seat_Leon_RT_S_Normal.csv",
+        progress_callback=lambda percent, message: progress_events.append(
+            (percent, message)
+        ),
+    )
+
+    assert progress_events == [
+        (10, "Analyzing data..."),
+        (35, "Analyzing data..."),
+        (65, "Analyzing data..."),
+        (90, "Analyzing data..."),
+        (100, "Analyzing data..."),
     ]

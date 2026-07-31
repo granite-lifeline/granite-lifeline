@@ -56,11 +56,26 @@ Open `http://localhost:8502`, then check:
 | 6 | What-If | Open What-If page and choose a scenario | Cards do not overlap; selected chip is readable; component breakdown updates |
 | 7 | Export | Return to overview and use PDF / CSV buttons | Single or ZIP downloads are generated without external services |
 | 8 | Empty state | Try running analysis without a CSV file | Polished empty state appears instead of a raw warning |
+| 9 | CSV upload | Upload a valid KIT CSV and click `Run Analysis` | Button changes to `Analysing...` and the loading card appears immediately |
+| 10 | CSV loading | Watch the loading card while the pipeline runs | A percentage progress ring is visible with `Analyzing data...`; no bottom Streamlit progress bar is shown |
+
+## CSV Loading State Demo Checklist
+
+Use this checklist when demonstrating the local live CSV flow for GL-388:
+
+| Check | Expected result |
+|-------|-----------------|
+| Valid CSV selected | File name is visible; no duplicate file-row `Upload` button appears |
+| `Run Analysis` clicked | Button is disabled and relabelled to `Analysing...` |
+| Pipeline is running | Loading card shows `Analysing your CSV...`, a percentage progress ring, and `Analyzing data...` |
+| Pipeline succeeds | Dashboard result loads and the loading state disappears |
+| Pipeline fails or times out | Existing polished error card appears and the button becomes usable again |
+| Browser refresh during loading | Any stale loading state is cleared on the next render |
 
 ## Demo Talking Points
 
 - The public hosted demo uses curated ReportLayerOutput-shaped data.
-- Local live CSV upload needs the Data Layer, Model Layer, Report Layer, and local Ollama.
+- Local live CSV upload needs the Data Layer, Model Layer, Report Layer, and local Ollama, but the user-facing loading text stays simple.
 - The current dashboard supports five current anomaly types from `docs/INTERFACE.md`.
 - Three anomaly types have live Model Layer scoring; two remain placeholder scores
   in the current Model Layer and should be presented as integration limitations.
@@ -90,4 +105,4 @@ By the end of the demo, the audience should have seen:
 | Empty/error state polish | Done |
 | Dashboard regression test expansion | Done |
 | Final demo route/checklist | Done |
-
+| CSV loading state tests/checklist | Done |
