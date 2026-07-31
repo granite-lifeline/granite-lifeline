@@ -48,6 +48,7 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | PDF / CSV Export | GL-343 to GL-348 | Overview-page export panel with component filters, PDF section filters, CSV column filters, ZIP downloads, local PDF template, and tests |
 | Module Split | GL-255 | `app.py` (2581 lines) split into `theme.py`, `ui_components.py`, `data_store.py`, and `pages/{overview,detail,what_if}.py` |
 | CSV Upload Pipeline | GL-256 to GL-262 | Upload validation (KIT column/row checks), user-friendly error cards, and end-to-end wiring to Data Layer + Model Layer + Report Layer |
+| CSV Analysis Loading State | GL-386 to GL-388 | Run Analysis enters an immediate `Analysing...` state, shows a percentage progress ring with simple user-facing text, recovers cleanly on failure/refresh, and is covered by demo checklist tests |
 | Live Model Layer Integration | GL-365 | `csv_pipeline.py` invokes the Model Layer's `kit_residual_detector.py --batch` as a subprocess per INTERFACE.md §2.5's documented CLI/error contract; verified with a real, unmocked run producing a live report |
 | What-If Analysis Page | — | Scenario cards, driving-style sliders, per-component risk projection, uncertainty range |
 | Signal Tooltips | — | `glossary.py`; plain-language tooltips for technical signal names |
@@ -367,6 +368,7 @@ than implementation details. The current demo path is documented in
 - Detail page failure prediction, notes, trend, key signals, and report text
 - What-If scenario flow
 - PDF / CSV export flow
+- CSV analysis loading state with a percentage progress ring
 - Empty/error states for CSV upload and missing data
 - Known limitations to disclose during the viva/demo
 
