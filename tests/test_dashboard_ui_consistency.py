@@ -167,7 +167,12 @@ def test_csv_analysis_loading_state_is_visible_and_disables_buttons():
 
     assert "CSV_ANALYSIS_RUNNING_KEY" in src
     assert "Analysing your CSV..." in src
-    assert "Data Layer, Model Layer, and Report Layer" in src
+    assert "Analyzing data..." in src
+    assert "csv-analysis-percent" in src
+    assert "conic-gradient(" in src
+    assert "csv-analysis-progress-rail" not in src
+    assert "csv-analysis-progress-fill" not in src
+    assert "csv-analysis-spinner" not in src
     assert "st.progress(" not in src
     assert '"Analysing..." if analysis_running else "Run Analysis"' in src
     assert "disabled=analysis_running" in src

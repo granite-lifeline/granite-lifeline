@@ -372,9 +372,12 @@ def _show_pipeline_error(title: str, message: str, tokens: dict) -> None:
     )
 
 
-def _show_csv_analysis_loading(tokens: dict) -> None:
+def _show_csv_analysis_loading(
+    target, tokens: dict, percent: int, message: str
+) -> None:
     """Render a clear loading state for the CSV analysis pipeline."""
-    st.markdown(
+    percent = max(0, min(100, int(percent)))
+    target.markdown(
         f"""
         <style>
         .csv-analysis-loading {{
@@ -389,14 +392,36 @@ def _show_csv_analysis_loading(tokens: dict) -> None:
             max-width: 620px;
             padding: 16px 18px;
         }}
-        .csv-analysis-spinner {{
-            animation: csv-spin 1s linear infinite;
-            border: 3px solid {hex_to_rgba(tokens["accent"], 0.16)};
+        .csv-analysis-percent {{
+            align-items: center;
+            background:
+                conic-gradient(
+                    {tokens["accent"]} {percent}%,
+                    {hex_to_rgba(tokens["accent"], 0.18)} 0
+                );
             border-radius: 999px;
-            border-top-color: {tokens["accent"]};
+            color: {tokens["accent"]};
+            display: flex;
             flex: 0 0 auto;
-            height: 28px;
-            width: 28px;
+            font-size: 13px;
+            font-weight: 800;
+            height: 46px;
+            justify-content: center;
+            position: relative;
+            width: 46px;
+        }}
+        .csv-analysis-percent::before {{
+            background: {tokens["surface"]};
+            border-radius: inherit;
+            content: "";
+            inset: 4px;
+            position: absolute;
+        }}
+        .csv-analysis-percent span {{
+            position: relative;
+            z-index: 1;
+        }}
+            width: 42px;
         }}
         .csv-analysis-title {{
             color: {tokens["text"]};
@@ -409,17 +434,13 @@ def _show_csv_analysis_loading(tokens: dict) -> None:
             font-size: 13px;
             line-height: 1.45;
         }}
-        @keyframes csv-spin {{
-            to {{ transform: rotate(360deg); }}
-        }}
         </style>
         <div class="csv-analysis-loading" role="status">
-            <div class="csv-analysis-spinner" aria-hidden="true"></div>
-            <div>
+            <div class="csv-analysis-percent"><span>{percent}%</span></div>
+            <div style="flex:1;">
                 <div class="csv-analysis-title">Analysing your CSV...</div>
                 <div class="csv-analysis-message">
-                    Running Data Layer, Model Layer, and Report Layer.
-                    This may take a few minutes.
+                    {html.escape(message)}
                 </div>
             </div>
         </div>
@@ -510,15 +531,21 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
         return
 
     _set_csv_analysis_running(True)
-    _show_csv_analysis_loading(tokens)
+    loading_slot = st.empty()
+    progress_message = "Analyzing data..."
+    _show_csv_analysis_loading(loading_slot, tokens, 0, progress_message)
+
+    def update_progress(percent: int, message: str) -> None:
+        _show_csv_analysis_loading(loading_slot, tokens, percent, message)
 
     should_rerun = False
     try:
         try:
-            with st.spinner("Analysing CSV..."):
-                result = run_uploaded_csv_batch(
-                    csv_bytes, uploaded_file.name
-                )
+            result = run_uploaded_csv_batch(
+                csv_bytes,
+                uploaded_file.name,
+                progress_callback=update_progress,
+            )
         except TimeoutError:
             _show_pipeline_error(
                 "Analysis Timed Out",
