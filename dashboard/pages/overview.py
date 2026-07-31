@@ -53,6 +53,9 @@ from ui_components import (
 # Private helpers
 # ---------------------------------------------------------------------------
 
+CSV_ANALYSIS_RUNNING_KEY = "csv_analysis_running"
+
+
 def _show_theme_toggle(dark_mode: bool, tokens: dict) -> None:
     """Render the dark/light-mode icon button."""
     st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
@@ -358,6 +361,62 @@ def _show_pipeline_error(title: str, message: str, tokens: dict) -> None:
     )
 
 
+def _show_csv_analysis_loading(tokens: dict) -> None:
+    """Render a clear loading state for the CSV analysis pipeline."""
+    st.markdown(
+        f"""
+        <style>
+        .csv-analysis-loading {{
+            align-items: center;
+            background: {tokens["surface"]};
+            border: 1px solid {hex_to_rgba(tokens["accent"], 0.28)};
+            border-radius: 12px;
+            box-shadow: 0 2px 10px {tokens["shadow"]};
+            display: flex;
+            gap: 14px;
+            margin: 12px auto 0 auto;
+            max-width: 620px;
+            padding: 16px 18px;
+        }}
+        .csv-analysis-spinner {{
+            animation: csv-spin 1s linear infinite;
+            border: 3px solid {hex_to_rgba(tokens["accent"], 0.16)};
+            border-radius: 999px;
+            border-top-color: {tokens["accent"]};
+            flex: 0 0 auto;
+            height: 28px;
+            width: 28px;
+        }}
+        .csv-analysis-title {{
+            color: {tokens["text"]};
+            font-size: 15px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }}
+        .csv-analysis-message {{
+            color: {tokens["text_secondary"]};
+            font-size: 13px;
+            line-height: 1.45;
+        }}
+        @keyframes csv-spin {{
+            to {{ transform: rotate(360deg); }}
+        }}
+        </style>
+        <div class="csv-analysis-loading" role="status">
+            <div class="csv-analysis-spinner" aria-hidden="true"></div>
+            <div>
+                <div class="csv-analysis-title">Analysing your CSV...</div>
+                <div class="csv-analysis-message">
+                    Running Data Layer, Model Layer, and Report Layer.
+                    This may take a few minutes.
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
     """Validate an uploaded CSV and run the dashboard upload pipeline."""
     if uploaded_file is None:
@@ -439,12 +498,16 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
         )
         return
 
+    st.session_state[CSV_ANALYSIS_RUNNING_KEY] = True
+    _show_csv_analysis_loading(tokens)
+
     try:
-        with st.spinner("Running analysis..."):
+        with st.spinner("Analysing CSV..."):
             result = run_uploaded_csv_batch(
                 csv_bytes, uploaded_file.name
             )
     except TimeoutError:
+        st.session_state[CSV_ANALYSIS_RUNNING_KEY] = False
         _show_pipeline_error(
             "Analysis Timed Out",
             "The analysis pipeline timed out. Please try uploading a "
@@ -453,12 +516,15 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
         )
         return
     except ModelBatchRunnerUnavailable as exc:
+        st.session_state[CSV_ANALYSIS_RUNNING_KEY] = False
         _show_pipeline_error("Model Analysis Unavailable", str(exc), tokens)
         return
     except UploadedCsvPipelineError as exc:
+        st.session_state[CSV_ANALYSIS_RUNNING_KEY] = False
         _show_pipeline_error("Analysis Unavailable", str(exc), tokens)
         return
     except Exception as exc:
+        st.session_state[CSV_ANALYSIS_RUNNING_KEY] = False
         _show_pipeline_error(
             "Analysis Unavailable",
             f"The analysis pipeline could not complete. {exc}",
@@ -474,6 +540,7 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
     if not components or all(
         not c.get("anomaly_description") for c in components.values()
     ):
+        st.session_state[CSV_ANALYSIS_RUNNING_KEY] = False
         _show_pipeline_error(
             "Analysis Timed Out",
             "The diagnostic report could not be generated in time. "
@@ -485,6 +552,7 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
     st.session_state["dashboard_data"] = result
     st.session_state["validated_df"] = df
     st.session_state["dashboard_mode"] = "dashboard"
+    st.session_state[CSV_ANALYSIS_RUNNING_KEY] = False
     st.rerun()
 
 
@@ -541,7 +609,7 @@ def _show_csv_uploader(tokens: dict) -> None:
             width: 100% !important;
         }}
         .st-key-csv_upload_section
-            [data-testid="stFileUploader"] button {{
+            [data-testid="stFileUploaderDropzone"] button {{
             align-items: center !important;
             background: {tokens["surface_alt"]} !important;
             border: 1.5px solid {tokens["border"]} !important;
@@ -559,14 +627,14 @@ def _show_csv_uploader(tokens: dict) -> None:
             width: 132px !important;
         }}
         .st-key-csv_upload_section
-            [data-testid="stFileUploader"] button * {{
+            [data-testid="stFileUploaderDropzone"] button * {{
             color: transparent !important;
             display: none !important;
             font-size: 0 !important;
             line-height: 0 !important;
         }}
         .st-key-csv_upload_section
-            [data-testid="stFileUploader"] button::after {{
+            [data-testid="stFileUploaderDropzone"] button::after {{
             align-items: center !important;
             color: {tokens["text"]} !important;
             content: "Upload";
@@ -580,12 +648,16 @@ def _show_csv_uploader(tokens: dict) -> None:
             text-align: center !important;
         }}
         .st-key-csv_upload_section
-            [data-testid="stFileUploader"] button:hover {{
+            [data-testid="stFileUploaderDropzone"] button:hover {{
             border-color: {tokens["accent"]} !important;
         }}
         .st-key-csv_upload_section
-            [data-testid="stFileUploader"] button:hover::after {{
+            [data-testid="stFileUploaderDropzone"] button:hover::after {{
             color: {tokens["accent"]} !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDeleteBtn"] {{
+            display: none !important;
         }}
         /* ── Run Analysis button ── */
         .st-key-csv_submit_btn button {{
@@ -600,6 +672,10 @@ def _show_csv_uploader(tokens: dict) -> None:
         .st-key-csv_submit_btn button:hover {{
             opacity: 0.88 !important;
         }}
+        .st-key-csv_submit_btn button:disabled {{
+            cursor: progress !important;
+            opacity: 0.64 !important;
+        }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -613,10 +689,14 @@ def _show_csv_uploader(tokens: dict) -> None:
             key="csv_file_uploader",
             label_visibility="collapsed",
         )
+        analysis_running = bool(
+            st.session_state.get(CSV_ANALYSIS_RUNNING_KEY, False)
+        )
         submit_clicked = st.button(
-            "Run Analysis",
+            "Analysing..." if analysis_running else "Run Analysis",
             key="csv_submit_btn",
             use_container_width=True,
+            disabled=analysis_running,
         )
 
     # ── Validation feedback ──
@@ -1289,7 +1369,8 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             padding: 0 !important;
             width: 100% !important;
         }}
-        .st-key-landing_upload_card [data-testid="stFileUploader"] button {{
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] button {{
             align-items: center !important;
             background: {tokens["surface_alt"]} !important;
             border: 1.5px solid {tokens["border"]} !important;
@@ -1306,13 +1387,14 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             position: relative !important;
             width: 140px !important;
         }}
-        .st-key-landing_upload_card [data-testid="stFileUploader"] button * {{
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] button * {{
             color: transparent !important;
             display: none !important;
             font-size: 0 !important;
             line-height: 0 !important;
         }}
-        .st-key-landing_upload_card [data-testid="stFileUploader"]
+        .st-key-landing_upload_card [data-testid="stFileUploaderDropzone"]
                 button::after {{
             align-items: center !important;
             color: {tokens["text"]} !important;
@@ -1326,13 +1408,17 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             position: absolute !important;
             text-align: center !important;
         }}
-        .st-key-landing_upload_card [data-testid="stFileUploader"]
+        .st-key-landing_upload_card [data-testid="stFileUploaderDropzone"]
                 button:hover {{
             border-color: {tokens["accent"]} !important;
         }}
-        .st-key-landing_upload_card [data-testid="stFileUploader"]
+        .st-key-landing_upload_card [data-testid="stFileUploaderDropzone"]
                 button:hover::after {{
             color: {tokens["accent"]} !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDeleteBtn"] {{
+            display: none !important;
         }}
         /* Run Analysis button — full-width accent */
         .st-key-landing_run_btn button {{
@@ -1348,6 +1434,10 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             transition: opacity 0.15s ease !important;
         }}
         .st-key-landing_run_btn button:hover {{ opacity: 0.88 !important; }}
+        .st-key-landing_run_btn button:disabled {{
+            cursor: progress !important;
+            opacity: 0.64 !important;
+        }}
         /* Demo data link-button */
         .st-key-landing_demo_btn button {{
             background: transparent !important;
@@ -1381,10 +1471,14 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
                 label_visibility="collapsed",
             )
             # Run Analysis button — full width inside the card col
+            analysis_running = bool(
+                st.session_state.get(CSV_ANALYSIS_RUNNING_KEY, False)
+            )
             submit_clicked = st.button(
-                "Run Analysis",
+                "Analysing..." if analysis_running else "Run Analysis",
                 key="landing_run_btn",
                 use_container_width=True,
+                disabled=analysis_running,
             )
 
     # ── Validation feedback ──

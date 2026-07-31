@@ -74,6 +74,15 @@ def test_global_buttons_use_carbon_hover_and_focus_tokens():
     assert 'outline: 2px solid {tokens["focus"]} !important;' in src
 
 
+def test_streamlit_builtin_running_decoration_is_hidden():
+    """GL-386: use our loading card instead of Streamlit's blue bar."""
+    src = _read("dashboard/theme.py")
+
+    assert '[data-testid="stDecoration"]' in src
+    assert '[data-testid="stStatusWidget"]' in src
+    assert "display: none !important;" in src
+
+
 def test_reusable_ui_helpers_cover_title_heading_and_empty_state():
     src = _read("dashboard/ui_components.py")
 
@@ -150,6 +159,31 @@ def test_key_empty_and_error_states_do_not_use_bare_streamlit_alerts():
     assert "Component not found" in detail_src
     assert 'st.warning("Please select a CSV file' not in overview_src
     assert 'st.error("Component not found.")' not in detail_src
+
+
+def test_csv_analysis_loading_state_is_visible_and_disables_buttons():
+    """GL-386: CSV analysis should show clear loading feedback."""
+    src = _read("dashboard/pages/overview.py")
+
+    assert "CSV_ANALYSIS_RUNNING_KEY" in src
+    assert "Analysing your CSV..." in src
+    assert "Data Layer, Model Layer, and Report Layer" in src
+    assert "st.progress(" not in src
+    assert '"Analysing..." if analysis_running else "Run Analysis"' in src
+    assert "disabled=analysis_running" in src
+    assert ".st-key-csv_submit_btn button:disabled" in src
+    assert ".st-key-landing_run_btn button:disabled" in src
+
+
+def test_selected_file_upload_button_is_hidden():
+    """GL-386: selected file row should not show a second Upload button."""
+    src = _read("dashboard/pages/overview.py")
+
+    assert '[data-testid="stFileUploaderDropzone"] button::after' in src
+    assert '[data-testid="stFileUploader"] button::after' not in src
+    assert '.st-key-csv_upload_section' in src
+    assert '.st-key-landing_upload_card' in src
+    assert '[data-testid="stFileUploaderDeleteBtn"]' in src
 
 
 def test_what_if_level_pill_centered_and_bar_left_filled():

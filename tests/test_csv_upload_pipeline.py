@@ -151,6 +151,13 @@ def test_csv_upload_ui_success_stores_dashboard_data_and_reruns(monkeypatch):
     monkeypatch.setattr(
         overview.st, "spinner", lambda label: _FakeSpinner(label)
     )
+    monkeypatch.setattr(
+        overview.st,
+        "progress",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("fake progress bar should not be used")
+        ),
+    )
     monkeypatch.setattr(overview.st, "rerun", lambda: rerun_calls.append(True))
 
     overview._handle_uploaded_csv_submit(
@@ -161,7 +168,10 @@ def test_csv_upload_ui_success_stores_dashboard_data_and_reruns(monkeypatch):
     assert overview.st.session_state["dashboard_data"] == dashboard_result
     assert len(overview.st.session_state["validated_df"]) == 700
     assert overview.st.session_state["dashboard_mode"] == "dashboard"
+    assert overview.st.session_state["csv_analysis_running"] is False
     assert rerun_calls == [True]
+    assert "Analysing your CSV..." in "".join(rendered)
+    assert "Data Layer, Model Layer, and Report Layer" in "".join(rendered)
     assert "Analysis Unavailable" not in "".join(rendered)
 
 
