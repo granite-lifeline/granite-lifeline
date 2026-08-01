@@ -1,0 +1,309 @@
+{
+  "alarm_threshold": 0.3,
+  "hit_definition": "risk_score >= threshold AND predicted type == truth",
+  "completed_primary_runs": 165,
+  "failed_runs": 1,
+  "per_type": {
+    "cooling_degradation": {
+      "tp": 33,
+      "fp": 7,
+      "fn": 0,
+      "precision": 0.825,
+      "recall": 1.0,
+      "f1": 0.9041095890410958
+    },
+    "air_intake_maf_anomaly": {
+      "tp": 2,
+      "fp": 11,
+      "fn": 42,
+      "precision": 0.15384615384615385,
+      "recall": 0.045454545454545456,
+      "f1": 0.07017543859649122
+    },
+    "accelerator_pedal_sensor": {
+      "tp": 35,
+      "fp": 0,
+      "fn": 42,
+      "precision": 1.0,
+      "recall": 0.45454545454545453,
+      "f1": 0.625
+    }
+  },
+  "macro": {
+    "precision": 0.6596153846153846,
+    "recall": 0.5,
+    "f1": 0.533095009212529
+  },
+  "micro": {
+    "precision": 0.7954545454545454,
+    "recall": 0.45454545454545453,
+    "f1": 0.5785123966942148
+  },
+  "healthy_false_positive_rate": 0.2727272727272727,
+  "healthy_alarms": 3,
+  "healthy_runs": 11,
+  "exact_hit_rate": 0.45454545454545453,
+  "attribution_accuracy_ignoring_threshold": 0.564935064935065,
+  "confusion_matrix": {
+    "healthy": {
+      "no_alarm": 8,
+      "cooling_degradation": 1,
+      "air_intake_maf_anomaly": 2,
+      "accelerator_pedal_sensor": 0
+    },
+    "cooling_degradation": {
+      "no_alarm": 0,
+      "cooling_degradation": 33,
+      "air_intake_maf_anomaly": 0,
+      "accelerator_pedal_sensor": 0
+    },
+    "air_intake_maf_anomaly": {
+      "no_alarm": 38,
+      "cooling_degradation": 4,
+      "air_intake_maf_anomaly": 2,
+      "accelerator_pedal_sensor": 0
+    },
+    "accelerator_pedal_sensor": {
+      "no_alarm": 31,
+      "cooling_degradation": 2,
+      "air_intake_maf_anomaly": 9,
+      "accelerator_pedal_sensor": 35
+    }
+  },
+  "severity_curves": [
+    {
+      "scenario": "cooling_offset_10c",
+      "fault_family": "cooling",
+      "severity": 10.0,
+      "severity_unit": "degC_offset",
+      "runs": 11,
+      "hits": 11,
+      "hit_rate": 1.0,
+      "alarm_rate": 1.0,
+      "mean_risk_score": 1.0
+    },
+    {
+      "scenario": "cooling_offset_15c",
+      "fault_family": "cooling",
+      "severity": 15.0,
+      "severity_unit": "degC_offset",
+      "runs": 11,
+      "hits": 11,
+      "hit_rate": 1.0,
+      "alarm_rate": 1.0,
+      "mean_risk_score": 1.0
+    },
+    {
+      "scenario": "cooling_offset_5c",
+      "fault_family": "cooling",
+      "severity": 5.0,
+      "severity_unit": "degC_offset",
+      "runs": 11,
+      "hits": 11,
+      "hit_rate": 1.0,
+      "alarm_rate": 1.0,
+      "mean_risk_score": 0.9781818181818182
+    },
+    {
+      "scenario": "maf_gain_0.70",
+      "fault_family": "maf",
+      "severity": 0.3,
+      "severity_unit": "fractional_underread",
+      "runs": 11,
+      "hits": 0,
+      "hit_rate": 0.0,
+      "alarm_rate": 0.09090909090909091,
+      "mean_risk_score": 0.22244545454545453
+    },
+    {
+      "scenario": "maf_gain_0.80",
+      "fault_family": "maf",
+      "severity": 0.2,
+      "severity_unit": "fractional_underread",
+      "runs": 11,
+      "hits": 0,
+      "hit_rate": 0.0,
+      "alarm_rate": 0.09090909090909091,
+      "mean_risk_score": 0.22244545454545453
+    },
+    {
+      "scenario": "maf_gain_0.90",
+      "fault_family": "maf",
+      "severity": 0.1,
+      "severity_unit": "fractional_underread",
+      "runs": 11,
+      "hits": 1,
+      "hit_rate": 0.09090909090909091,
+      "alarm_rate": 0.18181818181818182,
+      "mean_risk_score": 0.24935454545454547
+    },
+    {
+      "scenario": "maf_gain_0.95",
+      "fault_family": "maf",
+      "severity": 0.05,
+      "severity_unit": "fractional_underread",
+      "runs": 11,
+      "hits": 1,
+      "hit_rate": 0.09090909090909091,
+      "alarm_rate": 0.18181818181818182,
+      "mean_risk_score": 0.2717454545454545
+    },
+    {
+      "scenario": "pedal_d_offset_10pp",
+      "fault_family": "pedal",
+      "severity": 10.0,
+      "severity_unit": "percentage_point_offset",
+      "runs": 11,
+      "hits": 10,
+      "hit_rate": 0.9090909090909091,
+      "alarm_rate": 1.0,
+      "mean_risk_score": 0.9742545454545454
+    },
+    {
+      "scenario": "pedal_d_offset_20pp",
+      "fault_family": "pedal",
+      "severity": 20.0,
+      "severity_unit": "percentage_point_offset",
+      "runs": 11,
+      "hits": 10,
+      "hit_rate": 0.9090909090909091,
+      "alarm_rate": 1.0,
+      "mean_risk_score": 1.0
+    },
+    {
+      "scenario": "pedal_d_offset_2pp",
+      "fault_family": "pedal",
+      "severity": 2.0,
+      "severity_unit": "percentage_point_offset",
+      "runs": 11,
+      "hits": 0,
+      "hit_rate": 0.0,
+      "alarm_rate": 0.2727272727272727,
+      "mean_risk_score": 0.30019090909090906
+    },
+    {
+      "scenario": "pedal_d_offset_5pp",
+      "fault_family": "pedal",
+      "severity": 5.0,
+      "severity_unit": "percentage_point_offset",
+      "runs": 11,
+      "hits": 10,
+      "hit_rate": 0.9090909090909091,
+      "alarm_rate": 1.0,
+      "mean_risk_score": 0.40954545454545455
+    },
+    {
+      "scenario": "pedal_e_gain_1.05",
+      "fault_family": "pedal",
+      "severity": 0.05,
+      "severity_unit": "fractional_gain_error",
+      "runs": 11,
+      "hits": 0,
+      "hit_rate": 0.0,
+      "alarm_rate": 0.2727272727272727,
+      "mean_risk_score": 0.30019090909090906
+    },
+    {
+      "scenario": "pedal_e_gain_1.10",
+      "fault_family": "pedal",
+      "severity": 0.1,
+      "severity_unit": "fractional_gain_error",
+      "runs": 11,
+      "hits": 2,
+      "hit_rate": 0.18181818181818182,
+      "alarm_rate": 0.2727272727272727,
+      "mean_risk_score": 0.3079727272727273
+    },
+    {
+      "scenario": "pedal_e_gain_1.20",
+      "fault_family": "pedal",
+      "severity": 0.2,
+      "severity_unit": "fractional_gain_error",
+      "runs": 11,
+      "hits": 3,
+      "hit_rate": 0.2727272727272727,
+      "alarm_rate": 0.36363636363636365,
+      "mean_risk_score": 0.44839090909090906
+    }
+  ],
+  "controls": [
+    {
+      "scenario": "map_bias_control_1.25",
+      "segment_id": "trip_0002_seg_001",
+      "risk_score": 0.3642,
+      "anomaly_type": "air_intake_maf_anomaly",
+      "alarm": true
+    },
+    {
+      "scenario": "map_bias_control_1.25",
+      "segment_id": "trip_0008_seg_005",
+      "risk_score": 0.2206,
+      "anomaly_type": "air_intake_maf_anomaly",
+      "alarm": false
+    },
+    {
+      "scenario": "map_bias_control_1.25",
+      "segment_id": "trip_0010_seg_001",
+      "risk_score": 0.2104,
+      "anomaly_type": "air_intake_maf_anomaly",
+      "alarm": false
+    },
+    {
+      "scenario": "map_bias_control_1.25",
+      "segment_id": "trip_0012_seg_001",
+      "risk_score": 0.1776,
+      "anomaly_type": "air_intake_maf_anomaly",
+      "alarm": false
+    },
+    {
+      "scenario": "map_bias_control_1.25",
+      "segment_id": "trip_0021_seg_001",
+      "risk_score": 0.2407,
+      "anomaly_type": "cooling_degradation",
+      "alarm": false
+    },
+    {
+      "scenario": "map_bias_control_1.25",
+      "segment_id": "trip_0023_seg_002",
+      "risk_score": 0.2547,
+      "anomaly_type": "air_intake_maf_anomaly",
+      "alarm": false
+    },
+    {
+      "scenario": "map_bias_control_1.25",
+      "segment_id": "trip_0025_seg_001",
+      "risk_score": 0.2569,
+      "anomaly_type": "cooling_degradation",
+      "alarm": false
+    },
+    {
+      "scenario": "map_bias_control_1.25",
+      "segment_id": "trip_0060_seg_001",
+      "risk_score": 0.2433,
+      "anomaly_type": "cooling_degradation",
+      "alarm": false
+    },
+    {
+      "scenario": "map_bias_control_1.25",
+      "segment_id": "trip_0065_seg_001",
+      "risk_score": 1.0,
+      "anomaly_type": "air_intake_maf_anomaly",
+      "alarm": true
+    },
+    {
+      "scenario": "map_bias_control_1.25",
+      "segment_id": "trip_0072_seg_001",
+      "risk_score": 0.3272,
+      "anomaly_type": "air_intake_maf_anomaly",
+      "alarm": true
+    },
+    {
+      "scenario": "map_bias_control_1.25",
+      "segment_id": "trip_0078_seg_001",
+      "risk_score": 0.4615,
+      "anomaly_type": "air_intake_maf_anomaly",
+      "alarm": true
+    }
+  ],
+  "source_results": "ttm-related/outputs/synthetic_eval_results_e5_lr5e-5.json"
+}

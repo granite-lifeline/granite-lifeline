@@ -1,0 +1,57 @@
+{
+  "estimated_cycles_to_failure": 4,
+  "estimated_failure_probability": 1.0,
+  "notes": [
+    "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
+    "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips."
+  ],
+  "trip_risks": [
+    {
+      "cycle_index": 1,
+      "trip_id": "trip_0001",
+      "timestamp": "2026-01-01T10:00:00Z",
+      "mean_risk_score": 0.19,
+      "window_count": 2
+    },
+    {
+      "cycle_index": 2,
+      "trip_id": "trip_0002",
+      "timestamp": "2026-01-02T10:00:00Z",
+      "mean_risk_score": 0.27,
+      "window_count": 2
+    },
+    {
+      "cycle_index": 3,
+      "trip_id": "trip_0003",
+      "timestamp": "2026-01-03T10:00:00Z",
+      "mean_risk_score": 0.33999999999999997,
+      "window_count": 2
+    },
+    {
+      "cycle_index": 4,
+      "trip_id": "trip_0004",
+      "timestamp": "2026-01-04T10:00:00Z",
+      "mean_risk_score": 0.42,
+      "window_count": 2
+    },
+    {
+      "cycle_index": 5,
+      "trip_id": "trip_0005",
+      "timestamp": "2026-01-05T10:00:00Z",
+      "mean_risk_score": 0.505,
+      "window_count": 2
+    },
+    {
+      "cycle_index": 6,
+      "trip_id": "trip_0006",
+      "timestamp": "2026-01-06T10:00:00Z",
+      "mean_risk_score": 0.585,
+      "window_count": 2
+    }
+  ],
+  "slope_per_cycle": 0.07885714,
+  "intercept": 0.18785714,
+  "high_risk_threshold": 0.9,
+  "probability_horizon_cycles": 10,
+  "probability_definition": "Model-based probability that the linear risk projection crosses the High-risk threshold within the fixed horizon; not a calibrated probability of mechanical failure."
+}

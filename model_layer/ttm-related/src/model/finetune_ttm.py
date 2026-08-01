@@ -1,8 +1,8 @@
 """
 Story 6 fine-tuning entrypoint for Granite TTM.
 
-This script consumes Lucca's train/validation split manifest, filters
-Group 1's `feature_dataset.csv` by segment id, builds TTM forecast
+This script consumes the schema-v1 train/validation split manifest, filters
+Group 1's `production_features.csv` by segment id, builds TTM forecast
 windows, and optionally runs Hugging Face `Trainer` with the
 `tsfm_public` TinyTimeMixer model.
 
@@ -82,7 +82,7 @@ def repo_relative(path: str | Path) -> str:
 
 
 def load_manifest(manifest_path: Path) -> dict[str, Any]:
-    """Load and minimally validate Lucca's split manifest."""
+    """Load and validate the schema-v1 split manifest."""
     with manifest_path.open("r", encoding="utf-8") as handle:
         manifest = json.load(handle)
 
@@ -91,6 +91,16 @@ def load_manifest(manifest_path: Path) -> dict[str, Any]:
     if missing:
         raise ValueError(
             f"{manifest_path} is missing required keys: {missing}"
+        )
+    if manifest.get("schema_version") != "feature_schema.v1":
+        raise ValueError(
+            f"{manifest_path} must declare schema_version "
+            "'feature_schema.v1'; regenerate the split manifest"
+        )
+    if "labels_file" in manifest:
+        raise ValueError(
+            f"{manifest_path} still references the retired labels_file; "
+            "regenerate it from production_features.csv"
         )
     return manifest
 
@@ -148,7 +158,28 @@ def filter_by_segments(
         )
 
     selected = frame[frame[SEGMENT_COLUMN].astype(str).isin(requested)].copy()
-    return selected.sort_values([TRIP_COLUMN, SEGMENT_COLUMN, ROW_COLUMN])
+    selected = selected.sort_values(
+        [TRIP_COLUMN, SEGMENT_COLUMN, ROW_COLUMN]
+    ).reset_index(drop=True)
+    validate_segment_contiguity(selected, split_name)
+    return selected
+
+
+def validate_segment_contiguity(frame: pd.DataFrame, split_name: str) -> None:
+    """Ensure each TTM id is a contiguous, ordered 1 Hz segment."""
+    for segment_id, segment in frame.groupby(SEGMENT_COLUMN, sort=False):
+        rows = segment[ROW_COLUMN].to_numpy()
+        if len(rows) > 1 and not (rows[1:] - rows[:-1] == 1).all():
+            raise ValueError(
+                f"{split_name} segment {segment_id} has non-contiguous "
+                "row_in_segment values"
+            )
+        timestamps = pd.to_datetime(segment[TIMESTAMP_COLUMN])
+        deltas = timestamps.diff().dropna().dt.total_seconds()
+        if not deltas.eq(1.0).all():
+            raise ValueError(
+                f"{split_name} segment {segment_id} is not contiguous at 1 Hz"
+            )
 
 
 def build_forecast_dataset(
@@ -173,6 +204,9 @@ def build_forecast_dataset(
             )
         frame[signal] = values
 
+    # ForecastDFDataset groups by segment_id, so a window cannot cross a
+    # segment boundary. ``fill`` preserves missingness through the observed
+    # masks while supplying finite tensors to TTM.
     return ForecastDFDataset(
         data=frame,
         id_columns=[SEGMENT_COLUMN],
@@ -508,7 +542,14 @@ def main() -> None:
     )
     train_result = trainer.train()
     eval_metrics = trainer.evaluate()
-    trainer.save_model(str(args.output_dir / "model"))
+    staging_model = args.output_dir / "model.staging"
+    if staging_model.exists():
+        shutil.rmtree(staging_model)
+    trainer.save_model(str(staging_model))
+    final_model = args.output_dir / "model"
+    if final_model.exists():
+        shutil.rmtree(final_model)
+    staging_model.rename(final_model)
     config["trainer_metrics"] = {
         "train": train_result.metrics,
         "validation": eval_metrics,

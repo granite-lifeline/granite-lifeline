@@ -1,0 +1,32 @@
+{
+  "calibration_type": "model_risk_level_calibration",
+  "calibration_version": "model-risk-level.v1",
+  "status": "provisional_synthetic_only",
+  "risk_level_thresholds": {
+    "medium_min_inclusive": 0.4129,
+    "high_min_inclusive": 0.9
+  },
+  "alarm_policy": {
+    "alarm_when": "risk_score >= medium_min_inclusive",
+    "low_action": "record only; do not raise an alarm",
+    "medium_action": "raise an inspection alarm",
+    "high_action": "raise a priority inspection alarm"
+  },
+  "selection_policy": {
+    "alarm_threshold_selection": "maximise macro F1 subject to healthy false-positive rate <= 0.10 on the deterministic calibration-segment subset",
+    "high_threshold_selection": "conservative presentation boundary for near-maximum normalised evidence; it is not a calibrated failure probability"
+  },
+  "source_evidence": {
+    "results": "ttm-related/outputs/synthetic_eval_results_e5_lr5e-5.json",
+    "calibration_report": "ttm-related/outputs/risk_threshold_calibration_e5_lr5e-5.md",
+    "model_artifact": "ttm-related/outputs/ttm_finetuned_e5_lr5e-5/model",
+    "limitations": "Synthetic perturbations only; one held-out healthy segment still receives risk 1.0, so this policy is provisional and must not be represented as real-fault or safety validation."
+  },
+  "data_layer_registry_reconciliation": {
+    "path": "data_layer/calibration/calibration_registry.v1.json",
+    "calibration_version": "calibration.v1",
+    "status": "frozen",
+    "immutable": true,
+    "scope": "The registry remains unmodified. Its physical proxy rules and feature transforms are evidence inputs to Model Layer scoring; this file only maps the detector's normalised risk_score to Low/Medium/High."
+  }
+}

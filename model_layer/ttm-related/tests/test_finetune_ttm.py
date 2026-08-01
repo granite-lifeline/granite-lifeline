@@ -13,6 +13,7 @@ from model.finetune_ttm import (  # noqa: E402
     build_forecast_dataset,
     filter_by_segments,
     flatten_segment_ids,
+    validate_segment_contiguity,
     sample_shapes,
 )
 from model.kit_residual_detector import (  # noqa: E402
@@ -84,3 +85,28 @@ def test_build_forecast_dataset_rejects_non_numeric_model_signal():
             prediction_length=DEFAULT_PREDICTION_LENGTH,
             stride=DEFAULT_PREDICTION_LENGTH,
         )
+
+
+def test_segment_contiguity_rejects_missing_row_inside_segment():
+    frame = make_multi_segment_frame(
+        [("trip_001", "trip_001_seg_001", 700)]
+    ).drop(index=20)
+    with pytest.raises(ValueError, match="row_in_segment"):
+        validate_segment_contiguity(frame, "train")
+
+
+def test_forecast_dataset_handles_schema_v1_signal_nans_with_masks():
+    frame = make_multi_segment_frame(
+        [("trip_001", "trip_001_seg_001", 700)]
+    )
+    frame.loc[10, "maf"] = float("nan")
+    dataset = build_forecast_dataset(
+        frame,
+        context_length=DEFAULT_CONTEXT_LENGTH,
+        prediction_length=DEFAULT_PREDICTION_LENGTH,
+        stride=DEFAULT_PREDICTION_LENGTH,
+    )
+    sample = dataset[0]
+    maf_index = MODEL_SIGNALS.index("maf")
+    assert sample["past_observed_mask"][10, maf_index].item() == 0
+    assert sample["past_values"][10, maf_index].isfinite().item()
