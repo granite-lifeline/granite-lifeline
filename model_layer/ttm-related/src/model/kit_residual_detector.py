@@ -53,6 +53,7 @@ try:
         append_history,
     )
     from model.validate_output import validate_output
+    from model.risk_level_calibration import risk_level
 except ImportError:  # direct script run: src/ not on sys.path
     from input_validation import (
         PRODUCTION_FEATURE_REQUIRED_COLUMNS,
@@ -70,6 +71,7 @@ except ImportError:  # direct script run: src/ not on sys.path
         append_history,
     )
     from validate_output import validate_output
+    from risk_level_calibration import risk_level
 
 
 MODEL_PATH = "ibm-granite/granite-timeseries-ttm-r2"
@@ -730,14 +732,6 @@ def clipped_scale(value: float, low: float, high: float) -> float:
     if value >= high:
         return 1.0
     return float((value - low) / (high - low))
-
-
-def risk_level(risk_score: float) -> str:
-    if risk_score < 0.3:
-        return "Low"
-    if risk_score <= 0.7:
-        return "Medium"
-    return "High"
 
 
 def window_feature_values(future: pd.DataFrame) -> dict[str, float]:
