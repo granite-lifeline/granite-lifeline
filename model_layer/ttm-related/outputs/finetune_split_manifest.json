@@ -1,23 +1,18 @@
 {
-  "generated_at": "2026-07-14T21:00:28.855581+00:00",
-  "input_file": "data_layer/feature_engineering/feature_dataset.csv",
-  "labels_file": "data_layer/proxy_design/proxy_training_labels.csv",
+  "generated_at": "2026-07-20T14:55:53.985070+00:00",
+  "schema_version": "feature_schema.v1",
+  "input_file": "ttm-related/data/production_feature_manifest/production_features.csv",
   "min_rows": 700,
   "train_fraction": 0.8,
   "seed": 42,
-  "label_columns": [
-    "final_label_accelerator_pedal_sensor",
-    "final_label_air_intake_maf_anomaly",
-    "final_label_cooling_degradation",
-    "final_label_electronic_throttle_tracking_fault",
-    "final_label_idle_speed_control_or_surge_degradation",
-    "final_label_intake_air_temperature_sensor_or_heat_soak_fault",
-    "final_label_map_load_signal_plausibility_fault"
-  ],
+  "quality_gate": {
+    "condition_quality_flags": "OK",
+    "condition_confidence": "high"
+  },
   "n_trips_total": 81,
-  "n_trips_eligible": 80,
+  "n_trips_eligible": 59,
   "n_segments_total": 118,
-  "n_segments_eligible": 83,
+  "n_segments_eligible": 61,
   "segment_row_counts": {
     "trip_0001_seg_001": 3946,
     "trip_0002_seg_001": 3323,
@@ -139,258 +134,200 @@
     "trip_0081_seg_001": 1128
   },
   "train_trips": {
-    "trip_0051": [
-      "trip_0051_seg_001"
+    "trip_0062": [
+      "trip_0062_seg_001"
     ],
-    "trip_0065": [
-      "trip_0065_seg_001"
+    "trip_0035": [
+      "trip_0035_seg_001"
     ],
-    "trip_0025": [
-      "trip_0025_seg_001"
-    ],
-    "trip_0052": [
-      "trip_0052_seg_001"
-    ],
-    "trip_0032": [
-      "trip_0032_seg_001"
-    ],
-    "trip_0057": [
-      "trip_0057_seg_001"
-    ],
-    "trip_0009": [
-      "trip_0009_seg_001"
-    ],
-    "trip_0048": [
-      "trip_0048_seg_001"
-    ],
-    "trip_0059": [
-      "trip_0059_seg_001"
-    ],
-    "trip_0041": [
-      "trip_0041_seg_001"
+    "trip_0076": [
+      "trip_0076_seg_001"
     ],
     "trip_0017": [
       "trip_0017_seg_001"
     ],
-    "trip_0074": [
-      "trip_0074_seg_001"
+    "trip_0024": [
+      "trip_0024_seg_001"
     ],
-    "trip_0061": [
-      "trip_0061_seg_001"
+    "trip_0028": [
+      "trip_0028_seg_001"
     ],
-    "trip_0040": [
-      "trip_0040_seg_001"
+    "trip_0077": [
+      "trip_0077_seg_001"
     ],
-    "trip_0044": [
-      "trip_0044_seg_001"
+    "trip_0080": [
+      "trip_0080_seg_001"
     ],
-    "trip_0064": [
-      "trip_0064_seg_001"
+    "trip_0048": [
+      "trip_0048_seg_001"
     ],
     "trip_0027": [
       "trip_0027_seg_001"
     ],
-    "trip_0058": [
-      "trip_0058_seg_001"
+    "trip_0013": [
+      "trip_0013_seg_012"
     ],
-    "trip_0078": [
-      "trip_0078_seg_001"
-    ],
-    "trip_0002": [
-      "trip_0002_seg_001"
-    ],
-    "trip_0072": [
-      "trip_0072_seg_001"
-    ],
-    "trip_0055": [
-      "trip_0055_seg_001"
-    ],
-    "trip_0020": [
-      "trip_0020_seg_001"
-    ],
-    "trip_0069": [
-      "trip_0069_seg_001"
-    ],
-    "trip_0021": [
-      "trip_0021_seg_001"
-    ],
-    "trip_0022": [
-      "trip_0022_seg_001"
+    "trip_0064": [
+      "trip_0064_seg_001"
     ],
     "trip_0045": [
       "trip_0045_seg_001",
       "trip_0045_seg_002"
     ],
-    "trip_0049": [
-      "trip_0049_seg_001"
+    "trip_0052": [
+      "trip_0052_seg_001"
     ],
-    "trip_0035": [
-      "trip_0035_seg_001"
+    "trip_0044": [
+      "trip_0044_seg_001"
     ],
-    "trip_0063": [
-      "trip_0063_seg_001"
-    ],
-    "trip_0034": [
-      "trip_0034_seg_001"
-    ],
-    "trip_0008": [
-      "trip_0008_seg_005"
-    ],
-    "trip_0067": [
-      "trip_0067_seg_002"
-    ],
-    "trip_0003": [
-      "trip_0003_seg_001"
-    ],
-    "trip_0018": [
-      "trip_0018_seg_001"
-    ],
-    "trip_0038": [
-      "trip_0038_seg_001"
-    ],
-    "trip_0024": [
-      "trip_0024_seg_001"
-    ],
-    "trip_0042": [
-      "trip_0042_seg_001"
-    ],
-    "trip_0026": [
-      "trip_0026_seg_001"
-    ],
-    "trip_0006": [
-      "trip_0006_seg_001"
-    ],
-    "trip_0007": [
-      "trip_0007_seg_001"
-    ],
-    "trip_0062": [
-      "trip_0062_seg_001"
-    ],
-    "trip_0075": [
-      "trip_0075_seg_001"
-    ],
-    "trip_0010": [
-      "trip_0010_seg_001"
-    ],
-    "trip_0054": [
-      "trip_0054_seg_001"
-    ],
-    "trip_0023": [
-      "trip_0023_seg_001",
-      "trip_0023_seg_002"
-    ],
-    "trip_0068": [
-      "trip_0068_seg_001"
-    ],
-    "trip_0060": [
-      "trip_0060_seg_001"
-    ],
-    "trip_0011": [
-      "trip_0011_seg_001"
-    ],
-    "trip_0050": [
-      "trip_0050_seg_001"
-    ],
-    "trip_0001": [
-      "trip_0001_seg_001"
-    ],
-    "trip_0053": [
-      "trip_0053_seg_002"
-    ],
-    "trip_0076": [
-      "trip_0076_seg_001"
-    ],
-    "trip_0039": [
-      "trip_0039_seg_001"
-    ],
-    "trip_0077": [
-      "trip_0077_seg_001"
-    ],
-    "trip_0081": [
-      "trip_0081_seg_001"
-    ],
-    "trip_0028": [
-      "trip_0028_seg_001"
-    ],
-    "trip_0036": [
-      "trip_0036_seg_001"
-    ],
-    "trip_0046": [
-      "trip_0046_seg_001"
-    ],
-    "trip_0043": [
-      "trip_0043_seg_001"
-    ],
-    "trip_0047": [
-      "trip_0047_seg_001"
-    ],
-    "trip_0013": [
-      "trip_0013_seg_012"
-    ],
-    "trip_0079": [
-      "trip_0079_seg_003"
-    ],
-    "trip_0070": [
-      "trip_0070_seg_001"
-    ]
-  },
-  "validation_trips": {
-    "trip_0066": [
-      "trip_0066_seg_001"
-    ],
-    "trip_0031": [
-      "trip_0031_seg_001"
-    ],
-    "trip_0029": [
-      "trip_0029_seg_001"
-    ],
-    "trip_0073": [
-      "trip_0073_seg_001"
-    ],
-    "trip_0080": [
-      "trip_0080_seg_001"
-    ],
-    "trip_0005": [
-      "trip_0005_seg_001"
-    ],
-    "trip_0056": [
-      "trip_0056_seg_001"
-    ],
-    "trip_0012": [
-      "trip_0012_seg_001"
-    ],
-    "trip_0071": [
-      "trip_0071_seg_001"
-    ],
-    "trip_0014": [
-      "trip_0014_seg_001"
-    ],
-    "trip_0019": [
-      "trip_0019_seg_001"
-    ],
-    "trip_0030": [
-      "trip_0030_seg_001"
-    ],
-    "trip_0033": [
-      "trip_0033_seg_001"
-    ],
-    "trip_0037": [
-      "trip_0037_seg_001"
+    "trip_0059": [
+      "trip_0059_seg_001"
     ],
     "trip_0004": [
       "trip_0004_seg_001"
     ],
+    "trip_0032": [
+      "trip_0032_seg_001"
+    ],
+    "trip_0067": [
+      "trip_0067_seg_002"
+    ],
+    "trip_0005": [
+      "trip_0005_seg_001"
+    ],
+    "trip_0043": [
+      "trip_0043_seg_001"
+    ],
     "trip_0016": [
       "trip_0016_seg_002",
       "trip_0016_seg_003"
+    ],
+    "trip_0055": [
+      "trip_0055_seg_001"
+    ],
+    "trip_0033": [
+      "trip_0033_seg_001"
+    ],
+    "trip_0081": [
+      "trip_0081_seg_001"
+    ],
+    "trip_0037": [
+      "trip_0037_seg_001"
+    ],
+    "trip_0001": [
+      "trip_0001_seg_001"
+    ],
+    "trip_0066": [
+      "trip_0066_seg_001"
+    ],
+    "trip_0038": [
+      "trip_0038_seg_001"
+    ],
+    "trip_0074": [
+      "trip_0074_seg_001"
+    ],
+    "trip_0026": [
+      "trip_0026_seg_001"
+    ],
+    "trip_0042": [
+      "trip_0042_seg_001"
+    ],
+    "trip_0054": [
+      "trip_0054_seg_001"
+    ],
+    "trip_0040": [
+      "trip_0040_seg_001"
+    ],
+    "trip_0019": [
+      "trip_0019_seg_001"
+    ],
+    "trip_0051": [
+      "trip_0051_seg_001"
+    ],
+    "trip_0058": [
+      "trip_0058_seg_001"
+    ],
+    "trip_0047": [
+      "trip_0047_seg_001"
+    ],
+    "trip_0075": [
+      "trip_0075_seg_001"
+    ],
+    "trip_0020": [
+      "trip_0020_seg_001"
+    ],
+    "trip_0063": [
+      "trip_0063_seg_001"
+    ],
+    "trip_0079": [
+      "trip_0079_seg_003"
+    ],
+    "trip_0003": [
+      "trip_0003_seg_001"
+    ],
+    "trip_0041": [
+      "trip_0041_seg_001"
+    ],
+    "trip_0053": [
+      "trip_0053_seg_002"
+    ],
+    "trip_0007": [
+      "trip_0007_seg_001"
+    ],
+    "trip_0050": [
+      "trip_0050_seg_001"
+    ]
+  },
+  "validation_trips": {
+    "trip_0072": [
+      "trip_0072_seg_001"
+    ],
+    "trip_0060": [
+      "trip_0060_seg_001"
+    ],
+    "trip_0008": [
+      "trip_0008_seg_005"
+    ],
+    "trip_0078": [
+      "trip_0078_seg_001"
+    ],
+    "trip_0012": [
+      "trip_0012_seg_001"
+    ],
+    "trip_0021": [
+      "trip_0021_seg_001"
+    ],
+    "trip_0023": [
+      "trip_0023_seg_002"
+    ],
+    "trip_0025": [
+      "trip_0025_seg_001"
+    ],
+    "trip_0065": [
+      "trip_0065_seg_001"
+    ],
+    "trip_0002": [
+      "trip_0002_seg_001"
+    ],
+    "trip_0010": [
+      "trip_0010_seg_001"
+    ],
+    "trip_0057": [
+      "trip_0057_seg_001"
     ]
   },
   "excluded_segments": [
     {
+      "trip_id": "trip_0006",
+      "segment_id": "trip_0006_seg_001",
+      "rows": 2445,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
       "trip_id": "trip_0008",
       "segment_id": "trip_0008_seg_001",
       "rows": 515,
-      "reason": "below minimum length 700"
+      "reason": "below minimum length 700; 1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
     },
     {
       "trip_id": "trip_0008",
@@ -433,6 +370,18 @@
       "segment_id": "trip_0008_seg_009",
       "rows": 1,
       "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0009",
+      "segment_id": "trip_0009_seg_001",
+      "rows": 3523,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
+      "trip_id": "trip_0011",
+      "segment_id": "trip_0011_seg_001",
+      "rows": 3702,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
     },
     {
       "trip_id": "trip_0013",
@@ -507,10 +456,16 @@
       "reason": "below minimum length 700"
     },
     {
+      "trip_id": "trip_0014",
+      "segment_id": "trip_0014_seg_001",
+      "rows": 1269,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
       "trip_id": "trip_0015",
       "segment_id": "trip_0015_seg_001",
       "rows": 593,
-      "reason": "below minimum length 700"
+      "reason": "below minimum length 700; 1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
     },
     {
       "trip_id": "trip_0015",
@@ -552,13 +507,79 @@
       "trip_id": "trip_0016",
       "segment_id": "trip_0016_seg_001",
       "rows": 689,
-      "reason": "below minimum length 700"
+      "reason": "below minimum length 700; 1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
+      "trip_id": "trip_0018",
+      "segment_id": "trip_0018_seg_001",
+      "rows": 4033,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
+      "trip_id": "trip_0022",
+      "segment_id": "trip_0022_seg_001",
+      "rows": 1186,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
+      "trip_id": "trip_0023",
+      "segment_id": "trip_0023_seg_001",
+      "rows": 4280,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
+      "trip_id": "trip_0029",
+      "segment_id": "trip_0029_seg_001",
+      "rows": 2354,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
+      "trip_id": "trip_0030",
+      "segment_id": "trip_0030_seg_001",
+      "rows": 2793,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
+      "trip_id": "trip_0031",
+      "segment_id": "trip_0031_seg_001",
+      "rows": 4303,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
+      "trip_id": "trip_0034",
+      "segment_id": "trip_0034_seg_001",
+      "rows": 3006,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
+      "trip_id": "trip_0036",
+      "segment_id": "trip_0036_seg_001",
+      "rows": 3293,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
+      "trip_id": "trip_0039",
+      "segment_id": "trip_0039_seg_001",
+      "rows": 2317,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
     },
     {
       "trip_id": "trip_0045",
       "segment_id": "trip_0045_seg_003",
       "rows": 2,
       "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0046",
+      "segment_id": "trip_0046_seg_001",
+      "rows": 1206,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
+      "trip_id": "trip_0049",
+      "segment_id": "trip_0049_seg_001",
+      "rows": 2050,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
     },
     {
       "trip_id": "trip_0053",
@@ -573,16 +594,58 @@
       "reason": "below minimum length 700"
     },
     {
+      "trip_id": "trip_0056",
+      "segment_id": "trip_0056_seg_001",
+      "rows": 4820,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
       "trip_id": "trip_0057",
       "segment_id": "trip_0057_seg_002",
       "rows": 6,
       "reason": "below minimum length 700"
     },
     {
+      "trip_id": "trip_0061",
+      "segment_id": "trip_0061_seg_001",
+      "rows": 2922,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
       "trip_id": "trip_0067",
       "segment_id": "trip_0067_seg_001",
       "rows": 239,
       "reason": "below minimum length 700"
+    },
+    {
+      "trip_id": "trip_0068",
+      "segment_id": "trip_0068_seg_001",
+      "rows": 3558,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
+      "trip_id": "trip_0069",
+      "segment_id": "trip_0069_seg_001",
+      "rows": 5988,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
+      "trip_id": "trip_0070",
+      "segment_id": "trip_0070_seg_001",
+      "rows": 1298,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
+      "trip_id": "trip_0071",
+      "segment_id": "trip_0071_seg_001",
+      "rows": 1627,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
+    },
+    {
+      "trip_id": "trip_0073",
+      "segment_id": "trip_0073_seg_001",
+      "rows": 3215,
+      "reason": "1 rows flagged unhealthy by condition_quality_flags/condition_confidence"
     },
     {
       "trip_id": "trip_0079",
