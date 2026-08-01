@@ -51,6 +51,11 @@ try:
     from model.risk_history import (
         DEFAULT_HISTORY_PATH,
         append_history,
+        load_history,
+    )
+    from model.failure_estimation import (
+        add_estimate_to_output,
+        estimate_from_history,
     )
     from model.validate_output import validate_output
     from model.risk_level_calibration import risk_level
@@ -69,6 +74,11 @@ except ImportError:  # direct script run: src/ not on sys.path
     from risk_history import (
         DEFAULT_HISTORY_PATH,
         append_history,
+        load_history,
+    )
+    from failure_estimation import (
+        add_estimate_to_output,
+        estimate_from_history,
     )
     from validate_output import validate_output
     from risk_level_calibration import risk_level
@@ -976,6 +986,34 @@ def run_detector(args: argparse.Namespace) -> None:
         f"\nRisk history: {written} new record(s) -> "
         f"{args.history_file}"
     )
+
+    estimate = estimate_from_history(load_history(args.history_file))
+    if args.batch:
+        result["summary"] = add_estimate_to_output(
+            result["summary"], estimate
+        )
+        result["windows"] = [
+            {
+                **window,
+                **add_estimate_to_output(window, estimate),
+            }
+            for window in result["windows"]
+        ]
+        for window in result["windows"]:
+            errors = validate_output(window)
+            if errors:
+                raise ValueError(
+                    "Output validation failed after failure estimation: "
+                    + "; ".join(errors)
+                )
+    else:
+        result = add_estimate_to_output(result, estimate)
+        errors = validate_output(result)
+        if errors:
+            raise ValueError(
+                "Output validation failed after failure estimation: "
+                + "; ".join(errors)
+            )
 
     print("\nInterface JSON")
     print("-" * 44)
