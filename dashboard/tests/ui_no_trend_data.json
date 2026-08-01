@@ -3,20 +3,26 @@
     "timestamp": "2026-06-16T12:00:00Z",
     "risk_score": 0.72,
     "risk_level": "Medium",
-    "component": "cooling_system_stress",
-    "prediction_confidence": 0.80,
+    "component": "cooling_degradation",
+    "prediction_confidence": 0.8,
     "key_signals": [
       {
         "feature": "coolant_temp",
         "value": 101.0,
         "unit": "°C",
-        "reference_range": [90.0, 95.0]
+        "reference_range": [
+          90.0,
+          95.0
+        ]
       },
       {
-        "feature": "coolant_slope",
+        "feature": "ect_rate_180s",
         "value": 2.8,
         "unit": "°C/min",
-        "reference_range": [0.0, 2.0]
+        "reference_range": [
+          0.0,
+          2.0
+        ]
       }
     ],
     "risk_history": [],
@@ -26,6 +32,11 @@
       "Monitor the coolant level.",
       "Check for cooling system issues.",
       "Continue monitoring to build trend history."
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": [
+      "Risk history is unavailable in this fixture."
     ]
   },
   {
@@ -33,13 +44,16 @@
     "risk_score": 0.58,
     "risk_level": "Medium",
     "component": "air_intake_maf_anomaly",
-    "prediction_confidence": 0.70,
+    "prediction_confidence": 0.7,
     "key_signals": [
       {
         "feature": "maf",
         "value": 24.5,
         "unit": "g/s",
-        "reference_range": [10.0, 22.0]
+        "reference_range": [
+          10.0,
+          22.0
+        ]
       }
     ],
     "anomaly_description": "The airflow reading is above its reference range. No trend data is available yet.",
@@ -48,6 +62,9 @@
       "Check the air filter.",
       "Monitor for changes.",
       "Continue monitoring to establish baseline."
-    ]
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
   }
 ]

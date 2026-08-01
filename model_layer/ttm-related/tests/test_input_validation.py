@@ -105,7 +105,7 @@ class TestValidateSensorRanges:
 def make_future_df(rows=20, pedal_delta=None):
     """Healthy future window for risk/JSON tests.
 
-    Columns follow Group 1's feature_dataset.csv (INTERFACE.md
+    Columns follow production_features.csv v1 (INTERFACE.md
     Section 1) subset the detector reads. pedal_delta=None omits
     the pedal channels entirely (degraded-input case).
     """
@@ -120,9 +120,15 @@ def make_future_df(rows=20, pedal_delta=None):
             "map": np.full(rows, 110.0),
             "maf": np.full(rows, 20.0),
             "tps": np.full(rows, 30.0),
-            "coolant_slope": np.zeros(rows),
-            "coolant_stability": np.zeros(rows),
-            "maf_map_cohesion": np.zeros(rows),
+            "ect_rate_180s": np.zeros(rows),
+            "maf_integral_180s": np.full(rows, 1000.0),
+            "speed_density_maf_residual": np.zeros(rows),
+            "intake_ambient_delta": np.full(rows, 13.0),
+            "intake_temp_stability": np.full(rows, 0.5),
+            "map_range_60s": np.full(rows, 8.0),
+            "pedal_slope": np.zeros(rows),
+            "rpm_slope": np.zeros(rows),
+            "pedal_mapping_residual": np.zeros(rows),
         }
     )
     if pedal_delta is not None:
@@ -234,7 +240,7 @@ class TestBuildInterfaceJson:
         )
         assert result["notes"] == [note]
 
-    def test_cooling_key_signals_include_stability(self):
+    def test_cooling_key_signals_include_b_class_context(self):
         result = self.build(
             make_future_df(), "cooling_degradation", notes=[]
         )
@@ -242,8 +248,8 @@ class TestBuildInterfaceJson:
             signal["feature"] for signal in result["key_signals"]
         ]
         assert "coolant_temp" in features
-        assert "coolant_slope" in features
-        assert "coolant_stability" in features
+        assert "ect_rate_180s" in features
+        assert "maf_integral_180s" in features
 
     def test_pedal_key_signals_when_pedal_anomaly(self):
         result = self.build(
@@ -272,7 +278,7 @@ class TestLoadGroup1Features:
         from group1_fixtures import write_group1_csv
         from model.kit_residual_detector import load_group1_features
 
-        csv_path = write_group1_csv(tmp_path / "feature_dataset.csv")
+        csv_path = write_group1_csv(tmp_path / "production_features.csv")
         df = load_group1_features(csv_path)
         assert "rpm" in df.columns
         assert pd.api.types.is_datetime64_any_dtype(df["timestamp"])
@@ -282,7 +288,7 @@ class TestLoadGroup1Features:
         from model.kit_residual_detector import load_group1_features
 
         csv_path = write_group1_csv(
-            tmp_path / "feature_dataset.csv",
+            tmp_path / "production_features.csv",
             wrong_type_columns=["rpm_slope"],
         )
         with pytest.raises(ValueError) as excinfo:
@@ -290,20 +296,20 @@ class TestLoadGroup1Features:
         assert "rpm_slope" in str(excinfo.value)
 
     def test_policy_nan_columns_are_tolerated(self, tmp_path):
-        # Group 1 policy NaNs (feature_dataset_metadata.json):
-        # event-only and rolling features are NaN by design and
+        # B-class policy NaNs:
+        # episode/window features are NaN by design and
         # must load without error.
         from group1_fixtures import make_group1_frame
         from model.kit_residual_detector import load_group1_features
 
         frame = make_group1_frame(rows=10)
-        frame["pedal_to_throttle_delay"] = np.nan
-        frame["idle_rpm_stability"] = np.nan
-        frame.loc[:3, "coolant_stability"] = np.nan
-        csv_path = tmp_path / "feature_dataset.csv"
+        frame["engine_start_episode_id"] = pd.NA
+        frame["elapsed_since_engine_start"] = np.nan
+        frame.loc[:3, "maf_integral_180s"] = np.nan
+        csv_path = tmp_path / "production_features.csv"
         frame.to_csv(csv_path, index=False)
         df = load_group1_features(csv_path)
-        assert df["pedal_to_throttle_delay"].isna().all()
+        assert df["elapsed_since_engine_start"].isna().all()
 
     def test_implausible_value_repaired_and_noted(self, tmp_path):
         from group1_fixtures import write_group1_csv
@@ -313,7 +319,7 @@ class TestLoadGroup1Features:
         )
 
         csv_path = write_group1_csv(
-            tmp_path / "feature_dataset.csv", rows=30
+            tmp_path / "production_features.csv", rows=30
         )
         df = load_group1_features(csv_path)
         df.loc[5, "rpm"] = -900.0

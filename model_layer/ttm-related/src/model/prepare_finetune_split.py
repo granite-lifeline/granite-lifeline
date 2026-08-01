@@ -2,28 +2,37 @@
 Story 6 data preparation: segment eligibility check and seeded
 train/validation split on Group 1's data (Lucca subtasks).
 
-Input is Group 1's `feature_dataset.csv`, keyed by `trip_id` /
-`segment_id` / `row_in_segment`. A segment is eligible when it has
-at least 700 contiguous rows (above the TTM 512-context +
-96-prediction window, windows must not cross segment boundaries)
-AND every row is healthy per the `final_label_*` columns in Group
-1's `proxy_training_labels.csv`. A segment containing any unhealthy
-row is excluded whole — individual rows are never dropped, because
-that would break the row contiguity the TTM windows require.
+Input is Group 1's schema v1 `production_features.csv`, keyed by
+`trip_id` / `segment_id` / `row_in_segment`. A segment is eligible
+when it has at least 700 contiguous rows (above the TTM 512-context
++ 96-prediction window, windows must not cross segment boundaries)
+AND every row clears the data-quality gate: `condition_quality_flags
+== "OK"` and `condition_confidence == "high"` (two views of the same
+"all four critical fields present" signal, see
+data_layer/operating_condition_statistics/operating_condition_analysis.md
+section 2.3 — checking both is cheap defense-in-depth). A segment
+containing any row that fails the gate is excluded whole —
+individual rows are never dropped, because that would break the row
+contiguity the TTM windows require.
 
-Labels are joined to the feature rows on `timestamp`, which is
-globally unique (one vehicle, chronological trips at 1 Hz) — NOT on
-trip/segment ids, because Group 1's trip numbering drifted between
-the two deliveries (21 trips renumbered in the 2026-07-12 drop, seen
-2026-07-14). `feature_dataset.csv`'s trip_id/segment_id values are
-authoritative; the ids inside the labels CSV are ignored.
+Group 1 has not shipped a fault-label file for schema v1 yet (the
+`proxy_training_labels.csv` replacement, `proxy_decisions.csv`,
+hasn't landed) — every row is still assumed healthy in the fault
+sense, same as before. The eligibility gate here is a data-quality
+gate, not a fault gate: it keeps rows with missing/degraded sensor
+readings out of the fine-tuning set. Revisit once `proxy_decisions.csv`
+ships.
 
 The 80/20 split is grouped by trip: all eligible segments of a trip
 land on the same side, so correlated segments of one drive cannot
 leak between train and validation. The split fraction therefore
 holds on trips, not segments or rows. Ray's fine-tuning script
-consumes the JSON manifest by filtering `feature_dataset.csv` on
-the listed segment ids. See docs: notes/user_stories.md Story 6.
+consumes the JSON manifest by filtering `production_features.csv` on
+the listed segment ids. The manifest's `input_file` is recorded
+relative to the repo root (posix separators) so the manifest is
+portable across machines — resolve it from your own repo root. See
+docs: notes/user_stories.md Story 6 and Story 7's schema v1
+adaptation (GL-318).
 """
 
 from __future__ import annotations
@@ -56,110 +65,52 @@ TRIP_COLUMN = "trip_id"
 SEGMENT_COLUMN = "segment_id"
 ROW_COLUMN = "row_in_segment"
 KEY_COLUMNS = [TRIP_COLUMN, SEGMENT_COLUMN, ROW_COLUMN]
-TIMESTAMP_COLUMN = "timestamp"
-LABEL_PREFIX = "final_label_"
+QUALITY_FLAGS_COLUMN = "condition_quality_flags"
+CONFIDENCE_COLUMN = "condition_confidence"
+OK_QUALITY_FLAG = "OK"
+HIGH_CONFIDENCE = "high"
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _TTM_RELATED_DIR = Path(__file__).resolve().parents[2]
 DEFAULT_INPUT = (
-    _REPO_ROOT / "data_layer" / "feature_engineering"
-    / "feature_dataset.csv"
-)
-DEFAULT_LABELS = (
-    _REPO_ROOT / "data_layer" / "proxy_design"
-    / "proxy_training_labels.csv"
+    _TTM_RELATED_DIR / "data" / "production_feature_manifest"
+    / "production_features.csv"
 )
 DEFAULT_OUTPUT = (
     _TTM_RELATED_DIR / "outputs" / "finetune_split_manifest.json"
 )
 
 
+def repo_relative(path: str | Path) -> str:
+    """Path as repo-root-relative posix string; as-given if outside.
+
+    The manifest is handed to Ray, whose checkout lives at a
+    different absolute path, so recorded paths must not embed this
+    machine's directory layout.
+    """
+    resolved = Path(path).resolve()
+    try:
+        return resolved.relative_to(_REPO_ROOT).as_posix()
+    except ValueError:
+        return str(path)
+
+
 def load_key_columns(csv_path: Path) -> pd.DataFrame:
-    """Load only the trip/segment/row key columns of the feature CSV.
+    """Load only the trip/segment/row key and quality columns.
 
     The header is validated against the full Group 1 interface first
     (catches a wrong or stale file cheaply), but only the key and
-    timestamp columns are read into memory — the split never needs
-    the ~40 signal and feature columns of the ~96 MB file.
+    data-quality columns are read into memory — the split never needs
+    the other ~40 signal and feature columns of the ~96 MB file.
     """
     header = pd.read_csv(csv_path, nrows=0)
     validate_required_columns(
         header.columns, GROUP1_REQUIRED_COLUMNS, str(csv_path)
     )
     return pd.read_csv(
-        csv_path, usecols=KEY_COLUMNS + [TIMESTAMP_COLUMN]
-    )
-
-
-def find_label_columns(columns: Sequence[str]) -> list[str]:
-    """Discover `final_label_*` columns by prefix, sorted.
-
-    Never hardcode the anomaly-type list: the Data Layer adds and
-    removes proxy types between deliveries (e.g. the electronic
-    throttle type was dropped on 2026-07-13).
-    """
-    labels = sorted(
-        column for column in columns
-        if str(column).startswith(LABEL_PREFIX)
-    )
-    if not labels:
-        raise ValueError(
-            f"No columns with prefix '{LABEL_PREFIX}' found; is this "
-            "really Group 1's proxy_training_labels.csv?"
-        )
-    return labels
-
-
-def load_segment_labels(csv_path: Path) -> pd.DataFrame:
-    """Load timestamps plus `final_label_*` columns only.
-
-    The labels CSV's own trip/segment ids are deliberately NOT read:
-    Group 1's trip numbering is not stable across deliveries, so the
-    row identity is the timestamp and the segment ids come from the
-    feature frame after the join.
-    """
-    header = pd.read_csv(csv_path, nrows=0)
-    validate_required_columns(
-        header.columns, [TIMESTAMP_COLUMN], str(csv_path)
-    )
-    label_columns = find_label_columns(header.columns)
-    return pd.read_csv(
         csv_path,
-        usecols=[TIMESTAMP_COLUMN] + label_columns,
+        usecols=KEY_COLUMNS + [QUALITY_FLAGS_COLUMN, CONFIDENCE_COLUMN],
     )
-
-
-def validate_label_alignment(
-    features: pd.DataFrame, labels: pd.DataFrame
-) -> None:
-    """Fail loudly unless the two frames cover identical rows.
-
-    The labels CSV must mirror the feature CSV row-for-row on the
-    timestamp key; a silent mismatch would let unhealthy rows slip
-    into training unlabelled.
-    """
-    feature_keys = pd.Index(features[TIMESTAMP_COLUMN])
-    label_keys = pd.Index(labels[TIMESTAMP_COLUMN])
-    for name, keys in (
-        ("feature", feature_keys), ("labels", label_keys)
-    ):
-        if keys.duplicated().any():
-            sample = keys[keys.duplicated()][:5].tolist()
-            raise ValueError(
-                f"Duplicate timestamp keys in the {name} frame, "
-                f"e.g. {sample}"
-            )
-    if len(feature_keys) != len(label_keys):
-        raise ValueError(
-            f"Row count mismatch: {len(feature_keys)} feature rows "
-            f"vs {len(label_keys)} label rows"
-        )
-    difference = feature_keys.symmetric_difference(label_keys)
-    if len(difference):
-        raise ValueError(
-            f"Feature and label timestamps differ on "
-            f"{len(difference)} rows, e.g. {difference[:5].tolist()}"
-        )
 
 
 def segment_summary(features: pd.DataFrame) -> pd.DataFrame:
@@ -184,19 +135,20 @@ def segment_summary(features: pd.DataFrame) -> pd.DataFrame:
     return summary
 
 
-def unhealthy_segments(labels: pd.DataFrame) -> dict[str, int]:
-    """Count unhealthy rows per segment from `final_label_*`.
+def unhealthy_segments(features: pd.DataFrame) -> dict[str, int]:
+    """Count data-quality-gate failures per segment.
 
-    Expects a frame carrying the authoritative `segment_id` (i.e.
-    the feature frame merged with the label columns on timestamp).
-    A row is unhealthy when any label differs from 0; NaN labels
-    count as unhealthy (fail-safe: unlabelled rows must not be
-    trained on as healthy). Only flagged segments are returned.
+    A row fails the gate when `condition_quality_flags != "OK"` or
+    `condition_confidence != "high"` (fail-safe: a row with missing
+    or degraded sensor readings must not be trained on as healthy).
+    Only flagged segments are returned.
     """
-    label_columns = find_label_columns(labels.columns)
-    flagged = labels[label_columns].ne(0).any(axis=1)
+    flagged = (
+        features[QUALITY_FLAGS_COLUMN].ne(OK_QUALITY_FLAG)
+        | features[CONFIDENCE_COLUMN].ne(HIGH_CONFIDENCE)
+    )
     counts = (
-        labels.loc[flagged].groupby(SEGMENT_COLUMN).size()
+        features.loc[flagged].groupby(SEGMENT_COLUMN).size()
     )
     return {
         str(segment): int(count)
@@ -230,7 +182,7 @@ def partition_segments(
         if segment in unhealthy:
             reasons.append(
                 f"{unhealthy[segment]} rows flagged unhealthy by "
-                "final_label_*"
+                "condition_quality_flags/condition_confidence"
             )
         if reasons:
             excluded.append(
@@ -265,7 +217,7 @@ def split_trips(
     if not trips:
         raise ValueError(
             "No eligible trips to split; check the minimum-length "
-            "filter, the final_label_* filter and the input CSV"
+            "filter, the data-quality gate and the input CSV"
         )
     random.Random(seed).shuffle(trips)
     n_train = floor(len(trips) * train_fraction)
@@ -281,18 +233,14 @@ def split_trips(
 
 def build_manifest(
     features: pd.DataFrame,
-    labels: pd.DataFrame,
     input_file: str | Path,
-    labels_file: str | Path,
     min_rows: int = DEFAULT_MIN_ROWS,
     train_fraction: float = DEFAULT_TRAIN_FRACTION,
     seed: int = DEFAULT_SEED,
 ) -> dict:
     """Build the train/validation split record for Ray's trainer."""
-    validate_label_alignment(features, labels)
     summary = segment_summary(features)
-    joined = features.merge(labels, on=TIMESTAMP_COLUMN)
-    unhealthy = unhealthy_segments(joined)
+    unhealthy = unhealthy_segments(features)
     eligible, excluded = partition_segments(
         summary, unhealthy, min_rows
     )
@@ -310,12 +258,15 @@ def build_manifest(
     )
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "schema_version": "feature_schema.v1",
         "input_file": str(input_file),
-        "labels_file": str(labels_file),
         "min_rows": min_rows,
         "train_fraction": train_fraction,
         "seed": seed,
-        "label_columns": find_label_columns(labels.columns),
+        "quality_gate": {
+            QUALITY_FLAGS_COLUMN: OK_QUALITY_FLAG,
+            CONFIDENCE_COLUMN: HIGH_CONFIDENCE,
+        },
         "n_trips_total": int(features[TRIP_COLUMN].nunique()),
         "n_trips_eligible": len(eligible),
         "n_segments_total": len(summary),
@@ -338,13 +289,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--input", type=Path, default=DEFAULT_INPUT,
-        help="Group 1 feature_dataset.csv keyed by trip/segment id",
-    )
-    parser.add_argument(
-        "--labels", type=Path, default=DEFAULT_LABELS,
         help=(
-            "Group 1 proxy_training_labels.csv with final_label_* "
-            "columns"
+            "Group 1 production_features.csv (schema v1) keyed by "
+            "trip/segment id"
         ),
     )
     parser.add_argument(
@@ -369,9 +316,9 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     features = load_key_columns(args.input)
-    labels = load_segment_labels(args.labels)
     manifest = build_manifest(
-        features, labels, args.input, args.labels,
+        features,
+        repo_relative(args.input),
         args.min_rows, args.train_fraction, args.seed,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)

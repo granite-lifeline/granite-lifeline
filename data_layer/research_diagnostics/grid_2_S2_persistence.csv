@@ -1,0 +1,5 @@
+candidate_persistence_s,trips_triggered,total_trips,trigger_pct,longest_healthy_run_s,margin_s
+5,0,73,0.0,4,1
+10,0,73,0.0,4,6
+15,0,73,0.0,4,11
+30,0,73,0.0,4,26

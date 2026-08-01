@@ -3,14 +3,17 @@
     "timestamp": "2026-06-16T12:00:00Z",
     "risk_score": 0.88,
     "risk_level": "High",
-    "component": "cooling_system_stress",
-    "prediction_confidence": 0.90,
+    "component": "cooling_degradation",
+    "prediction_confidence": 0.9,
     "key_signals": [
       {
         "feature": "coolant_temp",
         "value": 106.0,
         "unit": "°C",
-        "reference_range": [90.0, 95.0]
+        "reference_range": [
+          90.0,
+          95.0
+        ]
       }
     ],
     "risk_history": [
@@ -29,6 +32,11 @@
       "Stop driving if safe to do so.",
       "Check coolant level immediately.",
       "Seek mechanic attention urgently."
+    ],
+    "estimated_cycles_to_failure": 12,
+    "estimated_failure_probability": 0.76,
+    "notes": [
+      "Cooling estimate uses repaired coolant temperature readings."
     ]
   },
   {
@@ -42,7 +50,10 @@
         "feature": "oil_pressure",
         "value": 15.0,
         "unit": "psi",
-        "reference_range": [25.0, 65.0]
+        "reference_range": [
+          25.0,
+          65.0
+        ]
       }
     ],
     "risk_history": [
@@ -61,7 +72,10 @@
       "Stop the engine immediately.",
       "Check oil level.",
       "Do not drive until inspected by a mechanic."
-    ]
+    ],
+    "estimated_cycles_to_failure": 10,
+    "estimated_failure_probability": 0.81,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T11:00:00Z",
@@ -74,13 +88,16 @@
         "feature": "maf",
         "value": 25.0,
         "unit": "g/s",
-        "reference_range": [10.0, 22.0]
+        "reference_range": [
+          10.0,
+          22.0
+        ]
       }
     ],
     "risk_history": [
       {
         "timestamp": "2026-06-16T07:00:00Z",
-        "risk_score": 0.50
+        "risk_score": 0.5
       },
       {
         "timestamp": "2026-06-16T11:00:00Z",
@@ -92,7 +109,10 @@
     "recommended_action": [
       "Schedule inspection soon.",
       "Monitor for performance issues."
-    ]
+    ],
+    "estimated_cycles_to_failure": 28,
+    "estimated_failure_probability": 0.46,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T10:30:00Z",
@@ -105,7 +125,10 @@
         "feature": "fuel_pressure",
         "value": 325.0,
         "unit": "kPa",
-        "reference_range": [280.0, 310.0]
+        "reference_range": [
+          280.0,
+          310.0
+        ]
       }
     ],
     "risk_history": [
@@ -123,20 +146,26 @@
     "recommended_action": [
       "Monitor fuel system.",
       "Schedule inspection if persists."
-    ]
+    ],
+    "estimated_cycles_to_failure": 35,
+    "estimated_failure_probability": 0.38,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T10:00:00Z",
     "risk_score": 0.52,
     "risk_level": "Medium",
     "component": "transmission_temp",
-    "prediction_confidence": 0.70,
+    "prediction_confidence": 0.7,
     "key_signals": [
       {
         "feature": "trans_temp",
         "value": 95.0,
         "unit": "°C",
-        "reference_range": [70.0, 90.0]
+        "reference_range": [
+          70.0,
+          90.0
+        ]
       }
     ],
     "risk_history": [
@@ -154,20 +183,26 @@
     "recommended_action": [
       "Check transmission fluid level.",
       "Avoid heavy loads."
-    ]
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T09:00:00Z",
     "risk_score": 0.18,
     "risk_level": "Low",
     "component": "accelerator_pedal_sensor",
-    "prediction_confidence": 0.60,
+    "prediction_confidence": 0.6,
     "key_signals": [
       {
         "feature": "accel_pedal_d",
         "value": 32.0,
         "unit": "%",
-        "reference_range": [0.0, 100.0]
+        "reference_range": [
+          0.0,
+          100.0
+        ]
       }
     ],
     "risk_history": [
@@ -184,6 +219,9 @@
     "possible_cause": "No significant issue detected.",
     "recommended_action": [
       "Continue normal monitoring."
-    ]
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
   }
 ]

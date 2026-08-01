@@ -1,0 +1,9 @@
+{
+  "sub_check": "1-S1_T_reg_est",
+  "n_iterations": 1000,
+  "n_trips": 77,
+  "mean": 90.0,
+  "std": 0.0,
+  "ci_lower_2.5": 90.0,
+  "ci_upper_97.5": 90.0
+}

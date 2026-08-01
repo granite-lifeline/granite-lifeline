@@ -3,20 +3,26 @@
     "timestamp": "2026-06-16T12:00:00Z",
     "risk_score": 0.86,
     "risk_level": "High",
-    "component": "cooling_system_stress",
+    "component": "cooling_degradation",
     "prediction_confidence": 0.88,
     "key_signals": [
       {
         "feature": "coolant_temp",
         "value": 104.0,
         "unit": "°C",
-        "reference_range": [90.0, 95.0]
+        "reference_range": [
+          90.0,
+          95.0
+        ]
       },
       {
-        "feature": "coolant_slope",
+        "feature": "ect_rate_180s",
         "value": 3.4,
         "unit": "°C/min",
-        "reference_range": [0.0, 2.0]
+        "reference_range": [
+          0.0,
+          2.0
+        ]
       }
     ],
     "risk_history": [
@@ -34,7 +40,7 @@
       },
       {
         "timestamp": "2026-06-16T08:00:00Z",
-        "risk_score": 0.70
+        "risk_score": 0.7
       },
       {
         "timestamp": "2026-06-16T12:00:00Z",
@@ -47,6 +53,12 @@
       "Avoid heavy driving if it is safe to do so.",
       "Check the coolant level when the engine is cool.",
       "Ask a mechanic to inspect the cooling system as soon as possible."
+    ],
+    "estimated_cycles_to_failure": 15,
+    "estimated_failure_probability": 0.72,
+    "notes": [
+      "Coolant readings include repaired sensor gaps from the latest drive cycle.",
+      "Failure estimate may become more stable after more drive cycles."
     ]
   },
   {
@@ -60,19 +72,25 @@
         "feature": "maf",
         "value": 28.5,
         "unit": "g/s",
-        "reference_range": [10.0, 22.0]
+        "reference_range": [
+          10.0,
+          22.0
+        ]
       },
       {
         "feature": "map",
         "value": 82.0,
         "unit": "kPa",
-        "reference_range": [60.0, 90.0]
+        "reference_range": [
+          60.0,
+          90.0
+        ]
       }
     ],
     "risk_history": [
       {
         "timestamp": "2026-06-15T07:00:00Z",
-        "risk_score": 0.30
+        "risk_score": 0.3
       },
       {
         "timestamp": "2026-06-15T11:00:00Z",
@@ -80,7 +98,7 @@
       },
       {
         "timestamp": "2026-06-15T15:00:00Z",
-        "risk_score": 0.40
+        "risk_score": 0.4
       },
       {
         "timestamp": "2026-06-16T07:00:00Z",
@@ -97,7 +115,10 @@
       "Ask a mechanic to inspect the air intake system soon.",
       "Check whether the air filter needs cleaning or replacement.",
       "Keep watching for rough idling, poor acceleration, or warning lights."
-    ]
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T10:00:00Z",
@@ -110,13 +131,19 @@
         "feature": "accel_pedal_d",
         "value": 35.0,
         "unit": "%",
-        "reference_range": [0.0, 100.0]
+        "reference_range": [
+          0.0,
+          100.0
+        ]
       },
       {
         "feature": "accel_pedal_e",
         "value": 37.5,
         "unit": "%",
-        "reference_range": [0.0, 100.0]
+        "reference_range": [
+          0.0,
+          100.0
+        ]
       }
     ],
     "risk_history": [
@@ -130,11 +157,11 @@
       },
       {
         "timestamp": "2026-06-15T14:00:00Z",
-        "risk_score": 0.20
+        "risk_score": 0.2
       },
       {
         "timestamp": "2026-06-16T06:00:00Z",
-        "risk_score": 0.20
+        "risk_score": 0.2
       },
       {
         "timestamp": "2026-06-16T10:00:00Z",
@@ -146,6 +173,131 @@
     "recommended_action": [
       "Continue monitoring the dashboard.",
       "If the warning appears repeatedly, ask a mechanic to check the pedal sensor."
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
+  },
+  {
+    "timestamp": "2026-06-16T09:30:00Z",
+    "risk_score": 0.48,
+    "risk_level": "Medium",
+    "component": "intake_air_temperature_sensor_fault",
+    "prediction_confidence": 0.69,
+    "key_signals": [
+      {
+        "feature": "intake_air_temp",
+        "value": 58.0,
+        "unit": "°C",
+        "reference_range": [
+          15.0,
+          45.0
+        ]
+      },
+      {
+        "feature": "ambient_air_temp",
+        "value": 24.0,
+        "unit": "°C",
+        "reference_range": [
+          10.0,
+          35.0
+        ]
+      }
+    ],
+    "risk_history": [
+      {
+        "timestamp": "2026-06-15T09:30:00Z",
+        "risk_score": 0.28
+      },
+      {
+        "timestamp": "2026-06-15T13:30:00Z",
+        "risk_score": 0.34
+      },
+      {
+        "timestamp": "2026-06-15T17:30:00Z",
+        "risk_score": 0.38
+      },
+      {
+        "timestamp": "2026-06-16T07:30:00Z",
+        "risk_score": 0.43
+      },
+      {
+        "timestamp": "2026-06-16T09:30:00Z",
+        "risk_score": 0.48
+      }
+    ],
+    "anomaly_description": "The intake air temperature reading is higher than expected compared with ambient air temperature. Medium risk means the sensor signal should be checked soon.",
+    "possible_cause": "This may indicate an intake air temperature sensor fault, wiring issue, or a sensor reading that is drifting under engine bay heat.",
+    "recommended_action": [
+      "Inspect the intake air temperature sensor connector.",
+      "Compare intake and ambient temperature readings after a cold start.",
+      "Schedule a sensor diagnostic if the reading remains elevated."
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": [
+      "Demo data illustrates a moderate sensor plausibility concern."
+    ]
+  },
+  {
+    "timestamp": "2026-06-16T09:00:00Z",
+    "risk_score": 0.54,
+    "risk_level": "Medium",
+    "component": "map_load_signal_plausibility_fault",
+    "prediction_confidence": 0.72,
+    "key_signals": [
+      {
+        "feature": "map",
+        "value": 96.0,
+        "unit": "kPa",
+        "reference_range": [
+          35.0,
+          90.0
+        ]
+      },
+      {
+        "feature": "throttle_position",
+        "value": 18.0,
+        "unit": "%",
+        "reference_range": [
+          0.0,
+          100.0
+        ]
+      }
+    ],
+    "risk_history": [
+      {
+        "timestamp": "2026-06-15T09:00:00Z",
+        "risk_score": 0.31
+      },
+      {
+        "timestamp": "2026-06-15T13:00:00Z",
+        "risk_score": 0.36
+      },
+      {
+        "timestamp": "2026-06-15T17:00:00Z",
+        "risk_score": 0.42
+      },
+      {
+        "timestamp": "2026-06-16T07:00:00Z",
+        "risk_score": 0.49
+      },
+      {
+        "timestamp": "2026-06-16T09:00:00Z",
+        "risk_score": 0.54
+      }
+    ],
+    "anomaly_description": "The manifold pressure signal is higher than expected for the current throttle position. Medium risk means the load signal should be inspected soon.",
+    "possible_cause": "This may indicate a MAP sensor plausibility issue, vacuum leak, intake restriction, or inconsistent load estimation.",
+    "recommended_action": [
+      "Inspect the intake manifold pressure sensor and vacuum lines.",
+      "Check for intake leaks or loose hoses.",
+      "Run a diagnostic scan if drivability issues or warning lights appear."
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": [
+      "Demo data illustrates pressure and throttle plausibility drift."
     ]
   }
 ]

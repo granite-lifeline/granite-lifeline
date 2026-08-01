@@ -15,17 +15,11 @@ from typing import Any, Dict, List
 import chromadb
 import yaml
 
+from shared.anomaly_mapping import GROUND_KNOWLEDGE_ANOMALY_TYPES
 
-# Seven canonical anomaly types from grounded_knowledge.yaml
-EXPECTED_ANOMALY_TYPES = [
-    "cooling_degradation",
-    "intake_air_temperature_sensor_or_heat_soak_fault",
-    "air_intake_maf_anomaly",
-    "map_load_signal_plausibility_fault",
-    "electronic_throttle_tracking_fault",
-    "accelerator_pedal_sensor",
-    "idle_speed_control_or_surge_degradation",
-]
+
+# Five current anomaly types from docs/INTERFACE.md v1.1.
+EXPECTED_ANOMALY_TYPES = list(GROUND_KNOWLEDGE_ANOMALY_TYPES)
 
 # ChromaDB configuration
 CHROMA_DB_PATH = Path(__file__).parent / "chroma_db"
@@ -190,28 +184,11 @@ def index_knowledge_base() -> int:
     client = chromadb.PersistentClient(path=str(CHROMA_DB_PATH))
     collection = client.get_or_create_collection(name=COLLECTION_NAME)
 
-    # Check if index is already up to date
-    existing_count = collection.count()
-    expected_count = len(EXPECTED_ANOMALY_TYPES) * 4  # 7 types × 4 docs
-
-    if existing_count == expected_count:
-        # Verify all expected document IDs exist
-        all_ids = []
-        for anomaly_type in EXPECTED_ANOMALY_TYPES:
-            all_ids.extend([
-                f"{anomaly_type}_description_causes",
-                f"{anomaly_type}_actions_low",
-                f"{anomaly_type}_actions_medium",
-                f"{anomaly_type}_actions_high",
-            ])
-
-        try:
-            collection.get(ids=all_ids)
-            print("✓ Index is already up to date (28 documents present)")
-            return existing_count
-        except Exception:
-            # Some documents are missing, proceed with re-indexing
-            pass
+    # Recreate the collection on every run so source-content changes are
+    # reflected even when document IDs and counts stay the same.
+    expected_count = len(EXPECTED_ANOMALY_TYPES) * 4
+    client.delete_collection(name=COLLECTION_NAME)
+    collection = client.get_or_create_collection(name=COLLECTION_NAME)
 
     # Create documents for all anomaly types
     all_documents = []

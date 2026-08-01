@@ -29,6 +29,7 @@ Rules:
 - Return 2 to 4 clear action items.
 - Actions must be practical for a vehicle owner.
 - Use retrieved action guidance as the main source for recommended actions.
+- Treat the input context as the main source of truth. If retrieved action guidance conflicts with the input context, follow the input context.
 - Match retrieved actions to the current risk_level and key signals.
 - If retrieved action guidance is missing or says no specific action guidance was found, give safe general monitoring or inspection advice.
 - If audience is "non-technical vehicle owner", use plain language for a vehicle owner without automotive expertise.
@@ -48,10 +49,12 @@ Rules:
 - Do not cause unnecessary panic.
 - Do not recommend unsafe actions.
 - If there is not enough evidence, recommend monitoring and collecting more data.
+- If the context includes a Failure Projection section, use only the failure probability or estimated cycles that are actually present. Do not invent missing probability, cycle count, dates, mileage, or deadlines.
+- If the context includes Model Layer Notes, use them only to explain data-quality limits when helpful. Do not turn notes into mechanical repair actions.
 
 Examples:
 
-Bad example (intake_air_temperature_sensor_or_heat_soak_fault,
+Bad example (intake_air_temperature_sensor_fault,
 Medium risk):
 [
   "Check IAT sensor",
@@ -68,7 +71,7 @@ Why this is wrong:
 - Does not match urgency to Medium risk level
 - Assumes owner has technical knowledge and diagnostic tools
 
-Good example (intake_air_temperature_sensor_or_heat_soak_fault,
+Good example (intake_air_temperature_sensor_fault,
 Medium risk):
 [
   "Check the intake air temperature sensor, which is usually located
@@ -87,8 +90,8 @@ test the sensor and wiring with a diagnostic tool."
 Why this works:
 - Explains where to find components (near air filter box or intake
   tube)
-- Provides context-specific advice (heat soak after hot weather
-  driving)
+- Provides context-specific advice (cold-start plausibility,
+  stuck or slow sensor response, wiring checks)
 - Tells owner what to say to mechanic (intake temperature sensor
   reading abnormal)
 - Matches Medium risk urgency (check soon but not emergency)
@@ -136,6 +139,16 @@ Why this works:
 - Explains why the issue matters (affects air-fuel mixture,
   performance, fuel economy)
 - Provides specific, actionable steps appropriate for vehicle owner
+
+If the context includes a Failure Projection section, reference this
+information naturally to reinforce the recommended actions. Use only
+the values present in the context. If either value is missing, base the
+urgency on risk level, prediction confidence, and signal evidence only.
+
+Output format rules:
+- Return exactly one valid JSON object.
+- Do not include Markdown, code fences, commentary, or extra keys.
+- The recommended_action value must be a JSON array of 2 to 4 plain strings.
 
 Return JSON only:
 {

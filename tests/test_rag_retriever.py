@@ -22,17 +22,10 @@ from report_layer.rag.rag_retriever import (  # noqa: E402
     retrieve_all,
     retrieve_description_causes,
 )
+from shared.anomaly_mapping import GROUND_KNOWLEDGE_ANOMALY_TYPES  # noqa: E402
 
-# Seven canonical anomaly types
-ANOMALY_TYPES = [
-    "cooling_degradation",
-    "intake_air_temperature_sensor_or_heat_soak_fault",
-    "air_intake_maf_anomaly",
-    "map_load_signal_plausibility_fault",
-    "electronic_throttle_tracking_fault",
-    "accelerator_pedal_sensor",
-    "idle_speed_control_or_surge_degradation",
-]
+# Five current anomaly types
+ANOMALY_TYPES = GROUND_KNOWLEDGE_ANOMALY_TYPES
 
 # Three risk levels
 RISK_LEVELS = ["low", "medium", "high"]
@@ -97,7 +90,7 @@ def test_retrieve_actions_valid_combinations(anomaly_type, risk_level):
     Test retrieve_actions returns valid content for all anomaly type
     and risk level combinations.
 
-    Tests all 21 combinations (7 anomaly types × 3 risk levels) to
+    Tests all 15 combinations (5 anomaly types × 3 risk levels) to
     ensure proper metadata filtering.
     """
     result = retrieve_actions(anomaly_type, risk_level)

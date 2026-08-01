@@ -16,7 +16,7 @@ one monitored component.
     "timestamp": "2026-06-16T12:00:00Z",
     "risk_score": 0.86,
     "risk_level": "High",
-    "component": "cooling_system_stress",
+    "component": "cooling_degradation",
     "prediction_confidence": 0.88,
     "key_signals": [
       {
@@ -26,7 +26,7 @@ one monitored component.
         "reference_range": [90.0, 95.0]
       },
       {
-        "feature": "coolant_slope",
+        "feature": "ect_rate_180s",
         "value": 3.4,
         "unit": "C/min",
         "reference_range": [0.0, 2.0]
@@ -48,6 +48,12 @@ one monitored component.
       "Avoid heavy driving if it is safe to do so.",
       "Check the coolant level when the engine is cool.",
       "Ask a mechanic to inspect the cooling system as soon as possible."
+    ],
+    "estimated_cycles_to_failure": 15,
+    "estimated_failure_probability": 0.72,
+    "notes": [
+      "Coolant readings include repaired sensor gaps from the latest drive cycle.",
+      "Failure estimate may become more stable after more drive cycles."
     ]
   },
   {
@@ -86,7 +92,10 @@ one monitored component.
       "Ask a mechanic to inspect the air intake system soon.",
       "Check whether the air filter needs cleaning or replacement.",
       "Keep watching for rough idling, poor acceleration, or warning lights."
-    ]
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
   },
   {
     "timestamp": "2026-06-16T10:00:00Z",
@@ -123,7 +132,10 @@ one monitored component.
     "recommended_action": [
       "Continue monitoring the dashboard.",
       "If the warning appears repeatedly, ask a mechanic to check the pedal sensor."
-    ]
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
   }
 ]
 ```
@@ -142,6 +154,9 @@ one monitored component.
 | `anomaly_description` | Explains what is happening. |
 | `possible_cause` | Explains the likely cause. |
 | `recommended_action` | Shows suggested actions as a list. |
+| `estimated_cycles_to_failure` | Shows the number of trips used in the failure prediction card. |
+| `estimated_failure_probability` | Shows the failure probability in the failure prediction card. |
+| `notes` | Shows Data Quality Notes when the list is not empty. |
 
 ## Important Notes
 

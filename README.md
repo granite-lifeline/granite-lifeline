@@ -9,6 +9,10 @@ language diagnostic report generation.
 
 [![Open Dashboard](https://img.shields.io/badge/Open%20Dashboard-granite--lifeline.streamlit.app-19c8b9?style=for-the-badge&logo=streamlit&logoColor=white)](https://granite-lifeline.streamlit.app)
 
+## Viva Presentation
+
+[![View Viva Slides](https://img.shields.io/badge/View%20Viva%20Slides-GitHub%20Pages-0f62fe?style=for-the-badge&logo=github&logoColor=white)](https://granite-lifeline.github.io/granite-lifeline/viva/slides/)
+
 ## Blog
 
 Project updates and sprint reflections are documented on our team blog:
@@ -28,8 +32,9 @@ Data Layer
 Model Layer
   (IBM Granite TTM — anomaly detection)
     │
-    ▼  [anomaly_type, risk_score, risk_level,
-        component, prediction_confidence, key_signals]
+    ▼  [anomaly_type, risk_score, risk_level, component,
+        prediction_confidence, key_signals,
+        estimated_failure_probability, estimated_cycles_to_failure, notes]
 Report Layer
   (IBM Granite LLM — 3-layer prompt chain
    + RAG knowledge base with ChromaDB)
@@ -51,6 +56,7 @@ Full field definitions for each arrow are in `docs/INTERFACE.md`.
 - `shared/` — cross-layer Pydantic interface models
 - `docs/INTERFACE.md` — field definitions across all layers
 - `docs/adr/` — architecture decision records
+- `docs/viva/slides/` — interactive viva presentation and visual assets
 
 ## Data Setup
 
@@ -70,8 +76,32 @@ The repository does not track the dataset itself (see `.gitignore`). Each team m
 
 ## Setup
 
-Run the dashboard locally:
+**Dashboard only (mock/demo data, no CSV analysis):**
 
 ```bash
 uv run streamlit run dashboard/app.py
 ```
+
+**Full local pipeline (real CSV upload → live Model Layer + Report Layer analysis):**
+
+`requirements.txt` contains the lightweight dashboard dependencies used by the
+hosted demo. The full local CSV pipeline also needs `requirements-local.txt`,
+the Model Layer's dedicated TTM environment, and a local
+[Ollama](https://ollama.com) instance with the Granite LLM pulled. On
+macOS/Linux, `setup.sh` does all of this in one step (installs dashboard deps,
+local pipeline deps, Model Layer deps, installs Ollama if missing, pulls the
+model, starts the dashboard):
+
+```bash
+./setup.sh
+```
+
+On Windows, `setup.ps1` does the same (installs Python deps, installs Ollama
+via `winget` if missing, pulls the model, starts the dashboard):
+
+```powershell
+.\setup.ps1
+```
+
+If script execution is blocked, run once as administrator:
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
