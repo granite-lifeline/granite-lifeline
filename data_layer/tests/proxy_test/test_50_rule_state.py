@@ -245,6 +245,76 @@ def test_episode_budget_and_censoring() -> None:
     )
 
 
+def test_no_observed_start_keeps_episode_header() -> None:
+    """A mid-drive upload has no engine start; the artifact stays readable.
+
+    An empty record list previously produced a zero-column frame whose
+    CSV carried no header at all, which script 70 could not parse.
+    """
+
+    frame = make_frame(60)
+    frame["thermal_state"] = "post_warmup"
+    state = script50.build_rule_state(frame, REGISTRY)
+    state = script50.build_cold_start_state(frame, state, REGISTRY)
+    episodes = pd.DataFrame(
+        columns=[
+            "trip_id", "engine_start_episode_id", "segment_id",
+            "continuity_block_id", "start_timestamp",
+            "start_row_in_segment", "end_timestamp",
+            "end_row_in_segment", "episode_sample_count",
+            "episode_duration_seconds", "termination_reason",
+            "ect_start", "aat_start",
+        ]
+    )
+    episode_state = script50.build_engine_start_rule_state(
+        frame, state, episodes, REGISTRY
+    )
+
+    assert len(episode_state) == 0
+    assert list(episode_state.columns) == (
+        script50.ENGINE_START_RULE_STATE_COLUMNS
+    )
+
+
+def test_episode_column_contract_matches_populated_output() -> None:
+    """The declared contract must not drift from the real record keys."""
+
+    n = 60
+    frame = make_frame(n)
+    frame["thermal_state"] = "warmup"
+    frame["coolant_temp"] = 30.0
+    frame.loc[10, "engine_start_observed"] = True
+    frame.loc[frame.index[10:], "engine_start_episode_id"] = "e1"
+    frame.loc[frame.index[10:], "elapsed_since_engine_start"] = [
+        float(x) for x in range(n - 10)
+    ]
+    episodes = pd.DataFrame([{
+        "trip_id": "trip_0001",
+        "engine_start_episode_id": "e1",
+        "segment_id": "trip_0001_seg_001",
+        "continuity_block_id": 1,
+        "start_timestamp": frame["timestamp"].iloc[10],
+        "start_row_in_segment": 11,
+        "end_timestamp": frame["timestamp"].iloc[-1],
+        "end_row_in_segment": n,
+        "episode_sample_count": n - 10,
+        "episode_duration_seconds": float(n - 11),
+        "termination_reason": "end_of_data",
+        "ect_start": 30.0,
+        "aat_start": 10.0,
+    }])
+    state = script50.build_rule_state(frame, REGISTRY)
+    state = script50.build_cold_start_state(frame, state, REGISTRY)
+    populated = script50.build_engine_start_rule_state(
+        frame, state, episodes, REGISTRY
+    )
+
+    assert len(populated) == 1
+    assert list(populated.columns) == (
+        script50.ENGINE_START_RULE_STATE_COLUMNS
+    )
+
+
 def test_episode_time_to_target_when_reached() -> None:
     n = 60
     frame = make_frame(n)

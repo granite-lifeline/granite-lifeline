@@ -1,0 +1,18 @@
+# Extra dependencies for local live CSV analysis.
+#
+# Streamlit Cloud installs requirements.txt only. Keep this file for local
+# setup because live uploads call the Data Layer, Model Layer subprocess, and
+# Report Layer RAG/Ollama pipeline.
+
+requests==2.34.2
+PyYAML==6.0.3
+
+# Report Layer RAG
+chromadb>=0.4.0
+langchain>=0.1.0
+langchain-community>=0.0.20
+
+# Local data pipeline / optional What-If surrogate artifacts
+joblib==1.5.3
+scikit-learn==1.7.2
+scipy==1.17.1

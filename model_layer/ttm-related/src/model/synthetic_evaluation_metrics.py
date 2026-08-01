@@ -7,16 +7,21 @@ import json
 from pathlib import Path
 from typing import Any
 
+try:
+    from model.risk_level_calibration import alarm_threshold
+except ImportError:  # direct script run
+    from risk_level_calibration import alarm_threshold
+
 DEFAULT_INPUT = Path(
     "ttm-related/outputs/synthetic_eval_results_e5_lr5e-5.json"
 )
 DEFAULT_JSON = Path(
-    "ttm-related/outputs/synthetic_eval_metrics_e5_lr5e-5.json"
+    "ttm-related/outputs/synthetic_eval_metrics_e5_lr5e-5_calibrated.json"
 )
 DEFAULT_MD = Path(
-    "ttm-related/outputs/synthetic_eval_metrics_e5_lr5e-5.md"
+    "ttm-related/outputs/synthetic_eval_metrics_e5_lr5e-5_calibrated.md"
 )
-ALARM_THRESHOLD = 0.3
+ALARM_THRESHOLD = alarm_threshold()
 FAULT_TYPES = [
     "cooling_degradation",
     "air_intake_maf_anomaly",

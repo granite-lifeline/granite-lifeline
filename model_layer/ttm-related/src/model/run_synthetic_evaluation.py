@@ -19,6 +19,7 @@ try:
         inject_pedal_sensor_fault,
         load_feature_transforms,
     )
+    from model.risk_level_calibration import alarm_threshold
 except ImportError:
     import kit_residual_detector as detector
     from fault_injection import (
@@ -28,6 +29,7 @@ except ImportError:
         inject_pedal_sensor_fault,
         load_feature_transforms,
     )
+    from risk_level_calibration import alarm_threshold
 
 DEFAULT_CSV = Path(
     "ttm-related/data/production_feature_manifest/production_features.csv"
@@ -35,7 +37,7 @@ DEFAULT_CSV = Path(
 DEFAULT_MANIFEST = Path("ttm-related/outputs/finetune_split_manifest.json")
 DEFAULT_MODEL = Path("ttm-related/outputs/ttm_finetuned_e5_lr5e-5/model")
 DEFAULT_OUTPUT = Path(
-    "ttm-related/outputs/synthetic_eval_results_e5_lr5e-5.json"
+    "ttm-related/outputs/synthetic_eval_results_e5_lr5e-5_calibrated.json"
 )
 SUSTAINED_FLOW_SPEED_KMH = 30.0
 Injector = Callable[[pd.DataFrame, int], pd.DataFrame]
@@ -281,7 +283,7 @@ def main() -> None:
             "context_length": args.context_length,
             "prediction_length": args.prediction_length,
             "injection_design": "512 healthy context + 96 injected future",
-            "risk_alarm_threshold": 0.3,
+            "risk_alarm_threshold": alarm_threshold(),
             "calibration_registry": str(args.calibration_registry),
         },
         "records": records,

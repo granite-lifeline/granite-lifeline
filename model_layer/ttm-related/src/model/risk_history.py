@@ -22,8 +22,7 @@ except ImportError:  # direct script run: src/ not on sys.path
 
 
 HISTORY_COLUMNS = ["trip_id", "window_id", "timestamp", "risk_score"]
-_TTM_RELATED_DIR = Path(__file__).resolve().parents[2]
-DEFAULT_HISTORY_PATH = _TTM_RELATED_DIR / "outputs" / "risk_history.csv"
+DEFAULT_HISTORY_PATH = Path("ttm-related/outputs/risk_history.csv")
 
 
 def append_history(records: list[dict], history_path: Path) -> int:

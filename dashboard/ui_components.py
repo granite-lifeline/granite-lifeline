@@ -8,12 +8,20 @@ from __future__ import annotations
 
 import streamlit as st
 
-from theme import (
-    FONT_MONO,
-    THEME_TOKENS,
-    hex_to_rgba,
-    lucide_icon,
-)
+try:
+    from theme import (
+        FONT_MONO,
+        THEME_TOKENS,
+        hex_to_rgba,
+        lucide_icon,
+    )
+except ImportError:  # package import during tests
+    from dashboard.theme import (
+        FONT_MONO,
+        THEME_TOKENS,
+        hex_to_rgba,
+        lucide_icon,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -119,6 +127,65 @@ def warning_banner_html(
         f'{label}</strong> \u2014 {message}'
         f'</span>'
         f'</div>'
+    )
+
+
+def page_title_html(
+    title: str,
+    tokens: dict,
+    *,
+    subtitle: str | None = None,
+    margin: str = "16px 0 24px",
+) -> str:
+    """Return the shared centered page title block."""
+    subtitle_html = ""
+    if subtitle:
+        subtitle_html = (
+            f'<p class="gl-page-subtitle">{subtitle}</p>'
+        )
+    return (
+        f'<div style="margin:{margin};text-align:center;">'
+        f'<h1 class="gl-page-title">{title}</h1>'
+        f'{subtitle_html}</div>'
+    )
+
+
+def section_heading_html(
+    title: str,
+    icon_svg: str,
+    *,
+    side_width: int = 24,
+) -> str:
+    """Return a centered section heading with balanced icon spacing."""
+    return (
+        '<div class="gl-section-heading">'
+        f'<div style="display:flex;width:{side_width}px;">{icon_svg}</div>'
+        f'<h2>{title}</h2>'
+        f'<div style="width:{side_width}px;"></div>'
+        '</div>'
+    )
+
+
+def empty_state_html(
+    title: str,
+    message: str,
+    tokens: dict,
+    *,
+    icon_name: str = "info",
+    max_width: str = "640px",
+    margin: str = "12px auto",
+) -> str:
+    """Return the shared neutral empty/incomplete-data state."""
+    icon = lucide_icon(icon_name, size=20, color=tokens["text_secondary"])
+    return (
+        f'<div class="gl-empty-state" style="max-width:{max_width};'
+        f'margin:{margin};">'
+        f'<div style="display:flex;align-items:center;flex-shrink:0;">'
+        f'{icon}</div>'
+        '<div style="flex:1;min-width:0;">'
+        f'<div class="gl-empty-state-title">{title}</div>'
+        f'<div class="gl-empty-state-message">{message}</div>'
+        '</div></div>'
     )
 
 

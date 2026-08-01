@@ -14,6 +14,13 @@ Run from the repository root:
 Optionally pass a specific feature CSV and segment:
     .venv/bin/python ttm-related/src/model/kit_residual_detector.py \
         path/to/production_features.csv --segment-id trip_0001_seg_001
+
+The two anomaly types the Data Layer scores instead of us
+(`intake_air_temperature_sensor_fault`,
+`map_load_signal_plausibility_fault`) carry a 0.0 placeholder unless
+`--proxy-decisions path/to/proxy_decisions.csv` is given, in which case
+their already-computed verdicts are forwarded (GL-368, INTERFACE.md
+2.4). See `proxy_decision_forwarding.py`.
 """
 
 from __future__ import annotations
@@ -36,11 +43,17 @@ try:
         validate_required_columns,
         validate_sensor_ranges,
     )
+    from model.proxy_decision_forwarding import (
+        ForwardedVerdict,
+        forward_verdicts,
+        load_proxy_decisions,
+    )
     from model.risk_history import (
         DEFAULT_HISTORY_PATH,
         append_history,
     )
     from model.validate_output import validate_output
+    from model.risk_level_calibration import risk_level
 except ImportError:  # direct script run: src/ not on sys.path
     from input_validation import (
         PRODUCTION_FEATURE_REQUIRED_COLUMNS,
@@ -48,18 +61,22 @@ except ImportError:  # direct script run: src/ not on sys.path
         validate_required_columns,
         validate_sensor_ranges,
     )
+    from proxy_decision_forwarding import (
+        ForwardedVerdict,
+        forward_verdicts,
+        load_proxy_decisions,
+    )
     from risk_history import (
         DEFAULT_HISTORY_PATH,
         append_history,
     )
     from validate_output import validate_output
+    from risk_level_calibration import risk_level
 
 
 MODEL_PATH = "ibm-granite/granite-timeseries-ttm-r2"
-_REPO_ROOT = Path(__file__).resolve().parents[4]
-DEFAULT_INPUT_CSV = (
-    _REPO_ROOT
-    / "data_layer/tests/fixtures/production_features.v1.fixture.csv"
+DEFAULT_INPUT_CSV = Path(
+    "data_layer/tests/fixtures/production_features.v1.fixture.csv"
 )
 DEFAULT_CONTEXT_LENGTH = 512
 DEFAULT_PREDICTION_LENGTH = 96
@@ -115,6 +132,9 @@ REFERENCE_RANGES = {
     "maf_integral_180s": [0, 2500],
     "intake_temp_stability": [0, 5],
     "map_range_60s": [0, 80],
+    # Low-motion guard bound frozen in INTERFACE.md 2.4 for the pedal
+    # residual path; also the healthy band for MAP plausibility.
+    "pedal_slope": [-2.4, 2.4],
 }
 
 FEATURE_UNITS = {
@@ -137,6 +157,7 @@ FEATURE_UNITS = {
     "maf_integral_180s": "g",
     "intake_temp_stability": "°C",
     "map_range_60s": "kPa",
+    "pedal_slope": "pp/s",
 }
 
 
@@ -188,6 +209,16 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--proxy-decisions",
+        type=Path,
+        help=(
+            "Optional path to the Data Layer's proxy_decisions.csv "
+            "(run summary key proxy_decisions_path). When given, the "
+            "two Data-Layer-scored anomaly types carry their "
+            "already-computed verdicts instead of a 0.0 placeholder."
+        ),
+    )
+    parser.add_argument(
         "--history-file",
         type=Path,
         default=DEFAULT_HISTORY_PATH,
@@ -209,8 +240,9 @@ def load_group1_features(csv_path: Path) -> pd.DataFrame:
     """
     if not Path(csv_path).exists():
         raise ValueError(f"Input CSV not found: {csv_path}")
-    # The production handoff contains policy-nullable boolean-like columns;
-    # one-pass inference avoids chunk-wise mixed-dtype warnings on the full CSV.
+    # The production handoff contains policy-nullable boolean-like
+    # columns; one-pass inference avoids chunk-wise mixed-dtype
+    # warnings on the full CSV.
     raw = pd.read_csv(csv_path, low_memory=False)
     validate_required_columns(
         raw.columns, PRODUCTION_FEATURE_REQUIRED_COLUMNS, str(csv_path)
@@ -358,6 +390,7 @@ def analyze_window(
     prediction_length: int,
     model,
     notes: list[str],
+    forwarded: dict[str, ForwardedVerdict] | None = None,
 ) -> dict[str, Any]:
     """Forecast -> residuals -> risk -> interface JSON for one
     window."""
@@ -370,7 +403,7 @@ def analyze_window(
     residual = calculate_residuals(prediction, future)
     residual_summary = summarize_residuals(residual)
     anomaly_type, score, confidence, top_signals, notes = (
-        calculate_risk(residual_summary, future, notes)
+        calculate_risk(residual_summary, future, notes, forwarded)
     )
     return build_interface_json(
         future=future,
@@ -383,12 +416,24 @@ def analyze_window(
     )
 
 
+def segment_verdicts(
+    decisions: pd.DataFrame | None,
+    trip_id: str,
+    segment_id: str,
+) -> dict[str, ForwardedVerdict] | None:
+    """Data Layer verdicts covering one segment, or None if unused."""
+    if decisions is None:
+        return None
+    return forward_verdicts(decisions, trip_id, segment_id)
+
+
 def run_batch(
     df: pd.DataFrame,
     context_length: int,
     prediction_length: int,
     model,
     trip_id: str | None = None,
+    decisions: pd.DataFrame | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Sweep all eligible segments/windows; return
     (envelope, history_records).
@@ -420,12 +465,17 @@ def run_batch(
         ).reset_index(drop=True)
         segment, notes = prepare_segment(segment)
         segment_trip = segment["trip_id"].iloc[0]
+        # One verdict lookup per segment: decisions are trip/segment
+        # grain, so every window in a segment shares the same result.
+        forwarded = segment_verdicts(
+            decisions, segment_trip, str(segment_id)
+        )
         for index, window in iter_windows(
             segment, context_length, prediction_length
         ):
             result = analyze_window(
                 window, context_length, prediction_length,
-                model, notes,
+                model, notes, forwarded,
             )
             errors = validate_output(result)
             if errors:
@@ -470,9 +520,13 @@ def run_batch(
     return envelope, history_records
 
 
-def load_model(context_length: int, prediction_length: int):
+def load_model(
+    context_length: int,
+    prediction_length: int,
+    model_path: str | Path = MODEL_PATH,
+):
     model = get_model(
-        MODEL_PATH,
+        str(model_path),
         context_length=context_length,
         prediction_length=prediction_length,
     )
@@ -581,6 +635,7 @@ def calculate_risk(
     residual_summary: dict[str, dict[str, float]],
     future: pd.DataFrame,
     notes: list[str] | None = None,
+    forwarded: dict[str, ForwardedVerdict] | None = None,
 ) -> tuple[str, float, float, list[str], list[str]]:
     notes = list(notes) if notes else []
     scores = normalized_residual_scores(residual_summary)
@@ -630,13 +685,20 @@ def calculate_risk(
             "back to next-highest score"
         )
 
+    # The Data Layer owns DTC scoring for these two types (GL-294/295
+    # retirement). Without a decisions file they keep their historical
+    # 0.0 placeholder; with one, we relay its already-computed verdict.
+    forwarded = forwarded or {}
     anomaly_scores = {
         "cooling_degradation": cooling_score,
         "air_intake_maf_anomaly": intake_score,
         "accelerator_pedal_sensor": pedal_score,
-        # Pending — Data Layer defined, Model Layer scoring TBD.
-        "intake_air_temperature_sensor_fault": 0.0,
-        "map_load_signal_plausibility_fault": 0.0,
+        "intake_air_temperature_sensor_fault": _forwarded_score(
+            forwarded, "intake_air_temperature_sensor_fault"
+        ),
+        "map_load_signal_plausibility_fault": _forwarded_score(
+            forwarded, "map_load_signal_plausibility_fault"
+        ),
     }
     anomaly_type = max(anomaly_scores, key=anomaly_scores.get)
     risk_score = float(anomaly_scores[anomaly_type])
@@ -646,7 +708,22 @@ def calculate_risk(
     top_residual_signals = sorted(scores, key=scores.get, reverse=True)[:3]
     std = float(np.std(list(scores.values())))
     confidence = float(max(0.35, min(0.95, 1.0 - std)))
+
+    # A forwarded verdict carries the Data Layer's own confidence: the
+    # residual spread describes a forecast that had no part in it.
+    verdict = forwarded.get(anomaly_type)
+    if verdict is not None and risk_score > 0.0:
+        confidence = float(verdict.confidence)
+        if verdict.note and verdict.note not in notes:
+            notes.append(verdict.note)
     return anomaly_type, risk_score, confidence, top_residual_signals, notes
+
+
+def _forwarded_score(
+    forwarded: dict[str, ForwardedVerdict], anomaly_type: str
+) -> float:
+    verdict = forwarded.get(anomaly_type)
+    return float(verdict.score) if verdict is not None else 0.0
 
 
 def clipped_scale(value: float, low: float, high: float) -> float:
@@ -655,14 +732,6 @@ def clipped_scale(value: float, low: float, high: float) -> float:
     if value >= high:
         return 1.0
     return float((value - low) / (high - low))
-
-
-def risk_level(risk_score: float) -> str:
-    if risk_score < 0.3:
-        return "Low"
-    if risk_score <= 0.7:
-        return "Medium"
-    return "High"
 
 
 def window_feature_values(future: pd.DataFrame) -> dict[str, float]:
@@ -746,13 +815,15 @@ def build_interface_json(
             "accel_pedal_d", "accel_pedal_e",
             "accel_pedal_channel_delta", "pedal_mapping_residual",
         ],
+        # Both lists follow INTERFACE.md 2.4's key_signals order,
+        # restricted to signals delivered in production_features.csv.
         "intake_air_temperature_sensor_fault": [
-            "intake_temp", "ambient_temp", "intake_ambient_delta",
-            "intake_temp_stability",
+            "intake_temp", "intake_temp_stability",
+            "intake_ambient_delta", "ambient_temp", "coolant_temp",
         ],
         "map_load_signal_plausibility_fault": [
-            "map", "maf", "speed_density_maf_residual", "map_range_60s",
-            "pedal_slope",
+            "map", "pedal_slope", "speed_density_maf_residual",
+            "map_range_60s", "rpm_slope",
         ],
     }[anomaly_type]
 
@@ -807,7 +878,9 @@ def print_residual_summary(
 
 
 def run_single(
-    df: pd.DataFrame, args: argparse.Namespace
+    df: pd.DataFrame,
+    args: argparse.Namespace,
+    decisions: pd.DataFrame | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Original one-window flow; returns (result, history records)."""
     segment = select_segment(
@@ -840,7 +913,10 @@ def run_single(
     print_residual_summary(residual_summary)
 
     anomaly_type, score, confidence, top_signals, notes = calculate_risk(
-        residual_summary, future, notes
+        residual_summary,
+        future,
+        notes,
+        segment_verdicts(decisions, trip_id_value, str(segment_id)),
     )
     result = build_interface_json(
         future=future,
@@ -871,6 +947,14 @@ def run_detector(args: argparse.Namespace) -> None:
     print(f"Reading Group 1 feature dataset: {csv_path}")
     df = load_group1_features(csv_path)
 
+    decisions = None
+    if args.proxy_decisions is not None:
+        decisions = load_proxy_decisions(args.proxy_decisions)
+        print(
+            f"Forwarding Data Layer proxy decisions: "
+            f"{len(decisions)} row(s) from {args.proxy_decisions}"
+        )
+
     if args.batch:
         if args.segment_id is not None:
             raise ValueError(
@@ -882,10 +966,10 @@ def run_detector(args: argparse.Namespace) -> None:
         )
         result, history_records = run_batch(
             df, args.context_length, args.prediction_length,
-            model, trip_id=args.trip_id,
+            model, trip_id=args.trip_id, decisions=decisions,
         )
     else:
-        result, history_records = run_single(df, args)
+        result, history_records = run_single(df, args, decisions)
 
     written = append_history(history_records, args.history_file)
     print(

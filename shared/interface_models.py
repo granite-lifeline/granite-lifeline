@@ -126,7 +126,10 @@ class DataLayerOutput(BaseModel):
     schema_version: str = Field(...)
     calibration_version: str = Field(...)
 
-    # Proxy labels (internal to Model Layer only)
+    # Proxy labels, row grain (internal to Model Layer only).
+    # The decision-level delivery proxy_decisions.csv (INTERFACE.md
+    # §1.4, Master Field Table rows 50a-50e) is a separate table at
+    # decision grain and is deliberately not modelled here.
     failure_label: Optional[str] = None
     risk_class: Optional[str] = None
     condition_ratio: Optional[float] = None

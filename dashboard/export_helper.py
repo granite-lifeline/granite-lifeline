@@ -68,8 +68,10 @@ SIGNAL_DISPLAY_NAMES = {
     "aat_start": "Ambient Temperature at Engine Start",
     "maf_integral_180s": "MAF Integral",
     "intake_temp": "Intake Air Temperature",
+    "intake_air_temp": "Intake Air Temperature",
     "intake_temp_stability": "Intake Temperature Stability",
     "intake_ambient_delta": "Intake-Ambient Temperature Difference",
+    "ambient_air_temp": "Ambient Air Temperature",
     "speed_density_maf_residual": "Speed-Density MAF Residual",
     "pedal_mapping_residual": "Pedal Mapping Residual",
     "pedal_slope": "Pedal Demand Rate",
@@ -77,6 +79,7 @@ SIGNAL_DISPLAY_NAMES = {
     "map_range_60s": "MAP Range",
     "maf": "Mass Airflow",
     "map": "Intake Pressure",
+    "throttle_position": "Throttle Position",
     "accel_pedal_d": "Pedal Sensor D",
     "accel_pedal_e": "Pedal Sensor E",
 }

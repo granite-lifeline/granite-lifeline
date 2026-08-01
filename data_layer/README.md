@@ -55,14 +55,15 @@ The source corpus contains healthy driving rather than labelled component failur
 | Synthetic Fault Injection         | 14 cases × 3 severities × 3 trips; 126 observations; 14/14 cases accepted                         |
 | Research Documentation            | Proxy definition, support derivations, completed Stage-4 evidence, and formal injection methodology |
 | Pipeline Infrastructure           | `RunLayout`, manifests, checksums, continuity helpers, and contract linting                       |
-| Upload Intake Contract            | Single-file callable entry point with fail-fast KIT file-name, column, and row-count validation     |
+| Upload Intake Contract            | Single-file callable entry point with fail-fast KIT file-name, column, duration, and segment validation |
+| Proxy Stage Wiring                | Stages 50–70 reachable from one pipeline call; opt-in for batch, default for uploads                |
 | Automated Tests                   | Fixture, pipeline-contract, feature, proxy, upload-intake, and fault-injection regression tests      |
 
 ### [IN PROGRESS]
 
 | Component                   | Status                                                                                     |
 | --------------------------- | ------------------------------------------------------------------------------------------ |
-| Model Layer Handoff         | Feature contract frozen and output path exposed; consumer-side items tracked in Remaining Work |
+| Model Layer Handoff         | Both artifact paths exposed and blocking items resolved; DTC forwarding tracked in Remaining Work |
 | Dashboard Handoff           | Upload entry point delivered; interface details tracked in Remaining Work                   |
 | Documentation Consolidation | Ongoing alignment of implementation, contract, audit, and research documents               |
 
@@ -339,18 +340,27 @@ and strongest-point response.
 - contract lint: cross-document and cross-stage consistency checks;
 - upload intake: fail-fast validation of one user-supplied CSV.
 
-**Upload intake** (`upload_contract.py`) accepts a single uploaded file from the Dashboard and rejects unusable input before any run directory or pipeline stage is created. `run_pipeline.run_data_pipeline_for_upload(csv_path, ...)` is the callable entry point: it validates the upload, stages the file into a temporary directory, delegates to `run_data_pipeline`, and removes the staging directory afterwards. The returned summary carries `production_features_path` as an absolute path for downstream consumers.
+**Upload intake** (`upload_contract.py`) accepts a single uploaded file from the Dashboard and rejects unusable input. `run_pipeline.run_data_pipeline_for_upload(csv_path, ...)` is the callable entry point: it validates the upload, stages the file into a temporary directory, delegates to `run_data_pipeline` with the proxy stages enabled, and removes the staging directory afterwards. The returned summary carries `production_features_path` and `proxy_decisions_path` as absolute paths for downstream consumers.
 
-Intake rules are evaluated in order and derived from `cleaning_config.yaml` so they cannot drift from the cleaning contract:
+Pre-run rules are evaluated in order and derived from `cleaning_config.yaml` so they cannot drift from the cleaning contract:
 
 | Rule | Reason | Rejection code |
 | ---- | ------ | -------------- |
 | File keeps its original KIT name | The recording date exists only in the file name; the cleaned CSV carries time-of-day alone | `bad_filename` |
 | All KIT source columns present | Cleaning cannot map absent signals | `missing_columns` |
-| At least 700 data rows | Model window is 512 context + 96 forecast plus margin (INTERFACE.md §1.5) | `too_few_rows` |
+| At least 700 data rows | Cheap sanity floor before the duration check | `too_few_rows` |
+| Recording spans at least 700 seconds | Raw files are sampled at 6–12 Hz across the corpus, so a row count cannot express a duration requirement; 700 s mirrors the ≥ 700 cleaned 1 Hz rows the Model Layer needs (INTERFACE.md §1.5) | `too_few_rows` |
 | File parses as CSV | Empty, unreadable, or absent file | `unreadable_csv` |
 
-Failures raise `UploadRejected` with a stable `code` and a user-readable message. Because validation precedes run creation, a rejected upload leaves no run artifacts behind.
+One further rule can only be judged after cleaning:
+
+| Rule | Reason | Rejection code |
+| ---- | ------ | -------------- |
+| Longest contiguous `segment_id` reaches 700 rows | Forecast windows never cross a recording break, so a recording fragmented into short pieces yields no usable window even when its total length passes every pre-run check | `no_usable_segment` |
+
+Failures raise `UploadRejected` with a stable `code` and a user-readable message. Pre-run rejections leave no run artifacts behind; a `no_usable_segment` rejection keeps the run directory and names it in the message so the result can be inspected.
+
+Unparsable time values are deliberately *not* rejected at intake: timestamp validation belongs to the cleaning stage, which reports it with full context.
 
 ---
 
@@ -385,13 +395,15 @@ This is the artifact the Model Layer reads for TTM windowing and inference
 2 provenance fields; see `docs/INTERFACE.md` §1.1–1.3). Both pipeline entry
 points return its absolute path as `production_features_path`.
 
-**2. Proxy decisions — a separate offline delivery.**
+**2. Proxy decisions — a decision-level delivery.**
 
 ```text
 data/processed/runs/<run_id>/proxy/70_decisions/proxy_decisions.csv
 ```
 
-Produced by the independent stage 50/60/61/70 chain, which is not part of `run_pipeline.py`. Per `docs/INTERFACE.md` §1.4 these labels are internal to the Model Layer and used only for (1) healthy-training-data filtering and (2) detection-evaluation ground truth. They are **not** used to train TTM and **do not** flow to the Report Layer or Dashboard.
+Produced by the stage 50/60/61/70 chain. These stages run inside `run_pipeline.py` when `include_proxy` is set: the upload path enables them by default and returns `proxy_decisions_path`, while the batch and CLI paths stay feature-only unless `--include-proxy` is passed. The chain can still be rerun standalone against an existing run directory, which is how `run_fault_injection.py` uses it.
+
+Per `docs/INTERFACE.md` §1.4 these labels are internal to the Model Layer and used only for (1) healthy-training-data filtering, (2) detection-evaluation ground truth, and (3) forwarding the already-computed DTC verdicts for the two anomaly types the Model Layer does not score itself. They are **not** used to train TTM and **do not** flow to the Report Layer or Dashboard as labels.
 
 Each executed decision carries:
 
@@ -441,9 +453,15 @@ python data_layer/run_pipeline.py `
   --input-dir D:\path\to\raw\csv
 ```
 
+The batch entry point stops at stage 41. Add `--include-proxy` to continue through the proxy stages in the same run:
+
+```powershell
+python data_layer/run_pipeline.py --run-id run_20260724 --include-proxy
+```
+
 ### Run the Pipeline for One Uploaded CSV
 
-Called by the Dashboard rather than from the command line. The caller passes a path to a CSV already saved on disk; the file must keep its original KIT name.
+Called by the Dashboard rather than from the command line. The caller passes a path to a CSV already saved on disk; the file must keep its original KIT name. Proxy stages run by default here, so both artifact paths are available.
 
 ```python
 from data_layer.run_pipeline import (
@@ -456,9 +474,12 @@ try:
         "2019-05-06_Seat_Leon_Karlsruhe_Stuttgart_Normal.csv"
     )
     features_path = summary["production_features_path"]
+    decisions_path = summary["proxy_decisions_path"]
 except UploadRejected as exc:
     show_to_user(exc.code, str(exc))
 ```
+
+Pass `include_proxy=False` to stop at stage 41. Pipeline failures surface as `DataPipelineError`, with the original stage error kept as the exception cause.
 
 ### Rerun Proxy Stages for an Existing Run
 
@@ -544,7 +565,7 @@ python -m flake8 data_layer
 | Stage-4 observations                     | 126        |
 | Stage-4 case acceptance                  | 14/14      |
 | Proxy + Stage-4 focused regression tests | 20 passed  |
-| Full Data Layer test suite               | 139 passed |
+| Full Data Layer test suite               | 148 passed |
 
 ### Data-Integrity Controls
 
@@ -575,25 +596,26 @@ Cross-layer items are recorded here so that decisions taken unilaterally by the 
 
 ### 1. Model Layer Handoff
 
-The feature contract is frozen and its absolute path is exposed; the outstanding items are consumer-side.
+Both deliveries are frozen and reachable by absolute path from one pipeline call. The blocking column and unit items were resolved by the Model Layer on 2026-07-27; what remains is the forwarding work and one cross-group decision.
 
 | # | Item |
 | - | ---- |
-| M1 | **[blocking] Required-column contract.** `input_validation.GROUP1_REQUIRED_COLUMNS` still validates the 41-column INTERFACE v0.6 set. Thirteen of those columns were superseded by schema v1 and are no longer produced: `coolant_slope`, `coolant_stability`, `intake_temp_slope`, `maf_derived_air_load_raw`, `map_derived_air_load_raw`, `maf_map_cohesion`, `map_slope`, `pedal_throttle_gap`, `pedal_to_throttle_delay`, `tps_slope`, `accel_pedal_channel_ratio`, `idle_flag`, `idle_rpm_stability`. Feeding `production_features.csv` therefore fails validation. *Data Layer decision: the superseded columns are not reinstated (INTERFACE.md §1.3 is frozen); the Model Layer updates its required set to the v1 contract.* |
-| M2 | **Cooling threshold migration.** The retired `coolant_slope` is scored in `calculate_risk` with hard-coded bounds `0.0333`/`0.1333`, derived specifically for its **°C/s** unit. Schema v1 provides no per-row coolant slope; its only ECT rate field, `ect_rate_180s`, uses a different window (180 s) **and** a different unit (**°C/min**). Choosing a replacement input is a Model Layer decision, but the existing bounds cannot be carried over unchanged — a direct substitution is a 60× scale error. The same applies to `maf_map_cohesion` and its `2.6` floor once intake scoring is in scope. |
-| M3 | **[blocking] Default input path.** `kit_residual_detector.DEFAULT_INPUT_CSV` still points at the retired `data_layer/feature_engineering/feature_dataset.csv`. |
+| M1 | **Resolved (2026-07-27).** The Model Layer replaced its required set with the 46-column `PRODUCTION_FEATURE_REQUIRED_COLUMNS`, matching the schema v1 contract. The thirteen superseded columns (`coolant_slope`, `coolant_stability`, `intake_temp_slope`, `maf_derived_air_load_raw`, `map_derived_air_load_raw`, `maf_map_cohesion`, `map_slope`, `pedal_throttle_gap`, `pedal_to_throttle_delay`, `tps_slope`, `accel_pedal_channel_ratio`, `idle_flag`, `idle_rpm_stability`) were not reinstated, per the frozen INTERFACE.md §1.3. |
+| M2 | **Resolved (2026-07-27).** Cooling scoring now reads `ect_rate_180s` with bounds rescaled to its **°C/min** unit (`2.0`/`8.0`), avoiding the 60× error a straight column swap from the **°C/s** `coolant_slope` would have caused. The same care applies to `maf_map_cohesion` and its `2.6` floor if intake scoring comes into scope. |
+| M3 | **Resolved (2026-07-27).** `kit_residual_detector.DEFAULT_INPUT_CSV` now points at the schema v1 production fixture instead of the retired `feature_dataset.csv`. |
 | M4 | **`run_model()` ownership.** The Data Layer exposes `production_features_path` only; wrapping inference in a callable `run_model()` belongs to the Model Layer. Any orchestrator should sit outside `data_layer/` so the Data Layer keeps no dependency on the Model Layer. *Inferred from the sprint specification; not yet confirmed cross-group.* |
 | M5 | **No action needed.** The six TTM signals `rpm`, `speed`, `coolant_temp`, `map`, `maf`, `tps` are all present in the 46-column output, so forecasting itself is unaffected. |
-| M6 | **Proxy delivery contract.** `docs/INTERFACE.md` §1.4 still describes the superseded `proxy_training_labels.csv` and duration window tables. The current delivery is `proxy_decisions.csv` from stages 50–70. Requires a cross-group contract update. |
+| M6 | **Proxy delivery reachable — unblocked.** Stages 50–70 now run inside `run_data_pipeline_for_upload`, so `proxy_decisions.csv` is produced by a live single-CSV upload and its absolute path is returned as `proxy_decisions_path`. Verified on real data: both anomaly types the Model Layer does not score itself carry real DTC candidates (`intake_air_temperature_sensor_fault` → P0111, `map_load_signal_plausibility_fault` → P0106). Forwarding those verdicts into the Model Layer JSON can now start. |
+| M7 | **Open question for the three groups.** Whether the Model Layer forwards the two types into its own JSON, or the Report Layer reads both files directly. The Data Layer has no preference beyond keeping `generate_report(model_output)` as a single-dict interface. |
 
 ### 2. Dashboard Handoff
 
 | # | Item |
 | - | ---- |
 | D1 | **Entry point signature.** `run_data_pipeline_for_upload(csv_path, ...)` takes a filesystem path, not a Streamlit `UploadedFile`, so the Data Layer keeps no dependency on Streamlit. The Dashboard persists the uploaded object first and passes the path. *Data Layer design; awaiting Dashboard confirmation.* |
-| D2 | **Rejection codes.** `UploadRejected.code` is one of `bad_filename`, `missing_columns`, `too_few_rows`, `unreadable_csv`; the exception message is already user-facing and may be displayed directly. *Data Layer design; awaiting Dashboard confirmation.* |
+| D2 | **Rejection codes.** `UploadRejected.code` is one of `bad_filename`, `missing_columns`, `too_few_rows`, `unreadable_csv`, `no_usable_segment`; the exception message is already user-facing and may be displayed directly. `no_usable_segment` differs from the others in being raised *after* the pipeline has run, so a run directory exists. The Dashboard's existing `except UploadRejected` already covers it; branching on `code` for distinct user messages is optional. *Data Layer design; awaiting Dashboard confirmation.* |
 | D3 | **Original KIT file name required.** The recording date is parsed from the file name because the CSV carries time-of-day only, so a renamed file cannot be processed. The upload UI must state this. *Data Layer decision; not covered by the sprint specification, which constrains column names only.* |
-| D4 | **Delivered.** KIT column and ≥700-row checks run fail-fast inside the Data Layer before any run directory is created. |
+| D4 | **Delivered.** KIT file-name, column, row-count and duration checks run fail-fast before any run directory is created; the segment-level check runs after cleaning. Uploads also produce `proxy_decisions_path` without any Dashboard change, because the upload path enables the proxy stages by default. |
 
 ### 3. Performance and Storage
 
@@ -623,6 +645,18 @@ python data_layer/run_pipeline.py --run-id <run_id>
 ```
 
 Stages 50–70 require a completed feature run and verified manifests.
+
+### Upload Rejected as `no_usable_segment`
+
+**Error:** An upload completes the pipeline but is rejected because no contiguous segment reaches 700 rows.
+
+**Explanation:** The recording was interrupted repeatedly, so the cleaning stage split it into short segments. Forecast windows never cross a segment boundary, so total length does not help — one uninterrupted stretch must be long enough. This is expected behaviour, not a fault: one trip in the reference corpus (731 s over 7 segments, longest 593 rows) fails exactly this way.
+
+**Solution:** Use a recording with a longer continuous drive. The run directory is kept and named in the message, so the segment layout can be inspected:
+
+```powershell
+python -c "import pandas as pd; d=pd.read_csv(r'data/processed/runs/<run_id>/features/41_production/production_features.csv', usecols=['segment_id']); print(d.groupby('segment_id').size())"
+```
 
 ### Checksum Drift
 
