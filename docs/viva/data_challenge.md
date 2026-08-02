@@ -7,6 +7,17 @@
 
 ---
 
+# Speech Script v1.0:
+
+##### Lei Pei: challenge and solution
+
+Our first challenge was the data. It contains normal driving records, but no confirmed examples of vehicle faults. This meant that we could not train or evaluate a conventional fault classifier. Simple global thresholds were also unreliable because the same sensor reading can have different meanings under different operating conditions. We therefore built a context-aware labelling pipeline. First, we clean and align each trip. Next, we identify the vehicle state, such as warm-up, steady driving, or high load. We then apply each fault rule only when it is physically meaningful, require abnormal patterns to persist, and return “not evaluable” when there is not enough reliable data. The result is traceable fault evidence for downstream analysis.
+
+##### Qiuting Fu: basis and verification
+
+To implement this approach, we developed five proxy fault families containing 14 individual checks. These rules are grounded in standard OBD-II fault codes and published automotive guidance. However, these proxy rules still needed validation. We therefore used controlled fault injection, changing one relevant signal at three severity levels across three different journeys. On the usable healthy data, none of the checks produced a fault decision. At the strongest injected level, all 14 checks responded across all three journeys. This shows that the rules are consistent and that the complete pipeline works as designed. However, simulated signals are not real mechanical failures. We therefore cannot claim real-world accuracy or recall.
+
+
 ## Why This Challenge Is Specific to This Project
 
 <!-- TODO: Lei Pei, Qiuting Fu -->
