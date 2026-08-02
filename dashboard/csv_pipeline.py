@@ -181,6 +181,11 @@ def _run_data_layer(raw_csv_path: Path) -> tuple[Path, Path | None]:
     proxy_path_value = summary.get("proxy_decisions_path")
     if proxy_path_value:
         proxy_path = Path(proxy_path_value)
+        if not proxy_path.is_file():
+            raise UploadedCsvPipelineError(
+                "Data Layer reported proxy_decisions.csv but the file "
+                "was not created."
+            )
 
     return production_path, proxy_path
 
