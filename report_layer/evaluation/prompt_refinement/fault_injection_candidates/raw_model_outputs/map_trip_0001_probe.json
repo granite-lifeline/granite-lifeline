@@ -1,0 +1,447 @@
+{
+  "summary": {
+    "timestamp": "2017-07-05T05:26:37Z",
+    "anomaly_type": "cooling_degradation",
+    "risk_score": 1.0,
+    "risk_level": "High",
+    "component": "cooling_degradation",
+    "prediction_confidence": 0.6495,
+    "key_signals": [
+      {
+        "feature": "coolant_temp",
+        "value": 80.0,
+        "unit": "°C",
+        "reference_range": [
+          90,
+          95
+        ]
+      },
+      {
+        "feature": "ect_rate_180s",
+        "value": 5.0868,
+        "unit": "°C/min",
+        "reference_range": [
+          0,
+          2
+        ]
+      },
+      {
+        "feature": "maf_integral_180s",
+        "value": 2978.8023,
+        "unit": "g",
+        "reference_range": [
+          0,
+          2500
+        ]
+      },
+      {
+        "feature": "speed",
+        "value": 85.0,
+        "unit": "km/h",
+        "reference_range": [
+          0,
+          218
+        ]
+      },
+      {
+        "feature": "rpm",
+        "value": 1443.0,
+        "unit": "RPM",
+        "reference_range": [
+          0,
+          3682
+        ]
+      }
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": [
+      "Failure estimate unavailable: need at least 5 chronological trips; found 3."
+    ]
+  },
+  "windows": [
+    {
+      "trip_id": "trip_0001",
+      "segment_id": "trip_0001_seg_001",
+      "window_id": "trip_0001_seg_001__w000",
+      "timestamp": "2017-07-05T05:26:37Z",
+      "anomaly_type": "cooling_degradation",
+      "risk_score": 1.0,
+      "risk_level": "High",
+      "component": "cooling_degradation",
+      "prediction_confidence": 0.6495,
+      "key_signals": [
+        {
+          "feature": "coolant_temp",
+          "value": 80.0,
+          "unit": "°C",
+          "reference_range": [
+            90,
+            95
+          ]
+        },
+        {
+          "feature": "ect_rate_180s",
+          "value": 5.0868,
+          "unit": "°C/min",
+          "reference_range": [
+            0,
+            2
+          ]
+        },
+        {
+          "feature": "maf_integral_180s",
+          "value": 2978.8023,
+          "unit": "g",
+          "reference_range": [
+            0,
+            2500
+          ]
+        },
+        {
+          "feature": "speed",
+          "value": 85.0,
+          "unit": "km/h",
+          "reference_range": [
+            0,
+            218
+          ]
+        },
+        {
+          "feature": "rpm",
+          "value": 1443.0,
+          "unit": "RPM",
+          "reference_range": [
+            0,
+            3682
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "Failure estimate unavailable: need at least 5 chronological trips; found 3."
+      ]
+    },
+    {
+      "trip_id": "trip_0001",
+      "segment_id": "trip_0001_seg_001",
+      "window_id": "trip_0001_seg_001__w001",
+      "timestamp": "2017-07-05T05:36:45Z",
+      "anomaly_type": "map_load_signal_plausibility_fault",
+      "risk_score": 0.9,
+      "risk_level": "High",
+      "component": "map_load_signal_plausibility_fault",
+      "prediction_confidence": 0.9,
+      "key_signals": [
+        {
+          "feature": "map",
+          "value": 104.0,
+          "unit": "kPa",
+          "reference_range": [
+            36,
+            237
+          ]
+        },
+        {
+          "feature": "pedal_slope",
+          "value": 0.0,
+          "unit": "pp/s",
+          "reference_range": [
+            -2.4,
+            2.4
+          ]
+        },
+        {
+          "feature": "speed_density_maf_residual",
+          "value": -1.3061,
+          "unit": "g/s",
+          "reference_range": [
+            -20,
+            20
+          ]
+        },
+        {
+          "feature": "map_range_60s",
+          "value": 98.0,
+          "unit": "kPa",
+          "reference_range": [
+            0,
+            80
+          ]
+        },
+        {
+          "feature": "rpm_slope",
+          "value": -8.2708,
+          "unit": "RPM/s",
+          "reference_range": [
+            -120,
+            135
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "map_load_signal_plausibility_fault forwarded from Data Layer proxy_decisions.csv: 5-S3 triggered, DTC P0106, confidence high",
+        "Failure estimate unavailable: need at least 5 chronological trips; found 3."
+      ]
+    },
+    {
+      "trip_id": "trip_0001",
+      "segment_id": "trip_0001_seg_001",
+      "window_id": "trip_0001_seg_001__w002",
+      "timestamp": "2017-07-05T05:46:53Z",
+      "anomaly_type": "map_load_signal_plausibility_fault",
+      "risk_score": 0.9,
+      "risk_level": "High",
+      "component": "map_load_signal_plausibility_fault",
+      "prediction_confidence": 0.9,
+      "key_signals": [
+        {
+          "feature": "map",
+          "value": 119.0,
+          "unit": "kPa",
+          "reference_range": [
+            36,
+            237
+          ]
+        },
+        {
+          "feature": "pedal_slope",
+          "value": 0.0573,
+          "unit": "pp/s",
+          "reference_range": [
+            -2.4,
+            2.4
+          ]
+        },
+        {
+          "feature": "speed_density_maf_residual",
+          "value": -0.7083,
+          "unit": "g/s",
+          "reference_range": [
+            -20,
+            20
+          ]
+        },
+        {
+          "feature": "map_range_60s",
+          "value": 97.0,
+          "unit": "kPa",
+          "reference_range": [
+            0,
+            80
+          ]
+        },
+        {
+          "feature": "rpm_slope",
+          "value": 1.3021,
+          "unit": "RPM/s",
+          "reference_range": [
+            -120,
+            135
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "map_load_signal_plausibility_fault forwarded from Data Layer proxy_decisions.csv: 5-S3 triggered, DTC P0106, confidence high",
+        "Failure estimate unavailable: need at least 5 chronological trips; found 3."
+      ]
+    },
+    {
+      "trip_id": "trip_0001",
+      "segment_id": "trip_0001_seg_001",
+      "window_id": "trip_0001_seg_001__w003",
+      "timestamp": "2017-07-05T05:57:01Z",
+      "anomaly_type": "map_load_signal_plausibility_fault",
+      "risk_score": 0.9,
+      "risk_level": "High",
+      "component": "map_load_signal_plausibility_fault",
+      "prediction_confidence": 0.9,
+      "key_signals": [
+        {
+          "feature": "map",
+          "value": 107.0,
+          "unit": "kPa",
+          "reference_range": [
+            36,
+            237
+          ]
+        },
+        {
+          "feature": "pedal_slope",
+          "value": -0.1083,
+          "unit": "pp/s",
+          "reference_range": [
+            -2.4,
+            2.4
+          ]
+        },
+        {
+          "feature": "speed_density_maf_residual",
+          "value": -1.305,
+          "unit": "g/s",
+          "reference_range": [
+            -20,
+            20
+          ]
+        },
+        {
+          "feature": "map_range_60s",
+          "value": 101.0,
+          "unit": "kPa",
+          "reference_range": [
+            0,
+            80
+          ]
+        },
+        {
+          "feature": "rpm_slope",
+          "value": 2.75,
+          "unit": "RPM/s",
+          "reference_range": [
+            -120,
+            135
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "map_load_signal_plausibility_fault forwarded from Data Layer proxy_decisions.csv: 5-S3 triggered, DTC P0106, confidence high",
+        "Failure estimate unavailable: need at least 5 chronological trips; found 3."
+      ]
+    },
+    {
+      "trip_id": "trip_0001",
+      "segment_id": "trip_0001_seg_001",
+      "window_id": "trip_0001_seg_001__w004",
+      "timestamp": "2017-07-05T06:07:09Z",
+      "anomaly_type": "map_load_signal_plausibility_fault",
+      "risk_score": 0.9,
+      "risk_level": "High",
+      "component": "map_load_signal_plausibility_fault",
+      "prediction_confidence": 0.9,
+      "key_signals": [
+        {
+          "feature": "map",
+          "value": 113.0,
+          "unit": "kPa",
+          "reference_range": [
+            36,
+            237
+          ]
+        },
+        {
+          "feature": "pedal_slope",
+          "value": -0.0,
+          "unit": "pp/s",
+          "reference_range": [
+            -2.4,
+            2.4
+          ]
+        },
+        {
+          "feature": "speed_density_maf_residual",
+          "value": -1.3307,
+          "unit": "g/s",
+          "reference_range": [
+            -20,
+            20
+          ]
+        },
+        {
+          "feature": "map_range_60s",
+          "value": 73.0,
+          "unit": "kPa",
+          "reference_range": [
+            0,
+            80
+          ]
+        },
+        {
+          "feature": "rpm_slope",
+          "value": 0.5417,
+          "unit": "RPM/s",
+          "reference_range": [
+            -120,
+            135
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "map_load_signal_plausibility_fault forwarded from Data Layer proxy_decisions.csv: 5-S3 triggered, DTC P0106, confidence high",
+        "Failure estimate unavailable: need at least 5 chronological trips; found 3."
+      ]
+    },
+    {
+      "trip_id": "trip_0001",
+      "segment_id": "trip_0001_seg_001",
+      "window_id": "trip_0001_seg_001__w005",
+      "timestamp": "2017-07-05T06:17:17Z",
+      "anomaly_type": "map_load_signal_plausibility_fault",
+      "risk_score": 0.9,
+      "risk_level": "High",
+      "component": "map_load_signal_plausibility_fault",
+      "prediction_confidence": 0.9,
+      "key_signals": [
+        {
+          "feature": "map",
+          "value": 190.0,
+          "unit": "kPa",
+          "reference_range": [
+            36,
+            237
+          ]
+        },
+        {
+          "feature": "pedal_slope",
+          "value": 0.1943,
+          "unit": "pp/s",
+          "reference_range": [
+            -2.4,
+            2.4
+          ]
+        },
+        {
+          "feature": "speed_density_maf_residual",
+          "value": 0.3751,
+          "unit": "g/s",
+          "reference_range": [
+            -20,
+            20
+          ]
+        },
+        {
+          "feature": "map_range_60s",
+          "value": 179.0,
+          "unit": "kPa",
+          "reference_range": [
+            0,
+            80
+          ]
+        },
+        {
+          "feature": "rpm_slope",
+          "value": 3.5521,
+          "unit": "RPM/s",
+          "reference_range": [
+            -120,
+            135
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "map_load_signal_plausibility_fault forwarded from Data Layer proxy_decisions.csv: 5-S3 triggered, DTC P0106, confidence high",
+        "Failure estimate unavailable: need at least 5 chronological trips; found 3."
+      ]
+    }
+  ]
+}

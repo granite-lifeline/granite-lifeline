@@ -35,9 +35,16 @@ Rules:
 - If audience is "non-technical vehicle owner", use plain language for a vehicle owner without automotive expertise.
 - Avoid unexplained technical jargon.
 - If a technical term is necessary, explain it in simple words.
+- Do not use unexplained acronyms in action items. Spell out
+  component names such as "intake air temperature sensor" instead of
+  "IAT sensor" unless the acronym has already been explained in the
+  same sentence.
 - Make every action concrete and specific.
 - Do not use vague advice such as "check related components".
 - Say what the owner should actually do, such as "take your car to a mechanic to check the cooling system".
+- Avoid clunky punctuation in examples. Do not use "e.g." or "i.e.".
+  Prefer natural phrasing like "such as rough idle or hesitation" or
+  "after driving in hot weather or on dusty roads."
 - Match the urgency to risk_level:
   - Low: suggest monitoring and simple checks.
   - Medium: suggest checking the vehicle soon.
@@ -45,12 +52,64 @@ Rules:
 - Match wording strength to prediction_confidence:
   - Higher confidence: use more specific, action-oriented wording.
   - Lower confidence: use more observational wording and suggest monitoring.
+- For Low risk, do not recommend urgent repair or replacement unless
+  the context contains a strong abnormal signal. Prefer monitoring,
+  rechecking after more driving, and simple visual checks.
 - Follow certainty guidance for wording strength, but never say the system has confirmed a real fault.
 - Do not cause unnecessary panic.
 - Do not recommend unsafe actions.
 - If there is not enough evidence, recommend monitoring and collecting more data.
-- If the context includes a Failure Projection section, use only the failure probability or estimated cycles that are actually present. Do not invent missing probability, cycle count, dates, mileage, or deadlines.
-- If the context includes Model Layer Notes, use them only to explain data-quality limits when helpful. Do not turn notes into mechanical repair actions.
+- If the context includes a Failure Projection section, use only the
+  failure probability or estimated cycles that are actually present.
+  Do not invent missing probability, cycle count, dates, mileage, or
+  deadlines.
+- If estimated_failure_probability is present but
+  estimated_cycles_to_failure is missing, do not say there is "no
+  failure probability". Say no cycle estimate is available. If the
+  probability is very small, describe it as a very low model-estimated
+  probability of crossing the High-risk threshold, not as a calibrated
+  probability of mechanical failure.
+- Do not treat risk_score as a probability of mechanical failure.
+  risk_score indicates current anomaly severity/classification, while
+  estimated_failure_probability is the model-provided projection for
+  crossing the High-risk threshold within the stated horizon.
+- If Model Layer Notes mention "forwarded from Data Layer
+  proxy_decisions.csv" or "Data Layer proxy decision", keep actions
+  consistent with rule-based proxy evidence: recommend inspection or
+  diagnostic confirmation, but do not treat the proxy note itself as a
+  confirmed mechanical failure.
+- Do not show internal source filenames such as "proxy_decisions.csv"
+  in owner-facing action text. Say "rule-based diagnostic flag" if the
+  provenance matters.
+- Do not show raw diagnostic trouble codes such as P0113 or P0106 in
+  owner-facing action text. Tell the owner a mechanic can check the
+  stored diagnostic code, without naming the code in the main report.
+- If the current key signals are mostly NORMAL, avoid recommending
+  immediate part replacement. Ask for confirmation with a scan tool or
+  mechanic inspection first.
+- For proxy-forwarded cases with NORMAL displayed key signals, do not
+  recommend replacing a sensor or component in the owner-facing action
+  list. Recommend inspection, connector/wiring checks, and diagnostic
+  confirmation first.
+- For proxy-forwarded cases with NORMAL displayed key signals and a
+  very low estimated_failure_probability, do not recommend avoiding
+  long-distance driving, heavy acceleration, towing, or high-speed
+  driving unless the context also shows drivability symptoms, warning
+  lights, or abnormal key signals. Recommend prompt diagnostic
+  confirmation instead.
+- If displayed key signals are NORMAL, do not tell the owner or
+  mechanic that the sensor is "outside its normal range." Say the
+  rule-based diagnostic flag should be verified against live sensor
+  readings and wiring condition.
+- For intake-air-temperature cases, do not recommend replacing the
+  mass airflow sensor unless the input context clearly says the mass
+  airflow sensor itself is abnormal or a mechanic has confirmed that
+  the intake-temperature sensor is integrated into that replaceable
+  part.
+- If the context includes Model Layer Notes, use them only to explain
+  provenance or data-quality limits when helpful. Do not turn notes
+  into mechanical repair actions. Do not copy Model Layer Notes or
+  retrieved source text verbatim into the report.
 
 Examples:
 
@@ -59,14 +118,14 @@ Medium risk):
 [
   "Check IAT sensor",
   "Inspect wiring harness",
-  "Use OBD-II scanner to read P0112/P0113 codes",
+  "Use OBD-II scanner to read raw diagnostic trouble codes",
   "Replace sensor if faulty"
 ]
 
 Why this is wrong:
 - Uses unexplained acronym (IAT) and technical term (wiring harness)
-- References OBD-II codes without explaining what they are or how to
-  access them
+- Shows raw OBD-II codes that belong in a technical-details area, not
+  the owner-facing action list
 - Vague actions ("check", "inspect") without saying how or where
 - Does not match urgency to Medium risk level
 - Assumes owner has technical knowledge and diagnostic tools
@@ -149,6 +208,10 @@ Output format rules:
 - Return exactly one valid JSON object.
 - Do not include Markdown, code fences, commentary, or extra keys.
 - The recommended_action value must be a JSON array of 2 to 4 plain strings.
+- Before returning, check every action item. No item may contain
+  "proxy_decisions.csv", raw P-codes such as "P0113" or "P0106",
+  "DTC", "e.g.", "i.e.", or "this window". If any appear, rewrite the
+  action in plain owner-facing language.
 
 Return JSON only:
 {

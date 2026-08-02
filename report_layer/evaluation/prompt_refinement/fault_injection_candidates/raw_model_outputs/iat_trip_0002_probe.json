@@ -1,0 +1,383 @@
+{
+  "summary": {
+    "timestamp": "2017-07-05T17:27:26Z",
+    "anomaly_type": "cooling_degradation",
+    "risk_score": 1.0,
+    "risk_level": "High",
+    "component": "cooling_degradation",
+    "prediction_confidence": 0.6464,
+    "key_signals": [
+      {
+        "feature": "coolant_temp",
+        "value": 93.0,
+        "unit": "°C",
+        "reference_range": [
+          90,
+          95
+        ]
+      },
+      {
+        "feature": "ect_rate_180s",
+        "value": 9.6979,
+        "unit": "°C/min",
+        "reference_range": [
+          0,
+          2
+        ]
+      },
+      {
+        "feature": "maf_integral_180s",
+        "value": 4942.092,
+        "unit": "g",
+        "reference_range": [
+          0,
+          2500
+        ]
+      },
+      {
+        "feature": "rpm",
+        "value": 1742.0,
+        "unit": "RPM",
+        "reference_range": [
+          0,
+          3682
+        ]
+      },
+      {
+        "feature": "map",
+        "value": 125.0,
+        "unit": "kPa",
+        "reference_range": [
+          36,
+          237
+        ]
+      }
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": [
+      "Failure estimate unavailable: need at least 5 chronological trips; found 2."
+    ]
+  },
+  "windows": [
+    {
+      "trip_id": "trip_0002",
+      "segment_id": "trip_0002_seg_001",
+      "window_id": "trip_0002_seg_001__w000",
+      "timestamp": "2017-07-05T17:27:26Z",
+      "anomaly_type": "cooling_degradation",
+      "risk_score": 1.0,
+      "risk_level": "High",
+      "component": "cooling_degradation",
+      "prediction_confidence": 0.6464,
+      "key_signals": [
+        {
+          "feature": "coolant_temp",
+          "value": 93.0,
+          "unit": "°C",
+          "reference_range": [
+            90,
+            95
+          ]
+        },
+        {
+          "feature": "ect_rate_180s",
+          "value": 9.6979,
+          "unit": "°C/min",
+          "reference_range": [
+            0,
+            2
+          ]
+        },
+        {
+          "feature": "maf_integral_180s",
+          "value": 4942.092,
+          "unit": "g",
+          "reference_range": [
+            0,
+            2500
+          ]
+        },
+        {
+          "feature": "rpm",
+          "value": 1742.0,
+          "unit": "RPM",
+          "reference_range": [
+            0,
+            3682
+          ]
+        },
+        {
+          "feature": "map",
+          "value": 125.0,
+          "unit": "kPa",
+          "reference_range": [
+            36,
+            237
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "Failure estimate unavailable: need at least 5 chronological trips; found 2."
+      ]
+    },
+    {
+      "trip_id": "trip_0002",
+      "segment_id": "trip_0002_seg_001",
+      "window_id": "trip_0002_seg_001__w001",
+      "timestamp": "2017-07-05T17:37:34Z",
+      "anomaly_type": "intake_air_temperature_sensor_fault",
+      "risk_score": 0.9,
+      "risk_level": "High",
+      "component": "intake_air_temperature_sensor_fault",
+      "prediction_confidence": 0.9,
+      "key_signals": [
+        {
+          "feature": "intake_temp",
+          "value": 33.0,
+          "unit": "°C",
+          "reference_range": [
+            -3,
+            41
+          ]
+        },
+        {
+          "feature": "intake_temp_stability",
+          "value": 0.7089,
+          "unit": "°C",
+          "reference_range": [
+            0,
+            5
+          ]
+        },
+        {
+          "feature": "intake_ambient_delta",
+          "value": 4.0,
+          "unit": "°C",
+          "reference_range": [
+            0,
+            20
+          ]
+        },
+        {
+          "feature": "ambient_temp",
+          "value": 29.0,
+          "unit": "°C",
+          "reference_range": [
+            -7,
+            25
+          ]
+        },
+        {
+          "feature": "coolant_temp",
+          "value": 90.0,
+          "unit": "°C",
+          "reference_range": [
+            90,
+            95
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "intake_air_temperature_sensor_fault forwarded from Data Layer proxy_decisions.csv: 4-S3 triggered, DTC P0113, confidence high",
+        "Failure estimate unavailable: need at least 5 chronological trips; found 2."
+      ]
+    },
+    {
+      "trip_id": "trip_0002",
+      "segment_id": "trip_0002_seg_001",
+      "window_id": "trip_0002_seg_001__w002",
+      "timestamp": "2017-07-05T17:47:42Z",
+      "anomaly_type": "intake_air_temperature_sensor_fault",
+      "risk_score": 0.9,
+      "risk_level": "High",
+      "component": "intake_air_temperature_sensor_fault",
+      "prediction_confidence": 0.9,
+      "key_signals": [
+        {
+          "feature": "intake_temp",
+          "value": 37.0,
+          "unit": "°C",
+          "reference_range": [
+            -3,
+            41
+          ]
+        },
+        {
+          "feature": "intake_temp_stability",
+          "value": 1.0851,
+          "unit": "°C",
+          "reference_range": [
+            0,
+            5
+          ]
+        },
+        {
+          "feature": "intake_ambient_delta",
+          "value": 7.0,
+          "unit": "°C",
+          "reference_range": [
+            0,
+            20
+          ]
+        },
+        {
+          "feature": "ambient_temp",
+          "value": 30.0,
+          "unit": "°C",
+          "reference_range": [
+            -7,
+            25
+          ]
+        },
+        {
+          "feature": "coolant_temp",
+          "value": 90.0,
+          "unit": "°C",
+          "reference_range": [
+            90,
+            95
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "intake_air_temperature_sensor_fault forwarded from Data Layer proxy_decisions.csv: 4-S3 triggered, DTC P0113, confidence high",
+        "Failure estimate unavailable: need at least 5 chronological trips; found 2."
+      ]
+    },
+    {
+      "trip_id": "trip_0002",
+      "segment_id": "trip_0002_seg_001",
+      "window_id": "trip_0002_seg_001__w003",
+      "timestamp": "2017-07-05T17:57:50Z",
+      "anomaly_type": "intake_air_temperature_sensor_fault",
+      "risk_score": 0.9,
+      "risk_level": "High",
+      "component": "intake_air_temperature_sensor_fault",
+      "prediction_confidence": 0.9,
+      "key_signals": [
+        {
+          "feature": "intake_temp",
+          "value": 40.0,
+          "unit": "°C",
+          "reference_range": [
+            -3,
+            41
+          ]
+        },
+        {
+          "feature": "intake_temp_stability",
+          "value": 1.5278,
+          "unit": "°C",
+          "reference_range": [
+            0,
+            5
+          ]
+        },
+        {
+          "feature": "intake_ambient_delta",
+          "value": 9.0,
+          "unit": "°C",
+          "reference_range": [
+            0,
+            20
+          ]
+        },
+        {
+          "feature": "ambient_temp",
+          "value": 31.0,
+          "unit": "°C",
+          "reference_range": [
+            -7,
+            25
+          ]
+        },
+        {
+          "feature": "coolant_temp",
+          "value": 90.0,
+          "unit": "°C",
+          "reference_range": [
+            90,
+            95
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "intake_air_temperature_sensor_fault forwarded from Data Layer proxy_decisions.csv: 4-S3 triggered, DTC P0113, confidence high",
+        "Failure estimate unavailable: need at least 5 chronological trips; found 2."
+      ]
+    },
+    {
+      "trip_id": "trip_0002",
+      "segment_id": "trip_0002_seg_001",
+      "window_id": "trip_0002_seg_001__w004",
+      "timestamp": "2017-07-05T18:07:58Z",
+      "anomaly_type": "intake_air_temperature_sensor_fault",
+      "risk_score": 0.9,
+      "risk_level": "High",
+      "component": "intake_air_temperature_sensor_fault",
+      "prediction_confidence": 0.9,
+      "key_signals": [
+        {
+          "feature": "intake_temp",
+          "value": 37.0,
+          "unit": "°C",
+          "reference_range": [
+            -3,
+            41
+          ]
+        },
+        {
+          "feature": "intake_temp_stability",
+          "value": 2.1502,
+          "unit": "°C",
+          "reference_range": [
+            0,
+            5
+          ]
+        },
+        {
+          "feature": "intake_ambient_delta",
+          "value": 10.0,
+          "unit": "°C",
+          "reference_range": [
+            0,
+            20
+          ]
+        },
+        {
+          "feature": "ambient_temp",
+          "value": 27.0,
+          "unit": "°C",
+          "reference_range": [
+            -7,
+            25
+          ]
+        },
+        {
+          "feature": "coolant_temp",
+          "value": 95.0,
+          "unit": "°C",
+          "reference_range": [
+            90,
+            95
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "intake_air_temperature_sensor_fault forwarded from Data Layer proxy_decisions.csv: 4-S3 triggered, DTC P0113, confidence high",
+        "Failure estimate unavailable: need at least 5 chronological trips; found 2."
+      ]
+    }
+  ]
+}

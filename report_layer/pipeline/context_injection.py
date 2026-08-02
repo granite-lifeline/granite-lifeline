@@ -6,6 +6,7 @@ Raw OBD-II field names are mapped to human-readable names before being
 passed to the LLM.
 """
 
+import re
 from typing import Dict, List, Union
 
 from report_layer.rag.rag_retriever import retrieve_all
@@ -80,30 +81,102 @@ KNOWN_CORRELATIONS = {
 CORRELATION_DESCRIPTIONS = {
     "thermal_stress_pattern": (
         "Thermal stress pattern detected — multiple cooling system "
-        "signals are abnormal simultaneously, suggesting systemic "
-        "cooling system degradation."
+        "signals are abnormal simultaneously. Interpret this together "
+        "with the risk level before describing it as degradation."
     ),
     "air_intake_issue": (
         "Air intake anomaly pattern detected — MAF and MAP signals "
-        "are both abnormal, suggesting a systemic air intake or "
+        "are both abnormal and may indicate an air intake or "
         "sensor plausibility issue."
     ),
     "dual_channel_pedal_divergence": (
         "Dual-channel pedal divergence detected — both accelerator "
-        "pedal sensor channels are abnormal simultaneously, "
-        "suggesting a sensor or wiring fault."
+        "pedal sensor channels are abnormal simultaneously. This may "
+        "indicate a sensor or wiring issue."
     ),
     "intake_temperature_sensor_pattern": (
         "Intake temperature sensor pattern detected — intake temperature "
-        "signals are abnormal together, suggesting an intake-air "
+        "signals are abnormal together. This may indicate an intake-air "
         "temperature sensor plausibility issue."
     ),
     "map_load_plausibility_issue": (
         "MAP load plausibility issue detected — MAP and RPM signals "
-        "are both abnormal, suggesting a manifold pressure or engine "
+        "are both abnormal. This may indicate a manifold pressure or engine "
         "load calculation fault."
     ),
 }
+
+
+PROXY_PROVENANCE_MARKERS = (
+    "forwarded from Data Layer proxy_decisions.csv",
+    "Data Layer proxy decision",
+)
+
+RAW_DTC_PATTERN = re.compile(r"\b(?:DTC\s*)?P\d{4}(?:-\d+)?\b", re.IGNORECASE)
+
+
+def _sanitize_owner_facing_prompt_text(text: str) -> str:
+    """
+    Remove technical artifacts before sending context/RAG text to prompts.
+
+    The raw ModelLayerOutput remains unchanged in the final report object.
+    This sanitizer only prevents owner-facing generated sections from copying
+    internal filenames or raw diagnostic trouble codes out of prompt context.
+    """
+    sanitized = text.replace(
+        "Data Layer proxy_decisions.csv",
+        "Data Layer rule-based evidence",
+    )
+    sanitized = sanitized.replace(
+        "proxy_decisions.csv",
+        "rule-based evidence",
+    )
+    sanitized = RAW_DTC_PATTERN.sub("a diagnostic flag", sanitized)
+    sanitized = re.sub(
+        r"\bDTCs?\b",
+        "diagnostic codes",
+        sanitized,
+        flags=re.IGNORECASE,
+    )
+    sanitized = re.sub(
+        r"\bfault code\b",
+        "diagnostic flag",
+        sanitized,
+        flags=re.IGNORECASE,
+    )
+    return sanitized
+
+
+def _sanitize_prompt_text(text: str) -> str:
+    """Sanitize a retrieved RAG string before prompt injection."""
+    return _sanitize_owner_facing_prompt_text(text)
+
+
+def _format_probability(value: float) -> str:
+    """Format a unit probability without rounding small values to zero."""
+    percent = value * 100
+    if 0 < percent < 1:
+        return f"{percent:.2f}%"
+    if percent == round(percent):
+        return f"{int(round(percent))}%"
+    return f"{percent:.1f}%"
+
+
+def _needs_low_cooling_caution(ttm_output: ModelLayerOutput) -> bool:
+    """Return true for cooling cases with low/falling temperature evidence."""
+    if ttm_output.component != "cooling_degradation":
+        return False
+    has_lower_than_expected_temp = False
+    has_falling_temp_rate = False
+    for signal in ttm_output.key_signals:
+        if (
+            signal.feature == "coolant_temp"
+            and signal.value < signal.reference_range[0]
+        ):
+            has_lower_than_expected_temp = True
+        if signal.feature == "ect_rate_180s" and signal.value < 0:
+            has_falling_temp_rate = True
+    return has_lower_than_expected_temp or has_falling_temp_rate
 
 
 def build_context(ttm_output: ModelLayerOutput) -> str:
@@ -117,8 +190,9 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
         Formatted context string with vehicle status, key signals,
         Signal Correlation section when abnormal signals are detected,
         Failure Projection section when estimated_cycles_to_failure or
-        estimated_failure_probability is not None, and Model Layer Notes
-        section when input validation or degradation messages are
+        estimated_failure_probability is not None, Detection Provenance
+        when Model Layer notes identify proxy forwarding, and Model
+        Layer Notes when input validation or degradation messages are
         present. The Signal Correlation section uses known automotive
         fault correlation patterns where available.
     """
@@ -211,6 +285,18 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
                 f"{feature_name}"
             )
 
+    if _needs_low_cooling_caution(ttm_output):
+        context_lines.append("")
+        context_lines.append("Interpretation Caution:")
+        context_lines.append(
+            "- Cooling evidence is lower-than-expected or falling "
+            "coolant temperature without high-temperature evidence. "
+            "Limit interpretation to cautious possibilities such as "
+            "sensor reading issue, cooling fan behavior, or insufficient "
+            "evidence for a specific cause. Avoid explaining thermostat "
+            "mechanics for this low-risk pattern."
+        )
+
     # Add Failure Projection section if prediction fields are present
     failure_prob = ttm_output.estimated_failure_probability
     cycles_to_failure = ttm_output.estimated_cycles_to_failure
@@ -218,27 +304,52 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
         context_lines.append("")
         context_lines.append("Failure Projection:")
         if failure_prob is not None:
-            prob_pct = round(failure_prob * 100)
             context_lines.append(
-                f"- Failure probability: {prob_pct}%"
+                f"- Failure probability: {_format_probability(failure_prob)}"
+            )
+            context_lines.append(
+                "- Probability meaning: model-estimated probability of "
+                "crossing the High-risk threshold within the configured "
+                "prediction horizon; not a calibrated probability of "
+                "mechanical failure."
             )
         if cycles_to_failure is not None:
             context_lines.append(
                 f"- Estimated cycles to failure: "
                 f"{cycles_to_failure} drive cycles"
             )
+        else:
+            context_lines.append(
+                "- Estimated cycles to failure: unavailable for this "
+                "window."
+            )
+
+    has_proxy_provenance = any(
+        any(marker in note for marker in PROXY_PROVENANCE_MARKERS)
+        for note in ttm_output.notes
+    )
+    if has_proxy_provenance:
+        context_lines.append("")
+        context_lines.append("Detection Provenance:")
+        context_lines.append(
+            "- This detection was forwarded from Data Layer rule-based "
+            "proxy evidence, not native TTM residual "
+            "scoring."
+        )
 
     # Add Model Layer Notes section if notes are present
     if ttm_output.notes:
         context_lines.append("")
         context_lines.append("Model Layer Notes:")
         context_lines.append(
-            "- These notes describe input data quality, repaired "
-            "values, or disabled detections. They are not mechanical "
-            "fault causes by themselves."
+            "- These notes describe input data quality, repaired values, "
+            "disabled detections, or detection provenance. They are not "
+            "mechanical fault causes by themselves."
         )
         for note in ttm_output.notes:
-            context_lines.append(f"- {note}")
+            context_lines.append(
+                f"- {_sanitize_owner_facing_prompt_text(note)}"
+            )
 
     return "\n".join(context_lines)
 
@@ -304,9 +415,13 @@ def build_context_with_rag(
         )
 
     return {
-        "context": context,
-        "fault_knowledge": rag_knowledge["description_causes"],
-        "actions_knowledge": rag_knowledge["actions"],
+        "context": _sanitize_owner_facing_prompt_text(context),
+        "fault_knowledge": _sanitize_prompt_text(
+            rag_knowledge["description_causes"]
+        ),
+        "actions_knowledge": _sanitize_prompt_text(
+            rag_knowledge["actions"]
+        ),
         "certainty_guidance": certainty_guidance,
         "notes": ttm_output.notes if ttm_output.notes else [],
     }

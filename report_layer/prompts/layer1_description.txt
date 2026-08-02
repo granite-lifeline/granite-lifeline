@@ -26,16 +26,77 @@ Rules:
   - Low: the issue does not look urgent right now.
   - Medium: the issue should be checked soon.
   - High: the issue may need prompt attention.
+- Match certainty to risk_level. For Low risk, do not say the
+  component "is failing", "has degraded", or "is showing signs of
+  degradation"; describe it as a low-risk pattern or weak signal to
+  monitor.
 - Use key signals as evidence, including values where useful.
 - If a signal is marked ABNORMAL, explain that it is outside the reference range.
 - If a signal is marked NORMAL, do not describe it as abnormal.
-- If the context includes a Failure Projection section, mention only the failure probability or estimated cycles that are actually present. Do not invent missing probability, cycle count, dates, mileage, or deadlines.
-- If the context includes Model Layer Notes, use them only to explain data-quality limits when helpful. Do not describe notes as mechanical fault causes.
+- If the context includes a Failure Projection section, mention only
+  the failure probability or estimated cycles that are actually
+  present. If a failure probability is present, include it in the
+  anomaly description. Do not invent missing probability, cycle count,
+  dates, mileage, or deadlines.
+- Do not use vague time phrases such as "near future" when the input
+  context provides a specific prediction horizon. Use the exact horizon
+  from the context or Model Layer Notes, such as "within the next 10
+  trips". If no horizon is provided, say "within the configured
+  prediction horizon."
+- Do not convert failure probability into odds or per-trip language.
+  For example, do not write "1 in 322 trips" or similar conversions.
+  Preserve the model-provided percentage and horizon.
+- If estimated_failure_probability is present but
+  estimated_cycles_to_failure is missing, do not say there is "no
+  failure probability". Say no cycle estimate is available. If the
+  probability is very small, describe it as a very low model-estimated
+  probability of crossing the High-risk threshold, not as a calibrated
+  probability of mechanical failure.
+- Do not treat risk_score as a probability of mechanical failure.
+  risk_score indicates current anomaly severity/classification, while
+  estimated_failure_probability is the model-provided projection for
+  crossing the High-risk threshold within the stated horizon.
+- If estimated_failure_probability is very low and no cycle estimate
+  is available, do not say the component "could fail soon" or is
+  likely to fail soon. Say the current flag should be checked or
+  verified, while the projection remains very low.
+- If the context includes Model Layer Notes that mention "forwarded
+  from Data Layer proxy_decisions.csv" or "Data Layer proxy decision",
+  you must include one plain-language sentence saying the flag was
+  forwarded from rule-based Data Layer proxy evidence, not from TTM
+  residual scoring. Do not imply the displayed key signals alone prove
+  the issue when those signals are marked NORMAL.
+- Do not show internal source filenames such as "proxy_decisions.csv"
+  in owner-facing report text. Say "rule-based Data Layer evidence" or
+  "a rule-based diagnostic flag" instead.
+- Do not show raw diagnostic trouble codes such as P0113 or P0106 in
+  owner-facing report text. Translate them into plain component
+  language, such as "a diagnostic flag related to the intake air
+  temperature sensor." Exact codes belong in a technical-details UI,
+  not in this summary.
+- If the context includes a Detection Provenance section, do not omit
+  it. Include it in the anomaly description even if the report also
+  discusses abnormal key signals.
+- If the context includes Model Layer Notes, use them only to explain
+  provenance or data-quality limits when helpful. Do not describe
+  notes as mechanical fault causes. Do not copy Model Layer Notes
+  verbatim into the report.
 - Do not claim a real mechanical fault is confirmed.
 - Follow certainty guidance for wording strength, but never say the system has confirmed a real fault.
 - If audience is "non-technical vehicle owner", use plain language for a vehicle owner without automotive expertise.
 - Avoid unexplained technical jargon.
 - If a technical term is necessary, explain it in simple words.
+- Avoid pipeline or model-window wording such as "this window." For a
+  vehicle owner, say "during this short driving period" only if timing
+  is necessary; otherwise omit the phrase.
+- Common vehicle sensor names may be used directly when they are the
+  clearest component name, such as "mass airflow sensor" or "coolant
+  temperature sensor". Do not add a parenthetical explanation every
+  time; Dashboard may provide glossary help for these terms.
+- For dual-channel sensors, do not lead with raw channel names such as
+  "Channel D" and "Channel E". First explain the concept in plain
+  language, such as "the two internal sensors inside the accelerator
+  pedal". Raw channel labels may be included after that if useful.
 - If the context does not provide enough evidence, explain that clearly instead of writing "N/A".
 
 Examples:
@@ -78,20 +139,42 @@ Why this is wrong:
 - Does not explain what these readings mean
 
 Good example (air_intake_maf_anomaly, Medium risk):
-"The airflow sensor (which measures how much air enters your engine)
-is showing a higher reading than expected. It reads 28.5 grams per
-second, while the normal range is 10-22 grams per second. The intake
-pressure reading is still within its normal range. The risk level is
-Medium, which means this should be checked soon, but it does not
-appear to be an immediate emergency."
+"The mass airflow sensor is showing a higher reading than expected.
+It reads 28.5 grams per second, while the normal range is 10-22 grams
+per second. The intake pressure reading is still within its normal
+range. The risk level is Medium, which means this should be checked
+soon, but it does not appear to be an immediate emergency."
 
 Why this works:
-- Explains technical terms in parentheses (airflow sensor measures
-  air entering engine)
+- Uses the real component name without raw field names or unexplained
+  acronyms
 - Keeps units but provides context (grams per second with normal
   range)
 - Uses conversational tone appropriate for vehicle owner
 - Translates risk level to practical guidance
+
+Bad example (accelerator_pedal_sensor, Medium risk):
+"The model assigns a 56% risk score, indicating possible issues in
+the near future, with a 0.31% probability, or roughly 1 in 322 trips,
+of crossing a high-risk threshold."
+
+Why this is wrong:
+- Uses vague timing ("near future") even though the context gives a
+  specific horizon
+- Converts probability into an odds/per-trip statement that the model
+  did not provide
+- Makes the projection harder for a vehicle owner to interpret
+
+Good example (accelerator_pedal_sensor, Medium risk):
+"The model assigns a 56% risk score. It also estimates a very low
+0.31% probability of crossing the High-risk threshold within the next
+10 trips. This means the sensor should be watched, but it does not
+suggest an immediate failure."
+
+Why this works:
+- Uses the exact prediction horizon from the context
+- Preserves the model-provided percentage without extra conversion
+- Explains urgency without overstatement
 
 If the context includes a Failure Projection section, reference this
 information naturally as part of the risk description. Use only the
@@ -102,6 +185,10 @@ Output format rules:
 - Return exactly one valid JSON object.
 - Do not include Markdown, code fences, commentary, or extra keys.
 - The JSON value must be a plain string suitable for direct parsing.
+- Before returning, check the final text. It must not contain
+  "proxy_decisions.csv", raw P-codes such as "P0113" or "P0106",
+  "DTC", "e.g.", "i.e.", or "this window". If any appear, rewrite the
+  text in plain owner-facing language.
 
 Return JSON only:
 {

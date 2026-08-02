@@ -11,7 +11,7 @@ from unittest.mock import patch, MagicMock
 
 import requests
 
-from report_layer.pipeline.report_generator import generate_report
+from report_layer.pipeline.report_generator import call_ollama, generate_report
 
 
 # ---------------------------------------------------------------------------
@@ -94,6 +94,24 @@ class TestGenerateReportSuccess(unittest.TestCase):
         self.assertTrue(len(result["possible_cause"]) > 0)
         self.assertIsInstance(result["recommended_action"], list)
         self.assertGreater(len(result["recommended_action"]), 0)
+
+
+class TestOllamaRequestOptions(unittest.TestCase):
+    """test_call_ollama_requests_json — request deterministic JSON."""
+
+    @patch(
+        "report_layer.pipeline.report_generator.requests.post"
+    )
+    def test_call_ollama_requests_json_mode(self, mock_post):
+        mock_post.return_value = _make_mock_response("{}")
+
+        response = call_ollama("Return JSON")
+
+        self.assertEqual(response, "{}")
+        _, kwargs = mock_post.call_args
+        self.assertEqual(kwargs["json"]["format"], "json")
+        self.assertEqual(kwargs["json"]["options"]["temperature"], 0)
+        self.assertFalse(kwargs["json"]["stream"])
 
 
 class TestGenerateReportOllamaTimeout(unittest.TestCase):

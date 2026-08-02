@@ -1,12 +1,10 @@
 """
 Unit tests for RAG retriever metadata-filtered retrieval functions.
 
-This module tests the ChromaDB retrieval functions in
-report_layer/rag/rag_retriever.py to ensure correct metadata filtering,
-fallback handling, and exception safety.
-
-Task: GL-113 (sub-task of GL-110: RAG-Enhanced Diagnostic Report Generation)
-Project: Granite Lifeline MSc Project, University of Bristol (IBM-sponsored)
+The retriever must be importable in fresh CI environments where the local
+ChromaDB knowledge collection has not been generated yet. These tests use a
+fake collection so they validate retrieval behavior without relying on
+generated local artifacts.
 """
 
 import sys
@@ -17,187 +15,138 @@ import pytest
 # Add project root to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from report_layer.rag.rag_retriever import (  # noqa: E402
-    retrieve_actions,
-    retrieve_all,
-    retrieve_description_causes,
-)
+from report_layer.rag import rag_retriever  # noqa: E402
 from shared.anomaly_mapping import GROUND_KNOWLEDGE_ANOMALY_TYPES  # noqa: E402
 
-# Five current anomaly types
+
 ANOMALY_TYPES = GROUND_KNOWLEDGE_ANOMALY_TYPES
-
-# Three risk levels
 RISK_LEVELS = ["low", "medium", "high"]
-
-# Fallback messages
 FALLBACK_DESCRIPTION = (
     "No specific fault knowledge found for this anomaly type."
 )
 FALLBACK_ACTIONS = "No specific action guidance found for this risk level."
 
 
+class FakeCollection:
+    """Minimal Chroma collection fake for metadata-filtered get calls."""
+
+    def __init__(self):
+        self.calls = []
+
+    def get(self, where):
+        self.calls.append(where)
+        filters = {
+            item_key: item_value["$eq"]
+            for item in where["$and"]
+            for item_key, item_value in item.items()
+        }
+
+        anomaly_type = filters.get("anomaly_type")
+        section = filters.get("section")
+        risk_level = filters.get("risk_level")
+
+        if anomaly_type not in ANOMALY_TYPES:
+            return {"documents": []}
+        if section == "description_causes":
+            return {
+                "documents": [
+                    f"Description and causes for {anomaly_type}."
+                ]
+            }
+        if section == "actions" and risk_level in RISK_LEVELS:
+            return {
+                "documents": [
+                    f"{risk_level.title()} risk actions for {anomaly_type}."
+                ]
+            }
+        return {"documents": []}
+
+
+@pytest.fixture
+def fake_collection(monkeypatch):
+    collection = FakeCollection()
+    monkeypatch.setattr(rag_retriever, "_get_collection", lambda: collection)
+    return collection
+
+
 @pytest.mark.parametrize("anomaly_type", ANOMALY_TYPES)
-def test_retrieve_description_causes_valid_types(anomaly_type):
-    """
-    Test retrieve_description_causes returns valid content for all
-    anomaly types.
+def test_retrieve_description_causes_valid_types(
+    anomaly_type, fake_collection
+):
+    result = rag_retriever.retrieve_description_causes(anomaly_type)
 
-    Verifies that the function returns non-empty content that is not
-    the fallback message and contains relevant technical terms.
-    """
-    result = retrieve_description_causes(anomaly_type)
-
-    # Assert non-empty
-    assert result, f"Result is empty for {anomaly_type}"
-
-    # Assert not fallback message
-    assert result != FALLBACK_DESCRIPTION, (
-        f"Returned fallback for valid type {anomaly_type}"
-    )
-
-    # Assert contains relevant content (case-insensitive)
-    result_lower = result.lower()
-    relevant_terms = [
-        "description",
-        "cause",
-        "sensor",
-        "temperature",
-        "pressure",
-        "coolant",
-        "intake",
-        "maf",
-        "map",
-        "throttle",
-        "pedal",
-        "idle",
-        "rpm",
-        "engine",
-    ]
-
-    has_relevant_term = any(term in result_lower for term in relevant_terms)
-    assert has_relevant_term, (
-        f"Result for {anomaly_type} does not contain relevant terms"
-    )
+    assert result == f"Description and causes for {anomaly_type}."
+    assert fake_collection.calls[-1] == {
+        "$and": [
+            {"anomaly_type": {"$eq": anomaly_type}},
+            {"section": {"$eq": "description_causes"}},
+        ]
+    }
 
 
 @pytest.mark.parametrize(
     "anomaly_type,risk_level",
     [(at, rl) for at in ANOMALY_TYPES for rl in RISK_LEVELS],
 )
-def test_retrieve_actions_valid_combinations(anomaly_type, risk_level):
-    """
-    Test retrieve_actions returns valid content for all anomaly type
-    and risk level combinations.
+def test_retrieve_actions_valid_combinations(
+    anomaly_type, risk_level, fake_collection
+):
+    result = rag_retriever.retrieve_actions(anomaly_type, risk_level)
 
-    Tests all 15 combinations (5 anomaly types × 3 risk levels) to
-    ensure proper metadata filtering.
-    """
-    result = retrieve_actions(anomaly_type, risk_level)
-
-    # Assert non-empty
-    assert result, (
-        f"Result is empty for {anomaly_type} at {risk_level} risk"
-    )
-
-    # Assert not fallback message
-    assert result != FALLBACK_ACTIONS, (
-        f"Returned fallback for valid combination: "
-        f"{anomaly_type}, {risk_level}"
-    )
+    assert result == f"{risk_level.title()} risk actions for {anomaly_type}."
+    assert fake_collection.calls[-1] == {
+        "$and": [
+            {"anomaly_type": {"$eq": anomaly_type}},
+            {"section": {"$eq": "actions"}},
+            {"risk_level": {"$eq": risk_level}},
+        ]
+    }
 
 
-def test_retrieve_description_causes_invalid_type():
-    """
-    Test retrieve_description_causes returns fallback for invalid
-    anomaly type.
+def test_retrieve_description_causes_invalid_type(fake_collection):
+    result = rag_retriever.retrieve_description_causes("nonexistent_type")
 
-    Verifies graceful handling of non-existent anomaly types without
-    raising exceptions.
-    """
-    result = retrieve_description_causes("nonexistent_type")
-
-    # Assert returns exact fallback message
-    assert result == FALLBACK_DESCRIPTION, (
-        "Did not return fallback message for invalid anomaly type"
-    )
+    assert result == FALLBACK_DESCRIPTION
 
 
-def test_retrieve_actions_invalid_anomaly_type():
-    """
-    Test retrieve_actions returns fallback for invalid anomaly type.
+def test_retrieve_actions_invalid_anomaly_type(fake_collection):
+    result = rag_retriever.retrieve_actions("nonexistent_type", "medium")
 
-    Verifies graceful handling when anomaly type does not exist in the
-    knowledge base.
-    """
-    result = retrieve_actions("nonexistent_type", "medium")
-
-    # Assert returns exact fallback message
-    assert result == FALLBACK_ACTIONS, (
-        "Did not return fallback message for invalid anomaly type"
-    )
+    assert result == FALLBACK_ACTIONS
 
 
-def test_retrieve_actions_invalid_risk_level():
-    """
-    Test retrieve_actions returns fallback for invalid risk level.
+def test_retrieve_actions_invalid_risk_level(fake_collection):
+    result = rag_retriever.retrieve_actions("cooling_degradation", "critical")
 
-    Verifies graceful handling when risk level is not one of the
-    expected values (low, medium, high).
-    """
-    result = retrieve_actions("cooling_degradation", "critical")
-
-    # Assert returns exact fallback message
-    assert result == FALLBACK_ACTIONS, (
-        "Did not return fallback message for invalid risk level"
-    )
+    assert result == FALLBACK_ACTIONS
 
 
-def test_retrieve_all_valid_combination():
-    """
-    Test retrieve_all returns both description/causes and actions for
-    valid input.
+def test_retrieve_all_valid_combination(fake_collection):
+    result = rag_retriever.retrieve_all("cooling_degradation", "medium")
 
-    Verifies that the function correctly combines results from both
-    retrieval functions.
-    """
-    result = retrieve_all("cooling_degradation", "medium")
-
-    # Assert dict has correct keys
-    assert "description_causes" in result, "Missing description_causes key"
-    assert "actions" in result, "Missing actions key"
-
-    # Assert both values are non-empty
-    assert result["description_causes"], "description_causes is empty"
-    assert result["actions"], "actions is empty"
-
-    # Assert neither value is a fallback message
-    assert result["description_causes"] != FALLBACK_DESCRIPTION, (
-        "description_causes is fallback message"
-    )
-    assert result["actions"] != FALLBACK_ACTIONS, (
-        "actions is fallback message"
-    )
+    assert result == {
+        "description_causes": (
+            "Description and causes for cooling_degradation."
+        ),
+        "actions": "Medium risk actions for cooling_degradation.",
+    }
 
 
-def test_retrieve_all_invalid_anomaly_type():
-    """
-    Test retrieve_all returns fallback messages for invalid anomaly
-    type.
+def test_retrieve_all_invalid_anomaly_type(fake_collection):
+    result = rag_retriever.retrieve_all("nonexistent_type", "medium")
 
-    Verifies that both retrieval functions return their respective
-    fallback messages when the anomaly type does not exist.
-    """
-    result = retrieve_all("nonexistent_type", "medium")
+    assert result == {
+        "description_causes": FALLBACK_DESCRIPTION,
+        "actions": FALLBACK_ACTIONS,
+    }
 
-    # Assert dict has correct keys
-    assert "description_causes" in result, "Missing description_causes key"
-    assert "actions" in result, "Missing actions key"
 
-    # Assert both values are fallback messages
-    assert result["description_causes"] == FALLBACK_DESCRIPTION, (
-        "description_causes is not fallback message for invalid type"
-    )
-    assert result["actions"] == FALLBACK_ACTIONS, (
-        "actions is not fallback message for invalid type"
-    )
+def test_retrieve_all_falls_back_when_collection_is_missing(monkeypatch):
+    monkeypatch.setattr(rag_retriever, "_get_collection", lambda: None)
+
+    result = rag_retriever.retrieve_all("cooling_degradation", "medium")
+
+    assert result == {
+        "description_causes": FALLBACK_DESCRIPTION,
+        "actions": FALLBACK_ACTIONS,
+    }

@@ -1,0 +1,1535 @@
+{
+  "timestamp": "2018-02-14T06:47:06Z",
+  "risk_score": 0.1802,
+  "risk_level": "Low",
+  "component": "cooling_degradation",
+  "prediction_confidence": 0.95,
+  "key_signals": [
+    {
+      "feature": "coolant_temp",
+      "value": 89.0,
+      "unit": "\u00b0C",
+      "reference_range": [
+        90,
+        95
+      ]
+    },
+    {
+      "feature": "ect_rate_180s",
+      "value": -0.2951,
+      "unit": "\u00b0C/min",
+      "reference_range": [
+        0,
+        2
+      ]
+    },
+    {
+      "feature": "maf_integral_180s",
+      "value": 3266.3368,
+      "unit": "g",
+      "reference_range": [
+        0,
+        2500
+      ]
+    },
+    {
+      "feature": "rpm",
+      "value": 1571.0,
+      "unit": "RPM",
+      "reference_range": [
+        0,
+        3682
+      ]
+    },
+    {
+      "feature": "speed",
+      "value": 42.0,
+      "unit": "km/h",
+      "reference_range": [
+        0,
+        218
+      ]
+    }
+  ],
+  "estimated_cycles_to_failure": null,
+  "estimated_failure_probability": 0.0031,
+  "notes": [
+    "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
+    "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips.",
+    "No positive trip-level risk trend was observed; no threshold crossing cycle is projected."
+  ],
+  "risk_history": [
+    {
+      "timestamp": "2017-07-05T05:26:37Z",
+      "risk_score": 1.0
+    },
+    {
+      "timestamp": "2017-07-05T05:36:45Z",
+      "risk_score": 0.9
+    },
+    {
+      "timestamp": "2017-07-05T05:46:53Z",
+      "risk_score": 0.9
+    },
+    {
+      "timestamp": "2017-07-05T05:57:01Z",
+      "risk_score": 0.9
+    },
+    {
+      "timestamp": "2017-07-05T06:07:09Z",
+      "risk_score": 0.9
+    },
+    {
+      "timestamp": "2017-07-05T06:17:17Z",
+      "risk_score": 0.9
+    },
+    {
+      "timestamp": "2017-07-05T17:27:26Z",
+      "risk_score": 1.0
+    },
+    {
+      "timestamp": "2017-07-05T17:37:34Z",
+      "risk_score": 0.9
+    },
+    {
+      "timestamp": "2017-07-05T17:47:42Z",
+      "risk_score": 0.9
+    },
+    {
+      "timestamp": "2017-07-05T17:57:50Z",
+      "risk_score": 0.9
+    },
+    {
+      "timestamp": "2017-07-05T18:07:58Z",
+      "risk_score": 0.9
+    },
+    {
+      "timestamp": "2017-07-06T06:48:05Z",
+      "risk_score": 0.9
+    },
+    {
+      "timestamp": "2017-07-06T06:58:13Z",
+      "risk_score": 0.9
+    },
+    {
+      "timestamp": "2017-07-06T17:04:35Z",
+      "risk_score": 1.0
+    },
+    {
+      "timestamp": "2017-07-06T17:14:43Z",
+      "risk_score": 0.5091
+    },
+    {
+      "timestamp": "2017-07-06T17:24:51Z",
+      "risk_score": 0.0611
+    },
+    {
+      "timestamp": "2017-07-06T17:34:59Z",
+      "risk_score": 0.1804
+    },
+    {
+      "timestamp": "2017-07-06T17:45:07Z",
+      "risk_score": 0.0947
+    },
+    {
+      "timestamp": "2017-07-06T17:55:15Z",
+      "risk_score": 0.1567
+    },
+    {
+      "timestamp": "2017-07-06T18:05:23Z",
+      "risk_score": 0.1401
+    },
+    {
+      "timestamp": "2017-07-06T18:15:31Z",
+      "risk_score": 0.0519
+    },
+    {
+      "timestamp": "2017-07-07T05:33:19Z",
+      "risk_score": 0.4804
+    },
+    {
+      "timestamp": "2017-07-07T05:43:27Z",
+      "risk_score": 0.2739
+    },
+    {
+      "timestamp": "2017-07-07T05:53:35Z",
+      "risk_score": 0.1087
+    },
+    {
+      "timestamp": "2017-07-07T06:03:43Z",
+      "risk_score": 0.1229
+    },
+    {
+      "timestamp": "2017-07-07T06:13:51Z",
+      "risk_score": 0.1122
+    },
+    {
+      "timestamp": "2017-07-07T17:34:33Z",
+      "risk_score": 0.342
+    },
+    {
+      "timestamp": "2017-07-07T17:44:41Z",
+      "risk_score": 0.0898
+    },
+    {
+      "timestamp": "2017-07-07T17:54:49Z",
+      "risk_score": 0.0846
+    },
+    {
+      "timestamp": "2017-07-07T18:04:57Z",
+      "risk_score": 0.0879
+    },
+    {
+      "timestamp": "2017-07-10T07:07:12Z",
+      "risk_score": 0.0903
+    },
+    {
+      "timestamp": "2017-07-10T07:17:20Z",
+      "risk_score": 0.1278
+    },
+    {
+      "timestamp": "2017-07-11T06:53:39Z",
+      "risk_score": 0.1194
+    },
+    {
+      "timestamp": "2017-07-11T11:51:41Z",
+      "risk_score": 1.0
+    },
+    {
+      "timestamp": "2017-07-11T12:01:49Z",
+      "risk_score": 0.1982
+    },
+    {
+      "timestamp": "2017-07-11T12:11:57Z",
+      "risk_score": 0.2079
+    },
+    {
+      "timestamp": "2017-07-11T12:22:05Z",
+      "risk_score": 0.2078
+    },
+    {
+      "timestamp": "2017-07-11T12:32:13Z",
+      "risk_score": 0.0286
+    },
+    {
+      "timestamp": "2017-07-11T16:44:13Z",
+      "risk_score": 0.5236
+    },
+    {
+      "timestamp": "2017-07-11T16:54:21Z",
+      "risk_score": 0.1608
+    },
+    {
+      "timestamp": "2017-07-11T17:04:29Z",
+      "risk_score": 0.1277
+    },
+    {
+      "timestamp": "2017-07-11T17:14:37Z",
+      "risk_score": 0.068
+    },
+    {
+      "timestamp": "2017-07-12T05:32:32Z",
+      "risk_score": 1.0
+    },
+    {
+      "timestamp": "2017-07-12T05:42:40Z",
+      "risk_score": 0.2158
+    },
+    {
+      "timestamp": "2017-07-12T05:52:48Z",
+      "risk_score": 0.1008
+    },
+    {
+      "timestamp": "2017-07-12T06:02:56Z",
+      "risk_score": 0.0472
+    },
+    {
+      "timestamp": "2017-07-12T06:13:04Z",
+      "risk_score": 0.2074
+    },
+    {
+      "timestamp": "2017-07-12T06:23:12Z",
+      "risk_score": 0.0847
+    },
+    {
+      "timestamp": "2017-07-12T17:10:21Z",
+      "risk_score": 1.0
+    },
+    {
+      "timestamp": "2017-07-12T17:20:29Z",
+      "risk_score": 0.1653
+    },
+    {
+      "timestamp": "2017-07-12T17:30:37Z",
+      "risk_score": 0.299
+    },
+    {
+      "timestamp": "2017-07-12T17:40:45Z",
+      "risk_score": 0.0872
+    },
+    {
+      "timestamp": "2017-07-12T17:50:53Z",
+      "risk_score": 0.0851
+    },
+    {
+      "timestamp": "2017-07-13T05:16:52Z",
+      "risk_score": 0.2275
+    },
+    {
+      "timestamp": "2017-07-13T05:27:00Z",
+      "risk_score": 0.0928
+    },
+    {
+      "timestamp": "2017-07-13T05:37:08Z",
+      "risk_score": 0.091
+    },
+    {
+      "timestamp": "2017-07-13T05:47:16Z",
+      "risk_score": 0.2037
+    },
+    {
+      "timestamp": "2017-07-13T05:57:24Z",
+      "risk_score": 0.5549
+    },
+    {
+      "timestamp": "2017-07-13T06:07:32Z",
+      "risk_score": 0.1293
+    },
+    {
+      "timestamp": "2017-07-13T06:17:40Z",
+      "risk_score": 0.0411
+    },
+    {
+      "timestamp": "2017-07-13T06:27:48Z",
+      "risk_score": 0.0247
+    },
+    {
+      "timestamp": "2017-07-13T17:38:59Z",
+      "risk_score": 0.6896
+    },
+    {
+      "timestamp": "2017-07-13T17:49:07Z",
+      "risk_score": 0.2819
+    },
+    {
+      "timestamp": "2017-07-14T16:29:32Z",
+      "risk_score": 0.2809
+    },
+    {
+      "timestamp": "2017-07-14T16:39:40Z",
+      "risk_score": 0.3214
+    },
+    {
+      "timestamp": "2017-07-14T16:53:37Z",
+      "risk_score": 0.1308
+    },
+    {
+      "timestamp": "2017-07-14T17:03:45Z",
+      "risk_score": 0.1775
+    },
+    {
+      "timestamp": "2017-07-14T17:13:53Z",
+      "risk_score": 0.1449
+    },
+    {
+      "timestamp": "2017-07-14T17:24:01Z",
+      "risk_score": 0.0906
+    },
+    {
+      "timestamp": "2017-07-14T17:34:09Z",
+      "risk_score": 0.1181
+    },
+    {
+      "timestamp": "2017-07-14T17:44:17Z",
+      "risk_score": 0.1122
+    },
+    {
+      "timestamp": "2017-07-24T05:32:31Z",
+      "risk_score": 0.2859
+    },
+    {
+      "timestamp": "2017-07-24T05:42:39Z",
+      "risk_score": 0.0775
+    },
+    {
+      "timestamp": "2017-07-24T05:52:47Z",
+      "risk_score": 0.1365
+    },
+    {
+      "timestamp": "2017-07-24T06:02:55Z",
+      "risk_score": 0.1491
+    },
+    {
+      "timestamp": "2017-07-24T06:13:03Z",
+      "risk_score": 0.1697
+    },
+    {
+      "timestamp": "2017-07-24T06:23:11Z",
+      "risk_score": 0.1885
+    },
+    {
+      "timestamp": "2017-07-24T06:33:19Z",
+      "risk_score": 0.1441
+    },
+    {
+      "timestamp": "2017-07-26T05:50:00Z",
+      "risk_score": 0.5753
+    },
+    {
+      "timestamp": "2017-07-26T06:00:08Z",
+      "risk_score": 0.088
+    },
+    {
+      "timestamp": "2017-07-26T06:10:16Z",
+      "risk_score": 0.0432
+    },
+    {
+      "timestamp": "2017-07-26T06:20:24Z",
+      "risk_score": 0.1048
+    },
+    {
+      "timestamp": "2017-07-26T06:30:32Z",
+      "risk_score": 0.1538
+    },
+    {
+      "timestamp": "2017-07-26T06:40:40Z",
+      "risk_score": 0.1326
+    },
+    {
+      "timestamp": "2017-07-26T17:00:00Z",
+      "risk_score": 0.3715
+    },
+    {
+      "timestamp": "2017-07-26T17:10:08Z",
+      "risk_score": 0.1596
+    },
+    {
+      "timestamp": "2017-07-26T17:20:16Z",
+      "risk_score": 0.2452
+    },
+    {
+      "timestamp": "2017-07-26T17:30:24Z",
+      "risk_score": 0.1531
+    },
+    {
+      "timestamp": "2017-07-26T17:40:32Z",
+      "risk_score": 0.118
+    },
+    {
+      "timestamp": "2017-07-27T06:53:33Z",
+      "risk_score": 0.823
+    },
+    {
+      "timestamp": "2017-07-27T19:21:25Z",
+      "risk_score": 0.4843
+    },
+    {
+      "timestamp": "2017-07-27T19:31:33Z",
+      "risk_score": 0.245
+    },
+    {
+      "timestamp": "2017-07-28T06:46:23Z",
+      "risk_score": 0.5021
+    },
+    {
+      "timestamp": "2017-07-28T15:45:08Z",
+      "risk_score": 0.1957
+    },
+    {
+      "timestamp": "2017-07-28T15:55:16Z",
+      "risk_score": 0.1688
+    },
+    {
+      "timestamp": "2017-07-28T16:05:24Z",
+      "risk_score": 0.0763
+    },
+    {
+      "timestamp": "2017-07-28T16:15:32Z",
+      "risk_score": 0.8032
+    },
+    {
+      "timestamp": "2017-07-28T16:25:40Z",
+      "risk_score": 0.4
+    },
+    {
+      "timestamp": "2017-07-28T16:35:48Z",
+      "risk_score": 0.1835
+    },
+    {
+      "timestamp": "2017-07-28T16:45:56Z",
+      "risk_score": 0.0728
+    },
+    {
+      "timestamp": "2017-07-28T16:56:30Z",
+      "risk_score": 0.1011
+    },
+    {
+      "timestamp": "2017-07-28T17:06:38Z",
+      "risk_score": 0.098
+    },
+    {
+      "timestamp": "2017-07-28T17:16:46Z",
+      "risk_score": 0.1605
+    },
+    {
+      "timestamp": "2017-07-31T05:38:48Z",
+      "risk_score": 0.6585
+    },
+    {
+      "timestamp": "2017-07-31T05:48:56Z",
+      "risk_score": 0.2571
+    },
+    {
+      "timestamp": "2017-07-31T05:59:04Z",
+      "risk_score": 0.0977
+    },
+    {
+      "timestamp": "2017-07-31T06:09:12Z",
+      "risk_score": 0.1452
+    },
+    {
+      "timestamp": "2017-07-31T06:19:20Z",
+      "risk_score": 0.1494
+    },
+    {
+      "timestamp": "2017-07-31T06:29:28Z",
+      "risk_score": 0.1833
+    },
+    {
+      "timestamp": "2017-07-31T06:39:36Z",
+      "risk_score": 0.1415
+    },
+    {
+      "timestamp": "2017-07-31T06:49:44Z",
+      "risk_score": 0.1613
+    },
+    {
+      "timestamp": "2017-07-31T18:02:55Z",
+      "risk_score": 0.8587
+    },
+    {
+      "timestamp": "2017-07-31T18:13:03Z",
+      "risk_score": 0.3975
+    },
+    {
+      "timestamp": "2017-08-01T06:52:59Z",
+      "risk_score": 0.6714
+    },
+    {
+      "timestamp": "2017-08-01T07:03:07Z",
+      "risk_score": 0.3449
+    },
+    {
+      "timestamp": "2017-08-01T16:35:09Z",
+      "risk_score": 0.3496
+    },
+    {
+      "timestamp": "2017-08-01T16:45:17Z",
+      "risk_score": 0.1825
+    },
+    {
+      "timestamp": "2017-08-01T16:55:25Z",
+      "risk_score": 0.3525
+    },
+    {
+      "timestamp": "2017-08-01T17:05:33Z",
+      "risk_score": 0.1179
+    },
+    {
+      "timestamp": "2017-08-01T17:15:41Z",
+      "risk_score": 0.0881
+    },
+    {
+      "timestamp": "2017-08-01T17:25:49Z",
+      "risk_score": 0.1166
+    },
+    {
+      "timestamp": "2017-08-01T17:35:57Z",
+      "risk_score": 0.1105
+    },
+    {
+      "timestamp": "2017-08-01T17:46:05Z",
+      "risk_score": 0.0682
+    },
+    {
+      "timestamp": "2017-08-02T05:40:04Z",
+      "risk_score": 1.0
+    },
+    {
+      "timestamp": "2017-08-02T05:50:12Z",
+      "risk_score": 0.1363
+    },
+    {
+      "timestamp": "2017-08-02T06:00:20Z",
+      "risk_score": 0.0868
+    },
+    {
+      "timestamp": "2017-08-02T06:10:28Z",
+      "risk_score": 0.1059
+    },
+    {
+      "timestamp": "2017-08-02T06:20:36Z",
+      "risk_score": 0.093
+    },
+    {
+      "timestamp": "2017-08-03T17:56:03Z",
+      "risk_score": 0.4463
+    },
+    {
+      "timestamp": "2017-08-03T18:06:11Z",
+      "risk_score": 0.1553
+    },
+    {
+      "timestamp": "2017-08-03T18:16:19Z",
+      "risk_score": 0.1033
+    },
+    {
+      "timestamp": "2017-08-04T17:03:16Z",
+      "risk_score": 0.2456
+    },
+    {
+      "timestamp": "2017-08-04T17:13:24Z",
+      "risk_score": 0.1507
+    },
+    {
+      "timestamp": "2017-08-04T17:23:32Z",
+      "risk_score": 0.119
+    },
+    {
+      "timestamp": "2017-08-04T17:33:40Z",
+      "risk_score": 0.1127
+    },
+    {
+      "timestamp": "2017-08-05T07:31:07Z",
+      "risk_score": 0.1558
+    },
+    {
+      "timestamp": "2017-08-05T07:41:15Z",
+      "risk_score": 0.1274
+    },
+    {
+      "timestamp": "2017-08-05T07:51:23Z",
+      "risk_score": 0.091
+    },
+    {
+      "timestamp": "2017-08-05T08:01:31Z",
+      "risk_score": 0.1117
+    },
+    {
+      "timestamp": "2017-08-05T08:11:39Z",
+      "risk_score": 0.0799
+    },
+    {
+      "timestamp": "2017-08-05T08:21:47Z",
+      "risk_score": 0.0994
+    },
+    {
+      "timestamp": "2017-08-05T08:31:55Z",
+      "risk_score": 0.6145
+    },
+    {
+      "timestamp": "2017-08-07T05:47:21Z",
+      "risk_score": 1.0
+    },
+    {
+      "timestamp": "2017-08-07T05:57:29Z",
+      "risk_score": 0.2045
+    },
+    {
+      "timestamp": "2017-08-07T06:07:37Z",
+      "risk_score": 0.1082
+    },
+    {
+      "timestamp": "2017-08-07T06:17:45Z",
+      "risk_score": 0.2352
+    },
+    {
+      "timestamp": "2017-08-07T06:27:53Z",
+      "risk_score": 0.1881
+    },
+    {
+      "timestamp": "2017-08-07T06:38:01Z",
+      "risk_score": 0.1173
+    },
+    {
+      "timestamp": "2017-08-07T06:48:09Z",
+      "risk_score": 0.1274
+    },
+    {
+      "timestamp": "2017-08-07T17:15:32Z",
+      "risk_score": 0.9271
+    },
+    {
+      "timestamp": "2017-08-07T17:25:40Z",
+      "risk_score": 0.1988
+    },
+    {
+      "timestamp": "2017-08-07T17:35:48Z",
+      "risk_score": 0.8479
+    },
+    {
+      "timestamp": "2017-08-07T17:45:56Z",
+      "risk_score": 0.1205
+    },
+    {
+      "timestamp": "2017-08-07T17:56:04Z",
+      "risk_score": 0.2128
+    },
+    {
+      "timestamp": "2017-08-07T18:06:12Z",
+      "risk_score": 0.0932
+    },
+    {
+      "timestamp": "2017-08-08T05:43:31Z",
+      "risk_score": 0.73
+    },
+    {
+      "timestamp": "2017-08-08T05:53:39Z",
+      "risk_score": 0.0966
+    },
+    {
+      "timestamp": "2017-08-08T06:03:47Z",
+      "risk_score": 0.0468
+    },
+    {
+      "timestamp": "2017-08-08T06:13:55Z",
+      "risk_score": 0.0332
+    },
+    {
+      "timestamp": "2017-08-08T16:44:09Z",
+      "risk_score": 0.1658
+    },
+    {
+      "timestamp": "2017-08-08T16:54:17Z",
+      "risk_score": 0.1317
+    },
+    {
+      "timestamp": "2017-08-08T17:04:25Z",
+      "risk_score": 0.1699
+    },
+    {
+      "timestamp": "2017-08-09T05:35:06Z",
+      "risk_score": 0.7233
+    },
+    {
+      "timestamp": "2017-08-09T05:45:14Z",
+      "risk_score": 0.1065
+    },
+    {
+      "timestamp": "2017-08-09T05:55:22Z",
+      "risk_score": 0.1065
+    },
+    {
+      "timestamp": "2017-08-09T06:05:30Z",
+      "risk_score": 0.0955
+    },
+    {
+      "timestamp": "2017-08-09T06:15:38Z",
+      "risk_score": 0.098
+    },
+    {
+      "timestamp": "2017-08-09T17:10:54Z",
+      "risk_score": 0.463
+    },
+    {
+      "timestamp": "2017-08-09T17:21:02Z",
+      "risk_score": 0.1091
+    },
+    {
+      "timestamp": "2017-08-09T17:31:10Z",
+      "risk_score": 0.1253
+    },
+    {
+      "timestamp": "2017-08-09T17:41:18Z",
+      "risk_score": 0.0883
+    },
+    {
+      "timestamp": "2017-08-10T06:15:29Z",
+      "risk_score": 0.113
+    },
+    {
+      "timestamp": "2017-08-10T06:25:37Z",
+      "risk_score": 0.2944
+    },
+    {
+      "timestamp": "2017-08-10T06:35:45Z",
+      "risk_score": 0.1099
+    },
+    {
+      "timestamp": "2017-08-10T06:45:53Z",
+      "risk_score": 0.0685
+    },
+    {
+      "timestamp": "2017-08-10T17:14:30Z",
+      "risk_score": 0.2785
+    },
+    {
+      "timestamp": "2017-08-10T17:24:38Z",
+      "risk_score": 0.1015
+    },
+    {
+      "timestamp": "2017-08-10T17:34:46Z",
+      "risk_score": 0.1042
+    },
+    {
+      "timestamp": "2018-02-14T06:16:42Z",
+      "risk_score": 0.2347
+    },
+    {
+      "timestamp": "2018-02-14T06:26:50Z",
+      "risk_score": 0.233
+    },
+    {
+      "timestamp": "2018-02-14T06:36:58Z",
+      "risk_score": 0.0759
+    },
+    {
+      "timestamp": "2018-02-14T06:47:06Z",
+      "risk_score": 0.1802
+    },
+    {
+      "timestamp": "2018-02-14T16:40:45Z",
+      "risk_score": 0.2673
+    },
+    {
+      "timestamp": "2018-02-14T16:50:53Z",
+      "risk_score": 0.2546
+    },
+    {
+      "timestamp": "2018-02-14T17:01:01Z",
+      "risk_score": 0.5579
+    },
+    {
+      "timestamp": "2018-02-14T17:11:09Z",
+      "risk_score": 0.1054
+    },
+    {
+      "timestamp": "2018-02-14T17:21:17Z",
+      "risk_score": 0.0605
+    },
+    {
+      "timestamp": "2018-02-16T17:24:53Z",
+      "risk_score": 1.0
+    },
+    {
+      "timestamp": "2018-02-16T17:35:01Z",
+      "risk_score": 0.1934
+    },
+    {
+      "timestamp": "2018-02-16T17:45:09Z",
+      "risk_score": 0.2521
+    },
+    {
+      "timestamp": "2018-02-17T10:47:04Z",
+      "risk_score": 0.86
+    },
+    {
+      "timestamp": "2018-02-17T10:57:12Z",
+      "risk_score": 0.345
+    },
+    {
+      "timestamp": "2018-02-17T11:07:20Z",
+      "risk_score": 0.1
+    },
+    {
+      "timestamp": "2018-02-17T11:17:28Z",
+      "risk_score": 0.0261
+    },
+    {
+      "timestamp": "2018-02-17T13:25:54Z",
+      "risk_score": 0.658
+    },
+    {
+      "timestamp": "2018-02-17T13:36:02Z",
+      "risk_score": 0.3694
+    },
+    {
+      "timestamp": "2018-02-17T13:46:10Z",
+      "risk_score": 0.0939
+    },
+    {
+      "timestamp": "2018-02-17T13:56:18Z",
+      "risk_score": 0.0241
+    },
+    {
+      "timestamp": "2018-02-17T14:06:26Z",
+      "risk_score": 0.0894
+    },
+    {
+      "timestamp": "2018-02-18T06:18:14Z",
+      "risk_score": 0.4703
+    },
+    {
+      "timestamp": "2018-02-18T06:43:48Z",
+      "risk_score": 0.0892
+    },
+    {
+      "timestamp": "2018-02-18T06:53:56Z",
+      "risk_score": 0.1211
+    },
+    {
+      "timestamp": "2018-02-18T07:04:04Z",
+      "risk_score": 0.2002
+    },
+    {
+      "timestamp": "2018-02-18T07:14:12Z",
+      "risk_score": 0.2221
+    },
+    {
+      "timestamp": "2018-02-18T07:24:20Z",
+      "risk_score": 0.1189
+    },
+    {
+      "timestamp": "2018-02-20T18:33:34Z",
+      "risk_score": 0.7288
+    },
+    {
+      "timestamp": "2018-02-21T07:40:35Z",
+      "risk_score": 0.2838
+    },
+    {
+      "timestamp": "2018-02-21T07:50:43Z",
+      "risk_score": 0.3227
+    },
+    {
+      "timestamp": "2018-02-21T17:30:56Z",
+      "risk_score": 0.9874
+    },
+    {
+      "timestamp": "2018-02-21T17:41:04Z",
+      "risk_score": 0.7689
+    },
+    {
+      "timestamp": "2018-02-21T17:51:12Z",
+      "risk_score": 0.2128
+    },
+    {
+      "timestamp": "2018-02-21T18:01:20Z",
+      "risk_score": 0.213
+    },
+    {
+      "timestamp": "2018-02-21T18:11:28Z",
+      "risk_score": 0.1698
+    },
+    {
+      "timestamp": "2018-02-21T18:21:36Z",
+      "risk_score": 0.2957
+    },
+    {
+      "timestamp": "2018-02-21T18:54:09Z",
+      "risk_score": 0.2169
+    },
+    {
+      "timestamp": "2018-02-21T19:04:17Z",
+      "risk_score": 0.0751
+    },
+    {
+      "timestamp": "2018-02-21T19:14:25Z",
+      "risk_score": 0.1837
+    },
+    {
+      "timestamp": "2018-02-22T06:01:12Z",
+      "risk_score": 0.869
+    },
+    {
+      "timestamp": "2018-02-22T06:11:20Z",
+      "risk_score": 0.1481
+    },
+    {
+      "timestamp": "2018-02-22T06:21:28Z",
+      "risk_score": 0.1261
+    },
+    {
+      "timestamp": "2018-02-22T06:31:36Z",
+      "risk_score": 0.1339
+    },
+    {
+      "timestamp": "2018-02-22T06:41:44Z",
+      "risk_score": 0.3275
+    },
+    {
+      "timestamp": "2018-02-23T06:24:05Z",
+      "risk_score": 0.4577
+    },
+    {
+      "timestamp": "2018-02-23T06:34:13Z",
+      "risk_score": 0.2432
+    },
+    {
+      "timestamp": "2018-02-23T06:44:21Z",
+      "risk_score": 0.1607
+    },
+    {
+      "timestamp": "2018-02-23T06:54:29Z",
+      "risk_score": 0.1936
+    },
+    {
+      "timestamp": "2018-02-23T16:05:05Z",
+      "risk_score": 0.337
+    },
+    {
+      "timestamp": "2018-02-23T16:15:13Z",
+      "risk_score": 0.2771
+    },
+    {
+      "timestamp": "2018-02-23T16:25:21Z",
+      "risk_score": 0.1083
+    },
+    {
+      "timestamp": "2018-02-23T16:37:29Z",
+      "risk_score": 0.1164
+    },
+    {
+      "timestamp": "2018-02-23T16:47:37Z",
+      "risk_score": 0.0745
+    },
+    {
+      "timestamp": "2018-02-23T17:08:09Z",
+      "risk_score": 0.0947
+    },
+    {
+      "timestamp": "2018-02-26T06:04:50Z",
+      "risk_score": 1.0
+    },
+    {
+      "timestamp": "2018-02-26T06:26:02Z",
+      "risk_score": 0.5099
+    },
+    {
+      "timestamp": "2018-02-26T06:36:10Z",
+      "risk_score": 0.2065
+    },
+    {
+      "timestamp": "2018-02-26T06:46:18Z",
+      "risk_score": 0.1544
+    },
+    {
+      "timestamp": "2018-02-26T06:56:26Z",
+      "risk_score": 0.852
+    },
+    {
+      "timestamp": "2018-02-26T07:06:34Z",
+      "risk_score": 0.189
+    },
+    {
+      "timestamp": "2018-02-26T07:16:42Z",
+      "risk_score": 0.0868
+    },
+    {
+      "timestamp": "2018-02-26T07:26:50Z",
+      "risk_score": 0.2656
+    },
+    {
+      "timestamp": "2018-02-26T20:16:13Z",
+      "risk_score": 0.7835
+    },
+    {
+      "timestamp": "2018-02-27T07:27:43Z",
+      "risk_score": 0.7997
+    },
+    {
+      "timestamp": "2018-02-27T07:37:51Z",
+      "risk_score": 0.0929
+    },
+    {
+      "timestamp": "2018-02-27T17:33:50Z",
+      "risk_score": 1.0
+    },
+    {
+      "timestamp": "2018-02-27T17:43:58Z",
+      "risk_score": 0.184
+    },
+    {
+      "timestamp": "2018-02-27T17:54:06Z",
+      "risk_score": 0.2356
+    },
+    {
+      "timestamp": "2018-02-27T18:04:14Z",
+      "risk_score": 0.1175
+    },
+    {
+      "timestamp": "2018-02-27T18:14:22Z",
+      "risk_score": 0.0769
+    },
+    {
+      "timestamp": "2018-02-27T18:24:30Z",
+      "risk_score": 0.0856
+    },
+    {
+      "timestamp": "2018-02-27T18:34:38Z",
+      "risk_score": 0.1624
+    },
+    {
+      "timestamp": "2018-02-28T06:14:06Z",
+      "risk_score": 0.378
+    },
+    {
+      "timestamp": "2018-02-28T06:24:14Z",
+      "risk_score": 0.2725
+    },
+    {
+      "timestamp": "2018-02-28T06:34:22Z",
+      "risk_score": 0.0784
+    },
+    {
+      "timestamp": "2018-02-28T06:44:30Z",
+      "risk_score": 0.1368
+    },
+    {
+      "timestamp": "2018-02-28T06:54:38Z",
+      "risk_score": 0.1799
+    },
+    {
+      "timestamp": "2018-02-28T16:01:52Z",
+      "risk_score": 1.0
+    },
+    {
+      "timestamp": "2018-02-28T16:12:00Z",
+      "risk_score": 0.2977
+    },
+    {
+      "timestamp": "2018-02-28T16:22:08Z",
+      "risk_score": 0.1832
+    },
+    {
+      "timestamp": "2018-02-28T16:32:16Z",
+      "risk_score": 0.2399
+    },
+    {
+      "timestamp": "2018-03-01T06:08:56Z",
+      "risk_score": 0.7577
+    },
+    {
+      "timestamp": "2018-03-01T06:19:04Z",
+      "risk_score": 0.1762
+    },
+    {
+      "timestamp": "2018-03-01T06:29:12Z",
+      "risk_score": 0.0901
+    },
+    {
+      "timestamp": "2018-03-01T06:39:20Z",
+      "risk_score": 0.1383
+    },
+    {
+      "timestamp": "2018-03-01T16:33:04Z",
+      "risk_score": 0.6522
+    },
+    {
+      "timestamp": "2018-03-01T16:43:12Z",
+      "risk_score": 0.534
+    },
+    {
+      "timestamp": "2018-03-01T16:53:20Z",
+      "risk_score": 0.7102
+    },
+    {
+      "timestamp": "2018-03-01T17:03:28Z",
+      "risk_score": 0.1208
+    },
+    {
+      "timestamp": "2018-03-01T17:13:36Z",
+      "risk_score": 0.0837
+    },
+    {
+      "timestamp": "2018-03-01T17:23:44Z",
+      "risk_score": 0.1332
+    },
+    {
+      "timestamp": "2018-03-01T17:33:52Z",
+      "risk_score": 0.3157
+    },
+    {
+      "timestamp": "2018-03-02T06:32:55Z",
+      "risk_score": 0.4472
+    },
+    {
+      "timestamp": "2018-03-02T06:43:03Z",
+      "risk_score": 0.2621
+    },
+    {
+      "timestamp": "2018-03-02T06:53:11Z",
+      "risk_score": 0.1178
+    },
+    {
+      "timestamp": "2018-03-02T07:03:19Z",
+      "risk_score": 0.092
+    },
+    {
+      "timestamp": "2018-03-06T17:41:52Z",
+      "risk_score": 0.9528
+    },
+    {
+      "timestamp": "2018-03-06T17:52:00Z",
+      "risk_score": 0.3516
+    },
+    {
+      "timestamp": "2018-03-06T18:02:08Z",
+      "risk_score": 0.218
+    },
+    {
+      "timestamp": "2018-03-06T18:12:16Z",
+      "risk_score": 0.133
+    },
+    {
+      "timestamp": "2018-03-06T18:22:24Z",
+      "risk_score": 0.112
+    },
+    {
+      "timestamp": "2018-03-06T18:32:32Z",
+      "risk_score": 0.1191
+    },
+    {
+      "timestamp": "2018-03-06T18:42:40Z",
+      "risk_score": 0.0643
+    },
+    {
+      "timestamp": "2018-03-07T06:15:32Z",
+      "risk_score": 0.7256
+    },
+    {
+      "timestamp": "2018-03-07T06:25:40Z",
+      "risk_score": 0.1888
+    },
+    {
+      "timestamp": "2018-03-07T06:35:48Z",
+      "risk_score": 0.11
+    },
+    {
+      "timestamp": "2018-03-07T06:45:56Z",
+      "risk_score": 0.1359
+    },
+    {
+      "timestamp": "2018-03-07T06:56:04Z",
+      "risk_score": 0.1362
+    },
+    {
+      "timestamp": "2018-03-07T17:56:31Z",
+      "risk_score": 0.9258
+    },
+    {
+      "timestamp": "2018-03-07T18:06:39Z",
+      "risk_score": 0.1942
+    },
+    {
+      "timestamp": "2018-03-07T18:16:47Z",
+      "risk_score": 0.1414
+    },
+    {
+      "timestamp": "2018-03-07T18:26:55Z",
+      "risk_score": 0.1389
+    },
+    {
+      "timestamp": "2018-03-07T18:37:03Z",
+      "risk_score": 0.0351
+    },
+    {
+      "timestamp": "2018-03-08T06:14:10Z",
+      "risk_score": 0.7846
+    },
+    {
+      "timestamp": "2018-03-08T06:24:18Z",
+      "risk_score": 0.1926
+    },
+    {
+      "timestamp": "2018-03-08T06:34:26Z",
+      "risk_score": 0.0673
+    },
+    {
+      "timestamp": "2018-03-08T06:44:34Z",
+      "risk_score": 0.0925
+    },
+    {
+      "timestamp": "2018-03-08T06:54:42Z",
+      "risk_score": 0.1002
+    },
+    {
+      "timestamp": "2018-03-19T06:02:28Z",
+      "risk_score": 1.0
+    },
+    {
+      "timestamp": "2018-03-19T06:12:36Z",
+      "risk_score": 0.4472
+    },
+    {
+      "timestamp": "2018-03-19T06:22:44Z",
+      "risk_score": 0.0359
+    },
+    {
+      "timestamp": "2018-03-19T06:32:52Z",
+      "risk_score": 0.0575
+    },
+    {
+      "timestamp": "2018-03-19T06:43:00Z",
+      "risk_score": 0.0612
+    },
+    {
+      "timestamp": "2018-03-19T06:53:08Z",
+      "risk_score": 0.1729
+    },
+    {
+      "timestamp": "2018-03-19T07:03:16Z",
+      "risk_score": 0.1925
+    },
+    {
+      "timestamp": "2018-03-19T07:13:24Z",
+      "risk_score": 0.0978
+    },
+    {
+      "timestamp": "2018-03-19T07:23:32Z",
+      "risk_score": 0.0999
+    },
+    {
+      "timestamp": "2018-03-19T18:33:42Z",
+      "risk_score": 0.6369
+    },
+    {
+      "timestamp": "2018-03-19T18:43:50Z",
+      "risk_score": 0.2957
+    },
+    {
+      "timestamp": "2018-03-20T07:38:10Z",
+      "risk_score": 1.0
+    },
+    {
+      "timestamp": "2018-03-20T07:48:18Z",
+      "risk_score": 0.1622
+    },
+    {
+      "timestamp": "2018-03-21T18:19:23Z",
+      "risk_score": 0.4343
+    },
+    {
+      "timestamp": "2018-03-21T18:29:31Z",
+      "risk_score": 0.2625
+    },
+    {
+      "timestamp": "2018-03-21T18:39:39Z",
+      "risk_score": 0.1382
+    },
+    {
+      "timestamp": "2018-03-21T18:49:47Z",
+      "risk_score": 0.1592
+    },
+    {
+      "timestamp": "2018-03-21T18:59:55Z",
+      "risk_score": 0.1666
+    },
+    {
+      "timestamp": "2018-03-21T19:10:03Z",
+      "risk_score": 0.1216
+    },
+    {
+      "timestamp": "2018-03-21T19:20:11Z",
+      "risk_score": 0.2785
+    },
+    {
+      "timestamp": "2018-03-22T06:24:55Z",
+      "risk_score": 1.0
+    },
+    {
+      "timestamp": "2018-03-22T06:35:03Z",
+      "risk_score": 0.1772
+    },
+    {
+      "timestamp": "2018-03-22T06:45:11Z",
+      "risk_score": 0.1195
+    },
+    {
+      "timestamp": "2018-03-22T06:55:19Z",
+      "risk_score": 0.0819
+    },
+    {
+      "timestamp": "2018-03-22T07:05:27Z",
+      "risk_score": 0.0913
+    },
+    {
+      "timestamp": "2018-03-22T17:52:18Z",
+      "risk_score": 0.956
+    },
+    {
+      "timestamp": "2018-03-22T18:02:26Z",
+      "risk_score": 0.2815
+    },
+    {
+      "timestamp": "2018-03-22T18:12:34Z",
+      "risk_score": 0.0985
+    },
+    {
+      "timestamp": "2018-03-22T18:22:42Z",
+      "risk_score": 0.0575
+    },
+    {
+      "timestamp": "2018-03-23T06:23:50Z",
+      "risk_score": 0.6834
+    },
+    {
+      "timestamp": "2018-03-23T06:33:58Z",
+      "risk_score": 0.18
+    },
+    {
+      "timestamp": "2018-03-23T06:44:06Z",
+      "risk_score": 0.1017
+    },
+    {
+      "timestamp": "2018-03-23T06:54:14Z",
+      "risk_score": 0.0833
+    },
+    {
+      "timestamp": "2018-03-23T07:04:22Z",
+      "risk_score": 0.0505
+    },
+    {
+      "timestamp": "2018-03-23T16:34:10Z",
+      "risk_score": 0.9078
+    },
+    {
+      "timestamp": "2018-03-23T16:44:18Z",
+      "risk_score": 0.2384
+    },
+    {
+      "timestamp": "2018-03-23T16:54:26Z",
+      "risk_score": 0.0408
+    },
+    {
+      "timestamp": "2018-03-23T17:04:34Z",
+      "risk_score": 0.1172
+    },
+    {
+      "timestamp": "2018-03-23T17:14:42Z",
+      "risk_score": 0.1603
+    },
+    {
+      "timestamp": "2018-03-23T17:24:50Z",
+      "risk_score": 0.0532
+    },
+    {
+      "timestamp": "2018-03-26T05:27:12Z",
+      "risk_score": 0.2054
+    },
+    {
+      "timestamp": "2018-03-26T05:37:20Z",
+      "risk_score": 0.278
+    },
+    {
+      "timestamp": "2018-03-26T05:47:28Z",
+      "risk_score": 0.1569
+    },
+    {
+      "timestamp": "2018-03-26T05:57:36Z",
+      "risk_score": 0.0908
+    },
+    {
+      "timestamp": "2018-03-26T16:16:40Z",
+      "risk_score": 0.2665
+    },
+    {
+      "timestamp": "2018-03-26T16:26:48Z",
+      "risk_score": 0.1441
+    },
+    {
+      "timestamp": "2018-03-26T16:36:56Z",
+      "risk_score": 0.1162
+    },
+    {
+      "timestamp": "2018-03-29T15:06:57Z",
+      "risk_score": 0.4851
+    },
+    {
+      "timestamp": "2018-03-29T15:17:05Z",
+      "risk_score": 0.5108
+    },
+    {
+      "timestamp": "2018-03-29T15:27:13Z",
+      "risk_score": 0.2937
+    },
+    {
+      "timestamp": "2018-03-29T15:37:21Z",
+      "risk_score": 0.2095
+    },
+    {
+      "timestamp": "2018-03-29T15:47:29Z",
+      "risk_score": 0.1254
+    },
+    {
+      "timestamp": "2018-03-29T15:57:37Z",
+      "risk_score": 0.0549
+    },
+    {
+      "timestamp": "2018-03-29T16:07:45Z",
+      "risk_score": 0.0656
+    },
+    {
+      "timestamp": "2018-03-29T16:17:53Z",
+      "risk_score": 0.8299
+    },
+    {
+      "timestamp": "2018-03-29T16:28:01Z",
+      "risk_score": 0.1218
+    },
+    {
+      "timestamp": "2018-03-29T16:38:09Z",
+      "risk_score": 0.0686
+    },
+    {
+      "timestamp": "2018-03-29T16:48:17Z",
+      "risk_score": 0.1455
+    },
+    {
+      "timestamp": "2018-03-29T16:58:25Z",
+      "risk_score": 0.0779
+    },
+    {
+      "timestamp": "2018-04-23T05:08:48Z",
+      "risk_score": 0.9311
+    },
+    {
+      "timestamp": "2018-04-23T05:18:56Z",
+      "risk_score": 0.3019
+    },
+    {
+      "timestamp": "2018-04-23T05:29:04Z",
+      "risk_score": 0.0757
+    },
+    {
+      "timestamp": "2018-04-23T05:39:12Z",
+      "risk_score": 0.0457
+    },
+    {
+      "timestamp": "2018-04-23T05:49:20Z",
+      "risk_score": 0.0792
+    },
+    {
+      "timestamp": "2018-04-23T05:59:28Z",
+      "risk_score": 0.1395
+    },
+    {
+      "timestamp": "2018-04-23T06:09:36Z",
+      "risk_score": 0.2273
+    },
+    {
+      "timestamp": "2018-04-23T06:19:44Z",
+      "risk_score": 0.1274
+    },
+    {
+      "timestamp": "2018-04-23T06:29:52Z",
+      "risk_score": 0.1737
+    },
+    {
+      "timestamp": "2018-04-23T06:40:00Z",
+      "risk_score": 0.2131
+    },
+    {
+      "timestamp": "2018-04-23T18:05:13Z",
+      "risk_score": 0.8498
+    }
+  ],
+  "anomaly_description": "The cooling system is showing a low\u2011risk pattern where several signals are outside their normal ranges. The coolant temperature is slightly below the expected range (89\u202f\u00b0C vs. 90\u201395\u202f\u00b0C) and the temperature rise rate is negative, indicating the coolant may be cooling faster than usual. Additionally, the mass airflow sensor reading exceeds its typical limits. Despite these abnormal readings, the overall risk level is Low, meaning there is no urgent concern at this time. The model estimates a very low 0.31\u202f% probability of reaching a High\u2011risk threshold within the next 10 trips, so while the system should be monitored, immediate action is not required.",
+  "possible_cause": "The slightly lower-than-expected coolant temperature and negative rise rate may indicate a minor sensor reading issue or an early sign of cooling fan behavior, but there is insufficient evidence to confirm a specific fault. The abnormal MAF integral suggests light dust or oil on the sensor surface, which could contribute to the pattern without indicating a serious problem.",
+  "recommended_action": [
+    "Check the coolant level and ensure it is between the MIN and MAX marks when the engine is cool. Do not remove the reservoir cap while the engine is hot.",
+    "Inspect the mass airflow (MAF) sensor for any light dust, oil, or debris that might be affecting its reading; gently clean if necessary using a soft brush or compressed air.",
+    "Monitor the vehicle\u2019s temperature gauge and warning lights during normal driving. If the coolant temperature stays near 90\u202f\u00b0C or the warning lights appear again, schedule an appointment with a mechanic for further diagnostic testing.",
+    "After a short drive such as after running in hot weather or on dusty roads, let the engine idle for a few minutes before checking the gauge to see if the reading stabilizes."
+  ]
+}

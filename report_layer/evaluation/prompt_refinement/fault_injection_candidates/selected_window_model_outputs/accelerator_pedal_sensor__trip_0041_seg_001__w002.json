@@ -1,0 +1,65 @@
+{
+  "trip_id": "trip_0041",
+  "segment_id": "trip_0041_seg_001",
+  "window_id": "trip_0041_seg_001__w002",
+  "timestamp": "2018-02-14T17:01:01Z",
+  "anomaly_type": "accelerator_pedal_sensor",
+  "risk_score": 0.5579,
+  "risk_level": "Medium",
+  "component": "accelerator_pedal_sensor",
+  "prediction_confidence": 0.9364,
+  "key_signals": [
+    {
+      "feature": "accel_pedal_d",
+      "value": 14.1,
+      "unit": "%",
+      "reference_range": [
+        0,
+        100
+      ]
+    },
+    {
+      "feature": "accel_pedal_e",
+      "value": 14.5,
+      "unit": "%",
+      "reference_range": [
+        0,
+        100
+      ]
+    },
+    {
+      "feature": "accel_pedal_channel_delta",
+      "value": 6.463,
+      "unit": "pp",
+      "reference_range": [
+        0,
+        10
+      ]
+    },
+    {
+      "feature": "speed",
+      "value": 86.0,
+      "unit": "km/h",
+      "reference_range": [
+        0,
+        218
+      ]
+    },
+    {
+      "feature": "rpm",
+      "value": 1740.0,
+      "unit": "RPM",
+      "reference_range": [
+        0,
+        3682
+      ]
+    }
+  ],
+  "estimated_cycles_to_failure": null,
+  "estimated_failure_probability": 0.0031,
+  "notes": [
+    "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
+    "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips.",
+    "No positive trip-level risk trend was observed; no threshold crossing cycle is projected."
+  ]
+}

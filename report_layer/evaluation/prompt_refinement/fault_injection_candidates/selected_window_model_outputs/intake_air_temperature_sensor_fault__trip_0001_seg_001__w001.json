@@ -1,0 +1,66 @@
+{
+  "trip_id": "trip_0001",
+  "segment_id": "trip_0001_seg_001",
+  "window_id": "trip_0001_seg_001__w001",
+  "timestamp": "2017-07-05T05:36:45Z",
+  "anomaly_type": "intake_air_temperature_sensor_fault",
+  "risk_score": 0.9,
+  "risk_level": "High",
+  "component": "intake_air_temperature_sensor_fault",
+  "prediction_confidence": 0.9,
+  "key_signals": [
+    {
+      "feature": "intake_temp",
+      "value": 19.0,
+      "unit": "\u00b0C",
+      "reference_range": [
+        -3,
+        41
+      ]
+    },
+    {
+      "feature": "intake_temp_stability",
+      "value": 1.5177,
+      "unit": "\u00b0C",
+      "reference_range": [
+        0,
+        5
+      ]
+    },
+    {
+      "feature": "intake_ambient_delta",
+      "value": 1.0,
+      "unit": "\u00b0C",
+      "reference_range": [
+        0,
+        20
+      ]
+    },
+    {
+      "feature": "ambient_temp",
+      "value": 18.0,
+      "unit": "\u00b0C",
+      "reference_range": [
+        -7,
+        25
+      ]
+    },
+    {
+      "feature": "coolant_temp",
+      "value": 90.0,
+      "unit": "\u00b0C",
+      "reference_range": [
+        90,
+        95
+      ]
+    }
+  ],
+  "estimated_cycles_to_failure": null,
+  "estimated_failure_probability": 0.0031,
+  "notes": [
+    "intake_air_temperature_sensor_fault forwarded from Data Layer proxy_decisions.csv: 4-S3 triggered, DTC P0113, confidence high",
+    "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
+    "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips.",
+    "No positive trip-level risk trend was observed; no threshold crossing cycle is projected."
+  ]
+}

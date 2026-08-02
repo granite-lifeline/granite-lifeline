@@ -8,8 +8,9 @@ Task: GL-112 (sub-task of GL-110: RAG-Enhanced Diagnostic Report Generation)
 Project: Granite Lifeline MSc Project, University of Bristol (IBM-sponsored)
 """
 
+import logging
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 import chromadb
 
@@ -18,9 +19,47 @@ import chromadb
 CHROMA_DB_PATH = Path(__file__).parent / "chroma_db"
 COLLECTION_NAME = "fault_knowledge"
 
-# Initialize ChromaDB client at module level
-_client = chromadb.PersistentClient(path=str(CHROMA_DB_PATH))
-_collection = _client.get_collection(name=COLLECTION_NAME)
+logger = logging.getLogger(__name__)
+
+FALLBACK_DESCRIPTION = (
+    "No specific fault knowledge found for this anomaly type."
+)
+FALLBACK_ACTIONS = "No specific action guidance found for this risk level."
+
+_client: Optional[chromadb.PersistentClient] = None
+_collection = None
+_collection_unavailable = False
+
+
+def _get_collection():
+    """
+    Return the ChromaDB fault knowledge collection when available.
+
+    The collection is created by running the RAG indexer locally. CI and fresh
+    clones may not have that generated database yet, so collection lookup must
+    happen lazily and degrade to fallback retrieval text instead of failing at
+    import time.
+    """
+    global _client, _collection, _collection_unavailable
+
+    if _collection is not None:
+        return _collection
+    if _collection_unavailable:
+        return None
+
+    try:
+        _client = chromadb.PersistentClient(path=str(CHROMA_DB_PATH))
+        _collection = _client.get_collection(name=COLLECTION_NAME)
+        return _collection
+    except Exception as exc:
+        _collection_unavailable = True
+        logger.warning(
+            "ChromaDB collection %r is unavailable at %s: %s",
+            COLLECTION_NAME,
+            CHROMA_DB_PATH,
+            exc,
+        )
+        return None
 
 
 def retrieve_description_causes(anomaly_type: str) -> str:
@@ -36,7 +75,11 @@ def retrieve_description_causes(anomaly_type: str) -> str:
         message if not found.
     """
     try:
-        result = _collection.get(
+        collection = _get_collection()
+        if collection is None:
+            return FALLBACK_DESCRIPTION
+
+        result = collection.get(
             where={
                 "$and": [
                     {"anomaly_type": {"$eq": anomaly_type}},
@@ -48,10 +91,10 @@ def retrieve_description_causes(anomaly_type: str) -> str:
         if result and result["documents"] and len(result["documents"]) > 0:
             return result["documents"][0]
 
-        return "No specific fault knowledge found for this anomaly type."
+        return FALLBACK_DESCRIPTION
 
     except Exception:
-        return "No specific fault knowledge found for this anomaly type."
+        return FALLBACK_DESCRIPTION
 
 
 def retrieve_actions(anomaly_type: str, risk_level: str) -> str:
@@ -69,7 +112,11 @@ def retrieve_actions(anomaly_type: str, risk_level: str) -> str:
         fallback message if not found.
     """
     try:
-        result = _collection.get(
+        collection = _get_collection()
+        if collection is None:
+            return FALLBACK_ACTIONS
+
+        result = collection.get(
             where={
                 "$and": [
                     {"anomaly_type": {"$eq": anomaly_type}},
@@ -82,10 +129,10 @@ def retrieve_actions(anomaly_type: str, risk_level: str) -> str:
         if result and result["documents"] and len(result["documents"]) > 0:
             return result["documents"][0]
 
-        return "No specific action guidance found for this risk level."
+        return FALLBACK_ACTIONS
 
     except Exception:
-        return "No specific action guidance found for this risk level."
+        return FALLBACK_ACTIONS
 
 
 def retrieve_all(anomaly_type: str, risk_level: str) -> Dict[str, str]:

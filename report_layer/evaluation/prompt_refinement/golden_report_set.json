@@ -1,0 +1,58 @@
+{
+  "description": "Golden prompt-regression report set generated from real CSV pipeline outputs or real Data Layer fault-injection feature/proxy artifacts.",
+  "owner_facing_scope": [
+    "notes",
+    "anomaly_description",
+    "possible_cause",
+    "recommended_action"
+  ],
+  "cases": [
+    {
+      "anomaly_type": "cooling_degradation",
+      "source_kind": "real_csv_window",
+      "risk_level": "Low",
+      "model_input_path": "report_layer/evaluation/prompt_refinement/fault_injection_candidates/selected_window_model_outputs/cooling_degradation__trip_0040_seg_001__w003.json",
+      "report_path": "report_layer/evaluation/prompt_refinement/fault_injection_candidates/selected_window_reports/cooling_degradation__trip_0040_seg_001__w003.json",
+      "expected_signal_status": "has_abnormal_key_signal",
+      "expected_projection_horizon": "within the next 10 trips"
+    },
+    {
+      "anomaly_type": "air_intake_maf_anomaly",
+      "source_kind": "real_csv_window",
+      "risk_level": "Low",
+      "model_input_path": "report_layer/evaluation/prompt_refinement/fault_injection_candidates/selected_window_model_outputs/air_intake_maf_anomaly__trip_0061_seg_001__w002.json",
+      "report_path": "report_layer/evaluation/prompt_refinement/fault_injection_candidates/selected_window_reports/air_intake_maf_anomaly__trip_0061_seg_001__w002.json",
+      "expected_signal_status": "all_key_signals_normal",
+      "expected_projection_horizon": "within the next 10 trips"
+    },
+    {
+      "anomaly_type": "accelerator_pedal_sensor",
+      "source_kind": "real_csv_window",
+      "risk_level": "Medium",
+      "model_input_path": "report_layer/evaluation/prompt_refinement/fault_injection_candidates/selected_window_model_outputs/accelerator_pedal_sensor__trip_0041_seg_001__w002.json",
+      "report_path": "report_layer/evaluation/prompt_refinement/fault_injection_candidates/selected_window_reports/accelerator_pedal_sensor__trip_0041_seg_001__w002.json",
+      "expected_signal_status": "all_key_signals_normal",
+      "expected_projection_horizon": "within the next 10 trips"
+    },
+    {
+      "anomaly_type": "intake_air_temperature_sensor_fault",
+      "source_kind": "fault_injection_window",
+      "risk_level": "High",
+      "model_input_path": "report_layer/evaluation/prompt_refinement/fault_injection_candidates/selected_window_model_outputs/intake_air_temperature_sensor_fault__trip_0001_seg_001__w001.json",
+      "report_path": "report_layer/evaluation/prompt_refinement/fault_injection_candidates/selected_window_reports/intake_air_temperature_sensor_fault__trip_0001_seg_001__w001.json",
+      "expected_signal_status": "all_key_signals_normal",
+      "expected_projection_horizon": "within the next 10 trips",
+      "expected_provenance": "rule_based_data_layer"
+    },
+    {
+      "anomaly_type": "map_load_signal_plausibility_fault",
+      "source_kind": "fault_injection_window",
+      "risk_level": "High",
+      "model_input_path": "report_layer/evaluation/prompt_refinement/fault_injection_candidates/selected_window_model_outputs/map_load_signal_plausibility_fault__trip_0001_seg_001__w001.json",
+      "report_path": "report_layer/evaluation/prompt_refinement/fault_injection_candidates/selected_window_reports/map_load_signal_plausibility_fault__trip_0001_seg_001__w001.json",
+      "expected_signal_status": "has_abnormal_key_signal",
+      "expected_projection_horizon": "within the next 10 trips",
+      "expected_provenance": "rule_based_data_layer"
+    }
+  ]
+}
