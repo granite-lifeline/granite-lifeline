@@ -6,6 +6,7 @@ Raw OBD-II field names are mapped to human-readable names before being
 passed to the LLM.
 """
 
+import re
 from typing import Dict, List, Union
 
 from report_layer.rag.rag_retriever import retrieve_all
@@ -110,6 +111,45 @@ PROXY_PROVENANCE_MARKERS = (
     "forwarded from Data Layer proxy_decisions.csv",
     "Data Layer proxy decision",
 )
+
+RAW_DTC_PATTERN = re.compile(r"\b(?:DTC\s*)?P\d{4}(?:-\d+)?\b", re.IGNORECASE)
+
+
+def _sanitize_owner_facing_prompt_text(text: str) -> str:
+    """
+    Remove technical artifacts before sending context/RAG text to prompts.
+
+    The raw ModelLayerOutput remains unchanged in the final report object.
+    This sanitizer only prevents owner-facing generated sections from copying
+    internal filenames or raw diagnostic trouble codes out of prompt context.
+    """
+    sanitized = text.replace(
+        "Data Layer proxy_decisions.csv",
+        "Data Layer rule-based evidence",
+    )
+    sanitized = sanitized.replace(
+        "proxy_decisions.csv",
+        "rule-based evidence",
+    )
+    sanitized = RAW_DTC_PATTERN.sub("a diagnostic flag", sanitized)
+    sanitized = re.sub(
+        r"\bDTCs?\b",
+        "diagnostic codes",
+        sanitized,
+        flags=re.IGNORECASE,
+    )
+    sanitized = re.sub(
+        r"\bfault code\b",
+        "diagnostic flag",
+        sanitized,
+        flags=re.IGNORECASE,
+    )
+    return sanitized
+
+
+def _sanitize_prompt_text_list(items: List[str]) -> List[str]:
+    """Sanitize retrieved RAG strings before prompt injection."""
+    return [_sanitize_owner_facing_prompt_text(item) for item in items]
 
 
 def _format_probability(value: float) -> str:
@@ -293,7 +333,7 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
         context_lines.append("Detection Provenance:")
         context_lines.append(
             "- This detection was forwarded from Data Layer rule-based "
-            "proxy_decisions.csv evidence, not native TTM residual "
+            "proxy evidence, not native TTM residual "
             "scoring."
         )
 
@@ -307,7 +347,9 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
             "mechanical fault causes by themselves."
         )
         for note in ttm_output.notes:
-            context_lines.append(f"- {note}")
+            context_lines.append(
+                f"- {_sanitize_owner_facing_prompt_text(note)}"
+            )
 
     return "\n".join(context_lines)
 
@@ -373,9 +415,13 @@ def build_context_with_rag(
         )
 
     return {
-        "context": context,
-        "fault_knowledge": rag_knowledge["description_causes"],
-        "actions_knowledge": rag_knowledge["actions"],
+        "context": _sanitize_owner_facing_prompt_text(context),
+        "fault_knowledge": _sanitize_prompt_text_list(
+            rag_knowledge["description_causes"]
+        ),
+        "actions_knowledge": _sanitize_prompt_text_list(
+            rag_knowledge["actions"]
+        ),
         "certainty_guidance": certainty_guidance,
         "notes": ttm_output.notes if ttm_output.notes else [],
     }

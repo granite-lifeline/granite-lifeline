@@ -10,6 +10,7 @@ ReportLayerOutput-compatible dict.
 
 import json
 import logging
+import re
 import sys
 import time
 from pathlib import Path
@@ -49,6 +50,140 @@ DEFAULT_PROMPT_VALUES = {
         "confirmed faults."
     ),
 }
+
+RAW_DTC_PATTERN = re.compile(r"\b(?:DTC\s*)?P\d{4}(?:-\d+)?\b", re.IGNORECASE)
+
+
+def _normal_key_signals(model_output: ModelLayerOutput) -> bool:
+    """Return true when every displayed key signal is within range."""
+    for signal in model_output.key_signals:
+        ref_lower = signal.reference_range[0]
+        ref_upper = signal.reference_range[1]
+        if signal.value < ref_lower or signal.value > ref_upper:
+            return False
+    return True
+
+
+def _has_proxy_provenance(model_output: ModelLayerOutput) -> bool:
+    """Return true when Model Layer notes identify proxy forwarding."""
+    return any(
+        "proxy_decisions.csv" in note or "Data Layer proxy decision" in note
+        for note in model_output.notes
+    )
+
+
+def _is_low_projection(model_output: ModelLayerOutput) -> bool:
+    """Return true when the model projection is very low."""
+    probability = model_output.estimated_failure_probability
+    return probability is not None and probability < 0.01
+
+
+def _format_example_phrase(match: re.Match[str]) -> str:
+    """Convert parenthetical e.g. phrases into natural wording."""
+    phrase = match.group(1).strip()
+    parts = [part.strip() for part in phrase.split(",") if part.strip()]
+    if len(parts) == 0:
+        return ""
+    if len(parts) == 1:
+        return f" such as {parts[0]}"
+    return f" such as {', '.join(parts[:-1])} or {parts[-1]}"
+
+
+def _clean_owner_facing_text(text: str) -> str:
+    """Remove owner-facing prompt artifacts that Granite may copy through."""
+    cleaned = text.replace(
+        "Data Layer proxy_decisions.csv",
+        "Data Layer rule-based evidence",
+    )
+    cleaned = cleaned.replace(
+        "proxy_decisions.csv",
+        "rule-based evidence",
+    )
+    cleaned = cleaned.replace("**", "")
+    cleaned = RAW_DTC_PATTERN.sub("a diagnostic flag", cleaned)
+    cleaned = re.sub(r"\bDTCs?\b", "diagnostic codes", cleaned)
+    cleaned = re.sub(
+        r"\s*\(e\.g\.,?\s*([^)]+)\)",
+        _format_example_phrase,
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(r"\bi\.e\.,?\s*", "that is, ", cleaned)
+    cleaned = cleaned.replace("this window", "this short driving period")
+    cleaned = cleaned.replace("IAT sensor", "intake air temperature sensor")
+    return cleaned
+
+
+def _clean_model_aware_text(
+    text: str,
+    model_output: ModelLayerOutput,
+) -> str:
+    """Clean generated text using the current signal-status context."""
+    cleaned = _clean_owner_facing_text(text)
+    if not _normal_key_signals(model_output):
+        cleaned = re.sub(
+            r"Because the current readings still look normal,?\s*",
+            "Because at least one key signal is outside its normal range, ",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+        cleaned = re.sub(
+            r"Although current readings [^,.]*normal,?\s*",
+            "Because at least one key signal is outside its normal range, ",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+    return cleaned
+
+
+def _clean_recommended_actions(
+    actions: Any,
+    model_output: ModelLayerOutput,
+) -> Any:
+    """Clean generated action items without changing the report schema."""
+    if not isinstance(actions, list):
+        return actions
+
+    proxy_normal_low_projection = (
+        _has_proxy_provenance(model_output)
+        and _normal_key_signals(model_output)
+        and _is_low_projection(model_output)
+    )
+    cleaned_actions = []
+    for action in actions:
+        if not isinstance(action, str):
+            cleaned_actions.append(action)
+            continue
+        cleaned = _clean_owner_facing_text(action)
+        if proxy_normal_low_projection:
+            cleaned = re.sub(
+                r"\boutside (?:of )?its normal range\b",
+                "needing verification against live sensor readings",
+                cleaned,
+                flags=re.IGNORECASE,
+            )
+            if re.match(
+                r"^\s*Avoid (?:heavy|long-distance|prolonged|sustained|"
+                r"towing|high-speed)",
+                cleaned,
+                flags=re.IGNORECASE,
+            ):
+                cleaned = (
+                    "Drive normally while watching for warning lights or "
+                    "unusual engine behavior until the sensor is verified."
+                )
+        cleaned_actions.append(cleaned)
+    return cleaned_actions
+
+
+def _clean_notes_for_dashboard(notes: Any) -> Any:
+    """Clean dashboard-visible Model Layer notes while preserving shape."""
+    if not isinstance(notes, list):
+        return notes
+    return [
+        _clean_owner_facing_text(note) if isinstance(note, str) else note
+        for note in notes
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -164,7 +299,9 @@ def _build_empty_report(
         "estimated_failure_probability": model_output_dict.get(
             "estimated_failure_probability"
         ),
-        "notes": model_output_dict.get("notes", []),
+        "notes": _clean_notes_for_dashboard(
+            model_output_dict.get("notes", [])
+        ),
         # Report Layer maintained fields
         "risk_history": risk_history,
         # Generated fields — empty (fallback)
@@ -415,6 +552,19 @@ def generate_report(
                 f"Layer 3 failed after {MAX_RETRIES} retries"
             )
 
+        anomaly_description = _clean_model_aware_text(
+            anomaly_description,
+            validated,
+        )
+        possible_cause = _clean_model_aware_text(
+            possible_cause,
+            validated,
+        )
+        recommended_action = _clean_recommended_actions(
+            recommended_action,
+            validated,
+        )
+
         # Step 5: Assemble successful output
         result = {
             # Pass-through fields
@@ -432,7 +582,9 @@ def generate_report(
             "estimated_failure_probability": summary_payload.get(
                 "estimated_failure_probability"
             ),
-            "notes": summary_payload.get("notes", []),
+            "notes": _clean_notes_for_dashboard(
+                summary_payload.get("notes", [])
+            ),
             # Report Layer maintained fields
             "risk_history": risk_history,
             # Generated fields

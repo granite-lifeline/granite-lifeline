@@ -54,7 +54,7 @@
   "estimated_cycles_to_failure": null,
   "estimated_failure_probability": 0.0031,
   "notes": [
-    "map_load_signal_plausibility_fault forwarded from Data Layer proxy_decisions.csv: 5-S3 triggered, DTC P0106, confidence high",
+    "map_load_signal_plausibility_fault forwarded from Data Layer rule-based evidence: 5-S3 triggered, a diagnostic flag, confidence high",
     "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
     "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips.",
     "No positive trip-level risk trend was observed; no threshold crossing cycle is projected."
@@ -1525,12 +1525,12 @@
       "risk_score": 0.8498
     }
   ],
-  "anomaly_description": "The diagnostic system has detected an implausible MAP (Manifold Absolute Pressure) signal, indicating that the sensor may not be providing accurate pressure readings. Specifically, the 'Manifold Pressure Range' key signal is marked ABNORMAL with a value of 98.0 kPa, which falls outside its expected reference range of 0.0-80.0 kPa. This abnormal reading suggests that the MAP sensor could be experiencing issues such as contamination, electrical problems, or physical damage. The risk level for this anomaly is High, meaning it should be addressed promptly to prevent potential drivability or performance concerns. The system estimates a very low (0.31%) probability of crossing the high-risk threshold within the next 10 trips, but given the abnormal signal and high risk score, proactive inspection is advisable. Note that this detection was forwarded from rule-based Data Layer proxy evidence rather than direct TTM residual scoring.",
-  "possible_cause": "This pattern may indicate an issue with the intake manifold pressure (MAP) sensor\u2014possibly due to contamination, electrical problems in the wiring or connector, physical damage, or a vacuum leak in the intake system.",
+  "anomaly_description": "The diagnostic system has flagged a high-risk issue related to the manifold absolute pressure (MAP) sensor plausibility. The MAP sensor reading is outside its normal operating range, indicating that the intake air pressure value is abnormally low (98 kPa). This abnormal signal suggests there may be a problem with the sensor or its wiring. The risk level is High, meaning this issue should be inspected soon to prevent potential drivability problems. The model estimates only a very low 0.31% chance of crossing the high-risk threshold within the next 10 trips, but because the current flag was forwarded from rule-based Data Layer evidence rather than direct TTM residual scoring, it strongly suggests the sensor\u2019s plausibility check is failing and warrants attention.",
+  "possible_cause": "The high\u2011risk plausibility fault for the manifold pressure sensor may indicate an intermittent MAP sensor reading, a loose or corroded wiring/connector, or a vacuum hose issue. Because only the manifold pressure signal is abnormal while other engine signals remain normal, the rule\u2011based diagnostic flag suggests that the system\u2019s consistency check has identified possible sensor drift or connection problems. This does not yet confirm a mechanical failure but warrants inspection to verify the MAP sensor and its wiring before treating it as a confirmed fault.",
   "recommended_action": [
-    "Avoid heavy acceleration or high-speed driving until this issue is inspected, as an inaccurate manifold pressure reading can affect engine performance and fuel efficiency.",
-    "Schedule a visit to a qualified mechanic within the next few days. Ask them to inspect the Manifold Absolute Pressure (MAP) sensor\u2014typically located on the intake manifold\u2014and check all related vacuum hoses for cracks or loose connections.",
-    "When you arrive, inform the mechanic that the diagnostic system flagged an implausible MAP signal with a high risk score, indicating potential contamination, electrical issues, or physical damage to the sensor.",
-    "If the mechanic recommends replacing the MAP sensor, ensure they also verify the wiring harness and connector for any signs of wear or corrosion before installation."
+    "Avoid heavy acceleration or high-speed driving until this issue is inspected.",
+    "Have a mechanic inspect the manifold absolute pressure (MAP) sensor and its wiring connector for damage or loose connections.",
+    "Check all vacuum hoses connected to the MAP sensor for cracks, splits, or blockage.",
+    "Schedule an appointment with a qualified mechanic within the next few days."
   ]
 }

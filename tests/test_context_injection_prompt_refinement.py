@@ -44,7 +44,8 @@ def test_build_context_adds_proxy_detection_provenance():
     )
 
     assert "Detection Provenance:" in context
-    assert "rule-based proxy_decisions.csv evidence" in context
+    assert "rule-based proxy evidence" in context
+    assert "proxy_decisions.csv" not in context
     assert "not native TTM residual scoring" in context
 
 
