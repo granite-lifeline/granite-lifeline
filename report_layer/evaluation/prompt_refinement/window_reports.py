@@ -90,6 +90,7 @@ def build_selected_window_cases(
     candidate_dir: Path = DEFAULT_CANDIDATE_DIR,
     generate_reports: bool = False,
     overwrite_reports: bool = False,
+    anomaly_types: set[str] | None = None,
 ) -> list[dict[str, str]]:
     """Write selected window ModelLayerOutput cases and optional reports."""
     manifest_path = candidate_dir / "window_candidate_manifest.csv"
@@ -100,6 +101,11 @@ def build_selected_window_cases(
         report_dir.mkdir(parents=True, exist_ok=True)
 
     rows = _load_selected_rows(manifest_path)
+    if anomaly_types:
+        rows = [
+            row for row in rows
+            if row.get("anomaly_type") in anomaly_types
+        ]
     output_rows: list[dict[str, str]] = []
     for row in rows:
         raw_model_output = _load_raw_model_output(
@@ -160,6 +166,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Regenerate reports even when complete report JSON exists.",
     )
+    parser.add_argument(
+        "--anomaly-type",
+        action="append",
+        default=[],
+        help="Limit generation to one anomaly type. Can be repeated.",
+    )
     return parser.parse_args()
 
 
@@ -169,6 +181,7 @@ def main() -> None:
         candidate_dir=args.candidate_dir,
         generate_reports=args.generate_reports,
         overwrite_reports=args.overwrite_reports,
+        anomaly_types=set(args.anomaly_type) or None,
     )
     print(
         f"Wrote {len(rows)} selected window model input(s) to "

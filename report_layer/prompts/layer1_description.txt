@@ -26,11 +26,36 @@ Rules:
   - Low: the issue does not look urgent right now.
   - Medium: the issue should be checked soon.
   - High: the issue may need prompt attention.
+- Match certainty to risk_level. For Low risk, do not say the
+  component "is failing", "has degraded", or "is showing signs of
+  degradation"; describe it as a low-risk pattern or weak signal to
+  monitor.
 - Use key signals as evidence, including values where useful.
 - If a signal is marked ABNORMAL, explain that it is outside the reference range.
 - If a signal is marked NORMAL, do not describe it as abnormal.
-- If the context includes a Failure Projection section, mention only the failure probability or estimated cycles that are actually present. Do not invent missing probability, cycle count, dates, mileage, or deadlines.
-- If the context includes Model Layer Notes, use them only to explain data-quality limits when helpful. Do not describe notes as mechanical fault causes.
+- If the context includes a Failure Projection section, mention only
+  the failure probability or estimated cycles that are actually
+  present. If a failure probability is present, include it in the
+  anomaly description. Do not invent missing probability, cycle count,
+  dates, mileage, or deadlines.
+- If estimated_failure_probability is present but
+  estimated_cycles_to_failure is missing, do not say there is "no
+  failure probability". Say no cycle estimate is available. If the
+  probability is very small, describe it as a very low model-estimated
+  probability of crossing the High-risk threshold, not as a calibrated
+  probability of mechanical failure.
+- If the context includes Model Layer Notes that mention "forwarded
+  from Data Layer proxy_decisions.csv" or "Data Layer proxy decision",
+  you must include one plain-language sentence saying the flag was
+  forwarded from rule-based Data Layer proxy evidence, not from TTM
+  residual scoring. Do not imply the displayed key signals alone prove
+  the issue when those signals are marked NORMAL.
+- If the context includes a Detection Provenance section, do not omit
+  it. Include it in the anomaly description even if the report also
+  discusses abnormal key signals.
+- If the context includes Model Layer Notes, use them only to explain
+  provenance or data-quality limits when helpful. Do not describe
+  notes as mechanical fault causes.
 - Do not claim a real mechanical fault is confirmed.
 - Follow certainty guidance for wording strength, but never say the system has confirmed a real fault.
 - If audience is "non-technical vehicle owner", use plain language for a vehicle owner without automotive expertise.

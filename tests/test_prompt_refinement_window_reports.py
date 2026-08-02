@@ -156,3 +156,69 @@ def test_build_selected_window_cases_skips_complete_existing_reports(
     )
 
     assert rows[0]["report_path"] == str(existing_report)
+
+
+def test_build_selected_window_cases_filters_by_anomaly_type(
+    tmp_path: Path,
+):
+    candidate_dir = tmp_path / "candidates"
+    raw_dir = candidate_dir / "raw_model_outputs"
+    raw_dir.mkdir(parents=True)
+
+    manifest_path = candidate_dir / "window_candidate_manifest.csv"
+    with manifest_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=[
+                "csv_path",
+                "window_id",
+                "anomaly_type",
+                "risk_level",
+                "selected_for_eval",
+            ],
+        )
+        writer.writeheader()
+        writer.writerow({
+            "csv_path": "cooling_case",
+            "window_id": "cooling_w000",
+            "anomaly_type": "cooling_degradation",
+            "risk_level": "Low",
+            "selected_for_eval": "True",
+        })
+        writer.writerow({
+            "csv_path": "maf_case",
+            "window_id": "maf_w000",
+            "anomaly_type": "air_intake_maf_anomaly",
+            "risk_level": "Low",
+            "selected_for_eval": "True",
+        })
+
+    for source_id, anomaly_type, window_id in [
+        ("cooling_case", "cooling_degradation", "cooling_w000"),
+        ("maf_case", "air_intake_maf_anomaly", "maf_w000"),
+    ]:
+        (raw_dir / f"{source_id}.json").write_text(json.dumps({
+            "windows": [
+                {
+                    "window_id": window_id,
+                    "timestamp": "2026-08-01T12:00:00Z",
+                    "anomaly_type": anomaly_type,
+                    "risk_score": 0.2,
+                    "risk_level": "Low",
+                    "component": anomaly_type,
+                    "prediction_confidence": 0.7,
+                    "key_signals": [],
+                    "estimated_cycles_to_failure": None,
+                    "estimated_failure_probability": None,
+                    "notes": [],
+                }
+            ],
+        }))
+
+    rows = build_selected_window_cases(
+        candidate_dir,
+        anomaly_types={"cooling_degradation"},
+    )
+
+    assert len(rows) == 1
+    assert rows[0]["anomaly_type"] == "cooling_degradation"

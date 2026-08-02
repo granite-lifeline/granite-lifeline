@@ -28,9 +28,45 @@ Rules:
 - Do not say the cause is confirmed.
 - Connect the possible cause to the key signal values in the context.
 - If the signals are mixed or unclear, say the evidence is limited.
-- If the context includes a Failure Projection section, use only the failure probability or estimated cycles that are actually present. Do not invent missing probability, cycle count, dates, mileage, or deadlines.
-- If the context includes Model Layer Notes, use them only to explain data-quality limits when helpful. Do not treat notes as possible mechanical causes.
+- Match certainty to risk_level. For Low risk, explain that the
+  pattern is weak or early and may simply need monitoring unless more
+  evidence appears.
+- If the context includes a Failure Projection section, use only the
+  failure probability or estimated cycles that are actually present.
+  Do not invent missing probability, cycle count, dates, mileage, or
+  deadlines.
+- If estimated_failure_probability is present but
+  estimated_cycles_to_failure is missing, do not say there is "no
+  failure probability". Say no cycle estimate is available. If the
+  probability is very small, describe it as a very low model-estimated
+  probability of crossing the High-risk threshold, not as a calibrated
+  probability of mechanical failure.
+- If the context includes Model Layer Notes that mention "forwarded
+  from Data Layer proxy_decisions.csv" or "Data Layer proxy decision",
+  you must explain that the likely cause assessment is based partly on
+  rule-based proxy evidence forwarded by the Data Layer, not only on
+  TTM residual scoring.
+- If the context includes a Detection Provenance section, do not omit
+  it. Use it to explain why a high-risk proxy-forwarded case can exist
+  even when some current window signals are normal.
+- If proxy-forwarded risk is High but the displayed key signals are
+  NORMAL, state that the evidence may reflect an intermittent or
+  decision-level diagnostic pattern. Do not claim the current window
+  readings alone prove a mechanical fault.
+- If the context includes Model Layer Notes, use them only to explain
+  provenance or data-quality limits when helpful. Do not treat notes
+  as possible mechanical causes.
 - Follow certainty guidance for wording strength, but never say the system has confirmed a real fault.
+- Do not name a specific mechanical failure mode unless it matches
+  the direction of the key signals. For example, do not suggest a
+  closed-thermostat failure mode for a lower-than-expected coolant
+  temperature pattern unless overheating evidence is present.
+- For lower-than-expected coolant temperature, slow warm-up, or
+  falling coolant temperature without high-temperature evidence, limit
+  the possible-cause explanation to cautious possibilities such as
+  sensor reading issue, cooling fan behavior, or insufficient evidence
+  for a specific cause. Avoid explaining thermostat mechanics for this
+  low-risk pattern.
 - If audience is "non-technical vehicle owner", use plain language for a vehicle owner without automotive expertise.
 - Avoid unexplained technical jargon.
 - If a technical term is necessary, explain it in simple words.
