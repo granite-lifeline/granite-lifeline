@@ -247,6 +247,10 @@ def call_ollama(prompt: str) -> str:
     payload = {
         "model": MODEL,
         "prompt": prompt,
+        "format": "json",
+        "options": {
+            "temperature": 0,
+        },
         "stream": False,
     }
     response = requests.post(
