@@ -10,9 +10,11 @@ from report_layer.evaluation.prompt_refinement.discovery import (
     feature_proxy_pair_from_run_dir,
     has_proxy_provenance_note,
     mark_selected_eval_cases,
+    mark_selected_window_cases,
     parse_feature_proxy_pair,
     summarize_model_output,
     summarize_proxy_decisions,
+    summarize_window_candidates,
 )
 
 
@@ -88,6 +90,44 @@ def test_summarize_model_output_records_proxy_provenance(tmp_path: Path):
     assert row["risk_history_count"] == 1
     assert row["has_proxy_decisions_path"] is True
     assert row["has_proxy_provenance_note"] is True
+
+
+def test_summarize_window_candidates_records_proxy_forwarded_windows(
+    tmp_path: Path,
+):
+    proxy_path = tmp_path / "proxy_decisions.csv"
+    output = {
+        "summary": {
+            **_model_summary(),
+            "anomaly_type": "cooling_degradation",
+            "risk_score": 1.0,
+        },
+        "windows": [
+            {
+                **_model_summary(
+                    notes=[
+                        "intake_air_temperature_sensor_fault forwarded from "
+                        "Data Layer proxy_decisions.csv: 4-S3 triggered"
+                    ]
+                ),
+                "trip_id": "trip_0003",
+                "segment_id": "trip_0003_seg_001",
+                "window_id": "trip_0003_seg_001__w000",
+                "timestamp": "2026-08-01T12:00:00Z",
+                "key_signals": [{"feature": "intake_temp"}],
+            }
+        ],
+    }
+
+    rows = summarize_window_candidates(
+        tmp_path / "iat_case.csv", output, proxy_path
+    )
+
+    assert len(rows) == 1
+    assert rows[0]["anomaly_type"] == "intake_air_temperature_sensor_fault"
+    assert rows[0]["window_id"] == "trip_0003_seg_001__w000"
+    assert rows[0]["key_signal_count"] == 1
+    assert rows[0]["has_proxy_provenance_note"] is True
 
 
 def test_summarize_proxy_decisions_for_forwarded_types(tmp_path: Path):
@@ -216,6 +256,52 @@ def test_mark_selected_eval_cases_requires_positive_proxy_evidence():
     assert rows[0]["selected_for_eval"] is True
     assert rows[0]["selection_reason"] == (
         "proxy_forwarded_positive_intake_air_temperature_sensor_fault"
+    )
+
+
+def test_mark_selected_window_cases_selects_proxy_window_when_summary_differs():
+    rows = [
+        {
+            "csv_path": "iat_case",
+            "anomaly_type": "intake_air_temperature_sensor_fault",
+            "risk_level": "High",
+            "risk_score": 0.9,
+            "prediction_confidence": 0.9,
+            "has_proxy_provenance_note": True,
+            "selected_for_eval": False,
+            "selection_reason": "",
+        },
+        {
+            "csv_path": "iat_case",
+            "anomaly_type": "cooling_degradation",
+            "risk_level": "High",
+            "risk_score": 1.0,
+            "prediction_confidence": 0.7,
+            "has_proxy_provenance_note": False,
+            "selected_for_eval": False,
+            "selection_reason": "",
+        },
+    ]
+    proxy_rows = [
+        {
+            "csv_path": "iat_case",
+            "anomaly_type": "intake_air_temperature_sensor_fault",
+            "has_positive_proxy_evidence": True,
+        }
+    ]
+
+    mark_selected_window_cases(rows, proxy_rows)
+
+    selected = {
+        row["anomaly_type"]: row["selection_reason"]
+        for row in rows
+        if row["selected_for_eval"]
+    }
+    assert selected["intake_air_temperature_sensor_fault"] == (
+        "window_representative_intake_air_temperature_sensor_fault"
+    )
+    assert selected["cooling_degradation"] == (
+        "window_representative_cooling_degradation"
     )
 
 

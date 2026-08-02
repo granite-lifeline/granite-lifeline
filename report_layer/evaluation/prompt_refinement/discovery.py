@@ -140,6 +140,58 @@ def summarize_model_output(
     }
 
 
+def summarize_window_candidates(
+    source_path: Path,
+    model_output: dict[str, Any],
+    proxy_decisions_path: Path | None,
+    source_kind: str = "real_csv",
+) -> list[dict[str, Any]]:
+    """Create one prompt-refinement candidate row per batch window."""
+    windows = model_output.get("windows")
+    if not isinstance(windows, list):
+        return []
+
+    rows: list[dict[str, Any]] = []
+    for index, window in enumerate(windows):
+        if not isinstance(window, dict):
+            continue
+        notes = window.get("notes") or []
+        if not isinstance(notes, list):
+            notes = [notes]
+        key_signals = window.get("key_signals") or []
+        rows.append({
+            "source_kind": source_kind,
+            "csv_path": repo_relative(source_path),
+            "window_index": index,
+            "trip_id": window.get("trip_id", ""),
+            "segment_id": window.get("segment_id", ""),
+            "window_id": window.get("window_id", ""),
+            "timestamp": window.get("timestamp", ""),
+            "anomaly_type": window.get("anomaly_type", ""),
+            "risk_score": window.get("risk_score", ""),
+            "risk_level": window.get("risk_level", ""),
+            "prediction_confidence": window.get(
+                "prediction_confidence", ""
+            ),
+            "estimated_cycles_to_failure": window.get(
+                "estimated_cycles_to_failure"
+            ),
+            "estimated_failure_probability": window.get(
+                "estimated_failure_probability"
+            ),
+            "key_signal_count": (
+                len(key_signals) if isinstance(key_signals, list) else 0
+            ),
+            "notes": " | ".join(str(note) for note in notes),
+            "has_proxy_decisions_path": proxy_decisions_path is not None,
+            "proxy_decisions_path": repo_relative(proxy_decisions_path),
+            "has_proxy_provenance_note": has_proxy_provenance_note(notes),
+            "selected_for_eval": False,
+            "selection_reason": "",
+        })
+    return rows
+
+
 def summarize_proxy_decisions(
     source_path: Path,
     proxy_decisions_path: Path | None,
@@ -288,6 +340,48 @@ def mark_selected_eval_cases(
         )
 
 
+def mark_selected_window_cases(
+    window_rows: list[dict[str, Any]],
+    proxy_rows: list[dict[str, Any]],
+) -> None:
+    """Mark representative window-level candidates for all anomaly types."""
+    positive_proxy_pairs = {
+        (row["csv_path"], row["anomaly_type"])
+        for row in proxy_rows
+        if row.get("has_positive_proxy_evidence") is True
+        or row.get("has_positive_proxy_evidence") == "True"
+    }
+
+    for anomaly_type in (*NATIVE_MODEL_TYPES, *FORWARDED_TYPES):
+        candidates = [
+            row
+            for row in window_rows
+            if row.get("anomaly_type") == anomaly_type
+        ]
+        if anomaly_type in FORWARDED_TYPES:
+            candidates = [
+                row
+                for row in candidates
+                if row.get("has_proxy_provenance_note") is True
+                and (row.get("csv_path"), anomaly_type)
+                in positive_proxy_pairs
+            ]
+        if not candidates:
+            continue
+        selected = max(
+            candidates,
+            key=lambda row: (
+                _as_float(row.get("prediction_confidence")),
+                _as_float(row.get("risk_score")),
+                row.get("risk_level") == "High",
+            ),
+        )
+        selected["selected_for_eval"] = True
+        selected["selection_reason"] = (
+            f"window_representative_{anomaly_type}"
+        )
+
+
 def discover_csvs(
     csv_paths: list[Path],
     output_dir: Path = DEFAULT_OUTPUT_DIR,
@@ -303,6 +397,7 @@ def discover_csvs(
 
     manifest_rows: list[dict[str, Any]] = []
     proxy_rows: list[dict[str, Any]] = []
+    window_rows: list[dict[str, Any]] = []
 
     for csv_path in csv_paths:
         try:
@@ -313,6 +408,11 @@ def discover_csvs(
             )
             manifest_rows.append(
                 summarize_model_output(csv_path, model_output, proxy_path)
+            )
+            window_rows.extend(
+                summarize_window_candidates(
+                    csv_path, model_output, proxy_path
+                )
             )
             proxy_rows.extend(summarize_proxy_decisions(csv_path, proxy_path))
 
@@ -358,7 +458,9 @@ def discover_csvs(
             })
 
     mark_selected_eval_cases(manifest_rows, proxy_rows)
+    mark_selected_window_cases(window_rows, proxy_rows)
     write_csv(output_dir / "real_csv_manifest.csv", manifest_rows)
+    write_csv(output_dir / "window_candidate_manifest.csv", window_rows)
     write_csv(output_dir / "proxy_forwarding_audit.csv", proxy_rows)
     return manifest_rows, proxy_rows
 
@@ -407,6 +509,7 @@ def discover_feature_proxy_pairs(
 
     manifest_rows: list[dict[str, Any]] = []
     proxy_rows: list[dict[str, Any]] = []
+    window_rows: list[dict[str, Any]] = []
 
     for pair in pairs:
         try:
@@ -432,6 +535,14 @@ def discover_feature_proxy_pairs(
             )
             manifest_rows.append(
                 summarize_model_output(
+                    Path(pair.source_id),
+                    model_output,
+                    proxy_decisions_path,
+                    source_kind="feature_proxy_pair",
+                )
+            )
+            window_rows.extend(
+                summarize_window_candidates(
                     Path(pair.source_id),
                     model_output,
                     proxy_decisions_path,
@@ -476,7 +587,9 @@ def discover_feature_proxy_pairs(
             })
 
     mark_selected_eval_cases(manifest_rows, proxy_rows)
+    mark_selected_window_cases(window_rows, proxy_rows)
     write_csv(output_dir / "real_csv_manifest.csv", manifest_rows)
+    write_csv(output_dir / "window_candidate_manifest.csv", window_rows)
     write_csv(output_dir / "proxy_forwarding_audit.csv", proxy_rows)
     return manifest_rows, proxy_rows
 
