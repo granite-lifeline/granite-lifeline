@@ -300,7 +300,11 @@ def test_run_model_layer_raises_when_script_missing(monkeypatch, tmp_path):
     )
 
     with pytest.raises(ModelBatchRunnerUnavailable):
-        csv_pipeline._run_model_layer(tmp_path / "production_features.csv")
+        csv_pipeline._run_model_layer(
+            tmp_path / "production_features.csv",
+            None,
+            tmp_path / "model_output.json",
+        )
 
 
 def test_run_model_layer_parses_error_contract(monkeypatch, tmp_path):
@@ -319,7 +323,11 @@ def test_run_model_layer_parses_error_contract(monkeypatch, tmp_path):
     monkeypatch.setattr(csv_pipeline.subprocess, "run", fake_run)
 
     with pytest.raises(UploadedCsvPipelineError, match="bad input"):
-        csv_pipeline._run_model_layer(tmp_path / "production_features.csv")
+        csv_pipeline._run_model_layer(
+            tmp_path / "production_features.csv",
+            None,
+            tmp_path / "model_output.json",
+        )
 
 
 def test_run_model_layer_times_out(monkeypatch, tmp_path):
@@ -335,7 +343,11 @@ def test_run_model_layer_times_out(monkeypatch, tmp_path):
     monkeypatch.setattr(csv_pipeline.subprocess, "run", fake_run)
 
     with pytest.raises(TimeoutError):
-        csv_pipeline._run_model_layer(tmp_path / "production_features.csv")
+        csv_pipeline._run_model_layer(
+            tmp_path / "production_features.csv",
+            None,
+            tmp_path / "model_output.json",
+        )
 
 
 def test_run_model_layer_reads_output_json(monkeypatch, tmp_path):
@@ -354,11 +366,113 @@ def test_run_model_layer_reads_output_json(monkeypatch, tmp_path):
 
     monkeypatch.setattr(csv_pipeline.subprocess, "run", fake_run)
 
+    output_path = tmp_path / "model_output.json"
     result = csv_pipeline._run_model_layer(
-        tmp_path / "production_features.csv"
+        tmp_path / "production_features.csv",
+        None,
+        output_path,
     )
 
     assert result == envelope
+
+
+def test_run_uploaded_csv_batch_passes_proxy_decisions_to_subprocess(
+    monkeypatch, tmp_path: Path
+):
+    import dashboard.csv_pipeline as csv_pipeline
+
+    script = tmp_path / "detector.py"
+    script.write_text("# stub")
+    monkeypatch.setattr(csv_pipeline, "MODEL_LAYER_SCRIPT", script)
+
+    production_features = tmp_path / "production_features.csv"
+    production_features.write_text("timestamp,rpm\n2026-07-20T12:00:00Z,900\n")
+    proxy_decisions = tmp_path / "proxy_decisions.csv"
+    proxy_decisions.write_text("proxy_id,result_state\n4-S1,pass\n")
+    captured: dict[str, list[str]] = {}
+
+    def fake_data_layer(input_path: Path):
+        return production_features, proxy_decisions
+
+    def fake_run(cmd, **kwargs):
+        captured["cmd"] = [str(part) for part in cmd]
+        output_path = Path(cmd[cmd.index("--output") + 1])
+        output_path.write_text(json.dumps({
+            "summary": _model_output(),
+            "windows": [],
+        }))
+        return subprocess.CompletedProcess(cmd, returncode=0)
+
+    def fake_load_model_output_for_dashboard(model_output: dict, source: str):
+        assert source == "uploaded"
+        return {
+            "cooling_degradation": model_output["summary"],
+            "_data_source": {"cooling_degradation": "uploaded"},
+        }
+
+    monkeypatch.setattr(csv_pipeline, "_run_data_layer", fake_data_layer)
+    monkeypatch.setattr(csv_pipeline.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        csv_pipeline,
+        "load_model_output_for_dashboard",
+        fake_load_model_output_for_dashboard,
+    )
+
+    run_uploaded_csv_batch(
+        b"Time\n12:00:00.000\n",
+        "2018-03-01_Seat_Leon_RT_S_Normal.csv",
+    )
+
+    assert "--proxy-decisions" in captured["cmd"]
+    assert str(proxy_decisions) in captured["cmd"]
+
+
+def test_run_uploaded_csv_batch_omits_proxy_decisions_when_absent(
+    monkeypatch, tmp_path: Path
+):
+    import dashboard.csv_pipeline as csv_pipeline
+
+    script = tmp_path / "detector.py"
+    script.write_text("# stub")
+    monkeypatch.setattr(csv_pipeline, "MODEL_LAYER_SCRIPT", script)
+
+    production_features = tmp_path / "production_features.csv"
+    production_features.write_text("timestamp,rpm\n2026-07-20T12:00:00Z,900\n")
+    captured: dict[str, list[str]] = {}
+
+    def fake_data_layer(input_path: Path):
+        return production_features, None
+
+    def fake_run(cmd, **kwargs):
+        captured["cmd"] = [str(part) for part in cmd]
+        output_path = Path(cmd[cmd.index("--output") + 1])
+        output_path.write_text(json.dumps({
+            "summary": _model_output(),
+            "windows": [],
+        }))
+        return subprocess.CompletedProcess(cmd, returncode=0)
+
+    def fake_load_model_output_for_dashboard(model_output: dict, source: str):
+        assert source == "uploaded"
+        return {
+            "cooling_degradation": model_output["summary"],
+            "_data_source": {"cooling_degradation": "uploaded"},
+        }
+
+    monkeypatch.setattr(csv_pipeline, "_run_data_layer", fake_data_layer)
+    monkeypatch.setattr(csv_pipeline.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        csv_pipeline,
+        "load_model_output_for_dashboard",
+        fake_load_model_output_for_dashboard,
+    )
+
+    run_uploaded_csv_batch(
+        b"Time\n12:00:00.000\n",
+        "2018-03-01_Seat_Leon_RT_S_Normal.csv",
+    )
+
+    assert "--proxy-decisions" not in captured["cmd"]
 
 
 def test_run_uploaded_csv_batch_passes_production_features_to_model(
@@ -370,12 +484,18 @@ def test_run_uploaded_csv_batch_passes_production_features_to_model(
     production_features = tmp_path / "production_features.csv"
     production_features.write_text("timestamp,rpm\n2026-07-20T12:00:00Z,900\n")
 
-    def fake_data_layer(input_path: Path) -> Path:
+    def fake_data_layer(input_path: Path) -> tuple[Path, Path | None]:
         calls["data_input"] = str(input_path)
-        return production_features
+        return production_features, None
 
-    def fake_run_model_layer(csv_path: Path) -> dict:
+    def fake_run_model_layer(
+        csv_path: Path,
+        proxy_decisions_path: Path | None,
+        output_path: Path,
+    ) -> dict:
         calls["model_input"] = str(csv_path)
+        calls["proxy_input"] = str(proxy_decisions_path)
+        calls["output_path"] = str(output_path)
         return {
             "summary": _model_output(),
             "windows": [
@@ -424,6 +544,8 @@ def test_run_uploaded_csv_batch_passes_production_features_to_model(
         "2018-03-01_Seat_Leon_RT_S_Normal.csv"
     )
     assert calls["model_input"] == str(production_features)
+    assert calls["proxy_input"] == "None"
+    assert calls["output_path"].endswith("model_output.json")
     assert "cooling_degradation" in dashboard_data
     assert dashboard_data["_data_source"]["cooling_degradation"] == "uploaded"
     assert dashboard_data["cooling_degradation"]["risk_history"] == [
@@ -438,12 +560,17 @@ def test_run_uploaded_csv_batch_reports_progress(monkeypatch, tmp_path: Path):
     production_features.write_text("timestamp,rpm\n2026-07-20T12:00:00Z,900\n")
 
     monkeypatch.setattr(
-        csv_pipeline, "_run_data_layer", lambda input_path: production_features
+        csv_pipeline,
+        "_run_data_layer",
+        lambda input_path: (production_features, None),
     )
     monkeypatch.setattr(
         csv_pipeline,
         "_run_model_layer",
-        lambda csv_path: {"summary": _model_output(), "windows": []},
+        lambda csv_path, proxy_decisions_path, output_path: {
+            "summary": _model_output(),
+            "windows": [],
+        },
     )
     monkeypatch.setattr(
         csv_pipeline,

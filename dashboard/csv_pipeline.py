@@ -75,7 +75,11 @@ def _extract_error_message(stderr: str) -> str:
     )
 
 
-def _run_model_layer(production_features_path: Path) -> Dict[str, Any]:
+def _run_model_layer(
+    production_features_path: Path,
+    proxy_decisions_path: Path | None,
+    output_path: Path,
+) -> Dict[str, Any]:
     """Run the Model Layer's TTM batch detector as a subprocess.
 
     Invokes ``kit_residual_detector.py --batch`` per INTERFACE.md
@@ -91,46 +95,46 @@ def _run_model_layer(production_features_path: Path) -> Dict[str, Any]:
         )
 
     python = _resolve_model_layer_python()
-    with tempfile.TemporaryDirectory(
-        prefix="granite_model_output_"
-    ) as out_dir:
-        output_path = Path(out_dir) / "model_output.json"
-        try:
-            result = subprocess.run(
-                [
-                    python, str(MODEL_LAYER_SCRIPT),
-                    str(production_features_path),
-                    "--batch",
-                    "--output", str(output_path),
-                ],
-                # The detector's --history-file default is relative to
-                # model_layer/ (its own docstring's "repository root");
-                # without this, it writes to the caller's cwd instead.
-                cwd=str(_REPO_ROOT / "model_layer"),
-                capture_output=True,
-                text=True,
-                timeout=MODEL_LAYER_TIMEOUT_SECONDS,
-            )
-        except subprocess.TimeoutExpired as exc:
-            raise TimeoutError(
-                "Model Layer analysis timed out after "
-                f"{MODEL_LAYER_TIMEOUT_SECONDS}s."
-            ) from exc
+    command = [
+        python, str(MODEL_LAYER_SCRIPT),
+        str(production_features_path),
+        "--batch",
+        "--output", str(output_path),
+    ]
+    if proxy_decisions_path is not None:
+        command.extend(["--proxy-decisions", str(proxy_decisions_path)])
 
-        if result.returncode != 0:
-            raise UploadedCsvPipelineError(
-                _extract_error_message(result.stderr)
-            )
-        if not output_path.is_file():
-            raise UploadedCsvPipelineError(
-                "Model Layer did not produce an output file."
-            )
-        try:
-            return json.loads(output_path.read_text())
-        except json.JSONDecodeError as exc:
-            raise UploadedCsvPipelineError(
-                "Model Layer output could not be parsed as JSON."
-            ) from exc
+    try:
+        result = subprocess.run(
+            command,
+            # The detector's --history-file default is relative to
+            # model_layer/ (its own docstring's "repository root");
+            # without this, it writes to the caller's cwd instead.
+            cwd=str(_REPO_ROOT / "model_layer"),
+            capture_output=True,
+            text=True,
+            timeout=MODEL_LAYER_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise TimeoutError(
+            "Model Layer analysis timed out after "
+            f"{MODEL_LAYER_TIMEOUT_SECONDS}s."
+        ) from exc
+
+    if result.returncode != 0:
+        raise UploadedCsvPipelineError(
+            _extract_error_message(result.stderr)
+        )
+    if not output_path.is_file():
+        raise UploadedCsvPipelineError(
+            "Model Layer did not produce an output file."
+        )
+    try:
+        return json.loads(output_path.read_text())
+    except json.JSONDecodeError as exc:
+        raise UploadedCsvPipelineError(
+            "Model Layer output could not be parsed as JSON."
+        ) from exc
 
 
 def _build_upload_run_id() -> str:
@@ -138,12 +142,17 @@ def _build_upload_run_id() -> str:
     return f"dashboard_upload_{timestamp}_{uuid4().hex[:8]}"
 
 
-def _run_data_layer(raw_csv_path: Path) -> Path:
-    """Run Data Layer on an uploaded raw CSV and return production features.
+def _run_data_layer(raw_csv_path: Path) -> tuple[Path, Path | None]:
+    """Run Data Layer and return feature/proxy output paths.
 
     ``raw_csv_path`` must keep its original KIT file name — Data Layer
     parses the recording date from it (data_layer/run_pipeline.py
     ``run_data_pipeline_for_upload`` docstring; data_layer/README.md D3).
+
+    Returns:
+        ``(production_features_path, proxy_decisions_path)``.  The proxy
+        path is ``None`` when the Data Layer summary does not include
+        ``proxy_decisions_path``.
     """
     try:
         from data_layer.run_pipeline import (
@@ -167,7 +176,18 @@ def _run_data_layer(raw_csv_path: Path) -> Path:
         raise UploadedCsvPipelineError(
             "Data Layer did not produce production_features.csv."
         )
-    return production_path
+
+    proxy_path = None
+    proxy_path_value = summary.get("proxy_decisions_path")
+    if proxy_path_value:
+        proxy_path = Path(proxy_path_value)
+        if not proxy_path.is_file():
+            raise UploadedCsvPipelineError(
+                "Data Layer reported proxy_decisions.csv but the file "
+                "was not created."
+            )
+
+    return production_path, proxy_path
 
 
 def _emit_progress(
@@ -203,9 +223,14 @@ def run_uploaded_csv_batch(
         raw_path.write_bytes(csv_bytes)
 
         _emit_progress(progress_callback, 35, "Analyzing data...")
-        production_features = _run_data_layer(raw_path)
+        production_features, proxy_decisions = _run_data_layer(raw_path)
         _emit_progress(progress_callback, 65, "Analyzing data...")
-        model_output = _run_model_layer(production_features)
+        output_path = Path(temp_dir) / "model_output.json"
+        model_output = _run_model_layer(
+            production_features,
+            proxy_decisions,
+            output_path,
+        )
         _emit_progress(progress_callback, 90, "Analyzing data...")
         dashboard_data = load_model_output_for_dashboard(
             model_output, "uploaded"

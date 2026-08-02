@@ -20,6 +20,7 @@ test marks the Ollama-dependent assertion as xfail in that case so the
 suite can always be run offline.
 """
 
+import json
 import sys
 from pathlib import Path
 from typing import Optional
@@ -40,6 +41,9 @@ from dashboard.data_loader import (  # noqa: E402
 # Uses the real pipeline for cooling_degradation; mock for missing real files.
 # ---------------------------------------------------------------------------
 _DATA_CACHE: Optional[dict] = None
+REAL_SAMPLE_PATH = (
+    project_root / "model_layer/ttm-related/outputs/kit_residual_sample.json"
+)
 
 
 def _get_data() -> dict:
@@ -135,9 +139,11 @@ class TestDetailPageRealData:
         if source.get(cooling_key) != "real":
             pytest.skip("cooling_degradation not loaded from real data")
         cooling = data[cooling_key]
-        # kit_residual_sample.json has risk_score 1.0
-        assert cooling["risk_score"] == 1.0, (
-            "Expected risk_score=1.0 from real file, "
+        expected = json.loads(
+            REAL_SAMPLE_PATH.read_text(encoding="utf-8")
+        )["risk_score"]
+        assert cooling["risk_score"] == expected, (
+            f"Expected risk_score={expected} from real file, "
             f"got {cooling['risk_score']}"
         )
 
