@@ -1,5 +1,9 @@
 from shared.interface_models import KeySignal, ModelLayerOutput
-from report_layer.pipeline.context_injection import build_context
+from report_layer.pipeline import context_injection
+from report_layer.pipeline.context_injection import (
+    build_context,
+    build_context_with_rag,
+)
 
 
 def _model_output(**overrides):
@@ -77,3 +81,19 @@ def test_build_context_warns_against_overheating_for_low_cooling_pattern():
     assert "without high-temperature evidence" in context
     assert "insufficient evidence for a specific cause" in context
     assert "Avoid explaining thermostat mechanics" in context
+
+
+def test_build_context_with_rag_keeps_retrieved_text_as_strings(monkeypatch):
+    monkeypatch.setattr(
+        context_injection,
+        "retrieve_all",
+        lambda anomaly_type, risk_level: {
+            "description_causes": "Fault knowledge text.",
+            "actions": "Action guidance text.",
+        },
+    )
+
+    context = build_context_with_rag(_model_output())
+
+    assert context["fault_knowledge"] == "Fault knowledge text."
+    assert context["actions_knowledge"] == "Action guidance text."

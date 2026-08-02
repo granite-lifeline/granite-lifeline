@@ -147,9 +147,9 @@ def _sanitize_owner_facing_prompt_text(text: str) -> str:
     return sanitized
 
 
-def _sanitize_prompt_text_list(items: List[str]) -> List[str]:
-    """Sanitize retrieved RAG strings before prompt injection."""
-    return [_sanitize_owner_facing_prompt_text(item) for item in items]
+def _sanitize_prompt_text(text: str) -> str:
+    """Sanitize a retrieved RAG string before prompt injection."""
+    return _sanitize_owner_facing_prompt_text(text)
 
 
 def _format_probability(value: float) -> str:
@@ -416,10 +416,10 @@ def build_context_with_rag(
 
     return {
         "context": _sanitize_owner_facing_prompt_text(context),
-        "fault_knowledge": _sanitize_prompt_text_list(
+        "fault_knowledge": _sanitize_prompt_text(
             rag_knowledge["description_causes"]
         ),
-        "actions_knowledge": _sanitize_prompt_text_list(
+        "actions_knowledge": _sanitize_prompt_text(
             rag_knowledge["actions"]
         ),
         "certainty_guidance": certainty_guidance,
