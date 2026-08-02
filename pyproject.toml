@@ -1,0 +1,35 @@
+[project]
+name = "granite-lifeline"
+version = "0.1.0"
+description = "OBD-II predictive maintenance dashboard with Data, Model, Report, and Dashboard layers."
+requires-python = ">=3.11"
+dependencies = [
+    "accelerate==1.14.0",
+    "chromadb>=0.4.0",
+    "datasets==5.0.0",
+    "einops==0.8.2",
+    "granite-tsfm==0.3.6",
+    "joblib==1.5.3",
+    "langchain>=0.1.0",
+    "langchain-community>=0.0.20",
+    "numpy==2.4.6",
+    "pandas==3.0.3",
+    "plotly>=5.0.0",
+    "psutil==7.2.2",
+    "pyarrow==24.0.0",
+    "pydantic>=2.0.0,<3.0.0",
+    "PyYAML==6.0.3",
+    "reportlab>=4.0.0",
+    "requests==2.34.2",
+    "scikit-learn==1.7.2",
+    "scipy==1.17.1",
+    "streamlit>=1.28.0",
+    "torch==2.10.0",
+    "transformers==4.57.6",
+]
+
+[dependency-groups]
+dev = [
+    "flake8>=6.1.0",
+    "pytest>=7.4.0",
+]
