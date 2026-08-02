@@ -1,7 +1,7 @@
 # INTERFACE.md — Granite Lifeline Field Definitions
 **Version:** v1.5  
 **Last updated:** 2026-08-01  
-**Status:** Confirmed — 5-type anomaly_type enum (`electronic_throttle_tracking_fault` and `idle_speed_control_or_surge_degradation` removed by the Data Layer; `intake_air_temperature_sensor_or_heat_soak_fault` renamed to `intake_air_temperature_sensor_fault`, 2026-07-19); 2 types pending Model Layer support, with their §2.4 key-signal mappings and rationales supplied by the Data Layer on 2026-07-19; Model Layer Story 3 hardening retained (`notes` field, null estimation placeholders, `accelerator_pedal_sensor` detection); Model Layer input requirements retained as §1.5 (2026-07-11); Data Layer scripts 00–41 now produce the confirmed 46-column `production_features.csv` contract (4 sample keys, 16 A-class context/raw fields, 24 B-class production features, and 2 provenance fields) under an explicit run directory; new §2.5 batch output envelope and risk-score history shape added for Report Layer integration (2026-07-20); Data Layer's decision-level `proxy_decisions.csv` (scripts 50–70) confirmed executable end-to-end against real data, 21-column schema documented in §1.4 — still not wired into the live upload pipeline (2026-07-27); that gap is now closed — the Data Layer runs scripts 50–70 inside `run_data_pipeline_for_upload` and returns `proxy_decisions_path`, so `proxy_decisions.csv` is produced by a live single-CSV upload (2026-07-31); the Model Layer now forwards those two types' verdicts into its own output JSON, with the verdict → `risk_score`/`prediction_confidence` mapping defined in §2.4 (2026-08-01); Story 8 is complete, so `estimated_cycles_to_failure` and `estimated_failure_probability` now carry real projected values instead of the `null` placeholders they have emitted since v0.5 (2026-08-01)
+**Status:** Confirmed — 5-type anomaly_type enum (`electronic_throttle_tracking_fault` and `idle_speed_control_or_surge_degradation` removed by the Data Layer; `intake_air_temperature_sensor_or_heat_soak_fault` renamed to `intake_air_temperature_sensor_fault`, 2026-07-19); 3 types have native Model Layer detection logic and 2 Data-Layer-scored types are forwarded from `proxy_decisions.csv` when the live upload path supplies `proxy_decisions_path`; Model Layer Story 3 hardening retained (`notes` field and `accelerator_pedal_sensor` detection); Model Layer input requirements retained as §1.5 (2026-07-11); Data Layer scripts 00–41 produce the confirmed 46-column `production_features.csv` contract (4 sample keys, 16 A-class context/raw fields, 24 B-class production features, and 2 provenance fields) under an explicit run directory; Data Layer scripts 50–70 produce the decision-level `proxy_decisions.csv` contract documented in §1.4, and `run_data_pipeline_for_upload` returns `proxy_decisions_path` for Dashboard live uploads; the Model Layer forwards those two proxy-backed types into its own output JSON, with the verdict → `risk_score`/`prediction_confidence` mapping defined in §2.4 (2026-08-01); Story 8 is complete, so `estimated_cycles_to_failure` and `estimated_failure_probability` now carry real projected values when enough rising risk history exists, while remaining nullable for insufficient or non-rising histories (2026-08-01)
 
 ---
 
@@ -380,7 +380,7 @@ The dashboard's final assembly runs the Model Layer over the full uploaded featu
 
 Consumed by: **Dashboard**
 
-Report Layer acts as a unified packager: it passes through fields from Model Layer unchanged, adds three Granite-generated fields, and maintains `risk_history` via local persistent storage.
+Report Layer acts as a unified packager: it passes through fields from Model Layer unchanged, adds three Granite-generated fields, and carries `risk_history` for Dashboard trend visualisation. In the current live pipeline, `risk_history` is derived per request from the Model Layer batch envelope's `windows` entries; it is not stored across Dashboard sessions by the Report Layer.
 
 ### 3.1 Pass-through fields
 
@@ -402,7 +402,7 @@ Originate in Model Layer, forwarded unchanged by Report Layer.
 
 | Field Name | Type | Description | Example | Status |
 |---|---|---|---|---|
-| risk_history | array of objects | Historical risk scores for trend visualisation. Report Layer appends `{timestamp, risk_score}` to local persistent storage on each inference call. Required by brief: "risk score over time". Structure: `[{timestamp, risk_score}]` | `[{"timestamp": "2026-06-15T10:00:00Z", "risk_score": 0.65}, {"timestamp": "2026-06-16T10:00:00Z", "risk_score": 0.82}]` | TBD — storage implementation pending Sprint 2 |
+| risk_history | array of objects \| null | Risk scores for Dashboard trend visualisation. In batch/live mode this is synthesized from `windows[*].timestamp` and `windows[*].risk_score` in the Model Layer `{summary, windows}` envelope. It is `null` for single-window outputs or when no batch history is available. Structure: `[{timestamp, risk_score}]` | `[{"timestamp": "2026-06-15T10:00:00Z", "risk_score": 0.65}, {"timestamp": "2026-06-16T10:00:00Z", "risk_score": 0.82}]` | Confirmed — derived from Model Layer batch output |
 
 ### 3.3 Generated fields
 
