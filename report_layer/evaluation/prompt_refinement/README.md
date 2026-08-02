@@ -150,6 +150,25 @@ report_layer/evaluation/prompt_refinement/fault_injection_candidates/
   selected_window_reports/
 ```
 
+## Regression Checks
+
+Run the fast prompt-regression checks without calling Ollama:
+
+```bash
+uv run pytest tests/test_report_prompt_regression.py
+```
+
+Run the broader prompt-refinement test subset:
+
+```bash
+uv run pytest tests/test_report_prompt_regression.py tests/test_context_injection_prompt_refinement.py tests/test_prompt_refinement_window_reports.py tests/test_prompt_refinement_discovery.py
+```
+
+These tests validate the committed golden reports and helper logic. They do
+not regenerate reports. To refresh generated report text after prompt changes,
+run `window_reports.py --generate-reports --overwrite-reports` with local
+Ollama running, then rerun the regression checks.
+
 ## Suggested Selection Criteria
 
 After discovery, choose a compact set covering:
