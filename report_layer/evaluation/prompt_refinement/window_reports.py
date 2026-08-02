@@ -71,9 +71,25 @@ def _case_id(row: dict[str, str]) -> str:
     )
 
 
+def _has_complete_report(path: Path) -> bool:
+    """Return true when an existing report has all generated text fields."""
+    if not path.is_file():
+        return False
+    try:
+        report = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return False
+    return bool(
+        report.get("anomaly_description")
+        and report.get("possible_cause")
+        and report.get("recommended_action")
+    )
+
+
 def build_selected_window_cases(
     candidate_dir: Path = DEFAULT_CANDIDATE_DIR,
     generate_reports: bool = False,
+    overwrite_reports: bool = False,
 ) -> list[dict[str, str]]:
     """Write selected window ModelLayerOutput cases and optional reports."""
     manifest_path = candidate_dir / "window_candidate_manifest.csv"
@@ -101,12 +117,15 @@ def build_selected_window_cases(
 
         report_path = ""
         if generate_reports:
-            report = generate_report(selected_window, risk_history=history)
             report_output_path = report_dir / f"{case_id}.json"
-            report_output_path.write_text(
-                json.dumps(report, indent=2),
-                encoding="utf-8",
-            )
+            if overwrite_reports or not _has_complete_report(
+                report_output_path
+            ):
+                report = generate_report(selected_window, risk_history=history)
+                report_output_path.write_text(
+                    json.dumps(report, indent=2),
+                    encoding="utf-8",
+                )
             report_path = str(report_output_path)
 
         output_rows.append({
@@ -136,6 +155,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Also call Report Layer/Ollama and save report outputs.",
     )
+    parser.add_argument(
+        "--overwrite-reports",
+        action="store_true",
+        help="Regenerate reports even when complete report JSON exists.",
+    )
     return parser.parse_args()
 
 
@@ -144,6 +168,7 @@ def main() -> None:
     rows = build_selected_window_cases(
         candidate_dir=args.candidate_dir,
         generate_reports=args.generate_reports,
+        overwrite_reports=args.overwrite_reports,
     )
     print(
         f"Wrote {len(rows)} selected window model input(s) to "
