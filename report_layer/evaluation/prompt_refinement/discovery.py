@@ -295,7 +295,7 @@ def discover_csvs(
     continue_on_error: bool = True,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Run discovery and return `(manifest_rows, proxy_audit_rows)`."""
-    raw_output_dir = output_dir / "raw_model_outputs"
+    raw_output_dir = output_dir.resolve() / "raw_model_outputs"
     report_output_dir = output_dir / "generated_reports"
     raw_output_dir.mkdir(parents=True, exist_ok=True)
     if generate_reports:
@@ -402,7 +402,7 @@ def discover_feature_proxy_pairs(
     continue_on_error: bool = True,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Run Model Layer directly on existing feature/proxy artifacts."""
-    raw_output_dir = output_dir / "raw_model_outputs"
+    raw_output_dir = output_dir.resolve() / "raw_model_outputs"
     raw_output_dir.mkdir(parents=True, exist_ok=True)
 
     manifest_rows: list[dict[str, Any]] = []
@@ -410,12 +410,14 @@ def discover_feature_proxy_pairs(
 
     for pair in pairs:
         try:
-            if not pair.production_features_path.is_file():
+            production_features_path = pair.production_features_path.resolve()
+            proxy_decisions_path = pair.proxy_decisions_path.resolve()
+            if not production_features_path.is_file():
                 raise UploadedCsvPipelineError(
                     "production_features.csv not found: "
                     f"{pair.production_features_path}"
                 )
-            if not pair.proxy_decisions_path.is_file():
+            if not proxy_decisions_path.is_file():
                 raise UploadedCsvPipelineError(
                     "proxy_decisions.csv not found: "
                     f"{pair.proxy_decisions_path}"
@@ -424,22 +426,22 @@ def discover_feature_proxy_pairs(
                 raw_output_dir / f"{safe_stem(Path(pair.source_id))}.json"
             )
             model_output = _run_model_layer(
-                pair.production_features_path,
-                pair.proxy_decisions_path,
+                production_features_path,
+                proxy_decisions_path,
                 output_path,
             )
             manifest_rows.append(
                 summarize_model_output(
                     Path(pair.source_id),
                     model_output,
-                    pair.proxy_decisions_path,
+                    proxy_decisions_path,
                     source_kind="feature_proxy_pair",
                 )
             )
             proxy_rows.extend(
                 summarize_proxy_decisions(
                     Path(pair.source_id),
-                    pair.proxy_decisions_path,
+                    proxy_decisions_path,
                     source_kind="feature_proxy_pair",
                 )
             )
