@@ -138,12 +138,17 @@ def _build_upload_run_id() -> str:
     return f"dashboard_upload_{timestamp}_{uuid4().hex[:8]}"
 
 
-def _run_data_layer(raw_csv_path: Path) -> Path:
-    """Run Data Layer on an uploaded raw CSV and return production features.
+def _run_data_layer(raw_csv_path: Path) -> tuple[Path, Path | None]:
+    """Run Data Layer and return feature/proxy output paths.
 
     ``raw_csv_path`` must keep its original KIT file name — Data Layer
     parses the recording date from it (data_layer/run_pipeline.py
     ``run_data_pipeline_for_upload`` docstring; data_layer/README.md D3).
+
+    Returns:
+        ``(production_features_path, proxy_decisions_path)``.  The proxy
+        path is ``None`` when the Data Layer summary does not include
+        ``proxy_decisions_path``.
     """
     try:
         from data_layer.run_pipeline import (
@@ -167,7 +172,13 @@ def _run_data_layer(raw_csv_path: Path) -> Path:
         raise UploadedCsvPipelineError(
             "Data Layer did not produce production_features.csv."
         )
-    return production_path
+
+    proxy_path = None
+    proxy_path_value = summary.get("proxy_decisions_path")
+    if proxy_path_value:
+        proxy_path = Path(proxy_path_value)
+
+    return production_path, proxy_path
 
 
 def _emit_progress(
