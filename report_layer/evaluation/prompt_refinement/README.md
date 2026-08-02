@@ -65,6 +65,7 @@ The script writes:
 ```text
 report_layer/evaluation/prompt_refinement/
   real_csv_manifest.csv
+  window_candidate_manifest.csv
   proxy_forwarding_audit.csv
   raw_model_outputs/
   generated_reports/
@@ -78,6 +79,12 @@ types are selected by anomaly type and risk level using the highest available
 `prediction_confidence`. Proxy-forwarded IAT/MAP rows are selected only when
 the model output includes proxy provenance and the proxy audit has positive
 evidence for that same CSV/type pair.
+
+`window_candidate_manifest.csv` records one row per Model Layer batch window.
+It is the preferred manifest for prompt refinement because batch summaries can
+be dominated by a higher-risk anomaly while still containing valid
+proxy-forwarded IAT/MAP windows. Selected window rows cover the five current
+anomaly types when evidence is available.
 
 `proxy_forwarding_audit.csv` records the Data Layer `proxy_decisions.csv`
 summary for the two proxy-forwarded anomaly types:
@@ -102,6 +109,38 @@ If no real CSV produces a positive IAT or MAP forwarded top anomaly, those
 cases should be marked unavailable in the manifest rather than fabricated.
 Use fault-injection feature/proxy pairs to cover these two required types when
 the original healthy KIT CSVs do not contain positive proxy evidence.
+
+## Selected Window Report Inputs
+
+After `window_candidate_manifest.csv` exists, write one
+`ModelLayerOutput`-shaped JSON file for each selected window:
+
+```bash
+uv run python -m report_layer.evaluation.prompt_refinement.window_reports
+```
+
+This writes:
+
+```text
+report_layer/evaluation/prompt_refinement/fault_injection_candidates/
+  selected_window_model_outputs/
+```
+
+To also generate Report Layer outputs, first start Ollama and make sure
+`granite4.1:8b` is available:
+
+```bash
+ollama serve
+ollama pull granite4.1:8b
+uv run python -m report_layer.evaluation.prompt_refinement.window_reports --generate-reports
+```
+
+The report-generation mode writes:
+
+```text
+report_layer/evaluation/prompt_refinement/fault_injection_candidates/
+  selected_window_reports/
+```
 
 ## Suggested Selection Criteria
 
