@@ -18,6 +18,9 @@ Use real pipeline outputs to evaluate whether Report Layer prompts:
   `estimated_cycles_to_failure` or `estimated_failure_probability` is `null`;
 - preserve provenance for proxy-forwarded detections.
 
+The owner-facing quality rules used during manual review are maintained in
+`report_regression_checklist.md`.
+
 ## Real-CSV Discovery
 
 Run a small discovery pass first:
