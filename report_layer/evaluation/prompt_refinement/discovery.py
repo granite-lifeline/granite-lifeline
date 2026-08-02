@@ -666,7 +666,9 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     pairs = list(args.feature_proxy_pair)
-    pairs.extend(feature_proxy_pair_from_run_dir(path) for path in args.run_dir)
+    pairs.extend(
+        feature_proxy_pair_from_run_dir(path) for path in args.run_dir
+    )
     csv_paths = list(args.csv)
     if not csv_paths and not pairs:
         csv_paths = sorted(args.csv_dir.glob(args.glob))

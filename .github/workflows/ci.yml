@@ -31,20 +31,18 @@ jobs:
 
       - name: Python syntax check
         run: |
-          files=$(find . -name "*.py" -not -path "./.git/*")
-          if [ -z "$files" ]; then
+          if [ -z "$(git ls-files '*.py')" ]; then
             echo "No Python files found. Skipping syntax check."
           else
-            python -m py_compile $files
+            git ls-files '*.py' | xargs -r python -m py_compile
           fi
 
       - name: flake8 style check
         run: |
-          files=$(find . -name "*.py" -not -path "./.git/*")
-          if [ -z "$files" ]; then
+          if [ -z "$(git ls-files '*.py')" ]; then
             echo "No Python files found. Skipping flake8."
           else
-            python -m flake8 $files
+            git ls-files '*.py' | xargs -r python -m flake8
           fi
 
       - name: Run pytest

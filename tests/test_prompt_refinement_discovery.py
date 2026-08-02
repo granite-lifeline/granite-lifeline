@@ -259,7 +259,8 @@ def test_mark_selected_eval_cases_requires_positive_proxy_evidence():
     )
 
 
-def test_mark_selected_window_cases_selects_proxy_window_when_summary_differs():
+def test_mark_selected_window_cases_selects_proxy_window_when_summary_differs(
+):
     rows = [
         {
             "csv_path": "iat_case",

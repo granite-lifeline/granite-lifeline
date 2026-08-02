@@ -29,7 +29,10 @@ def _load_selected_rows(manifest_path: Path) -> list[dict[str, str]]:
     return [row for row in rows if _truthy(row.get("selected_for_eval"))]
 
 
-def _load_raw_model_output(candidate_dir: Path, csv_path: str) -> dict[str, Any]:
+def _load_raw_model_output(
+    candidate_dir: Path,
+    csv_path: str,
+) -> dict[str, Any]:
     """Load the raw batch Model Layer output for a selected row."""
     output_path = (
         candidate_dir
@@ -40,7 +43,10 @@ def _load_raw_model_output(candidate_dir: Path, csv_path: str) -> dict[str, Any]
         return json.load(handle)
 
 
-def _find_window(model_output: dict[str, Any], window_id: str) -> dict[str, Any]:
+def _find_window(
+    model_output: dict[str, Any],
+    window_id: str,
+) -> dict[str, Any]:
     """Find one batch window by `window_id`."""
     for window in model_output.get("windows", []):
         if isinstance(window, dict) and window.get("window_id") == window_id:
