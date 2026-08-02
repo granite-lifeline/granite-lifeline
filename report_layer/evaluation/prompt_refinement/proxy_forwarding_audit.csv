@@ -1,0 +1,3 @@
+csv_path,proxy_decisions_path,anomaly_type,rows,triggered_rows,dtc_emitted_rows,result_states,confidence_values,sub_checks,has_positive_proxy_evidence
+data/raw/OBD-II-Dataset/2017-07-05_Seat_Leon_RT_S_Stau.csv,data/processed/runs/dashboard_upload_20260802T130716Z_a8c51a1a/proxy/70_decisions/proxy_decisions.csv,intake_air_temperature_sensor_fault,3,0,0,not_evaluable|pass,high|low,4-S1|4-S2|4-S3,False
+data/raw/OBD-II-Dataset/2017-07-05_Seat_Leon_RT_S_Stau.csv,data/processed/runs/dashboard_upload_20260802T130716Z_a8c51a1a/proxy/70_decisions/proxy_decisions.csv,map_load_signal_plausibility_fault,3,0,0,not_evaluable|pass,high,5-S1|5-S2|5-S3,False
