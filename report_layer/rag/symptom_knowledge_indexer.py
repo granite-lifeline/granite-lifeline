@@ -19,7 +19,7 @@ import yaml
 from shared.anomaly_mapping import GROUND_KNOWLEDGE_ANOMALY_TYPES
 
 
-# Five current anomaly types from docs/INTERFACE.md v1.1.
+# Five current anomaly types from docs/INTERFACE.md v1.5.
 EXPECTED_ANOMALY_TYPES = list(GROUND_KNOWLEDGE_ANOMALY_TYPES)
 
 # ChromaDB configuration

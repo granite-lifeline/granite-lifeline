@@ -1,6 +1,6 @@
 """Pydantic models for Granite Lifeline cross-layer data contracts.
 
-Based on INTERFACE.md v1.1 (updated 2026-07-20).
+Based on INTERFACE.md v1.5 (updated 2026-08-01).
 
 DataLayerOutput now follows the versioned production_features.csv contract:
 4 sample keys + 16 A-class context/raw fields + 24 B-class production features
@@ -8,14 +8,14 @@ DataLayerOutput now follows the versioned production_features.csv contract:
 Internal-only proxy label fields (INTERFACE.md 1.4) are kept optional.
 
 ModelLayerOutput supports the single-window shape. BatchModelLayerOutput
-supports the v1.1 `{summary, windows}` envelope emitted by Model Layer
+supports the v1.5 `{summary, windows}` envelope emitted by Model Layer
 batch inference.
 """
 
 from typing import List, Optional, Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-# Anomaly type enum based on INTERFACE.md v1.1.
+# Anomaly type enum based on INTERFACE.md v1.5.
 AnomalyType = Literal[
     "cooling_degradation",
     "air_intake_maf_anomaly",
@@ -58,7 +58,7 @@ class RiskHistoryEntry(BaseModel):
 class DataLayerOutput(BaseModel):
     """Output from Data Layer, consumed by Model Layer.
 
-    Follows the production_features.csv contract (INTERFACE.md v1.1):
+    Follows the production_features.csv contract (INTERFACE.md v1.5):
     46 ordered columns = 4 sample keys + 16 A-class context/raw fields
     + 24 B-class production features + 2 provenance fields.
     Nullable columns are typed Optional but remain required keys.
@@ -184,7 +184,7 @@ class BatchWindowOutput(ModelLayerOutput):
 
 
 class BatchModelLayerOutput(BaseModel):
-    """Model Layer v1.1 batch output envelope."""
+    """Model Layer v1.5 batch output envelope."""
 
     summary: ModelLayerOutput
     windows: List[BatchWindowOutput]

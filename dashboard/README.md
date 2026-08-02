@@ -284,8 +284,8 @@ The dashboard loads `ReportLayerOutput` JSON via `data_loader.py`. A
     "anomaly_description": str,             # Granite LLM generated
     "possible_cause": str,                  # Granite LLM generated
     "recommended_action": List[str],        # Granite LLM generated
-    "estimated_failure_probability": float | None,  # Model Layer, may be null
-    "estimated_cycles_to_failure": int | None,      # Model Layer, may be null
+    "estimated_failure_probability": float | None,  # Model Layer projection
+    "estimated_cycles_to_failure": int | None,      # Model Layer projection
     "notes": List[str],                     # Model Layer validation messages
 }
 ```
@@ -467,8 +467,8 @@ See `docs/INTERFACE.md` Section 3 for complete field definitions.
 
 ### Current Limitations
 
-1. **Only 3 of 5 anomaly types have real Model Layer detection logic** (`cooling_degradation`, `air_intake_maf_anomaly`, `accelerator_pedal_sensor`); the other 2 are permanent 0.0-score placeholders in `kit_residual_detector.py`, so a live upload can never surface them as the top result even if that fault is actually present.
-2. **`estimated_cycles_to_failure` / `estimated_failure_probability` are always null** in live mode — the Model Layer's trend estimator (Story 8) is not yet implemented.
+1. **Only 3 of 5 anomaly types have native TTM detection logic** (`cooling_degradation`, `air_intake_maf_anomaly`, `accelerator_pedal_sensor`); the other 2 are supplied by Data Layer `proxy_decisions.csv` forwarding when live uploads include `proxy_decisions_path`.
+2. **Failure estimates are projected by the Model Layer, not calibrated mechanical-failure labels** — `estimated_cycles_to_failure` / `estimated_failure_probability` may still be `null` when history is insufficient or non-rising, but the current real sample already contains non-null projected values.
 3. **Desktop-First**: Mobile experience needs optimization.
 4. **No cross-session persistence**: in live mode, `risk_history` is synthesized per request from the Model Layer's batch envelope (every analysed window in the uploaded file), not stored across separate uploads or sessions — this is a deliberate simplification, not an oversight, and is sufficient for "trend within this one upload."
 5. **No hosted/zero-install mode**: live analysis requires local Ollama + Model Layer Python dependencies; there is no paid hosted inference (see Integration with Report Layer above).
