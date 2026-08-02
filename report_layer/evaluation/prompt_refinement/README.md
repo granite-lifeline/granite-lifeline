@@ -56,7 +56,12 @@ report_layer/evaluation/prompt_refinement/
 
 `real_csv_manifest.csv` records one row per CSV run, including anomaly type,
 risk score, risk level, confidence, projection fields, notes, whether batch
-history exists, and whether proxy-provenance notes were emitted.
+history exists, whether proxy-provenance notes were emitted, and whether the
+row was selected as a representative prompt-evaluation case. Native Model Layer
+types are selected by anomaly type and risk level using the highest available
+`prediction_confidence`. Proxy-forwarded IAT/MAP rows are selected only when
+the model output includes proxy provenance and the proxy audit has positive
+evidence for that same CSV/type pair.
 
 `proxy_forwarding_audit.csv` records the Data Layer `proxy_decisions.csv`
 summary for the two proxy-forwarded anomaly types:

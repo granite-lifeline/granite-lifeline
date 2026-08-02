@@ -6,6 +6,7 @@ from report_layer.evaluation.prompt_refinement.discovery import (
     extract_risk_history_count,
     extract_summary,
     has_proxy_provenance_note,
+    mark_selected_eval_cases,
     summarize_model_output,
     summarize_proxy_decisions,
 )
@@ -117,3 +118,94 @@ def test_summarize_proxy_decisions_for_forwarded_types(tmp_path: Path):
     assert by_type["map_load_signal_plausibility_fault"][
         "has_positive_proxy_evidence"
     ] is False
+
+
+def test_mark_selected_eval_cases_selects_native_risk_examples():
+    rows = [
+        {
+            "csv_path": "high_low_conf.csv",
+            "output_shape": "batch",
+            "anomaly_type": "cooling_degradation",
+            "risk_level": "High",
+            "risk_score": 0.9,
+            "prediction_confidence": 0.6,
+            "risk_history_count": 5,
+            "has_proxy_provenance_note": False,
+            "selected_for_eval": False,
+            "selection_reason": "",
+        },
+        {
+            "csv_path": "high_best_conf.csv",
+            "output_shape": "batch",
+            "anomaly_type": "cooling_degradation",
+            "risk_level": "High",
+            "risk_score": 0.8,
+            "prediction_confidence": 0.8,
+            "risk_history_count": 4,
+            "has_proxy_provenance_note": False,
+            "selected_for_eval": False,
+            "selection_reason": "",
+        },
+        {
+            "csv_path": "medium.csv",
+            "output_shape": "batch",
+            "anomaly_type": "air_intake_maf_anomaly",
+            "risk_level": "Medium",
+            "risk_score": 0.5,
+            "prediction_confidence": 0.9,
+            "risk_history_count": 3,
+            "has_proxy_provenance_note": False,
+            "selected_for_eval": False,
+            "selection_reason": "",
+        },
+    ]
+
+    mark_selected_eval_cases(rows, [])
+
+    selected = {
+        row["csv_path"]: row["selection_reason"]
+        for row in rows
+        if row["selected_for_eval"]
+    }
+    assert selected == {
+        "high_best_conf.csv": (
+            "representative_cooling_degradation_high"
+        ),
+        "medium.csv": (
+            "representative_air_intake_maf_anomaly_medium"
+        ),
+    }
+
+
+def test_mark_selected_eval_cases_requires_positive_proxy_evidence():
+    rows = [
+        {
+            "csv_path": "proxy.csv",
+            "output_shape": "batch",
+            "anomaly_type": "intake_air_temperature_sensor_fault",
+            "risk_level": "High",
+            "risk_score": 0.9,
+            "prediction_confidence": 0.9,
+            "risk_history_count": 2,
+            "has_proxy_provenance_note": True,
+            "selected_for_eval": False,
+            "selection_reason": "",
+        }
+    ]
+
+    mark_selected_eval_cases(rows, [])
+    assert rows[0]["selected_for_eval"] is False
+
+    proxy_rows = [
+        {
+            "csv_path": "proxy.csv",
+            "anomaly_type": "intake_air_temperature_sensor_fault",
+            "has_positive_proxy_evidence": True,
+        }
+    ]
+    mark_selected_eval_cases(rows, proxy_rows)
+
+    assert rows[0]["selected_for_eval"] is True
+    assert rows[0]["selection_reason"] == (
+        "proxy_forwarded_positive_intake_air_temperature_sensor_fault"
+    )

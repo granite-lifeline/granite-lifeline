@@ -30,6 +30,12 @@ FORWARDED_TYPES = (
     "intake_air_temperature_sensor_fault",
     "map_load_signal_plausibility_fault",
 )
+NATIVE_MODEL_TYPES = (
+    "cooling_degradation",
+    "air_intake_maf_anomaly",
+    "accelerator_pedal_sensor",
+)
+RISK_LEVEL_ORDER = ("High", "Medium", "Low")
 PROXY_PROVENANCE_MARKERS = (
     "forwarded from Data Layer proxy_decisions.csv",
     "Data Layer proxy decision",
@@ -193,6 +199,80 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         writer.writerows(rows)
 
 
+def _as_float(value: Any) -> float:
+    """Convert numeric-ish values for candidate ranking."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return -1.0
+
+
+def mark_selected_eval_cases(
+    manifest_rows: list[dict[str, Any]],
+    proxy_rows: list[dict[str, Any]],
+) -> None:
+    """Mark representative real outputs for prompt-refinement evaluation.
+
+    Native Model Layer anomaly types are selected by anomaly type and risk
+    level. Proxy-forwarded types are only selected when the model output also
+    carries an explicit proxy provenance note and the proxy audit has positive
+    evidence for that CSV/type pair.
+    """
+    positive_proxy_pairs = {
+        (row["csv_path"], row["anomaly_type"])
+        for row in proxy_rows
+        if row.get("has_positive_proxy_evidence") is True
+        or row.get("has_positive_proxy_evidence") == "True"
+    }
+
+    for anomaly_type in NATIVE_MODEL_TYPES:
+        for risk_level in RISK_LEVEL_ORDER:
+            candidates = [
+                row
+                for row in manifest_rows
+                if row.get("output_shape") in {"single", "batch"}
+                and row.get("anomaly_type") == anomaly_type
+                and row.get("risk_level") == risk_level
+            ]
+            if not candidates:
+                continue
+            selected = max(
+                candidates,
+                key=lambda row: (
+                    _as_float(row.get("prediction_confidence")),
+                    _as_float(row.get("risk_score")),
+                    row.get("risk_history_count", 0),
+                ),
+            )
+            selected["selected_for_eval"] = True
+            selected["selection_reason"] = (
+                f"representative_{anomaly_type}_{risk_level.lower()}"
+            )
+
+    for anomaly_type in FORWARDED_TYPES:
+        candidates = [
+            row
+            for row in manifest_rows
+            if row.get("output_shape") in {"single", "batch"}
+            and row.get("anomaly_type") == anomaly_type
+            and row.get("has_proxy_provenance_note") is True
+            and (row.get("csv_path"), anomaly_type) in positive_proxy_pairs
+        ]
+        if not candidates:
+            continue
+        selected = max(
+            candidates,
+            key=lambda row: (
+                _as_float(row.get("prediction_confidence")),
+                _as_float(row.get("risk_score")),
+            ),
+        )
+        selected["selected_for_eval"] = True
+        selected["selection_reason"] = (
+            f"proxy_forwarded_positive_{anomaly_type}"
+        )
+
+
 def discover_csvs(
     csv_paths: list[Path],
     output_dir: Path = DEFAULT_OUTPUT_DIR,
@@ -261,6 +341,7 @@ def discover_csvs(
                 "selection_reason": "pipeline_error",
             })
 
+    mark_selected_eval_cases(manifest_rows, proxy_rows)
     write_csv(output_dir / "real_csv_manifest.csv", manifest_rows)
     write_csv(output_dir / "proxy_forwarding_audit.csv", proxy_rows)
     return manifest_rows, proxy_rows

@@ -1,0 +1,190 @@
+{
+  "summary": {
+    "timestamp": "2018-02-21T07:50:43Z",
+    "anomaly_type": "cooling_degradation",
+    "risk_score": 0.3227,
+    "risk_level": "Low",
+    "component": "cooling_degradation",
+    "prediction_confidence": 0.8964,
+    "key_signals": [
+      {
+        "feature": "coolant_temp",
+        "value": 72.0,
+        "unit": "°C",
+        "reference_range": [
+          90,
+          95
+        ]
+      },
+      {
+        "feature": "ect_rate_180s",
+        "value": 0.6667,
+        "unit": "°C/min",
+        "reference_range": [
+          0,
+          2
+        ]
+      },
+      {
+        "feature": "maf_integral_180s",
+        "value": 1990.2151,
+        "unit": "g",
+        "reference_range": [
+          0,
+          2500
+        ]
+      },
+      {
+        "feature": "rpm",
+        "value": 1329.0,
+        "unit": "RPM",
+        "reference_range": [
+          0,
+          3682
+        ]
+      },
+      {
+        "feature": "speed",
+        "value": 23.0,
+        "unit": "km/h",
+        "reference_range": [
+          0,
+          218
+        ]
+      }
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": [
+      "Failure estimate unavailable: need at least 5 chronological trips; found 1."
+    ]
+  },
+  "windows": [
+    {
+      "trip_id": "trip_0001",
+      "segment_id": "trip_0001_seg_001",
+      "window_id": "trip_0001_seg_001__w000",
+      "timestamp": "2018-02-21T07:40:35Z",
+      "anomaly_type": "cooling_degradation",
+      "risk_score": 0.2838,
+      "risk_level": "Low",
+      "component": "cooling_degradation",
+      "prediction_confidence": 0.908,
+      "key_signals": [
+        {
+          "feature": "coolant_temp",
+          "value": 58.0,
+          "unit": "°C",
+          "reference_range": [
+            90,
+            95
+          ]
+        },
+        {
+          "feature": "ect_rate_180s",
+          "value": 4.7743,
+          "unit": "°C/min",
+          "reference_range": [
+            0,
+            2
+          ]
+        },
+        {
+          "feature": "maf_integral_180s",
+          "value": 3427.0967,
+          "unit": "g",
+          "reference_range": [
+            0,
+            2500
+          ]
+        },
+        {
+          "feature": "speed",
+          "value": 0.0,
+          "unit": "km/h",
+          "reference_range": [
+            0,
+            218
+          ]
+        },
+        {
+          "feature": "rpm",
+          "value": 1041.0,
+          "unit": "RPM",
+          "reference_range": [
+            0,
+            3682
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "Failure estimate unavailable: need at least 5 chronological trips; found 1."
+      ]
+    },
+    {
+      "trip_id": "trip_0001",
+      "segment_id": "trip_0001_seg_001",
+      "window_id": "trip_0001_seg_001__w001",
+      "timestamp": "2018-02-21T07:50:43Z",
+      "anomaly_type": "cooling_degradation",
+      "risk_score": 0.3227,
+      "risk_level": "Low",
+      "component": "cooling_degradation",
+      "prediction_confidence": 0.8964,
+      "key_signals": [
+        {
+          "feature": "coolant_temp",
+          "value": 72.0,
+          "unit": "°C",
+          "reference_range": [
+            90,
+            95
+          ]
+        },
+        {
+          "feature": "ect_rate_180s",
+          "value": 0.6667,
+          "unit": "°C/min",
+          "reference_range": [
+            0,
+            2
+          ]
+        },
+        {
+          "feature": "maf_integral_180s",
+          "value": 1990.2151,
+          "unit": "g",
+          "reference_range": [
+            0,
+            2500
+          ]
+        },
+        {
+          "feature": "rpm",
+          "value": 1329.0,
+          "unit": "RPM",
+          "reference_range": [
+            0,
+            3682
+          ]
+        },
+        {
+          "feature": "speed",
+          "value": 23.0,
+          "unit": "km/h",
+          "reference_range": [
+            0,
+            218
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "Failure estimate unavailable: need at least 5 chronological trips; found 1."
+      ]
+    }
+  ]
+}
