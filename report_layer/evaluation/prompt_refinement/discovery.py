@@ -11,6 +11,7 @@ import argparse
 import csv
 import json
 import re
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -41,6 +42,15 @@ PROXY_PROVENANCE_MARKERS = (
     "Data Layer proxy decision",
     "not TTM residual scoring",
 )
+
+
+@dataclass(frozen=True)
+class FeatureProxyPair:
+    """Existing feature/proxy artifacts to send directly to Model Layer."""
+
+    source_id: str
+    production_features_path: Path
+    proxy_decisions_path: Path
 
 
 def repo_relative(path: Path | None) -> str:
@@ -90,9 +100,10 @@ def has_proxy_provenance_note(notes: Iterable[Any]) -> bool:
 
 
 def summarize_model_output(
-    csv_path: Path,
+    source_path: Path,
     model_output: dict[str, Any],
     proxy_decisions_path: Path | None,
+    source_kind: str = "real_csv",
 ) -> dict[str, Any]:
     """Create one manifest row from a model output envelope."""
     summary = extract_summary(model_output)
@@ -102,7 +113,8 @@ def summarize_model_output(
     cycles = summary.get("estimated_cycles_to_failure")
     probability = summary.get("estimated_failure_probability")
     return {
-        "csv_path": repo_relative(csv_path),
+        "source_kind": source_kind,
+        "csv_path": repo_relative(source_path),
         "output_shape": (
             "batch"
             if isinstance(model_output.get("windows"), list)
@@ -129,15 +141,17 @@ def summarize_model_output(
 
 
 def summarize_proxy_decisions(
-    csv_path: Path,
+    source_path: Path,
     proxy_decisions_path: Path | None,
+    source_kind: str = "real_csv",
 ) -> list[dict[str, Any]]:
     """Summarize Data Layer proxy decisions for the two forwarded types."""
     rows = []
     if proxy_decisions_path is None:
         for anomaly_type in FORWARDED_TYPES:
             rows.append({
-                "csv_path": repo_relative(csv_path),
+                "source_kind": source_kind,
+                "csv_path": repo_relative(source_path),
                 "proxy_decisions_path": "",
                 "anomaly_type": anomaly_type,
                 "rows": 0,
@@ -156,7 +170,8 @@ def summarize_proxy_decisions(
         triggered = subset[subset.get("result_state") == "triggered"]
         dtc_emitted = subset[subset.get("dtc_emitted").astype(str) == "True"]
         rows.append({
-            "csv_path": repo_relative(csv_path),
+            "source_kind": source_kind,
+            "csv_path": repo_relative(source_path),
             "proxy_decisions_path": repo_relative(proxy_decisions_path),
             "anomaly_type": anomaly_type,
             "rows": len(subset),
@@ -318,6 +333,7 @@ def discover_csvs(
             if not continue_on_error:
                 raise
             manifest_rows.append({
+                "source_kind": "real_csv",
                 "csv_path": repo_relative(csv_path),
                 "output_shape": "error",
                 "anomaly_type": "",
@@ -336,6 +352,122 @@ def discover_csvs(
                 ),
                 "has_proxy_decisions_path": False,
                 "proxy_decisions_path": "",
+                "has_proxy_provenance_note": False,
+                "selected_for_eval": False,
+                "selection_reason": "pipeline_error",
+            })
+
+    mark_selected_eval_cases(manifest_rows, proxy_rows)
+    write_csv(output_dir / "real_csv_manifest.csv", manifest_rows)
+    write_csv(output_dir / "proxy_forwarding_audit.csv", proxy_rows)
+    return manifest_rows, proxy_rows
+
+
+def parse_feature_proxy_pair(value: str) -> FeatureProxyPair:
+    """Parse `source_id=features.csv:proxy_decisions.csv` CLI values."""
+    source_id = ""
+    pair_value = value
+    if "=" in value:
+        source_id, pair_value = value.split("=", 1)
+    if ":" not in pair_value:
+        raise argparse.ArgumentTypeError(
+            "--feature-proxy-pair must use "
+            "source_id=production_features.csv:proxy_decisions.csv"
+        )
+    features_raw, proxy_raw = pair_value.split(":", 1)
+    features = Path(features_raw)
+    proxy = Path(proxy_raw)
+    if not source_id:
+        source_id = features.parent.parent.parent.name or features.stem
+    return FeatureProxyPair(source_id, features, proxy)
+
+
+def feature_proxy_pair_from_run_dir(run_dir: Path) -> FeatureProxyPair:
+    """Build a direct Model Layer input pair from a processed run dir."""
+    return FeatureProxyPair(
+        source_id=run_dir.name,
+        production_features_path=(
+            run_dir / "features" / "41_production"
+            / "production_features.csv"
+        ),
+        proxy_decisions_path=(
+            run_dir / "proxy" / "70_decisions" / "proxy_decisions.csv"
+        ),
+    )
+
+
+def discover_feature_proxy_pairs(
+    pairs: list[FeatureProxyPair],
+    output_dir: Path = DEFAULT_OUTPUT_DIR,
+    continue_on_error: bool = True,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Run Model Layer directly on existing feature/proxy artifacts."""
+    raw_output_dir = output_dir / "raw_model_outputs"
+    raw_output_dir.mkdir(parents=True, exist_ok=True)
+
+    manifest_rows: list[dict[str, Any]] = []
+    proxy_rows: list[dict[str, Any]] = []
+
+    for pair in pairs:
+        try:
+            if not pair.production_features_path.is_file():
+                raise UploadedCsvPipelineError(
+                    "production_features.csv not found: "
+                    f"{pair.production_features_path}"
+                )
+            if not pair.proxy_decisions_path.is_file():
+                raise UploadedCsvPipelineError(
+                    "proxy_decisions.csv not found: "
+                    f"{pair.proxy_decisions_path}"
+                )
+            output_path = (
+                raw_output_dir / f"{safe_stem(Path(pair.source_id))}.json"
+            )
+            model_output = _run_model_layer(
+                pair.production_features_path,
+                pair.proxy_decisions_path,
+                output_path,
+            )
+            manifest_rows.append(
+                summarize_model_output(
+                    Path(pair.source_id),
+                    model_output,
+                    pair.proxy_decisions_path,
+                    source_kind="feature_proxy_pair",
+                )
+            )
+            proxy_rows.extend(
+                summarize_proxy_decisions(
+                    Path(pair.source_id),
+                    pair.proxy_decisions_path,
+                    source_kind="feature_proxy_pair",
+                )
+            )
+        except Exception as exc:
+            if not continue_on_error:
+                raise
+            manifest_rows.append({
+                "source_kind": "feature_proxy_pair",
+                "csv_path": pair.source_id,
+                "output_shape": "error",
+                "anomaly_type": "",
+                "risk_score": "",
+                "risk_level": "",
+                "prediction_confidence": "",
+                "estimated_cycles_to_failure": "",
+                "estimated_failure_probability": "",
+                "projection_is_null": "",
+                "risk_history_count": 0,
+                "has_notes": True,
+                "notes": (
+                    str(exc)
+                    if isinstance(exc, UploadedCsvPipelineError)
+                    else f"{type(exc).__name__}: {exc}"
+                ),
+                "has_proxy_decisions_path": False,
+                "proxy_decisions_path": repo_relative(
+                    pair.proxy_decisions_path
+                ),
                 "has_proxy_provenance_note": False,
                 "selected_for_eval": False,
                 "selection_reason": "pipeline_error",
@@ -382,6 +514,28 @@ def parse_args() -> argparse.Namespace:
         help="Output directory for manifest/audit/model outputs.",
     )
     parser.add_argument(
+        "--feature-proxy-pair",
+        type=parse_feature_proxy_pair,
+        action="append",
+        default=[],
+        help=(
+            "Existing Model input artifacts to run directly, formatted as "
+            "source_id=production_features.csv:proxy_decisions.csv. "
+            "Use this for fault-injection evidence."
+        ),
+    )
+    parser.add_argument(
+        "--run-dir",
+        type=Path,
+        action="append",
+        default=[],
+        help=(
+            "Existing processed run directory containing "
+            "features/41_production/production_features.csv and "
+            "proxy/70_decisions/proxy_decisions.csv."
+        ),
+    )
+    parser.add_argument(
         "--generate-reports",
         action="store_true",
         help="Also run Report Layer/Ollama and save generated reports.",
@@ -396,20 +550,33 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    pairs = list(args.feature_proxy_pair)
+    pairs.extend(feature_proxy_pair_from_run_dir(path) for path in args.run_dir)
     csv_paths = list(args.csv)
-    if not csv_paths:
+    if not csv_paths and not pairs:
         csv_paths = sorted(args.csv_dir.glob(args.glob))
     if args.limit is not None:
         csv_paths = csv_paths[:args.limit]
-    if not csv_paths:
-        raise SystemExit("No CSV files selected for discovery.")
+    if not csv_paths and not pairs:
+        raise SystemExit("No CSV files or feature/proxy pairs selected.")
 
     manifest_rows, proxy_rows = discover_csvs(
         csv_paths=csv_paths,
         output_dir=args.output_dir,
         generate_reports=args.generate_reports,
         continue_on_error=not args.fail_fast,
-    )
+    ) if csv_paths else ([], [])
+    pair_manifest_rows, pair_proxy_rows = discover_feature_proxy_pairs(
+        pairs=pairs,
+        output_dir=args.output_dir,
+        continue_on_error=not args.fail_fast,
+    ) if pairs else ([], [])
+    manifest_rows.extend(pair_manifest_rows)
+    proxy_rows.extend(pair_proxy_rows)
+    if pairs and csv_paths:
+        mark_selected_eval_cases(manifest_rows, proxy_rows)
+        write_csv(args.output_dir / "real_csv_manifest.csv", manifest_rows)
+        write_csv(args.output_dir / "proxy_forwarding_audit.csv", proxy_rows)
     print(
         f"Wrote {len(manifest_rows)} manifest row(s) and "
         f"{len(proxy_rows)} proxy audit row(s) to {args.output_dir}"

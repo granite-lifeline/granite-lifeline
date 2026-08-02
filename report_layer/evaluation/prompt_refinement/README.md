@@ -42,6 +42,22 @@ uv run python -m report_layer.evaluation.prompt_refinement.discovery --limit 3 -
 requires local Ollama with `granite4.1:8b`. Without that flag, discovery runs
 only Data Layer + Model Layer and is suitable for selecting candidate cases.
 
+Run existing feature/proxy artifacts directly through the Model Layer:
+
+```bash
+uv run python -m report_layer.evaluation.prompt_refinement.discovery --run-dir data/processed/runs/<fault_injection_run_id> --output-dir report_layer/evaluation/prompt_refinement/fault_injection_candidates
+```
+
+Equivalent explicit pair form:
+
+```bash
+uv run python -m report_layer.evaluation.prompt_refinement.discovery --feature-proxy-pair iat_case=data/processed/runs/<run_id>/features/41_production/production_features.csv:data/processed/runs/<run_id>/proxy/70_decisions/proxy_decisions.csv --output-dir report_layer/evaluation/prompt_refinement/fault_injection_candidates
+```
+
+This direct mode is intended for Data Layer fault-injection evidence: it skips
+CSV upload/Data Layer execution and verifies that the Model Layer forwards an
+existing `proxy_decisions.csv` into the interface JSON.
+
 ## Outputs
 
 The script writes:
@@ -84,6 +100,8 @@ Current forwarding notes are expected to resemble:
 
 If no real CSV produces a positive IAT or MAP forwarded top anomaly, those
 cases should be marked unavailable in the manifest rather than fabricated.
+Use fault-injection feature/proxy pairs to cover these two required types when
+the original healthy KIT CSVs do not contain positive proxy evidence.
 
 ## Suggested Selection Criteria
 
