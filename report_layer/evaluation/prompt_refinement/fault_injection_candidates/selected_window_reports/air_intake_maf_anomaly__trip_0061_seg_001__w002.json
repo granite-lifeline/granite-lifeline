@@ -1515,12 +1515,12 @@
       "risk_score": 0.8498
     }
   ],
-  "anomaly_description": "The mass airflow (MAF) sensor is showing a higher reading than expected. It reads 31.41 grams per second, while the normal range for this component is 0.0\u2013123.0 grams per second. All other key signals\u2014manifold air pressure, speed-density MAF residual, and throttle position\u2014are within their normal ranges. The system flags this as an *air_intake_maf_anomaly* with a Low risk level (18% risk score) and a very high prediction confidence of 95%. The model estimates only a 0.31% probability of crossing the High\u2011risk threshold within the next 10 trips, indicating that while there is a weak signal to monitor, it does not suggest an immediate problem. In practical terms, this issue should be checked during routine maintenance but does not require urgent attention at this time.",
-  "possible_cause": "Possible explanations include light contamination (such as dust or oil) on the mass airflow sensor surface, a slightly loose electrical connector, or normal sensor variation during operation. Because all other key signals are within their normal ranges and the overall risk level is Low, there isn\u2019t enough evidence to pinpoint a specific intake-system fault at this time.",
+  "anomaly_description": "The mass airflow (MAF) sensor is reporting a slightly elevated reading of 31.41 grams per second, which is within its normal operating range (0.0\u2013123.0 g/s). All related signals\u2014manifold air pressure, speed-density MAF residual, and throttle position\u2014are also normal. The diagnostic system flags this as an 'mass airflow sensor pattern' with a Low risk level (18% risk score) and a very high prediction confidence of 95%. The model estimates only a 0.31% probability of crossing the High-risk threshold within the next 10 trips, indicating that while the sensor is showing a minor pattern to monitor, it does not suggest an imminent failure. In practical terms, this issue should be kept on your radar but does not require immediate attention.",
+  "possible_cause": "Possible explanations include light dust or oil on the mass airflow sensor surface, a slightly loose connector, or normal variation during driving. Because related readings are still normal, there is not enough evidence to identify a specific intake-system fault.",
   "recommended_action": [
-    "Inspect the mass airflow sensor for dirt or oil buildup near the air filter box.",
-    "Use an OBD-II scan tool to read the MAF sensor PID values while driving at moderate speeds, and observe if the reading is linear between low and high RPMs.",
-    "If any rough idle or check\u2011engine light appears during this check, bring the vehicle to a mechanic promptly.",
-    "Otherwise, continue normal driving and recheck the MAF sensor during your next routine maintenance."
+    "Connect a scan tool to view the MAF sensor Parameter Identification Data (PID) and verify that the mass airflow reading is within normal limits.",
+    "Inspect the air intake hose and filter area for any visible dust, oil, or debris that could affect the MAF sensor; gently clean if necessary.",
+    "If you notice any changes in engine performance such as rough idle, hesitation, or reduced fuel efficiency after driving in dusty conditions, schedule a quick inspection with a mechanic.",
+    "Monitor the vehicle\u2019s warning lights and drive normally for the next few trips. If no new symptoms appear, the issue is likely minor and can be observed further."
   ]
 }

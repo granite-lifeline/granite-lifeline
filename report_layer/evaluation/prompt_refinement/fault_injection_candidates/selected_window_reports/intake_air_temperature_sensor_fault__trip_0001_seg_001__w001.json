@@ -54,7 +54,7 @@
   "estimated_cycles_to_failure": null,
   "estimated_failure_probability": 0.0031,
   "notes": [
-    "intake_air_temperature_sensor_fault forwarded from Data Layer rule-based evidence: 4-S3 triggered, a diagnostic flag, confidence high",
+    "intake air temperature sensor issue forwarded from Data Layer rule-based evidence: 4-S3 triggered, a diagnostic flag, confidence high",
     "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
     "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips.",
     "No positive trip-level risk trend was observed; no threshold crossing cycle is projected."
@@ -1525,12 +1525,12 @@
       "risk_score": 0.8498
     }
   ],
-  "anomaly_description": "The intake air temperature sensor (intake air temperature sensor) has been flagged with a High risk level. Although all current key signals\u2014such as the intake air temperature, stability, and ambient conditions\u2014are within normal ranges, the rule\u2011based Data Layer evidence indicates a possible issue. Consequently, this situation may need prompt attention. The model estimates only a very low 0.31% probability of crossing the High\u2011risk threshold within the next 10 trips.",
-  "possible_cause": "The high\u2011risk flag for the intake air temperature sensor may indicate an intermittent sensor signal or a loose/corroded connector, even though current key signals (intake air temperature, stability, ambient temperature, and coolant temperature) appear normal. This rule\u2011based proxy evidence suggests that the sensor\u2019s electrical path could be partially degraded, causing the diagnostic system to raise a high\u2011risk alert while actual operating conditions remain within expected ranges.",
+  "anomaly_description": "The diagnostic system has flagged a potential issue with the intake air temperature sensor. Although all measured key signals\u2014such as the actual intake air temperature (19\u202f\u00b0C), its stability, and the difference from ambient temperature\u2014are within normal ranges, the rule\u2011based Data Layer evidence indicates that the sensor may be experiencing a fault. This flag is marked with a High risk level (90% confidence) and suggests that the sensor could degrade or fail within the stated prediction horizon. The model estimates only a very low 0.31\u202f% probability of crossing the high\u2011risk threshold within the next 10 trips, meaning the problem should be monitored but does not constitute an immediate emergency.",
+  "possible_cause": "The high\u2011risk flag for the intake air temperature sensor may stem from an intermittent sensor signal, a loose or corroded connector, or early sensor drift. Although all measured key signals\u2014such as the actual intake air temperature (19\u202f\u00b0C), its stability, and the difference from ambient temperature\u2014are within normal ranges, the rule\u2011based Data Layer evidence suggests that the sensor could be experiencing a fault. This proxy\u2011forwarded detection indicates that while current readings appear normal, further verification is advisable before concluding a confirmed sensor failure.",
   "recommended_action": [
-    "Inspect the intake air temperature sensor wiring and connector for loose or damaged connections.",
-    "Ask a mechanic to run a diagnostic scan to verify any stored trouble codes related to the intake air temperature sensor.",
-    "Monitor your vehicle for symptoms such as rough idle, hesitation, or reduced power while driving.",
+    "Inspect the intake air temperature sensor and its wiring harness for loose connections or damage. The sensor is typically located near the air filter box or within the intake tube.",
+    "If you notice any warning lights or unusual engine behavior after driving in hot weather or heavy traffic, allow the engine to cool for about 30 minutes before checking again.",
+    "Take your vehicle to a qualified mechanic who can use a diagnostic scan tool to verify the sensor\u2019s readings and confirm whether the rule\u2011based flag indicates an actual fault.",
     "Drive normally while watching for warning lights or unusual engine behavior until the sensor is verified."
   ]
 }

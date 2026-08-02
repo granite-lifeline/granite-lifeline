@@ -1524,11 +1524,12 @@
       "risk_score": 0.8498
     }
   ],
-  "anomaly_description": "The accelerator pedal position sensor (APPS) is showing a medium risk pattern. Both Channel D and Channel E readings are within normal ranges at 14.1% and 14.5%, respectively, indicating the pedal positions are being correctly sensed. The channel difference of 6.463\u202fpp also falls within its normal range, suggesting no immediate sensor mismatch. However, the overall risk score is 56%, signaling a potential issue that should be monitored soon rather than an urgent failure. The model estimates only a very low 0.31% probability of crossing the high-risk threshold within the next 10 trips, reinforcing that while attention is warranted, there is no imminent danger.",
-  "possible_cause": "The accelerator pedal position sensor may show a slight variation between its two internal channels (Channel D and Channel E). Modern vehicles use dual sensors to ensure accurate pedal input readings. The current minor difference in channel outputs (6.463\u202fpp) falls within the normal range, but could indicate early sensor wear, a small wiring or connector issue, or simply be within acceptable tolerance. Because other key signals such as vehicle speed and engine RPM are normal, there is no strong evidence of an immediate fault, yet this pattern warrants monitoring to ensure it does not develop into a higher\u2011risk condition.",
+  "anomaly_description": "The accelerator pedal sensor is showing a medium risk level (56% risk score). Both internal sensors report normal pedal positions (Channel D: 14.1%, Channel E: 14.5%) and the channel difference is within range (6.463\u202fpp). Vehicle speed and engine RPM are also normal. The model estimates only a very low 0.31% probability of reaching a high\u2011risk threshold within the next 10 trips, indicating that while the sensor should be monitored, there is no immediate cause for concern.",
+  "possible_cause": "The slight variation between the two accelerator pedal sensor channels (Channel D: 14.1%, Channel E: 14.5%) could indicate a minor early sensor drift, a small wiring or connector issue, or normal tolerance within the dual\u2011sensor design.",
   "recommended_action": [
-    "Inspect the wiring harness and connector at the accelerator pedal position sensor for any visible damage, loose wires, or corrosion. The sensor is typically located under the dashboard near the accelerator pedal.",
-    "Check for an open circuit between the sensor\u2019s connector and the Engine Control Module (ECM) connector using a simple multimeter set to continuity mode\u2014if you are comfortable doing so, ensure there is a solid connection; otherwise, have a mechanic verify this step.",
-    "After checking the connections, gently move the accelerator pedal through its full range while observing that it returns smoothly to the fully released position. If any resistance or irregular return occurs, note it for further inspection by a professional."
+    "Inspect the accelerator pedal sensor wiring and connector for any damage or loose connections.",
+    "Check that the accelerator pedal moves smoothly from fully released to fully depressed and returns correctly.",
+    "If you notice any irregular pedal movement or suspect a wiring issue, have a qualified mechanic examine the sensor and its wiring harness.",
+    "Monitor the vehicle\u2019s performance over the next few trips; if no further issues arise, the risk remains low."
   ]
 }

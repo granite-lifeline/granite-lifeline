@@ -30,6 +30,8 @@ FORBIDDEN_OWNER_FACING_TERMS = [
     "could fail soon",
     "likely to fail soon",
     "**",
+    "*air_",
+    "air_intake_maf_anomaly",
 ]
 
 NORMAL_CONTRADICTIONS = [
@@ -134,3 +136,26 @@ def test_low_projection_reports_do_not_claim_likely_immediate_failure():
         assert "immediate failure is likely" not in text
         assert "will fail soon" not in text
         assert "is likely to fail soon" not in text
+
+
+def test_possible_cause_does_not_repeat_projection_or_risk_summary():
+    forbidden_cause_phrases = [
+        "failure probability",
+        "probability of crossing",
+        "high-risk threshold within",
+        "within the next",
+        "risk score",
+        "risk level is",
+        "overall risk level",
+        "warrants monitoring",
+        "monitoring is advisable",
+        "immediate corrective action",
+    ]
+
+    for report in _load_selected_reports():
+        cause = str(report.get("possible_cause") or "").lower()
+        for phrase in forbidden_cause_phrases:
+            assert phrase not in cause, (
+                f"{report['component']} possible_cause repeats "
+                f"{phrase!r}"
+            )

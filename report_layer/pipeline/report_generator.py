@@ -53,6 +53,18 @@ DEFAULT_PROMPT_VALUES = {
 
 RAW_DTC_PATTERN = re.compile(r"\b(?:DTC\s*)?P\d{4}(?:-\d+)?\b", re.IGNORECASE)
 
+OWNER_FACING_COMPONENT_REPLACEMENTS = {
+    "cooling_degradation": "cooling system pattern",
+    "air_intake_maf_anomaly": "mass airflow sensor pattern",
+    "accelerator_pedal_sensor": "accelerator pedal sensor",
+    "intake_air_temperature_sensor_fault": (
+        "intake air temperature sensor issue"
+    ),
+    "map_load_signal_plausibility_fault": (
+        "manifold pressure sensor plausibility issue"
+    ),
+}
+
 
 def _normal_key_signals(model_output: ModelLayerOutput) -> bool:
     """Return true when every displayed key signal is within range."""
@@ -100,6 +112,7 @@ def _clean_owner_facing_text(text: str) -> str:
         "rule-based evidence",
     )
     cleaned = cleaned.replace("**", "")
+    cleaned = cleaned.replace("*", "")
     cleaned = RAW_DTC_PATTERN.sub("a diagnostic flag", cleaned)
     cleaned = re.sub(r"\bDTCs?\b", "diagnostic codes", cleaned)
     cleaned = re.sub(
@@ -110,7 +123,17 @@ def _clean_owner_facing_text(text: str) -> str:
     )
     cleaned = re.sub(r"\bi\.e\.,?\s*", "that is, ", cleaned)
     cleaned = cleaned.replace("this window", "this short driving period")
+    cleaned = cleaned.replace(
+        "in the near future",
+        "within the stated prediction horizon",
+    )
+    cleaned = cleaned.replace(
+        "near future",
+        "stated prediction horizon",
+    )
     cleaned = cleaned.replace("IAT sensor", "intake air temperature sensor")
+    for raw_name, display_name in OWNER_FACING_COMPONENT_REPLACEMENTS.items():
+        cleaned = cleaned.replace(raw_name, display_name)
     return cleaned
 
 
@@ -134,6 +157,46 @@ def _clean_model_aware_text(
             flags=re.IGNORECASE,
         )
     return cleaned
+
+
+def _split_sentences(text: str) -> List[str]:
+    """Split owner-facing prose into sentences for conservative cleanup."""
+    return [
+        sentence.strip()
+        for sentence in re.split(r"(?<=[.!?])\s+", text)
+        if sentence.strip()
+    ]
+
+
+def _clean_possible_cause_text(text: str) -> str:
+    """Keep possible_cause distinct from the description/projection."""
+    sentences = _split_sentences(text)
+    filtered = []
+    projection_markers = (
+        "failure probability",
+        "probability of crossing",
+        "high-risk threshold within",
+        "within the next",
+        "cycles to failure",
+        "risk score",
+        "risk level is",
+        "risk level remains",
+        "overall risk level",
+    )
+    monitoring_markers = (
+        "warrants monitoring",
+        "monitoring is advisable",
+        "should be monitored",
+        "monitor to ensure",
+    )
+    for sentence in sentences:
+        lower = sentence.lower()
+        if any(marker in lower for marker in projection_markers):
+            continue
+        if any(marker in lower for marker in monitoring_markers):
+            continue
+        filtered.append(sentence)
+    return " ".join(filtered) if filtered else text
 
 
 def _clean_recommended_actions(
@@ -564,6 +627,7 @@ def generate_report(
             possible_cause,
             validated,
         )
+        possible_cause = _clean_possible_cause_text(possible_cause)
         recommended_action = _clean_recommended_actions(
             recommended_action,
             validated,
