@@ -33,7 +33,7 @@ REAL_DATA_PATHS: Dict[str, Optional[str]] = {
 # Canonical mock-data fallback file (ReportLayerOutput format)
 _MOCK_DATA_FILE = "dashboard/tests/ui_required_data.json"
 
-# The five current anomaly types from INTERFACE.md v1.1.
+# The five current anomaly types from INTERFACE.md v1.5.
 CONFIRMED_ANOMALY_TYPES = list(REAL_DATA_PATHS.keys())
 
 LEGACY_SIGNAL_ALIASES: Dict[str, str] = {

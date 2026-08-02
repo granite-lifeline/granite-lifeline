@@ -1,6 +1,6 @@
 """Shared anomaly type naming tables."""
 
-# The five current anomaly types follow docs/INTERFACE.md v1.1.
+# The five current anomaly types follow docs/INTERFACE.md v1.5.
 GROUND_KNOWLEDGE_ANOMALY_TYPES = [
     "cooling_degradation",
     "intake_air_temperature_sensor_fault",
