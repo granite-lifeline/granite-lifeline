@@ -6,6 +6,9 @@ SELECTED_REPORT_DIR = Path(
     "report_layer/evaluation/prompt_refinement/"
     "fault_injection_candidates/selected_window_reports"
 )
+GOLDEN_SET_PATH = Path(
+    "report_layer/evaluation/prompt_refinement/golden_report_set.json"
+)
 
 EXPECTED_ANOMALY_TYPES = {
     "cooling_degradation",
@@ -46,10 +49,14 @@ ABNORMAL_CONTRADICTIONS = [
 
 
 def _load_selected_reports():
-    return [
-        json.loads(path.read_text(encoding="utf-8"))
-        for path in sorted(SELECTED_REPORT_DIR.glob("*.json"))
-    ]
+    manifest = json.loads(GOLDEN_SET_PATH.read_text(encoding="utf-8"))
+    reports = []
+    for case in manifest["cases"]:
+        report_path = Path(case["report_path"])
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        report["_golden_case"] = case
+        reports.append(report)
+    return reports
 
 
 def _owner_facing_text(report):
@@ -75,6 +82,18 @@ def test_selected_reports_cover_five_anomaly_types():
     assert {report["component"] for report in reports} == (
         EXPECTED_ANOMALY_TYPES
     )
+    assert len(reports) == 5
+
+
+def test_golden_report_manifest_points_to_existing_case_files():
+    manifest = json.loads(GOLDEN_SET_PATH.read_text(encoding="utf-8"))
+
+    assert {case["anomaly_type"] for case in manifest["cases"]} == (
+        EXPECTED_ANOMALY_TYPES
+    )
+    for case in manifest["cases"]:
+        assert Path(case["model_input_path"]).exists()
+        assert Path(case["report_path"]).exists()
 
 
 def test_selected_reports_do_not_expose_owner_facing_artifacts():

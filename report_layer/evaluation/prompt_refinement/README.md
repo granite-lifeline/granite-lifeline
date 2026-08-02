@@ -21,6 +21,11 @@ Use real pipeline outputs to evaluate whether Report Layer prompts:
 The owner-facing quality rules used during manual review are maintained in
 `report_regression_checklist.md`.
 
+The current five-case regression set is registered in
+`golden_report_set.json`. It covers all five supported anomaly types and marks
+which cases are native real-CSV windows versus Data Layer fault-injection
+proxy-forwarded windows.
+
 ## Real-CSV Discovery
 
 Run a small discovery pass first:
