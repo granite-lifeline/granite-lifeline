@@ -300,7 +300,11 @@ def test_run_model_layer_raises_when_script_missing(monkeypatch, tmp_path):
     )
 
     with pytest.raises(ModelBatchRunnerUnavailable):
-        csv_pipeline._run_model_layer(tmp_path / "production_features.csv")
+        csv_pipeline._run_model_layer(
+            tmp_path / "production_features.csv",
+            None,
+            tmp_path / "model_output.json",
+        )
 
 
 def test_run_model_layer_parses_error_contract(monkeypatch, tmp_path):
@@ -319,7 +323,11 @@ def test_run_model_layer_parses_error_contract(monkeypatch, tmp_path):
     monkeypatch.setattr(csv_pipeline.subprocess, "run", fake_run)
 
     with pytest.raises(UploadedCsvPipelineError, match="bad input"):
-        csv_pipeline._run_model_layer(tmp_path / "production_features.csv")
+        csv_pipeline._run_model_layer(
+            tmp_path / "production_features.csv",
+            None,
+            tmp_path / "model_output.json",
+        )
 
 
 def test_run_model_layer_times_out(monkeypatch, tmp_path):
@@ -335,7 +343,11 @@ def test_run_model_layer_times_out(monkeypatch, tmp_path):
     monkeypatch.setattr(csv_pipeline.subprocess, "run", fake_run)
 
     with pytest.raises(TimeoutError):
-        csv_pipeline._run_model_layer(tmp_path / "production_features.csv")
+        csv_pipeline._run_model_layer(
+            tmp_path / "production_features.csv",
+            None,
+            tmp_path / "model_output.json",
+        )
 
 
 def test_run_model_layer_reads_output_json(monkeypatch, tmp_path):
@@ -354,8 +366,11 @@ def test_run_model_layer_reads_output_json(monkeypatch, tmp_path):
 
     monkeypatch.setattr(csv_pipeline.subprocess, "run", fake_run)
 
+    output_path = tmp_path / "model_output.json"
     result = csv_pipeline._run_model_layer(
-        tmp_path / "production_features.csv"
+        tmp_path / "production_features.csv",
+        None,
+        output_path,
     )
 
     assert result == envelope
@@ -421,12 +436,18 @@ def test_run_uploaded_csv_batch_passes_production_features_to_model(
     production_features = tmp_path / "production_features.csv"
     production_features.write_text("timestamp,rpm\n2026-07-20T12:00:00Z,900\n")
 
-    def fake_data_layer(input_path: Path) -> Path:
+    def fake_data_layer(input_path: Path) -> tuple[Path, Path | None]:
         calls["data_input"] = str(input_path)
-        return production_features
+        return production_features, None
 
-    def fake_run_model_layer(csv_path: Path) -> dict:
+    def fake_run_model_layer(
+        csv_path: Path,
+        proxy_decisions_path: Path | None,
+        output_path: Path,
+    ) -> dict:
         calls["model_input"] = str(csv_path)
+        calls["proxy_input"] = str(proxy_decisions_path)
+        calls["output_path"] = str(output_path)
         return {
             "summary": _model_output(),
             "windows": [
@@ -475,6 +496,8 @@ def test_run_uploaded_csv_batch_passes_production_features_to_model(
         "2018-03-01_Seat_Leon_RT_S_Normal.csv"
     )
     assert calls["model_input"] == str(production_features)
+    assert calls["proxy_input"] == "None"
+    assert calls["output_path"].endswith("model_output.json")
     assert "cooling_degradation" in dashboard_data
     assert dashboard_data["_data_source"]["cooling_degradation"] == "uploaded"
     assert dashboard_data["cooling_degradation"]["risk_history"] == [
@@ -489,12 +512,17 @@ def test_run_uploaded_csv_batch_reports_progress(monkeypatch, tmp_path: Path):
     production_features.write_text("timestamp,rpm\n2026-07-20T12:00:00Z,900\n")
 
     monkeypatch.setattr(
-        csv_pipeline, "_run_data_layer", lambda input_path: production_features
+        csv_pipeline,
+        "_run_data_layer",
+        lambda input_path: (production_features, None),
     )
     monkeypatch.setattr(
         csv_pipeline,
         "_run_model_layer",
-        lambda csv_path: {"summary": _model_output(), "windows": []},
+        lambda csv_path, proxy_decisions_path, output_path: {
+            "summary": _model_output(),
+            "windows": [],
+        },
     )
     monkeypatch.setattr(
         csv_pipeline,
