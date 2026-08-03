@@ -11,7 +11,7 @@
 
 ##### Lei Pei: challenge and solution
 
-Our first challenge was the data. It contains normal driving records, but no confirmed examples of vehicle faults. This meant that we could not train or evaluate a conventional fault classifier. Simple global thresholds were also unreliable because the same sensor reading can have different meanings under different operating conditions. We therefore built a context-aware labelling pipeline. First, we clean and align each trip. Next, we identify the vehicle state, such as warm-up, steady driving, or high load. We then apply each fault rule only when it is physically meaningful, require abnormal patterns to persist, and return “not evaluable” when there is not enough reliable data. The result is traceable fault evidence for downstream analysis.
+The data contains normal driving records, but not a single confirmed vehicle fault. That leaves us with no way to train or even evaluate a conventional fault classifier — and a simple global threshold does not work either, because the same sensor reading can be healthy in one situation and abnormal in another. So we built a context-aware labelling pipeline. We clean and align each trip, identify the vehicle's state — warm-up, steady driving, high load — and then apply each fault rule only where it is physically meaningful, require the abnormal pattern to persist before we act on it, and return “not evaluable” when the data isn't reliable enough. The result is traceable fault evidence the rest of the system can build on.
 
 ##### Qiuting Fu: basis and verification
 
