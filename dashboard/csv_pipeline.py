@@ -35,6 +35,15 @@ MODEL_LAYER_VENV_PYTHON = (
 # measured; tune once real TTM batch-run timings are available.
 MODEL_LAYER_TIMEOUT_SECONDS = 120
 ProgressCallback = Callable[[int, str], None]
+CSV_PROGRESS_STAGES = {
+    "checking_upload": (5, "Checking uploaded CSV..."),
+    "preparing_upload": (10, "Preparing drive data..."),
+    "processing_signals": (35, "Processing vehicle signals..."),
+    "estimating_risk": (65, "Estimating component risk..."),
+    "generating_report": (90, "Generating diagnostic report..."),
+    "preparing_dashboard": (100, "Preparing dashboard results..."),
+}
+CSV_PROGRESS_STAGE_KEYS = tuple(CSV_PROGRESS_STAGES)
 
 
 class UploadedCsvPipelineError(RuntimeError):
@@ -199,6 +208,21 @@ def _emit_progress(
         progress_callback(percent, message)
 
 
+def get_csv_progress_stage(stage_key: str) -> tuple[int, str]:
+    try:
+        return CSV_PROGRESS_STAGES[stage_key]
+    except KeyError as exc:
+        raise ValueError(f"Unknown CSV progress stage: {stage_key}") from exc
+
+
+def _emit_progress_stage(
+    progress_callback: Optional[ProgressCallback],
+    stage_key: str,
+) -> None:
+    percent, message = get_csv_progress_stage(stage_key)
+    _emit_progress(progress_callback, percent, message)
+
+
 def run_uploaded_csv_batch(
     csv_bytes: bytes,
     original_filename: str,
@@ -214,26 +238,27 @@ def run_uploaded_csv_batch(
     Returns dashboard-ready component data keyed by anomaly type, with
     ``_data_source`` marking the generated component as ``uploaded``.
     """
+    _emit_progress_stage(progress_callback, "checking_upload")
     if not csv_bytes.strip():
         raise UploadedCsvPipelineError("The uploaded CSV file is empty.")
 
     with tempfile.TemporaryDirectory(prefix="granite_upload_") as temp_dir:
         raw_path = Path(temp_dir) / original_filename
-        _emit_progress(progress_callback, 10, "Analyzing data...")
+        _emit_progress_stage(progress_callback, "preparing_upload")
         raw_path.write_bytes(csv_bytes)
 
-        _emit_progress(progress_callback, 35, "Analyzing data...")
+        _emit_progress_stage(progress_callback, "processing_signals")
         production_features, proxy_decisions = _run_data_layer(raw_path)
-        _emit_progress(progress_callback, 65, "Analyzing data...")
+        _emit_progress_stage(progress_callback, "estimating_risk")
         output_path = Path(temp_dir) / "model_output.json"
         model_output = _run_model_layer(
             production_features,
             proxy_decisions,
             output_path,
         )
-        _emit_progress(progress_callback, 90, "Analyzing data...")
+        _emit_progress_stage(progress_callback, "generating_report")
         dashboard_data = load_model_output_for_dashboard(
             model_output, "uploaded"
         )
-        _emit_progress(progress_callback, 100, "Analyzing data...")
+        _emit_progress_stage(progress_callback, "preparing_dashboard")
         return dashboard_data

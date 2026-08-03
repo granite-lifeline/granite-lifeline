@@ -12,11 +12,15 @@ dist/
 build/
 .ipynb_checkpoints/
 model_layer/artifacts/*
+model_layer/ttm-related/outputs/risk_history.csv
 report_layer/rag/vector_store/*
 report_layer/rag/chroma_db/
 .vscode/
 .idea/
 .venv/
+.venv-py39-backup-*/
+.uv-cache/
+.uv-python/
 venv/
 .pytest_cache/
 .gitattributes

@@ -11,8 +11,11 @@ import pandas as pd
 import pytest
 
 from dashboard.csv_pipeline import (
+    CSV_PROGRESS_STAGE_KEYS,
+    CSV_PROGRESS_STAGES,
     ModelBatchRunnerUnavailable,
     UploadedCsvPipelineError,
+    get_csv_progress_stage,
     run_uploaded_csv_batch,
 )
 from dashboard.csv_validator import (
@@ -75,6 +78,9 @@ class _FakeEmpty:
 
     def markdown(self, body, **kwargs):
         self.rendered.append(str(body))
+
+    def empty(self):
+        self.rendered.clear()
 
 
 def _valid_csv_bytes(rows: int = 700) -> bytes:
@@ -160,7 +166,7 @@ def test_csv_upload_ui_success_stores_dashboard_data_and_reruns(monkeypatch):
         calls["file_name"] = file_name
         calls["progress_callback"] = progress_callback is not None
         if progress_callback is not None:
-            progress_callback(65, "Analyzing data...")
+            progress_callback(65, "Estimating component risk...")
         return dashboard_result
 
     monkeypatch.setattr(
@@ -194,8 +200,40 @@ def test_csv_upload_ui_success_stores_dashboard_data_and_reruns(monkeypatch):
     assert rerun_calls == [True]
     assert "Analysing your CSV..." in "".join(rendered)
     assert "65%" in "".join(rendered)
-    assert "Analyzing data..." in "".join(rendered)
+    assert "Estimating component risk..." in "".join(rendered)
     assert "Analysis Unavailable" not in "".join(rendered)
+
+
+def test_csv_upload_shows_initial_loading_before_pipeline_runs(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+    csv_bytes = _valid_csv_bytes()
+    dashboard_result = {
+        "cooling_degradation": {
+            **_model_output(),
+            "anomaly_description": "Cooling readings show rising stress.",
+        },
+        "_data_source": {"cooling_degradation": "uploaded"},
+    }
+
+    def fake_run_uploaded_csv_batch(
+        body: bytes, file_name: str, progress_callback=None
+    ) -> dict:
+        html = "".join(rendered)
+        assert "Analysing your CSV..." in html
+        assert "5%" in html
+        assert "Checking uploaded CSV..." in html
+        return dashboard_result
+
+    monkeypatch.setattr(
+        overview, "run_uploaded_csv_batch", fake_run_uploaded_csv_batch
+    )
+    monkeypatch.setattr(overview.st, "rerun", lambda: None)
+
+    overview._handle_uploaded_csv_submit(
+        _FakeUpload(csv_bytes, "valid-drive.csv"), tokens
+    )
+
+    assert overview.st.session_state["csv_analysis_running"] is False
 
 
 def test_csv_upload_failure_recovers_running_state(monkeypatch):
@@ -206,7 +244,7 @@ def test_csv_upload_failure_recovers_running_state(monkeypatch):
         body: bytes, file_name: str, progress_callback=None
     ) -> dict:
         if progress_callback is not None:
-            progress_callback(35, "Analyzing data...")
+            progress_callback(35, "Processing vehicle signals...")
         raise UploadedCsvPipelineError("Pipeline failed during model run.")
 
     monkeypatch.setattr(
@@ -222,9 +260,90 @@ def test_csv_upload_failure_recovers_running_state(monkeypatch):
 
     html = "".join(rendered)
     assert overview.st.session_state["csv_analysis_running"] is False
-    assert "Analysing your CSV..." in html
+    assert "Analysing your CSV..." not in html
     assert "Analysis Unavailable" in html
     assert "Pipeline failed during model run." in html
+
+
+def test_csv_upload_timeout_clears_loading_state(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+    csv_bytes = _valid_csv_bytes()
+
+    def fake_run_uploaded_csv_batch(
+        body: bytes, file_name: str, progress_callback=None
+    ) -> dict:
+        if progress_callback is not None:
+            progress_callback(65, "Estimating component risk...")
+        raise TimeoutError("model run timed out")
+
+    monkeypatch.setattr(
+        overview, "run_uploaded_csv_batch", fake_run_uploaded_csv_batch
+    )
+
+    overview._handle_uploaded_csv_submit(
+        _FakeUpload(csv_bytes, "valid-drive.csv"), tokens
+    )
+
+    html = "".join(rendered)
+    assert overview.st.session_state["csv_analysis_running"] is False
+    assert "Analysing your CSV..." not in html
+    assert "Estimating component risk..." not in html
+    assert "Analysis Timed Out" in html
+    assert "shorter drive session" in html
+
+
+def test_csv_upload_model_unavailable_clears_loading_state(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+    csv_bytes = _valid_csv_bytes()
+
+    def fake_run_uploaded_csv_batch(
+        body: bytes, file_name: str, progress_callback=None
+    ) -> dict:
+        if progress_callback is not None:
+            progress_callback(35, "Processing vehicle signals...")
+        raise overview.ModelBatchRunnerUnavailable("Model runner is missing.")
+
+    monkeypatch.setattr(
+        overview, "run_uploaded_csv_batch", fake_run_uploaded_csv_batch
+    )
+
+    overview._handle_uploaded_csv_submit(
+        _FakeUpload(csv_bytes, "valid-drive.csv"), tokens
+    )
+
+    html = "".join(rendered)
+    assert overview.st.session_state["csv_analysis_running"] is False
+    assert "Analysing your CSV..." not in html
+    assert "Processing vehicle signals..." not in html
+    assert "Model Analysis Unavailable" in html
+    assert "Model runner is missing." in html
+
+
+def test_csv_upload_unexpected_error_clears_loading_state(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+    csv_bytes = _valid_csv_bytes()
+
+    def fake_run_uploaded_csv_batch(
+        body: bytes, file_name: str, progress_callback=None
+    ) -> dict:
+        if progress_callback is not None:
+            progress_callback(90, "Generating diagnostic report...")
+        raise RuntimeError("unexpected pipeline issue")
+
+    monkeypatch.setattr(
+        overview, "run_uploaded_csv_batch", fake_run_uploaded_csv_batch
+    )
+
+    overview._handle_uploaded_csv_submit(
+        _FakeUpload(csv_bytes, "valid-drive.csv"), tokens
+    )
+
+    html = "".join(rendered)
+    assert overview.st.session_state["csv_analysis_running"] is False
+    assert "Analysing your CSV..." not in html
+    assert "Generating diagnostic report..." not in html
+    assert "Analysis Unavailable" in html
+    assert "unexpected pipeline issue" in html
 
 
 def test_csv_upload_empty_report_recovers_running_state(monkeypatch):
@@ -246,6 +365,7 @@ def test_csv_upload_empty_report_recovers_running_state(monkeypatch):
 
     html = "".join(rendered)
     assert overview.st.session_state["csv_analysis_running"] is False
+    assert "Analysing your CSV..." not in html
     assert "Analysis Timed Out" in html
     assert "diagnostic report could not be generated" in html
 
@@ -589,9 +709,43 @@ def test_run_uploaded_csv_batch_reports_progress(monkeypatch, tmp_path: Path):
     )
 
     assert progress_events == [
-        (10, "Analyzing data..."),
-        (35, "Analyzing data..."),
-        (65, "Analyzing data..."),
-        (90, "Analyzing data..."),
-        (100, "Analyzing data..."),
+        (5, "Checking uploaded CSV..."),
+        (10, "Preparing drive data..."),
+        (35, "Processing vehicle signals..."),
+        (65, "Estimating component risk..."),
+        (90, "Generating diagnostic report..."),
+        (100, "Preparing dashboard results..."),
     ]
+
+
+def test_csv_progress_stage_mapping_is_user_facing():
+    """GL-412: progress copy should be staged but not layer jargon."""
+    expected_order = [
+        "checking_upload",
+        "preparing_upload",
+        "processing_signals",
+        "estimating_risk",
+        "generating_report",
+        "preparing_dashboard",
+    ]
+    expected_percentages = [5, 10, 35, 65, 90, 100]
+    banned_terms = ["Data Layer", "Model Layer", "Report Layer"]
+
+    assert list(CSV_PROGRESS_STAGES) == expected_order
+    assert CSV_PROGRESS_STAGE_KEYS == tuple(expected_order)
+    assert [
+        CSV_PROGRESS_STAGES[key][0] for key in expected_order
+    ] == expected_percentages
+    assert len({
+        CSV_PROGRESS_STAGES[key][1] for key in expected_order
+    }) == len(expected_order)
+
+    for key in expected_order:
+        message = CSV_PROGRESS_STAGES[key][1]
+        assert message.endswith("...")
+        assert all(term not in message for term in banned_terms)
+
+
+def test_csv_progress_stage_lookup_rejects_unknown_stage():
+    with pytest.raises(ValueError, match="Unknown CSV progress stage"):
+        get_csv_progress_stage("missing_stage")

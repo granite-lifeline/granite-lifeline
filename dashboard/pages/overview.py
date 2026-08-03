@@ -14,6 +14,7 @@ from pandas.errors import EmptyDataError
 from anomaly_display import COMPONENT_DISPLAY_NAMES
 from csv_validator import validate_csv_columns, validate_csv_min_rows
 from csv_pipeline import (
+    CSV_PROGRESS_STAGES,
     ModelBatchRunnerUnavailable,
     UploadedCsvPipelineError,
     run_uploaded_csv_batch,
@@ -372,6 +373,12 @@ def _show_pipeline_error(title: str, message: str, tokens: dict) -> None:
     )
 
 
+def _clear_csv_analysis_loading(target) -> None:
+    """Remove the loading card before showing a terminal state."""
+    if hasattr(target, "empty"):
+        target.empty()
+
+
 def _show_csv_analysis_loading(
     target, tokens: dict, percent: int, message: str
 ) -> None:
@@ -420,8 +427,6 @@ def _show_csv_analysis_loading(
         .csv-analysis-percent span {{
             position: relative;
             z-index: 1;
-        }}
-            width: 42px;
         }}
         .csv-analysis-title {{
             color: {tokens["text"]};
@@ -532,8 +537,12 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
 
     _set_csv_analysis_running(True)
     loading_slot = st.empty()
-    progress_message = "Analyzing data..."
-    _show_csv_analysis_loading(loading_slot, tokens, 0, progress_message)
+    progress_percent, progress_message = CSV_PROGRESS_STAGES[
+        "checking_upload"
+    ]
+    _show_csv_analysis_loading(
+        loading_slot, tokens, progress_percent, progress_message
+    )
 
     def update_progress(percent: int, message: str) -> None:
         _show_csv_analysis_loading(loading_slot, tokens, percent, message)
@@ -547,6 +556,7 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
                 progress_callback=update_progress,
             )
         except TimeoutError:
+            _clear_csv_analysis_loading(loading_slot)
             _show_pipeline_error(
                 "Analysis Timed Out",
                 "The analysis pipeline timed out. Please try uploading a "
@@ -555,14 +565,17 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
             )
             return
         except ModelBatchRunnerUnavailable as exc:
+            _clear_csv_analysis_loading(loading_slot)
             _show_pipeline_error(
                 "Model Analysis Unavailable", str(exc), tokens
             )
             return
         except UploadedCsvPipelineError as exc:
+            _clear_csv_analysis_loading(loading_slot)
             _show_pipeline_error("Analysis Unavailable", str(exc), tokens)
             return
         except Exception as exc:
+            _clear_csv_analysis_loading(loading_slot)
             _show_pipeline_error(
                 "Analysis Unavailable",
                 f"The analysis pipeline could not complete. {exc}",
@@ -578,6 +591,7 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
         if not components or all(
             not c.get("anomaly_description") for c in components.values()
         ):
+            _clear_csv_analysis_loading(loading_slot)
             _show_pipeline_error(
                 "Analysis Timed Out",
                 "The diagnostic report could not be generated in time. "
@@ -696,6 +710,13 @@ def _show_csv_uploader(tokens: dict) -> None:
         .st-key-csv_upload_section
             [data-testid="stFileUploaderDropzone"] button:hover::after {{
             color: {tokens["accent"]} !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] section > div + button,
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] section
+            > button:not(:first-child) {{
+            display: none !important;
         }}
         .st-key-csv_upload_section
             [data-testid="stFileUploaderDeleteBtn"] {{
@@ -1459,6 +1480,13 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
         .st-key-landing_upload_card [data-testid="stFileUploaderDropzone"]
                 button:hover::after {{
             color: {tokens["accent"]} !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] section > div + button,
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] section
+            > button:not(:first-child) {{
+            display: none !important;
         }}
         .st-key-landing_upload_card
             [data-testid="stFileUploaderDeleteBtn"] {{
