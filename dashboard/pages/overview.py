@@ -373,6 +373,12 @@ def _show_pipeline_error(title: str, message: str, tokens: dict) -> None:
     )
 
 
+def _clear_csv_analysis_loading(target) -> None:
+    """Remove the loading card before showing a terminal state."""
+    if hasattr(target, "empty"):
+        target.empty()
+
+
 def _show_csv_analysis_loading(
     target, tokens: dict, percent: int, message: str
 ) -> None:
@@ -550,6 +556,7 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
                 progress_callback=update_progress,
             )
         except TimeoutError:
+            _clear_csv_analysis_loading(loading_slot)
             _show_pipeline_error(
                 "Analysis Timed Out",
                 "The analysis pipeline timed out. Please try uploading a "
@@ -558,14 +565,17 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
             )
             return
         except ModelBatchRunnerUnavailable as exc:
+            _clear_csv_analysis_loading(loading_slot)
             _show_pipeline_error(
                 "Model Analysis Unavailable", str(exc), tokens
             )
             return
         except UploadedCsvPipelineError as exc:
+            _clear_csv_analysis_loading(loading_slot)
             _show_pipeline_error("Analysis Unavailable", str(exc), tokens)
             return
         except Exception as exc:
+            _clear_csv_analysis_loading(loading_slot)
             _show_pipeline_error(
                 "Analysis Unavailable",
                 f"The analysis pipeline could not complete. {exc}",
@@ -581,6 +591,7 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
         if not components or all(
             not c.get("anomaly_description") for c in components.values()
         ):
+            _clear_csv_analysis_loading(loading_slot)
             _show_pipeline_error(
                 "Analysis Timed Out",
                 "The diagnostic report could not be generated in time. "

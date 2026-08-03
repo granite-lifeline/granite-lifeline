@@ -181,6 +181,15 @@ def test_csv_analysis_loading_state_is_visible_and_disables_buttons():
     assert ".st-key-landing_run_btn button:disabled" in src
 
 
+def test_csv_analysis_loading_is_cleared_before_failure_states():
+    """GL-415: failure and timeout states should replace loading feedback."""
+    src = _read("dashboard/pages/overview.py")
+
+    assert "def _clear_csv_analysis_loading" in src
+    assert 'hasattr(target, "empty")' in src
+    assert src.count("_clear_csv_analysis_loading(loading_slot)") >= 5
+
+
 def test_selected_file_upload_button_is_hidden():
     """GL-386: selected file row should not show a second Upload button."""
     src = _read("dashboard/pages/overview.py")

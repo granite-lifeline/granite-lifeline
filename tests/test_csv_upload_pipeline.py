@@ -79,6 +79,9 @@ class _FakeEmpty:
     def markdown(self, body, **kwargs):
         self.rendered.append(str(body))
 
+    def empty(self):
+        self.rendered.clear()
+
 
 def _valid_csv_bytes(rows: int = 700) -> bytes:
     upload_df = pd.DataFrame(
@@ -225,7 +228,7 @@ def test_csv_upload_failure_recovers_running_state(monkeypatch):
 
     html = "".join(rendered)
     assert overview.st.session_state["csv_analysis_running"] is False
-    assert "Analysing your CSV..." in html
+    assert "Analysing your CSV..." not in html
     assert "Analysis Unavailable" in html
     assert "Pipeline failed during model run." in html
 
@@ -249,6 +252,7 @@ def test_csv_upload_empty_report_recovers_running_state(monkeypatch):
 
     html = "".join(rendered)
     assert overview.st.session_state["csv_analysis_running"] is False
+    assert "Analysing your CSV..." not in html
     assert "Analysis Timed Out" in html
     assert "diagnostic report could not be generated" in html
 

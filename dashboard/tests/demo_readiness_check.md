@@ -69,7 +69,7 @@ Use this checklist when demonstrating the local live CSV flow for GL-388:
 | `Run Analysis` clicked | Button is disabled and relabelled to `Analysing...` |
 | Pipeline is running | Loading card shows `Analysing your CSV...`, a percentage progress ring, and `Analyzing data...` |
 | Pipeline succeeds | Dashboard result loads and the loading state disappears |
-| Pipeline fails or times out | Existing polished error card appears and the button becomes usable again |
+| Pipeline fails or times out | Loading card disappears, the existing polished error card appears, and the button becomes usable again |
 | Browser refresh during loading | Any stale loading state is cleared on the next render |
 
 ## Demo Talking Points
