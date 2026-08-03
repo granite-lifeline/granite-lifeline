@@ -17,7 +17,7 @@ Report Layer output:
 
 ## Automated Check
 
-Run this before demo or before marking GL-384 / GL-416 complete:
+Run this before demo or before marking GL-384 / GL-416 / GL-417 complete:
 
 ```bash
 python -m pytest \
@@ -57,20 +57,44 @@ Open `http://localhost:8502`, then check:
 | 7 | Export | Return to overview and use PDF / CSV buttons | Single or ZIP downloads are generated without external services |
 | 8 | Empty state | Try running analysis without a CSV file | Polished empty state appears instead of a raw warning |
 | 9 | CSV upload | Upload a valid KIT CSV and click `Run Analysis` | Button changes to `Analysing...` and the loading card appears immediately |
-| 10 | CSV loading | Watch the loading card while the pipeline runs | A percentage progress ring is visible with `Analyzing data...`; no bottom Streamlit progress bar is shown |
+| 10 | CSV loading | Watch the loading card while the pipeline runs | A percentage progress ring is visible with staged user-facing text; no bottom Streamlit progress bar is shown |
 
 ## CSV Loading State Demo Checklist
 
-Use this checklist when demonstrating the local live CSV flow for GL-388:
+Use this checklist when demonstrating the local live CSV flow for GL-388
+and GL-417:
 
 | Check | Expected result |
 |-------|-----------------|
 | Valid CSV selected | File name is visible; no duplicate file-row `Upload` button appears |
 | `Run Analysis` clicked | Button is disabled and relabelled to `Analysing...` |
-| Pipeline is running | Loading card shows `Analysing your CSV...`, a percentage progress ring, and `Analyzing data...` |
+| Pipeline is running | Loading card shows `Analysing your CSV...`, a percentage progress ring, and staged user-facing text |
 | Pipeline succeeds | Dashboard result loads and the loading state disappears |
 | Pipeline fails or times out | Loading card disappears, the existing polished error card appears, and the button becomes usable again |
 | Browser refresh during loading | Any stale loading state is cleared on the next render |
+
+## CSV Loading Progress Demo Steps
+
+Use a valid KIT CSV file, then click `Run Analysis`. The exact speed depends on
+the local machine and whether Ollama is already warm, but the loading card
+should move through these user-facing states:
+
+| Progress | Loading text |
+|----------|--------------|
+| 5% | `Checking uploaded CSV...` |
+| 10% | `Preparing drive data...` |
+| 35% | `Processing vehicle signals...` |
+| 65% | `Estimating component risk...` |
+| 90% | `Generating diagnostic report...` |
+| 100% | `Preparing dashboard results...` |
+
+During this flow:
+
+- The bottom Streamlit progress decoration should stay hidden.
+- The run button should remain disabled while analysis is running.
+- The text should not mention internal layer names to the user.
+- On success, the Dashboard result should replace the loading card.
+- On failure or timeout, the loading card should clear before the error card.
 
 ## Demo Talking Points
 
@@ -107,3 +131,4 @@ By the end of the demo, the audience should have seen:
 | Final demo route/checklist | Done |
 | CSV loading state tests/checklist | Done |
 | CSV loading regression tests | Done |
+| CSV loading progress demo checklist | Done |

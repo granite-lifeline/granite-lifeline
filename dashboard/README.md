@@ -48,7 +48,7 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | PDF / CSV Export | GL-343 to GL-348 | Overview-page export panel with component filters, PDF section filters, CSV column filters, ZIP downloads, local PDF template, and tests |
 | Module Split | GL-255 | `app.py` (2581 lines) split into `theme.py`, `ui_components.py`, `data_store.py`, and `pages/{overview,detail,what_if}.py` |
 | CSV Upload Pipeline | GL-256 to GL-262 | Upload validation (KIT column/row checks), user-friendly error cards, and end-to-end wiring to Data Layer + Model Layer + Report Layer |
-| CSV Analysis Loading State | GL-386 to GL-388, GL-412/413, GL-415/416 | Run Analysis enters an immediate `Analysing...` state, shows a percentage progress ring with simple user-facing staged text, recovers cleanly on failure/refresh, and is covered by regression and demo checklist tests |
+| CSV Analysis Loading State | GL-386 to GL-388, GL-412/413, GL-415 to GL-417 | Run Analysis enters an immediate `Analysing...` state, shows a percentage progress ring with simple user-facing staged text, recovers cleanly on failure/refresh, and is covered by regression and demo checklist tests |
 | Live Model Layer Integration | GL-365 | `csv_pipeline.py` invokes the Model Layer's `kit_residual_detector.py --batch` as a subprocess per INTERFACE.md §2.5's documented CLI/error contract; verified with a real, unmocked run producing a live report |
 | What-If Analysis Page | — | Scenario cards, driving-style sliders, per-component risk projection, uncertainty range |
 | Signal Tooltips | — | `glossary.py`; plain-language tooltips for technical signal names |

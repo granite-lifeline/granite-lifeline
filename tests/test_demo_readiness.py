@@ -9,6 +9,7 @@ from dashboard.export_helper import (
     DEFAULT_EXPORT_SECTIONS,
     build_export_data,
 )
+from dashboard.csv_pipeline import CSV_PROGRESS_STAGES
 from shared.anomaly_mapping import GROUND_KNOWLEDGE_ANOMALY_TYPES
 
 
@@ -89,7 +90,7 @@ def test_demo_readiness_checklist_documents_run_route_and_limits():
         "PDF / CSV",
         "CSV upload",
         "percentage progress ring",
-        "Analyzing data...",
+        "staged user-facing text",
         "five current anomaly types",
         "local Ollama",
         "placeholder scores",
@@ -111,8 +112,21 @@ def test_demo_readiness_checklist_covers_csv_loading_recovery():
         "Browser refresh during loading",
         "stale loading state is cleared",
         "CSV loading regression tests",
+        "CSV Loading Progress Demo Steps",
     ]:
         assert required_text in src
+
+
+def test_csv_loading_demo_checklist_matches_progress_stages():
+    """GL-417: demo checklist should document the live progress states."""
+    src = DEMO_CHECK_PATH.read_text(encoding="utf-8")
+
+    assert "GL-417" in src
+    assert "internal layer names" in src
+    assert "loading card should clear before the error card" in src
+
+    for percent, message in CSV_PROGRESS_STAGES.values():
+        assert f"| {percent}% | `{message}` |" in src
 
 
 def test_dashboard_readme_uses_current_demo_readiness_language():
@@ -121,7 +135,7 @@ def test_dashboard_readme_uses_current_demo_readiness_language():
 
     assert "Five-Type Component Display Mapping" in src
     assert "CSV Analysis Loading State" in src
-    assert "GL-415/416" in src
+    assert "GL-415 to GL-417" in src
     assert "Demo Readiness Check" in src
     assert "percentage progress ring" in src
     assert "tests/test_demo_readiness.py" in src
