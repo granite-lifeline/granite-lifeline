@@ -358,6 +358,49 @@ def _show_csv_upload_heading(tokens: dict) -> None:
     )
 
 
+def _show_how_to_run_locally(tokens: dict) -> None:
+    """Render the local-run help entry near the CSV upload area."""
+    st.markdown("**How to Run Locally**")
+    st.caption(
+        "Use these commands on your own machine for full live CSV analysis."
+    )
+    st.info(
+        "Live CSV analysis is local-only. It needs the Data Layer, Model "
+        "Layer, Report Layer, local Python dependencies, and a running Ollama "
+        "Granite model. The hosted Streamlit demo can show the dashboard UI, "
+        "but it cannot run the full upload-to-analysis pipeline."
+    )
+
+    st.markdown("Clone the repository")
+    st.code(
+        "git clone https://github.com/granite-lifeline/granite-lifeline.git",
+        language="bash",
+    )
+
+    st.markdown("Open the project root")
+    st.code("cd granite-lifeline", language="bash")
+
+    st.markdown("Install dependencies")
+    st.code("./setup.sh", language="bash")
+    st.caption(r"Windows PowerShell: .\setup.ps1")
+
+    st.markdown("Start Ollama if needed")
+    st.code("ollama serve", language="bash")
+
+    st.markdown("Pull the Granite model")
+    st.code("ollama pull granite4.1:8b", language="bash")
+
+    st.markdown("Build RAG knowledge bases")
+    st.code(
+        "uv run python -m report_layer.rag.knowledge_indexer\n"
+        "uv run python -m report_layer.rag.symptom_knowledge_indexer",
+        language="bash",
+    )
+
+    st.markdown("Start the dashboard")
+    st.code("uv run streamlit run dashboard/app.py", language="bash")
+
+
 def _error_paragraph(message: str, tokens: dict) -> str:
     return (
         f'<p style="color:{tokens["danger_text"]};font-size:14px;'
@@ -744,23 +787,27 @@ def _show_csv_uploader(tokens: dict) -> None:
         unsafe_allow_html=True,
     )
 
-    with st.container(key="csv_upload_section"):
-        _show_csv_upload_heading(tokens)
-        uploaded_file = st.file_uploader(
-            "CSV file",
-            type=["csv"],
-            key="csv_file_uploader",
-            label_visibility="collapsed",
-        )
-        analysis_running = bool(
-            st.session_state.get(CSV_ANALYSIS_RUNNING_KEY, False)
-        )
-        submit_clicked = st.button(
-            "Analysing..." if analysis_running else "Run Analysis",
-            key="csv_submit_btn",
-            use_container_width=True,
-            disabled=analysis_running,
-        )
+    upload_col, local_help_col = st.columns([4, 1.35], gap="medium")
+    with upload_col:
+        with st.container(key="csv_upload_section"):
+            _show_csv_upload_heading(tokens)
+            uploaded_file = st.file_uploader(
+                "CSV file",
+                type=["csv"],
+                key="csv_file_uploader",
+                label_visibility="collapsed",
+            )
+            analysis_running = bool(
+                st.session_state.get(CSV_ANALYSIS_RUNNING_KEY, False)
+            )
+            submit_clicked = st.button(
+                "Analysing..." if analysis_running else "Run Analysis",
+                key="csv_submit_btn",
+                use_container_width=True,
+                disabled=analysis_running,
+            )
+    with local_help_col:
+        _show_how_to_run_locally(tokens)
 
     # ── Validation feedback ──
     if submit_clicked:
@@ -1532,7 +1579,7 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
     )
 
     # ── Upload card — centered via columns ──
-    _, card_col, _ = st.columns([1, 4, 1])
+    _, card_col, help_col, _ = st.columns([0.7, 4, 1.35, 0.7])
     with card_col:
         with st.container(key="landing_upload_card"):
             _show_csv_upload_heading(tokens)
@@ -1552,6 +1599,8 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
                 use_container_width=True,
                 disabled=analysis_running,
             )
+    with help_col:
+        _show_how_to_run_locally(tokens)
 
     # ── Validation feedback ──
     if submit_clicked:
