@@ -203,6 +203,45 @@ def test_selected_file_upload_button_is_hidden():
     assert '[data-testid="stFileUploaderDeleteBtn"]' in src
 
 
+def test_local_run_help_card_has_tooltip_notes_and_copy_commands():
+    """GL-424: local-run help keeps its main user-facing controls."""
+    src = _read("dashboard/pages/overview.py")
+
+    assert "def _show_how_to_run_locally(tokens: dict, key_prefix: str)" in src
+    assert "How to Run Locally" in src
+    assert (
+        "Use these commands on your own machine for full live CSV analysis."
+        in src
+    )
+    assert 'class="local-run-title-help"' in src
+    assert 'tabindex="0"' in src
+    assert "data-tooltip" in src
+    assert '<details class="local-run-notes-details">' in src
+    assert "<summary>Environment notes</summary>" in src
+    assert "Show copy commands" in src
+    assert "command_open_key" in src
+    assert "uv run streamlit run dashboard/app.py" in src
+
+
+def test_local_run_help_layout_matches_upload_card():
+    """GL-424: upload and local-run cards stay balanced on both entry pages."""
+    src = _read("dashboard/pages/overview.py")
+
+    assert 'with st.container(key="dashboard_upload_pair")' in src
+    assert 'with st.container(key="landing_upload_pair")' in src
+    assert src.count('st.columns([1, 1], gap="large")') >= 2
+    assert "_show_how_to_run_locally(tokens, \"dashboard_local_run\")" in src
+    assert "_show_how_to_run_locally(tokens, \"landing_local_run\")" in src
+    assert ".st-key-dashboard_upload_pair" in src
+    assert ".st-key-landing_upload_pair" in src
+    assert "max-width: 1160px !important;" in src
+    assert "max-width: 560px !important;" in src
+    assert "min-height: 315px !important;" in src
+    assert ".local-run-notes-details summary:hover" in src
+    assert 'background: {tokens["surface_alt"]};' in src
+    assert 'border-color: {tokens["accent"]};' in src
+
+
 def test_what_if_level_pill_centered_and_bar_left_filled():
     src = _read("dashboard/pages/what_if.py")
 
