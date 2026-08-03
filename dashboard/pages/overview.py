@@ -712,6 +712,13 @@ def _show_csv_uploader(tokens: dict) -> None:
             color: {tokens["accent"]} !important;
         }}
         .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] section > div + button,
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] section
+            > button:not(:first-child) {{
+            display: none !important;
+        }}
+        .st-key-csv_upload_section
             [data-testid="stFileUploaderDeleteBtn"] {{
             display: none !important;
         }}
@@ -1473,6 +1480,13 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
         .st-key-landing_upload_card [data-testid="stFileUploaderDropzone"]
                 button:hover::after {{
             color: {tokens["accent"]} !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] section > div + button,
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] section
+            > button:not(:first-child) {{
+            display: none !important;
         }}
         .st-key-landing_upload_card
             [data-testid="stFileUploaderDeleteBtn"] {{

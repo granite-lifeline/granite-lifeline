@@ -196,6 +196,8 @@ def test_selected_file_upload_button_is_hidden():
 
     assert '[data-testid="stFileUploaderDropzone"] button::after' in src
     assert '[data-testid="stFileUploader"] button::after' not in src
+    assert "section > div + button" in src
+    assert "> button:not(:first-child)" in src
     assert '.st-key-csv_upload_section' in src
     assert '.st-key-landing_upload_card' in src
     assert '[data-testid="stFileUploaderDeleteBtn"]' in src
