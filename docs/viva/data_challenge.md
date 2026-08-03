@@ -15,8 +15,7 @@ The data contains normal driving records, but not a single confirmed vehicle fau
 
 ##### Qiuting Fu: basis and verification
 
-To implement this approach, we developed five proxy fault families containing 14 individual checks. These rules are grounded in standard OBD-II fault codes and published automotive guidance. However, these proxy rules still needed validation. We therefore used controlled fault injection, changing one relevant signal at three severity levels across three different journeys. On the usable healthy data, none of the checks produced a fault decision. At the strongest injected level, all 14 checks responded across all three journeys. This shows that the rules are consistent and that the complete pipeline works as designed. However, simulated signals are not real mechanical failures. We therefore cannot claim real-world accuracy or recall.
-
+To implement this approach, we developed five proxy fault families containing 14 individual checks. These rules are grounded in standard OBD-II fault codes and published automotive guidance. However, these proxy rules still needed validation. We therefore used controlled fault injection, changing one relevant signal at three severity levels across three different journeys. On the usable healthy data, none of the checks produced a fault decision. At the strongest injected level, every check responded on all three trips. This shows that the rules are consistent and that the complete pipeline works as designed. However, simulated signals are not real mechanical failures. We therefore cannot claim real-world accuracy or recall.
 
 ## Why This Challenge Is Specific to This Project
 
