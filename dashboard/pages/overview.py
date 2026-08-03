@@ -463,7 +463,8 @@ def _show_how_to_run_locally(tokens: dict, key_prefix: str) -> None:
         .st-key-{key_prefix}_commands_btn button *,
         .st-key-{key_prefix}_commands_btn button p,
         .st-key-{key_prefix}_commands_btn [data-testid="stMarkdownContainer"],
-        .st-key-{key_prefix}_commands_btn [data-testid="stMarkdownContainer"] p {{
+        .st-key-{key_prefix}_commands_btn
+            [data-testid="stMarkdownContainer"] p {{
             color: {tokens["accent_contrast"]} !important;
             font-size: 15px !important;
             font-weight: 700 !important;
@@ -599,7 +600,8 @@ def _show_how_to_run_locally(tokens: dict, key_prefix: str) -> None:
             style_html
             + '<div class="local-run-heading">'
             + 'How to Run Locally'
-            + f'<span class="local-run-title-help" tabindex="0" title="{html.escape(run_hint)}" '
+            + '<span class="local-run-title-help" tabindex="0" '
+            + f'title="{html.escape(run_hint)}" '
             + f'data-tooltip="{html.escape(run_hint)}">'
             + run_hint_icon
             + '</span></div>',
