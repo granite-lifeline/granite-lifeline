@@ -17,7 +17,7 @@ Report Layer output:
 
 ## Automated Check
 
-Run this before demo or before marking GL-384 complete:
+Run this before demo or before marking GL-384 / GL-416 complete:
 
 ```bash
 python -m pytest \
@@ -106,3 +106,4 @@ By the end of the demo, the audience should have seen:
 | Dashboard regression test expansion | Done |
 | Final demo route/checklist | Done |
 | CSV loading state tests/checklist | Done |
+| CSV loading regression tests | Done |

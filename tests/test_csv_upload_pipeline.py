@@ -204,6 +204,38 @@ def test_csv_upload_ui_success_stores_dashboard_data_and_reruns(monkeypatch):
     assert "Analysis Unavailable" not in "".join(rendered)
 
 
+def test_csv_upload_shows_initial_loading_before_pipeline_runs(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+    csv_bytes = _valid_csv_bytes()
+    dashboard_result = {
+        "cooling_degradation": {
+            **_model_output(),
+            "anomaly_description": "Cooling readings show rising stress.",
+        },
+        "_data_source": {"cooling_degradation": "uploaded"},
+    }
+
+    def fake_run_uploaded_csv_batch(
+        body: bytes, file_name: str, progress_callback=None
+    ) -> dict:
+        html = "".join(rendered)
+        assert "Analysing your CSV..." in html
+        assert "5%" in html
+        assert "Checking uploaded CSV..." in html
+        return dashboard_result
+
+    monkeypatch.setattr(
+        overview, "run_uploaded_csv_batch", fake_run_uploaded_csv_batch
+    )
+    monkeypatch.setattr(overview.st, "rerun", lambda: None)
+
+    overview._handle_uploaded_csv_submit(
+        _FakeUpload(csv_bytes, "valid-drive.csv"), tokens
+    )
+
+    assert overview.st.session_state["csv_analysis_running"] is False
+
+
 def test_csv_upload_failure_recovers_running_state(monkeypatch):
     overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
     csv_bytes = _valid_csv_bytes()
@@ -231,6 +263,87 @@ def test_csv_upload_failure_recovers_running_state(monkeypatch):
     assert "Analysing your CSV..." not in html
     assert "Analysis Unavailable" in html
     assert "Pipeline failed during model run." in html
+
+
+def test_csv_upload_timeout_clears_loading_state(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+    csv_bytes = _valid_csv_bytes()
+
+    def fake_run_uploaded_csv_batch(
+        body: bytes, file_name: str, progress_callback=None
+    ) -> dict:
+        if progress_callback is not None:
+            progress_callback(65, "Estimating component risk...")
+        raise TimeoutError("model run timed out")
+
+    monkeypatch.setattr(
+        overview, "run_uploaded_csv_batch", fake_run_uploaded_csv_batch
+    )
+
+    overview._handle_uploaded_csv_submit(
+        _FakeUpload(csv_bytes, "valid-drive.csv"), tokens
+    )
+
+    html = "".join(rendered)
+    assert overview.st.session_state["csv_analysis_running"] is False
+    assert "Analysing your CSV..." not in html
+    assert "Estimating component risk..." not in html
+    assert "Analysis Timed Out" in html
+    assert "shorter drive session" in html
+
+
+def test_csv_upload_model_unavailable_clears_loading_state(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+    csv_bytes = _valid_csv_bytes()
+
+    def fake_run_uploaded_csv_batch(
+        body: bytes, file_name: str, progress_callback=None
+    ) -> dict:
+        if progress_callback is not None:
+            progress_callback(35, "Processing vehicle signals...")
+        raise overview.ModelBatchRunnerUnavailable("Model runner is missing.")
+
+    monkeypatch.setattr(
+        overview, "run_uploaded_csv_batch", fake_run_uploaded_csv_batch
+    )
+
+    overview._handle_uploaded_csv_submit(
+        _FakeUpload(csv_bytes, "valid-drive.csv"), tokens
+    )
+
+    html = "".join(rendered)
+    assert overview.st.session_state["csv_analysis_running"] is False
+    assert "Analysing your CSV..." not in html
+    assert "Processing vehicle signals..." not in html
+    assert "Model Analysis Unavailable" in html
+    assert "Model runner is missing." in html
+
+
+def test_csv_upload_unexpected_error_clears_loading_state(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+    csv_bytes = _valid_csv_bytes()
+
+    def fake_run_uploaded_csv_batch(
+        body: bytes, file_name: str, progress_callback=None
+    ) -> dict:
+        if progress_callback is not None:
+            progress_callback(90, "Generating diagnostic report...")
+        raise RuntimeError("unexpected pipeline issue")
+
+    monkeypatch.setattr(
+        overview, "run_uploaded_csv_batch", fake_run_uploaded_csv_batch
+    )
+
+    overview._handle_uploaded_csv_submit(
+        _FakeUpload(csv_bytes, "valid-drive.csv"), tokens
+    )
+
+    html = "".join(rendered)
+    assert overview.st.session_state["csv_analysis_running"] is False
+    assert "Analysing your CSV..." not in html
+    assert "Generating diagnostic report..." not in html
+    assert "Analysis Unavailable" in html
+    assert "unexpected pipeline issue" in html
 
 
 def test_csv_upload_empty_report_recovers_running_state(monkeypatch):

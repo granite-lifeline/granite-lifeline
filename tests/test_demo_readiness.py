@@ -110,6 +110,7 @@ def test_demo_readiness_checklist_covers_csv_loading_recovery():
         "Pipeline fails or times out",
         "Browser refresh during loading",
         "stale loading state is cleared",
+        "CSV loading regression tests",
     ]:
         assert required_text in src
 
@@ -120,6 +121,7 @@ def test_dashboard_readme_uses_current_demo_readiness_language():
 
     assert "Five-Type Component Display Mapping" in src
     assert "CSV Analysis Loading State" in src
+    assert "GL-415/416" in src
     assert "Demo Readiness Check" in src
     assert "percentage progress ring" in src
     assert "tests/test_demo_readiness.py" in src
