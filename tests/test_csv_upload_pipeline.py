@@ -11,8 +11,11 @@ import pandas as pd
 import pytest
 
 from dashboard.csv_pipeline import (
+    CSV_PROGRESS_STAGE_KEYS,
+    CSV_PROGRESS_STAGES,
     ModelBatchRunnerUnavailable,
     UploadedCsvPipelineError,
+    get_csv_progress_stage,
     run_uploaded_csv_batch,
 )
 from dashboard.csv_validator import (
@@ -160,7 +163,7 @@ def test_csv_upload_ui_success_stores_dashboard_data_and_reruns(monkeypatch):
         calls["file_name"] = file_name
         calls["progress_callback"] = progress_callback is not None
         if progress_callback is not None:
-            progress_callback(65, "Analyzing data...")
+            progress_callback(65, "Estimating component risk...")
         return dashboard_result
 
     monkeypatch.setattr(
@@ -194,7 +197,7 @@ def test_csv_upload_ui_success_stores_dashboard_data_and_reruns(monkeypatch):
     assert rerun_calls == [True]
     assert "Analysing your CSV..." in "".join(rendered)
     assert "65%" in "".join(rendered)
-    assert "Analyzing data..." in "".join(rendered)
+    assert "Estimating component risk..." in "".join(rendered)
     assert "Analysis Unavailable" not in "".join(rendered)
 
 
@@ -206,7 +209,7 @@ def test_csv_upload_failure_recovers_running_state(monkeypatch):
         body: bytes, file_name: str, progress_callback=None
     ) -> dict:
         if progress_callback is not None:
-            progress_callback(35, "Analyzing data...")
+            progress_callback(35, "Processing vehicle signals...")
         raise UploadedCsvPipelineError("Pipeline failed during model run.")
 
     monkeypatch.setattr(
@@ -589,9 +592,43 @@ def test_run_uploaded_csv_batch_reports_progress(monkeypatch, tmp_path: Path):
     )
 
     assert progress_events == [
-        (10, "Analyzing data..."),
-        (35, "Analyzing data..."),
-        (65, "Analyzing data..."),
-        (90, "Analyzing data..."),
-        (100, "Analyzing data..."),
+        (5, "Checking uploaded CSV..."),
+        (10, "Preparing drive data..."),
+        (35, "Processing vehicle signals..."),
+        (65, "Estimating component risk..."),
+        (90, "Generating diagnostic report..."),
+        (100, "Preparing dashboard results..."),
     ]
+
+
+def test_csv_progress_stage_mapping_is_user_facing():
+    """GL-412: progress copy should be staged but not layer jargon."""
+    expected_order = [
+        "checking_upload",
+        "preparing_upload",
+        "processing_signals",
+        "estimating_risk",
+        "generating_report",
+        "preparing_dashboard",
+    ]
+    expected_percentages = [5, 10, 35, 65, 90, 100]
+    banned_terms = ["Data Layer", "Model Layer", "Report Layer"]
+
+    assert list(CSV_PROGRESS_STAGES) == expected_order
+    assert CSV_PROGRESS_STAGE_KEYS == tuple(expected_order)
+    assert [
+        CSV_PROGRESS_STAGES[key][0] for key in expected_order
+    ] == expected_percentages
+    assert len({
+        CSV_PROGRESS_STAGES[key][1] for key in expected_order
+    }) == len(expected_order)
+
+    for key in expected_order:
+        message = CSV_PROGRESS_STAGES[key][1]
+        assert message.endswith("...")
+        assert all(term not in message for term in banned_terms)
+
+
+def test_csv_progress_stage_lookup_rejects_unknown_stage():
+    with pytest.raises(ValueError, match="Unknown CSV progress stage"):
+        get_csv_progress_stage("missing_stage")

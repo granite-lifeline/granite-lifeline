@@ -14,6 +14,7 @@ from pandas.errors import EmptyDataError
 from anomaly_display import COMPONENT_DISPLAY_NAMES
 from csv_validator import validate_csv_columns, validate_csv_min_rows
 from csv_pipeline import (
+    CSV_PROGRESS_STAGES,
     ModelBatchRunnerUnavailable,
     UploadedCsvPipelineError,
     run_uploaded_csv_batch,
@@ -421,8 +422,6 @@ def _show_csv_analysis_loading(
             position: relative;
             z-index: 1;
         }}
-            width: 42px;
-        }}
         .csv-analysis-title {{
             color: {tokens["text"]};
             font-size: 15px;
@@ -532,8 +531,12 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
 
     _set_csv_analysis_running(True)
     loading_slot = st.empty()
-    progress_message = "Analyzing data..."
-    _show_csv_analysis_loading(loading_slot, tokens, 0, progress_message)
+    progress_percent, progress_message = CSV_PROGRESS_STAGES[
+        "checking_upload"
+    ]
+    _show_csv_analysis_loading(
+        loading_slot, tokens, progress_percent, progress_message
+    )
 
     def update_progress(percent: int, message: str) -> None:
         _show_csv_analysis_loading(loading_slot, tokens, percent, message)

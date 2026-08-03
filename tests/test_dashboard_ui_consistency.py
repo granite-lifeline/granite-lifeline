@@ -167,7 +167,8 @@ def test_csv_analysis_loading_state_is_visible_and_disables_buttons():
 
     assert "CSV_ANALYSIS_RUNNING_KEY" in src
     assert "Analysing your CSV..." in src
-    assert "Analyzing data..." in src
+    assert "CSV_PROGRESS_STAGES" in src
+    assert "checking_upload" in src
     assert "csv-analysis-percent" in src
     assert "conic-gradient(" in src
     assert "csv-analysis-progress-rail" not in src
