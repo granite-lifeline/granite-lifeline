@@ -275,8 +275,9 @@ def _command_block(
         st.markdown(_command_label(command_title), unsafe_allow_html=True)
         st.code(commands, language="bash")
         if note:
+            note_html = html.escape(note)
             st.markdown(
-                f'<div class="local-run-command-note">{html.escape(note)}</div>',
+                f'<div class="local-run-command-note">{note_html}</div>',
                 unsafe_allow_html=True,
             )
 
