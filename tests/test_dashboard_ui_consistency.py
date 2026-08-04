@@ -26,6 +26,7 @@ def test_streamlit_app_routes_import_cleanly():
     assert callable(app.main)
     assert callable(app.show_overview_page)
     assert callable(app.show_detail_page)
+    assert callable(app.show_local_run_page)
     assert callable(app.show_what_if_page)
 
 
@@ -106,10 +107,12 @@ def test_literal_lucide_icons_are_registered():
 def test_main_dashboard_pages_use_shared_consistency_helpers():
     overview_src = _read("dashboard/pages/overview.py")
     detail_src = _read("dashboard/pages/detail.py")
+    local_run_src = _read("dashboard/pages/local_run.py")
     what_if_src = _read("dashboard/pages/what_if.py")
 
     assert "page_title_html(" in overview_src
     assert "page_title_html(" in detail_src
+    assert "page_title_html(" in local_run_src
     assert "page_title_html(" in what_if_src
 
     assert "empty_state_html(" in overview_src
@@ -203,43 +206,64 @@ def test_selected_file_upload_button_is_hidden():
     assert '[data-testid="stFileUploaderDeleteBtn"]' in src
 
 
-def test_local_run_help_card_has_tooltip_notes_and_copy_commands():
-    """GL-424: local-run help keeps its main user-facing controls."""
-    src = _read("dashboard/pages/overview.py")
+def test_local_run_page_has_guide_layout_and_copy_commands():
+    """GL-426: local-run help uses a structured guide page."""
+    app_src = _read("dashboard/app.py")
+    src = _read("dashboard/pages/local_run.py")
 
-    assert "def _show_how_to_run_locally(tokens: dict, key_prefix: str)" in src
+    assert "from pages.local_run import show_local_run_page" in app_src
+    assert 'st.session_state["page"] == "local_run"' in app_src
+    assert "show_local_run_page()" in app_src
+    assert "def show_local_run_page() -> None" in src
     assert "How to Run Locally" in src
+    assert "Setup overview" in src
     assert (
-        "Use these commands on your own machine for full live CSV analysis."
+        "Follow these steps to run the app on your computer and try "
         in src
     )
-    assert 'class="local-run-title-help"' in src
-    assert 'tabindex="0"' in src
-    assert "data-tooltip" in src
-    assert '<details class="local-run-notes-details">' in src
-    assert "<summary>Environment notes</summary>" in src
-    assert "Show copy commands" in src
-    assert "command_open_key" in src
+    assert "data, model, report, and dashboard pipeline" not in src
+    assert "Prepare project" in src
+    assert "Install tools" in src
+    assert "Start Granite" in src
+    assert "Open dashboard" in src
+    assert "Why local setup is needed" not in src
+    assert "Before running" in src
+    assert "Copy commands" in src
+    assert "Setup overview included" in src
     assert "uv run streamlit run dashboard/app.py" in src
 
 
-def test_local_run_help_layout_matches_upload_card():
-    """GL-424: upload and local-run cards stay balanced on both entry pages."""
+def test_upload_pages_link_to_local_run_guide():
+    """GL-426: upload areas use a button instead of a large inline guide."""
+    src = _read("dashboard/pages/overview.py")
+
+    assert "def _show_local_run_button(tokens: dict, key: str)" in src
+    assert "How to Run Locally" in src
+    assert 'st.session_state["page"] = "local_run"' in src
+    assert '_show_local_run_button(tokens, "landing_local_run_btn")' in src
+    assert (
+        '_show_local_run_button(tokens, "dashboard_upload_local_run_btn")'
+        in src
+    )
+
+
+def test_upload_layout_no_longer_renders_inline_local_run_card():
+    """GL-426: upload cards stay focused on upload and analysis."""
     src = _read("dashboard/pages/overview.py")
 
     assert 'with st.container(key="dashboard_upload_pair")' in src
     assert 'with st.container(key="landing_upload_pair")' in src
-    assert src.count('st.columns([1, 1], gap="large")') >= 2
-    assert "_show_how_to_run_locally(tokens, \"dashboard_local_run\")" in src
-    assert "_show_how_to_run_locally(tokens, \"landing_local_run\")" in src
     assert ".st-key-dashboard_upload_pair" in src
     assert ".st-key-landing_upload_pair" in src
     assert "max-width: 1160px !important;" in src
     assert "max-width: 560px !important;" in src
     assert "min-height: 315px !important;" in src
-    assert ".local-run-notes-details summary:hover" in src
-    assert 'background: {tokens["surface_alt"]};' in src
-    assert 'border-color: {tokens["accent"]};' in src
+    assert 'st.columns([1, 2, 1], gap="large")' in src
+    assert "_show_how_to_run_locally" not in src
+    assert '_show_how_to_run_locally(tokens, "landing_local_run")' not in src
+    assert (
+        '_show_how_to_run_locally(tokens, "dashboard_local_run")' not in src
+    )
 
 
 def test_what_if_level_pill_centered_and_bar_left_filled():
