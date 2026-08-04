@@ -233,6 +233,31 @@ def test_local_run_page_has_guide_layout_and_copy_commands():
     assert "uv run streamlit run dashboard/app.py" in src
 
 
+def test_local_run_copy_commands_are_grouped_by_step():
+    """GL-427: commands should be grouped into easy-to-copy blocks."""
+    src = _read("dashboard/pages/local_run.py")
+
+    assert "def _command_block(" in src
+    assert "Copy this block" in src
+    assert "local-run-command-label" in src
+    assert "local-run-copy-hint" in src
+    assert "local-run-command-note" in src
+    assert 'with st.container(key=f"local_run_command_{number}")' in src
+    assert "Project setup" in src
+    assert "Install command" in src
+    assert "Report helper commands" in src
+    assert "Dashboard commands" in src
+    assert (
+        "git clone https://github.com/granite-lifeline/granite-lifeline.git\\n"
+        in src
+    )
+    assert "ollama serve\\nollama pull granite4.1:8b" in src
+    assert (
+        "uv run python -m report_layer.rag.symptom_knowledge_indexer\\n"
+        in src
+    )
+
+
 def test_upload_pages_link_to_local_run_guide():
     """GL-426: upload areas use a button instead of a large inline guide."""
     src = _read("dashboard/pages/overview.py")

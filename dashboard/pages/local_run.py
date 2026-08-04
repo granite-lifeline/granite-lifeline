@@ -117,6 +117,42 @@ def _render_page_styles(tokens: dict[str, str]) -> None:
             font-size: 12px;
             line-height: 1.45;
         }}
+        .local-run-command-label {{
+            align-items: center;
+            color: {tokens["text_secondary"]};
+            display: flex;
+            font-size: 12px;
+            font-weight: 700;
+            gap: 7px;
+            justify-content: space-between;
+            margin: 0 0 6px;
+        }}
+        .local-run-copy-hint {{
+            color: {tokens["accent"]};
+            font-size: 11px;
+            font-weight: 700;
+        }}
+        .local-run-command-note {{
+            color: {tokens["text_secondary"]};
+            font-size: 11px;
+            line-height: 1.45;
+            margin: -2px 0 12px;
+        }}
+        [class*="st-key-local_run_command_"] {{
+            border-bottom: 1px solid {tokens["border"]};
+            margin-bottom: 18px;
+            padding-bottom: 18px;
+        }}
+        [class*="st-key-local_run_command_"]:last-child {{
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }}
+        [class*="st-key-local_run_command_"] [data-testid="stCodeBlock"] {{
+            border: 1px solid {tokens["border"]};
+            border-radius: 12px;
+            overflow: hidden;
+        }}
         .local-run-note-card {{
             background: {tokens["accent_subtle"]};
             border: 1px solid {hex_to_rgba(tokens["accent"], 0.22)};
@@ -191,57 +227,67 @@ def _step_card(number: int, title: str, copy: str) -> str:
     )
 
 
+def _command_label(title: str) -> str:
+    return (
+        '<div class="local-run-command-label">'
+        f'<span>{html.escape(title)}</span>'
+        '<span class="local-run-copy-hint">Copy this block</span>'
+        '</div>'
+    )
+
+
+def _command_block(
+    number: int,
+    title: str,
+    copy: str,
+    command_title: str,
+    commands: str,
+    note: str = "",
+) -> None:
+    with st.container(key=f"local_run_command_{number}"):
+        st.markdown(_step_card(number, title, copy), unsafe_allow_html=True)
+        st.markdown(_command_label(command_title), unsafe_allow_html=True)
+        st.code(commands, language="bash")
+        if note:
+            st.markdown(
+                f'<div class="local-run-command-note">{html.escape(note)}</div>',
+                unsafe_allow_html=True,
+            )
+
+
 def _render_command_blocks() -> None:
-    st.markdown(
-        _step_card(
-            1,
-            "Prepare project",
-            "Get the project files and open the folder before running it.",
-        ),
-        unsafe_allow_html=True,
+    _command_block(
+        1,
+        "Prepare project",
+        "Get the project files and open the folder before running it.",
+        "Project setup",
+        "git clone https://github.com/granite-lifeline/granite-lifeline.git\n"
+        "cd granite-lifeline",
     )
-    st.code(
-        "git clone https://github.com/granite-lifeline/granite-lifeline.git",
-        language="bash",
+    _command_block(
+        2,
+        "Install tools",
+        "Set up everything the app needs on your computer.",
+        "Install command",
+        "./setup.sh",
+        note=r"Windows PowerShell: .\setup.ps1",
     )
-    st.code("cd granite-lifeline", language="bash")
-
-    st.markdown(
-        _step_card(
-            2,
-            "Install tools",
-            "Set up everything the app needs on your computer.",
-        ),
-        unsafe_allow_html=True,
+    _command_block(
+        3,
+        "Start Granite",
+        "Start the local helper used to create the report text.",
+        "Report helper commands",
+        "ollama serve\nollama pull granite4.1:8b",
     )
-    st.code("./setup.sh", language="bash")
-    st.caption(r"Windows PowerShell: .\setup.ps1")
-
-    st.markdown(
-        _step_card(
-            3,
-            "Start Granite",
-            "Start the local helper used to create the report text.",
-        ),
-        unsafe_allow_html=True,
-    )
-    st.code("ollama serve", language="bash")
-    st.code("ollama pull granite4.1:8b", language="bash")
-
-    st.markdown(
-        _step_card(
-            4,
-            "Open dashboard",
-            "Prepare the guide content and open the app in your browser.",
-        ),
-        unsafe_allow_html=True,
-    )
-    st.code(
+    _command_block(
+        4,
+        "Open dashboard",
+        "Prepare the guide content and open the app in your browser.",
+        "Dashboard commands",
         "uv run python -m report_layer.rag.knowledge_indexer\n"
-        "uv run python -m report_layer.rag.symptom_knowledge_indexer",
-        language="bash",
+        "uv run python -m report_layer.rag.symptom_knowledge_indexer\n"
+        "uv run streamlit run dashboard/app.py",
     )
-    st.code("uv run streamlit run dashboard/app.py", language="bash")
 
 
 def show_local_run_page() -> None:
