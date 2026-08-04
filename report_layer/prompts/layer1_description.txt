@@ -46,6 +46,12 @@ Rules:
 - Do not convert failure probability into odds or per-trip language.
   For example, do not write "1 in 322 trips" or similar conversions.
   Preserve the model-provided percentage and horizon.
+- The numbers shown in the Examples section below (such as "56%" or
+  "0.31%") belong only to those example scenarios. They are not real
+  values and must never appear in your output. Always take
+  risk_score, estimated_failure_probability, and
+  estimated_cycles_to_failure only from the Input context above,
+  never from an example.
 - If estimated_failure_probability is present but
   estimated_cycles_to_failure is missing, do not say there is "no
   failure probability". Say no cycle estimate is available. If the
@@ -100,6 +106,10 @@ Rules:
 - If the context does not provide enough evidence, explain that clearly instead of writing "N/A".
 
 Examples:
+(Study these only for tone, structure, and plain-language style. Every
+number in them — risk scores, percentages, cycle counts — belongs to
+that example's own made-up scenario. Copy none of these numbers into
+your output under any circumstances.)
 
 Bad example (cooling_degradation, High risk):
 "The coolant_temp signal shows 102°C which exceeds the

@@ -2096,7 +2096,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 <b>risk_level</b>   Medium
 <b>confidence</b>   65.34%
 <b>key_signal</b>   coolant slope rising
-<b>projection</b>    4 trips · 100%</pre>
+<b>projection</b>    4 trips · 100% (illustrative)</pre>
             </div>
             <div class="report-combine">→</div>
             <div class="owner-questions">
@@ -2116,24 +2116,24 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
               <div class="model-kicker">Deterministic input</div>
               <h3>Known anomaly + risk</h3>
               <p>The model fields can select a fixed knowledge entry.</p>
-              <div class="template-code"><b>IF</b> anomaly = cooling_degradation<br><b>AND</b> risk = High</div>
+              <div class="template-code"><b>IF</b> anomaly = cooling_degradation<br><b>AND</b> risk = Medium</div>
             </div>
             <div class="ground-arrow">→</div>
             <div class="template-card">
               <div class="model-kicker">Pure retrieval</div>
               <h3>Fetch fixed content</h3>
-              <p>Retrieve the stored cooling explanation and the stored high-risk action.</p>
-              <div class="template-code">cause_text = <b>cooling_A</b><br>action_text = <b>high_B</b></div>
+              <p>Real ChromaDB lookup — the full causes list and the stored medium-risk action text, unedited.</p>
+              <div class="template-code">causes = <b>46 listed causes</b><br>actions = <b>"...check radiator for mud or clogging..."</b></div>
             </div>
             <div class="ground-arrow">→</div>
             <div class="template-card output">
               <div class="model-kicker">Template report</div>
-              <h3>Correct and predictable</h3>
+              <h3>Correct, but not owner-shaped</h3>
               <p>“Cooling degradation detected. Inspect the cooling system.”</p>
-              <div class="template-code"><b>Same matched case</b><br>→ same fixed wording</div>
+              <div class="template-code"><b>Same matched case</b><br>→ same fixed wording, regardless of confidence or signal detail</div>
             </div>
           </div>
-          <p class="report-takeaway">A rule-based template can generate a valid report when every case follows a predefined path.</p>
+          <p class="report-takeaway">A rule-based template can generate a valid report when every case follows a predefined path — but it can't adapt to this vehicle's confidence or signal detail.</p>
         </div>
 
         <div class="report-stage" data-report-stage="2">
@@ -2157,24 +2157,24 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
         <div class="report-stage" data-report-stage="3">
           <div class="plain-llm-flow">
             <div class="plain-llm-card">
-              <div class="model-kicker">Initial design</div>
-              <h3>Model output → LLM → report</h3>
-              <p>A flexible generator can explain different combinations without maintaining a separate paragraph for every branch.</p>
-              <div class="template-code">evidence + prompt<br>→ <b>case-specific language</b></div>
+              <div class="model-kicker">Real run · no retrieval</div>
+              <h3>Same evidence, same LLM — no verified reference</h3>
+              <p>Same input, same Granite model, but fault knowledge replaced with the code's own RAG-unavailable fallback text.</p>
+              <div class="comparison-copy">"...possibly due to a partially restricted cooling system or an airflow issue...early signs of a thermostat not fully opening, debris in the radiator, or a sensor beginning to drift."</div>
             </div>
             <div class="report-combine">→</div>
             <div class="plain-llm-card risk">
               <div class="model-kicker">Limitation</div>
-              <h3>Flexible language can invent facts</h3>
+              <h3>Fluent, but not verifiably grounded</h3>
               <div class="risk-list">
-                <div>Turn a possible cause into a confirmed diagnosis</div>
-                <div>Add a probability, date or remaining life when the field is null</div>
-                <div>Use unsupported automotive knowledge from model memory</div>
-                <div>Phrase the same evidence inconsistently</div>
+                <div>These causes come from the model's training data, not a cited source</div>
+                <div>No way to check if "debris in the radiator" is actually likely for this vehicle</div>
+                <div>Still relies on the prompt alone to avoid inventing a probability or date</div>
+                <div>Wording and cause selection can vary run to run for the same evidence</div>
               </div>
             </div>
           </div>
-          <p class="report-takeaway">Flexible language alone was not enough. It also had to remain grounded.</p>
+          <p class="report-takeaway">Flexible language alone was not enough. It also had to be traceable to a real source.</p>
         </div>
 
         <div class="report-stage" data-report-stage="4">
@@ -2194,8 +2194,8 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
               <div class="model-kicker">Exact knowledge retrieval</div>
               <h3>Verified cooling guidance</h3>
               <div class="ground-lines">
-                <div class="ground-line"><span>Possible causes</span><b>coolant · fan · pump</b></div>
-                <div class="ground-line"><span>Safe action</span><b>reduce load · inspect soon</b></div>
+                <div class="ground-line"><span>Possible causes</span><b>46 listed (pump, thermostat, radiator…)</b></div>
+                <div class="ground-line"><span>Safe action</span><b>"…check radiator for mud or clogging…"</b></div>
                 <div class="ground-line"><span>Certainty</span><b>moderate wording</b></div>
                 <div class="ground-line"><span>Priority</span><b>medium-risk guidance</b></div>
               </div>
@@ -2230,8 +2230,8 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
             <div class="comparison-report adaptive">
               <div class="model-kicker">RAG + LLM</div>
               <h3>Same facts, case-specific wording</h3>
-              <div class="comparison-copy">Your coolant pattern is changing faster than expected. The cooling system may be having difficulty moving heat, although this is not a confirmed diagnosis. Avoid heavy driving and arrange an inspection soon.</div>
-              <div class="comparison-tags"><span>evidence prioritised</span><span>confidence visible</span><span>missing fields omitted</span><span>action connected to risk</span></div>
+              <div class="comparison-copy">Your vehicle's cooling system is showing signs of degradation. The coolant temperature sensor reads 98.0°C, which exceeds the normal range of 90.0–95.0°C. The model projects a 100% failure probability of crossing the High-risk threshold within an estimated 4 drive cycles.</div>
+              <div class="comparison-tags"><span>real Ollama run</span><span>no invented diagnosis</span><span>real projection preserved</span><span>action connected to risk</span></div>
             </div>
           </div>
           <p class="report-takeaway">The advantage is adaptive communication, not new automotive facts.</p>
@@ -2251,7 +2251,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
               <div class="assurance-step">02 · Choose and test retrieval</div>
               <h3>Can RAG add verified help quickly?</h3>
               <div class="assurance-question">Exact metadata matching was compared with semantic search; RAG reports were compared with the baseline.</div>
-              <div class="assurance-result"><strong>100% · ≈180× faster</strong><span>Exact metadata retrieval across seven anomaly types</span></div>
+              <div class="assurance-result"><strong>100% · ≈180× faster</strong><span>Exact metadata retrieval across five anomaly types</span></div>
               <div class="assurance-evidence">RAG quality <b>0.95</b> vs baseline <b>0.93</b> · stronger uncertainty wording in mixed-signal cases</div>
             </div>
             <div class="assurance-arrow">→</div>
@@ -2263,7 +2263,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
                 <div class="prompt-gate"><i>2</i><b>Explain possible causes</b><span>hedged · no overclaim</span></div>
                 <div class="prompt-gate"><i>3</i><b>Recommend an action</b><span>2–4 steps · urgency fits risk</span></div>
               </div>
-              <div class="assurance-evidence">Each stage returns a <b>pass / warning / score</b>; all three form the final validation status.</div>
+              <div class="assurance-evidence">A per-layer validator scores each rule (warnings + 0–1) — honest gap: production <code>generate_report()</code> doesn't call it yet, so today's live gate is JSON/key presence only.</div>
             </div>
           </div>
           <div class="assurance-summary">We selected the strongest generator, the fastest accurate retrieval path, and rules that check every part of the owner report.</div>
@@ -2285,7 +2285,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
       </div>
     </div>
     <script type="application/json" class="slide-notes">
-    {"title":"Challenge 3: Explaining Risk Without Inventing a Diagnosis","script":"We already know what changed, how serious it may be and which signals support it. But the owner still needs to know what it means and what to do. A deterministic template can produce a valid report, and for a small fixed knowledge base it is a reasonable alternative. Its limitation is flexibility: every combination of anomaly, risk, confidence, signals and missing fields needs another predefined branch. We therefore use a Large Language Model as a communication tool. It connects the supplied evidence, adjusts urgency and certainty, and translates technical fields into owner language. Direct generation was flexible but could invent unsupported facts. Retrieval-Augmented Generation addresses this by retrieving verified knowledge before the model writes. The facts remain fixed while the explanation adapts to the current case. We then validated three decisions: Granite 4.1 8B achieved the highest model score; exact metadata retrieval was accurate and much faster than semantic search while RAG slightly improved report quality; and each prompt stage is checked against its own communication and safety rules.","notes":["LLM means Large Language Model: a model that generates and adapts natural language from supplied context","RAG means Retrieval-Augmented Generation: verified knowledge is retrieved before generation","JSON means JavaScript Object Notation: a structured machine-readable field format","Model selection: Granite 4.1 8B scored 4.85 out of 5 with 100 percent JSON parsing","Retrieval: metadata filtering achieved 100 percent accuracy and was about 180 times faster than semantic search","Prompt validation reports pass, warnings and a score for each stage; ordinary warnings do not automatically stop the next LLM call","End on the three assurance decisions and move to the completed architecture"]}
+    {"title":"Challenge 3: Explaining Risk Without Inventing a Diagnosis","script":"We already know what changed, how serious it may be and which signals support it. But the owner still needs to know what it means and what to do. A deterministic template can produce a valid report, and for a small fixed knowledge base it is a reasonable alternative. Its limitation is flexibility: every combination of anomaly, risk, confidence, signals and missing fields needs another predefined branch. We therefore use a Large Language Model as a communication tool. It connects the supplied evidence, adjusts urgency and certainty, and translates technical fields into owner language. Direct generation was flexible but could invent unsupported facts. Retrieval-Augmented Generation addresses this by retrieving verified knowledge before the model writes. The facts remain fixed while the explanation adapts to the current case. We then validated three decisions: Granite 4.1 8B achieved the highest model score; exact metadata retrieval was accurate and much faster than semantic search while RAG slightly improved report quality; and each prompt stage is checked against its own communication and safety rules.","notes":["LLM means Large Language Model: a model that generates and adapts natural language from supplied context","RAG means Retrieval-Augmented Generation: verified knowledge is retrieved before generation","JSON means JavaScript Object Notation: a structured machine-readable field format","Model selection: Granite 4.1 8B scored 4.85 out of 5 with 100 percent JSON parsing","Retrieval: metadata filtering achieved 100 percent accuracy and was about 180 times faster than semantic search","prompt_chain_validator.py checks each layer for raw field names, confirmed-fault language, hedging and length, returning warnings plus a 0-1 score per layer, but current production generate_report() does not call it — the live acceptance gate is JSON key presence only, so this is evaluation evidence, not yet a runtime safety guarantee","Say this limitation before being asked — it is the honest core of this slide","End on the three assurance decisions and move to the completed architecture"]}
     </script>
   </div>
 
