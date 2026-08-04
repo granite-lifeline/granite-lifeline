@@ -358,320 +358,45 @@ def _show_csv_upload_heading(tokens: dict) -> None:
     )
 
 
-def _show_how_to_run_locally(tokens: dict, key_prefix: str) -> None:
-    """Render the local-run help entry near the CSV upload area."""
-    run_hint = (
-        "Use these commands on your own machine for full live CSV analysis."
-    )
-    run_hint_icon = lucide_icon(
-        "help-circle", size=16, color=tokens["text_secondary"]
-    )
-    style_html = f"""
+def _show_local_run_button(tokens: dict, key: str) -> None:
+    """Render the page link for local setup instructions."""
+    st.markdown(
+        f"""
         <style>
-        .st-key-{key_prefix}_card {{
-            background: {tokens["glass_surface"]} !important;
-            backdrop-filter: blur(20px) saturate(150%) !important;
-            -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
-            border: 1px solid {tokens["glass_border"]} !important;
-            border-radius: 20px !important;
-            box-shadow: 0 4px 24px {tokens["shadow"]} !important;
-            box-sizing: border-box !important;
-            margin: 0 auto !important;
-            max-width: 560px !important;
-            min-height: 315px !important;
-            padding: 32px 32px 24px 32px !important;
-        }}
-        .st-key-{key_prefix}_card [data-testid="stMarkdownContainer"] p {{
-            color: {tokens["text_secondary"]} !important;
+        div.st-key-{key} button,
+        .st-key-{key} button {{
+            background: transparent !important;
+            border: 1.5px solid {tokens["border"]} !important;
+            border-radius: 10px !important;
+            color: {tokens["text"]} !important;
             font-size: 13px !important;
-            line-height: 1.5 !important;
-            text-align: center !important;
-        }}
-        .local-run-heading {{
-            align-items: center;
-            color: {tokens["text"]};
-            display: flex;
-            font-size: 15px;
-            font-weight: 700;
-            gap: 10px;
-            justify-content: center;
-            line-height: 28px;
-            margin: 0 0 10px 0;
-            text-align: center;
-            white-space: nowrap;
-        }}
-        .local-run-title-help {{
-            align-items: center;
-            background: {tokens["surface"]};
-            border: 1px solid {tokens["border"]};
-            border-radius: 50%;
-            cursor: help;
-            display: inline-flex;
-            height: 28px;
-            justify-content: center;
-            position: relative;
-            width: 28px;
-        }}
-        .local-run-title-help::after {{
-            background: {tokens["surface"]};
-            border: 1px solid {tokens["border"]};
-            border-radius: 10px;
-            box-shadow: 0 4px 16px {tokens["shadow"]};
-            color: {tokens["text"]};
-            content: attr(data-tooltip);
-            font-size: 12px;
-            font-weight: 500;
-            left: 50%;
-            line-height: 1.45;
-            max-width: 260px;
-            min-width: 220px;
-            opacity: 0;
-            padding: 8px 10px;
-            pointer-events: none;
-            position: absolute;
-            text-align: left;
-            top: 36px;
-            transform: translateX(-50%);
-            transition: opacity 0.15s ease;
-            white-space: normal;
-            z-index: 20;
-        }}
-        .local-run-title-help:hover::after,
-        .local-run-title-help:focus::after {{
-            opacity: 1;
-        }}
-        .local-run-title-help:focus {{
-            outline: 2px solid {tokens["accent"]};
-            outline-offset: 2px;
-        }}
-        .st-key-{key_prefix}_commands_btn button {{
-            align-items: center !important;
-            background-color: {tokens["accent"]} !important;
-            border: none !important;
-            border-radius: 12px !important;
-            color: {tokens["accent_contrast"]} !important;
-            display: flex !important;
-            font-size: 15px !important;
-            font-weight: 700 !important;
-            justify-content: center !important;
-            min-height: 46px !important;
-            padding: 13px 0 !important;
-            text-align: center !important;
-            transition: opacity 0.15s ease !important;
+            font-weight: 600 !important;
+            min-height: 38px !important;
+            transition: background 0.15s ease, border-color 0.15s ease,
+                        color 0.15s ease !important;
             width: 100% !important;
         }}
-        .st-key-{key_prefix}_commands_btn button *,
-        .st-key-{key_prefix}_commands_btn button p,
-        .st-key-{key_prefix}_commands_btn [data-testid="stMarkdownContainer"],
-        .st-key-{key_prefix}_commands_btn
-            [data-testid="stMarkdownContainer"] p {{
-            color: {tokens["accent_contrast"]} !important;
-            font-size: 15px !important;
-            font-weight: 700 !important;
+        div.st-key-{key} button *,
+        div.st-key-{key} button:hover *,
+        .st-key-{key} button *,
+        .st-key-{key} button:hover * {{
+            color: inherit !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
         }}
-        .st-key-{key_prefix}_card
-            .st-key-{key_prefix}_commands_btn button *,
-        .st-key-{key_prefix}_card
-            .st-key-{key_prefix}_commands_btn button p,
-        .st-key-{key_prefix}_card
-            .st-key-{key_prefix}_commands_btn
-            [data-testid="stMarkdownContainer"] p {{
-            color: {tokens["accent_contrast"]} !important;
-            font-size: 15px !important;
-            font-weight: 700 !important;
-        }}
-        .st-key-{key_prefix}_commands_btn button:hover {{
-            opacity: 0.88 !important;
-        }}
-        .st-key-{key_prefix}_notes_btn {{
-            display: flex !important;
-            justify-content: center !important;
-        }}
-        .st-key-{key_prefix}_notes_btn button {{
-            background: {tokens["surface_alt"]} !important;
-            border: 1.5px solid {tokens["border"]} !important;
-            border-radius: 12px !important;
-            color: {tokens["text"]} !important;
-            display: flex !important;
-            justify-content: center !important;
-            font-size: 15px !important;
-            font-weight: 700 !important;
-            margin: 0 auto !important;
-            min-height: 46px !important;
-            min-width: 190px !important;
-            padding: 0 22px !important;
-        }}
-        .st-key-{key_prefix}_notes_btn button *,
-        .st-key-{key_prefix}_notes_btn button p {{
-            color: {tokens["text"]} !important;
-            font-size: 15px !important;
-            font-weight: 700 !important;
-        }}
-        .st-key-{key_prefix}_card
-            .st-key-{key_prefix}_notes_btn div.stButton > button:hover,
-        .st-key-{key_prefix}_notes_btn div.stButton > button:hover,
-        .st-key-{key_prefix}_notes_btn button:hover {{
-            background: {tokens["surface_alt"]} !important;
-            background-color: {tokens["surface_alt"]} !important;
-            border: 1.5px solid {tokens["accent"]} !important;
+        div.st-key-{key} button:hover,
+        .st-key-{key} button:hover {{
+            background: {hex_to_rgba(tokens["accent"], 0.07)} !important;
+            border-color: {tokens["accent"]} !important;
             color: {tokens["accent"]} !important;
-            outline: none !important;
-        }}
-        .st-key-{key_prefix}_card
-            .st-key-{key_prefix}_notes_btn div.stButton > button:hover *,
-        .st-key-{key_prefix}_card
-            .st-key-{key_prefix}_notes_btn div.stButton > button:hover p,
-        .st-key-{key_prefix}_notes_btn div.stButton > button:hover *,
-        .st-key-{key_prefix}_notes_btn div.stButton > button:hover p,
-        .st-key-{key_prefix}_notes_btn button:hover *,
-        .st-key-{key_prefix}_notes_btn button:hover p {{
-            color: {tokens["accent"]} !important;
-        }}
-        .st-key-{key_prefix}_notes_btn button:focus *,
-        .st-key-{key_prefix}_notes_btn button:focus p {{
-            color: {tokens["text"]} !important;
-        }}
-        .st-key-{key_prefix}_notes_btn button:focus,
-        .st-key-{key_prefix}_notes_btn button:active {{
-            background: {tokens["surface_alt"]} !important;
-            background-color: {tokens["surface_alt"]} !important;
-            border: 1.5px solid {tokens["border"]} !important;
-            color: {tokens["text"]} !important;
-            outline: none !important;
-        }}
-        .st-key-{key_prefix}_notes_btn button:active *,
-        .st-key-{key_prefix}_notes_btn button:active p {{
-            color: {tokens["text"]} !important;
-        }}
-        .local-run-notes-details {{
-            display: block;
-            margin: 32px auto 0 auto;
-            width: 100%;
-        }}
-        .local-run-notes-details summary {{
-            align-items: center;
-            background: {tokens["surface_alt"]};
-            border: 1.5px solid {tokens["border"]};
-            border-radius: 12px;
-            box-sizing: border-box;
-            color: {tokens["text"]};
-            cursor: pointer;
-            display: flex;
-            font-size: 15px;
-            font-weight: 700;
-            justify-content: center;
-            list-style: none;
-            margin: 0 auto;
-            min-height: 46px;
-            min-width: 190px;
-            padding: 0 22px;
-            text-align: center;
-            width: 190px;
-        }}
-        .local-run-notes-details summary::-webkit-details-marker {{
-            display: none;
-        }}
-        .local-run-notes-details summary:hover {{
-            background: {tokens["surface_alt"]};
-            border-color: {tokens["accent"]};
-            color: {tokens["accent"]};
-        }}
-        .local-run-notes-panel {{
-            background: {tokens["accent_subtle"]};
-            border: 1px solid {hex_to_rgba(tokens["accent"], 0.18)};
-            border-radius: 12px;
-            box-sizing: border-box;
-            color: {tokens["text"]};
-            font-size: 13px;
-            line-height: 1.5;
-            margin: 14px auto 0 auto;
-            max-width: 460px;
-            padding: 14px 16px;
-            text-align: left;
         }}
         </style>
-        """
-
-    command_open_key = f"{key_prefix}_commands_open"
-    if command_open_key not in st.session_state:
-        st.session_state[command_open_key] = False
-    with st.container(key=f"{key_prefix}_card"):
-        st.markdown(
-            style_html
-            + '<div class="local-run-heading">'
-            + 'How to Run Locally'
-            + '<span class="local-run-title-help" tabindex="0" '
-            + f'title="{html.escape(run_hint)}" '
-            + f'data-tooltip="{html.escape(run_hint)}">'
-            + run_hint_icon
-            + '</span></div>',
-            unsafe_allow_html=True,
-        )
-
-        st.markdown(
-            """
-            <details class="local-run-notes-details">
-                <summary>Environment notes</summary>
-                <div class="local-run-notes-panel">
-                    Live CSV analysis is local-only. It needs the Data Layer,
-                    Model Layer, Report Layer, local Python dependencies, and a
-                    running Ollama Granite model. The hosted Streamlit demo can
-                    show the dashboard UI, but it cannot run the full
-                    upload-to-analysis pipeline.
-                </div>
-            </details>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        st.markdown("<div style='height:40px;'></div>", unsafe_allow_html=True)
-        button_label = (
-            "Hide copy commands"
-            if st.session_state[command_open_key]
-            else "Show copy commands"
-        )
-        if st.button(
-            button_label,
-            key=f"{key_prefix}_commands_btn",
-            use_container_width=True,
-        ):
-            st.session_state[command_open_key] = not st.session_state[
-                command_open_key
-            ]
-            st.rerun()
-
-        if not st.session_state[command_open_key]:
-            return
-
-        st.markdown("Clone the repository")
-        st.code(
-            "git clone "
-            "https://github.com/granite-lifeline/granite-lifeline.git",
-            language="bash",
-        )
-
-        st.markdown("Open the project root")
-        st.code("cd granite-lifeline", language="bash")
-
-        st.markdown("Install dependencies")
-        st.code("./setup.sh", language="bash")
-        st.caption(r"Windows PowerShell: .\setup.ps1")
-
-        st.markdown("Start Ollama if needed")
-        st.code("ollama serve", language="bash")
-
-        st.markdown("Pull the Granite model")
-        st.code("ollama pull granite4.1:8b", language="bash")
-
-        st.markdown("Build RAG knowledge bases")
-        st.code(
-            "uv run python -m report_layer.rag.knowledge_indexer\n"
-            "uv run python -m report_layer.rag.symptom_knowledge_indexer",
-            language="bash",
-        )
-
-        st.markdown("Start the dashboard")
-        st.code("uv run streamlit run dashboard/app.py", language="bash")
+        """,
+        unsafe_allow_html=True,
+    )
+    if st.button("How to Run Locally", key=key, use_container_width=True):
+        st.session_state["page"] = "local_run"
+        st.rerun()
 
 
 def _error_paragraph(message: str, tokens: dict) -> str:
@@ -1076,7 +801,11 @@ def _show_csv_uploader(tokens: dict) -> None:
     )
 
     with st.container(key="dashboard_upload_pair"):
-        upload_col, local_help_col = st.columns([1, 1], gap="large")
+        _, local_btn_col = st.columns([4, 1])
+        with local_btn_col:
+            _show_local_run_button(tokens, "dashboard_upload_local_run_btn")
+
+        _, upload_col, _ = st.columns([1, 2, 1], gap="large")
         with upload_col:
             with st.container(key="csv_upload_section"):
                 _show_csv_upload_heading(tokens)
@@ -1095,8 +824,6 @@ def _show_csv_uploader(tokens: dict) -> None:
                     use_container_width=True,
                     disabled=analysis_running,
                 )
-        with local_help_col:
-            _show_how_to_run_locally(tokens, "dashboard_local_run")
 
     # ── Validation feedback ──
     if submit_clicked:
@@ -1693,7 +1420,7 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
     _recover_csv_analysis_running_state()
 
     # ── Minimal nav bar: brand left, theme toggle right ──
-    nav_left, nav_right = st.columns([10, 1])
+    nav_left, nav_help, nav_right = st.columns([7, 2, 1])
     with nav_left:
         st.markdown(
             f'<div style="padding:8px 0 24px 0;">'
@@ -1701,6 +1428,9 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             f'color:{tokens["text"]};">Granite Lifeline</span></div>',
             unsafe_allow_html=True,
         )
+    with nav_help:
+        st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
+        _show_local_run_button(tokens, "landing_local_run_btn")
     with nav_right:
         _show_theme_toggle(dark_mode, tokens)
 
@@ -1881,7 +1611,7 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
 
     # ── Upload card — centered via columns ──
     with st.container(key="landing_upload_pair"):
-        card_col, help_col = st.columns([1, 1], gap="large")
+        _, card_col, _ = st.columns([1, 2, 1], gap="large")
         with card_col:
             with st.container(key="landing_upload_card"):
                 _show_csv_upload_heading(tokens)
@@ -1901,8 +1631,6 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
                     use_container_width=True,
                     disabled=analysis_running,
                 )
-        with help_col:
-            _show_how_to_run_locally(tokens, "landing_local_run")
 
     # ── Validation feedback ──
     if submit_clicked:

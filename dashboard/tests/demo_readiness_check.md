@@ -58,6 +58,7 @@ Open `http://localhost:8502`, then check:
 | 8 | Empty state | Try running analysis without a CSV file | Polished empty state appears instead of a raw warning |
 | 9 | CSV upload | Upload a valid KIT CSV and click `Run Analysis` | Button changes to `Analysing...` and the loading card appears immediately |
 | 10 | CSV loading | Watch the loading card while the pipeline runs | A percentage progress ring is visible with staged user-facing text; no bottom Streamlit progress bar is shown |
+| 11 | Local run guide | Click `How to Run Locally`, review commands, then click `Back to Upload` | Full setup guide opens, copy command blocks are readable, and returning does not affect upload controls |
 
 ## CSV Loading State Demo Checklist
 
@@ -132,3 +133,4 @@ By the end of the demo, the audience should have seen:
 | CSV loading state tests/checklist | Done |
 | CSV loading regression tests | Done |
 | CSV loading progress demo checklist | Done |
+| Local run guide behaviour check | Done |
