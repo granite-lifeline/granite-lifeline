@@ -27,8 +27,11 @@ MODEL_LAYER_SCRIPT = (
 )
 # Recommended per model_layer/ttm-related/README.md: a dedicated venv,
 # since the detector pins specific torch/transformers versions.
+_MODEL_VENV = _REPO_ROOT / "model_layer" / "ttm-related" / ".venv"
 MODEL_LAYER_VENV_PYTHON = (
-    _REPO_ROOT / "model_layer" / "ttm-related" / ".venv" / "bin" / "python"
+    _MODEL_VENV / "Scripts" / "python.exe"
+    if os.name == "nt"
+    else _MODEL_VENV / "bin" / "python"
 )
 # Matches report_layer/pipeline/report_generator.py's Ollama TIMEOUT —
 # both are the pipeline's "slow AI call" thresholds. Estimated, not
