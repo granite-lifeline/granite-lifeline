@@ -283,6 +283,34 @@ def test_local_run_page_uses_consistent_dashboard_styling():
     assert "@media (max-width: 760px)" in src
 
 
+def test_local_run_navigation_and_upload_behaviour_are_preserved():
+    """GL-429: local-run UI navigation should not break upload behaviour."""
+    overview_src = _read("dashboard/pages/overview.py")
+    local_run_src = _read("dashboard/pages/local_run.py")
+
+    assert 'st.session_state["page"] = "local_run"' in overview_src
+    assert 'st.session_state["page"] = "overview"' in local_run_src
+    assert 'key="local_run_back_btn"' in local_run_src
+    assert "st.rerun()" in local_run_src
+
+    # Upload behaviour still uses the existing upload and analysis widgets.
+    assert 'key="landing_csv_uploader"' in overview_src
+    assert 'key="landing_run_btn"' in overview_src
+    assert 'key="csv_file_uploader"' in overview_src
+    assert 'key="csv_submit_btn"' in overview_src
+    assert '"Analysing..." if analysis_running else "Run Analysis"' in (
+        overview_src
+    )
+    assert "disabled=analysis_running" in overview_src
+
+    # Command blocks remain individually addressable for UI testing.
+    for index in range(1, 5):
+        assert re.search(rf"_command_block\(\s+{index},", local_run_src)
+    assert 'with st.container(key=f"local_run_command_{number}")' in (
+        local_run_src
+    )
+
+
 def test_upload_pages_link_to_local_run_guide():
     """GL-426: upload areas use a button instead of a large inline guide."""
     src = _read("dashboard/pages/overview.py")
