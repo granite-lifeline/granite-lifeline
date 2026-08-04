@@ -6,7 +6,7 @@ import html
 
 import streamlit as st
 
-from theme import FONT_MONO, THEME_TOKENS, hex_to_rgba, lucide_icon
+from theme import FONT_MONO, THEME_TOKENS, lucide_icon
 from ui_components import page_title_html, show_footer
 
 
@@ -65,7 +65,7 @@ def _render_page_styles(tokens: dict[str, str]) -> None:
             align-items: center;
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
+            margin-bottom: 14px;
         }}
         .local-run-section-head {{
             color: {tokens["text"]};
@@ -76,35 +76,28 @@ def _render_page_styles(tokens: dict[str, str]) -> None:
             color: {tokens["text_secondary"]};
             font-size: 12px;
         }}
-        .local-run-card {{
-            background: {tokens["glass_surface"]};
-            border: 1px solid {tokens["glass_border"]};
-            border-radius: 16px;
-            box-shadow: 0 2px 12px {tokens["shadow"]};
-            box-sizing: border-box;
-            padding: 20px;
-        }}
         .st-key-local_run_commands_card {{
             background: {tokens["glass_surface"]};
             border: 1px solid {tokens["glass_border"]};
             border-radius: 16px;
             box-shadow: 0 2px 12px {tokens["shadow"]};
             box-sizing: border-box;
-            padding: 20px;
+            max-width: 900px;
+            padding: 20px 20px 18px;
         }}
         .local-run-step-card {{
             background: {tokens["surface"]};
             border: 1px solid {tokens["border"]};
             border-radius: 12px;
             box-sizing: border-box;
-            margin: 14px 0 10px;
-            padding: 16px;
+            margin: 14px 0 12px;
+            padding: 14px 16px;
         }}
         .local-run-step-card-head {{
             align-items: center;
             display: flex;
             gap: 9px;
-            margin-bottom: 8px;
+            margin-bottom: 7px;
         }}
         .local-run-step-card-title {{
             color: {tokens["text"]};
@@ -119,13 +112,20 @@ def _render_page_styles(tokens: dict[str, str]) -> None:
         }}
         .local-run-command-label {{
             align-items: center;
-            color: {tokens["text_secondary"]};
+            background: {tokens["surface_alt"]};
+            border: 1px solid {tokens["border"]};
+            border-bottom: none;
+            border-radius: 12px 12px 0 0;
+            box-sizing: border-box;
+            color: {tokens["text"]};
             display: flex;
             font-size: 12px;
             font-weight: 700;
             gap: 7px;
             justify-content: space-between;
-            margin: 0 0 6px;
+            margin: 0;
+            min-height: 36px;
+            padding: 0 12px;
         }}
         .local-run-copy-hint {{
             color: {tokens["accent"]};
@@ -140,8 +140,8 @@ def _render_page_styles(tokens: dict[str, str]) -> None:
         }}
         [class*="st-key-local_run_command_"] {{
             border-bottom: 1px solid {tokens["border"]};
-            margin-bottom: 18px;
-            padding-bottom: 18px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
         }}
         [class*="st-key-local_run_command_"]:last-child {{
             border-bottom: none;
@@ -150,17 +150,20 @@ def _render_page_styles(tokens: dict[str, str]) -> None:
         }}
         [class*="st-key-local_run_command_"] [data-testid="stCodeBlock"] {{
             border: 1px solid {tokens["border"]};
-            border-radius: 12px;
+            border-radius: 0 0 12px 12px;
+            box-shadow: none;
+            margin-top: 0;
             overflow: hidden;
         }}
         .local-run-note-card {{
-            background: {tokens["accent_subtle"]};
-            border: 1px solid {hex_to_rgba(tokens["accent"], 0.22)};
+            background: {tokens["surface"]};
+            border: 1px solid {tokens["border"]};
+            border-left: 4px solid {tokens["accent"]};
             border-radius: 12px;
             color: {tokens["text"]};
             font-size: 13px;
             line-height: 1.5;
-            margin-bottom: 14px;
+            margin-bottom: 16px;
             padding: 16px;
         }}
         .local-run-note-title {{
@@ -179,6 +182,10 @@ def _render_page_styles(tokens: dict[str, str]) -> None:
             margin: 0;
             padding-left: 18px;
         }}
+        .st-key-local_run_commands_card [data-testid="stCaptionContainer"] {{
+            color: {tokens["text_secondary"]} !important;
+            font-size: 11px !important;
+        }}
         .st-key-local_run_back_btn button {{
             background: {tokens["accent_subtle"]} !important;
             border: 1.5px solid {tokens["accent"]} !important;
@@ -195,6 +202,11 @@ def _render_page_styles(tokens: dict[str, str]) -> None:
             border-color: {tokens["accent_hover"]} !important;
             color: {tokens["accent_contrast"]} !important;
         }}
+        .st-key-local_run_back_btn button:active {{
+            background: {tokens["accent_hover"]} !important;
+            color: {tokens["accent_contrast"]} !important;
+            transform: scale(0.98) !important;
+        }}
         .st-key-local_run_back_btn button *,
         .st-key-local_run_back_btn button:hover * {{
             color: inherit !important;
@@ -207,6 +219,20 @@ def _render_page_styles(tokens: dict[str, str]) -> None:
             }}
             .local-run-step-chip {{
                 min-width: max-content;
+            }}
+            .local-run-section-row {{
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 3px;
+            }}
+            .st-key-local_run_commands_card {{
+                padding: 16px;
+            }}
+            .local-run-command-label {{
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 2px;
+                padding: 9px 12px;
             }}
         }}
         </style>

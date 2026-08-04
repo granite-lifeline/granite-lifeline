@@ -258,6 +258,31 @@ def test_local_run_copy_commands_are_grouped_by_step():
     )
 
 
+def test_local_run_page_uses_consistent_dashboard_styling():
+    """GL-428: local-run guide follows Dashboard and What-If styling."""
+    overview_src = _read("dashboard/pages/overview.py")
+    src = _read("dashboard/pages/local_run.py")
+
+    assert 'background: transparent !important;' in overview_src
+    assert 'border: 1.5px solid {tokens["border"]} !important;' in overview_src
+    assert 'background: {hex_to_rgba(tokens["accent"], 0.07)} !important;' in (
+        overview_src
+    )
+    assert ".st-key-local_run_commands_card" in src
+    assert 'background: {tokens["glass_surface"]};' in src
+    assert 'border: 1px solid {tokens["glass_border"]};' in src
+    assert 'border-radius: 16px;' in src
+    assert 'box-shadow: 0 2px 12px {tokens["shadow"]};' in src
+    assert ".local-run-command-label" in src
+    assert 'background: {tokens["surface_alt"]};' in src
+    assert 'border-radius: 12px 12px 0 0;' in src
+    assert '[data-testid="stCodeBlock"]' in src
+    assert 'border-radius: 0 0 12px 12px;' in src
+    assert 'border-left: 4px solid {tokens["accent"]};' in src
+    assert ".st-key-local_run_back_btn button:active" in src
+    assert "@media (max-width: 760px)" in src
+
+
 def test_upload_pages_link_to_local_run_guide():
     """GL-426: upload areas use a button instead of a large inline guide."""
     src = _read("dashboard/pages/overview.py")

@@ -365,13 +365,13 @@ def _show_local_run_button(tokens: dict, key: str) -> None:
         <style>
         div.st-key-{key} button,
         .st-key-{key} button {{
-            background: {tokens["accent_subtle"]} !important;
-            border: 1.5px solid {tokens["accent"]} !important;
-            border-radius: 14px !important;
-            color: {tokens["accent"]} !important;
-            font-size: 14px !important;
-            font-weight: 700 !important;
-            min-height: 44px !important;
+            background: transparent !important;
+            border: 1.5px solid {tokens["border"]} !important;
+            border-radius: 10px !important;
+            color: {tokens["text"]} !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            min-height: 38px !important;
             transition: background 0.15s ease, border-color 0.15s ease,
                         color 0.15s ease !important;
             width: 100% !important;
@@ -381,14 +381,14 @@ def _show_local_run_button(tokens: dict, key: str) -> None:
         .st-key-{key} button *,
         .st-key-{key} button:hover * {{
             color: inherit !important;
-            font-size: 14px !important;
-            font-weight: 700 !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
         }}
         div.st-key-{key} button:hover,
         .st-key-{key} button:hover {{
-            background: {tokens["accent_hover"]} !important;
-            border-color: {tokens["accent_hover"]} !important;
-            color: {tokens["accent_contrast"]} !important;
+            background: {hex_to_rgba(tokens["accent"], 0.07)} !important;
+            border-color: {tokens["accent"]} !important;
+            color: {tokens["accent"]} !important;
         }}
         </style>
         """,
