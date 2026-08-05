@@ -29,6 +29,10 @@ from shared.interface_models import (  # noqa: E402
 from report_layer.pipeline.context_injection import (  # noqa: E402
     build_context_with_rag,
 )
+from report_layer.pipeline.prompt_chain_validator import (  # noqa: E402
+    format_validation_summary,
+    validate_chain,
+)
 
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
 MODEL = "granite4.1:8b"
@@ -632,6 +636,22 @@ def generate_report(
             recommended_action,
             validated,
         )
+
+        # Step 4b: Validate the cleaned chain output. Never blocks or
+        # retries — validate_chain() never raises, so this only adds
+        # visibility (via logging) into quality issues that previously
+        # had no runtime signal at all.
+        validation_results = validate_chain(
+            anomaly_description,
+            possible_cause,
+            recommended_action,
+            validated.risk_level or "Low",
+        )
+        if not all(result.passed for result in validation_results):
+            logger.warning(
+                "Prompt chain validation flagged issues:\n%s",
+                format_validation_summary(validation_results),
+            )
 
         # Step 5: Assemble successful output
         result = {
