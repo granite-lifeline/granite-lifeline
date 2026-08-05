@@ -176,13 +176,25 @@ def _clean_possible_cause_text(text: str) -> str:
     """Keep possible_cause distinct from the description/projection."""
     sentences = _split_sentences(text)
     filtered = []
-    projection_markers = (
+    dropped: List[str] = []
+    # Numeric-restatement markers: only drop the sentence when it also
+    # contains a digit. "risk score" in particular is also used for
+    # legitimate qualitative clarification the prompts explicitly ask
+    # for (e.g. "risk_score indicates severity, not a failure
+    # probability") — stripping every mention of it regardless of
+    # content silently deleted that clarification.
+    numeric_projection_markers = (
         "failure probability",
         "probability of crossing",
         "high-risk threshold within",
         "within the next",
         "cycles to failure",
         "risk score",
+    )
+    # Risk-level restatement markers: dropped regardless of digits,
+    # since these restate the categorical risk_level in words rather
+    # than a number ("do not reclassify risk in this section").
+    risk_level_markers = (
         "risk level is",
         "risk level remains",
         "overall risk level",
@@ -193,13 +205,26 @@ def _clean_possible_cause_text(text: str) -> str:
         "should be monitored",
         "monitor to ensure",
     )
+    has_digit = re.compile(r"\d")
     for sentence in sentences:
         lower = sentence.lower()
-        if any(marker in lower for marker in projection_markers):
+        if any(
+            marker in lower for marker in numeric_projection_markers
+        ) and has_digit.search(sentence):
+            dropped.append(sentence)
+            continue
+        if any(marker in lower for marker in risk_level_markers):
+            dropped.append(sentence)
             continue
         if any(marker in lower for marker in monitoring_markers):
+            dropped.append(sentence)
             continue
         filtered.append(sentence)
+    if dropped:
+        logger.debug(
+            "possible_cause: dropped %d redundant sentence(s): %s",
+            len(dropped), dropped,
+        )
     return " ".join(filtered) if filtered else text
 
 
