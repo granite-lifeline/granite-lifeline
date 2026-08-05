@@ -105,7 +105,12 @@ def retrieve_actions(anomaly_type: str, risk_level: str) -> str:
     Args:
         anomaly_type: The anomaly type identifier (e.g.,
             "cooling_degradation").
-        risk_level: The risk level ("low", "medium", or "high").
+        risk_level: The risk level, in any case ("Low", "low",
+            "MEDIUM", etc. are all accepted). Stored metadata uses
+            lowercase, so this is normalized internally rather than
+            relying on every caller to lowercase it first — a wrong-case
+            value used to fail silently and return FALLBACK_ACTIONS with
+            no error or warning.
 
     Returns:
         The actions document content for the specified risk level, or a
@@ -116,12 +121,15 @@ def retrieve_actions(anomaly_type: str, risk_level: str) -> str:
         if collection is None:
             return FALLBACK_ACTIONS
 
+        normalized_risk_level = (
+            risk_level.lower() if risk_level else risk_level
+        )
         result = collection.get(
             where={
                 "$and": [
                     {"anomaly_type": {"$eq": anomaly_type}},
                     {"section": {"$eq": "actions"}},
-                    {"risk_level": {"$eq": risk_level}},
+                    {"risk_level": {"$eq": normalized_risk_level}},
                 ]
             }
         )
