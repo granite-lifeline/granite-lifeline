@@ -422,6 +422,55 @@ def _extract_risk_history_payload(
 
 
 # ---------------------------------------------------------------------------
+# Layer call with retry
+# ---------------------------------------------------------------------------
+
+def _call_layer_with_retry(
+    layer_num: int,
+    prompt: str,
+    response_key: str,
+) -> Optional[Any]:
+    """
+    Call Ollama for one prompt-chain layer, retrying on request failure
+    or JSON parse/key failure.
+
+    Args:
+        layer_num: Layer number (1, 2, or 3), used only for log messages.
+        prompt: Rendered prompt text for this layer.
+        response_key: JSON key expected in the parsed response
+            (e.g. "anomaly_description").
+
+    Returns:
+        The value at response_key once obtained, or None if every
+        retry failed.
+    """
+    value: Optional[Any] = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            response = call_ollama(prompt)
+            parsed = extract_json(response)
+            if parsed is not None and response_key in parsed:
+                value = parsed[response_key]
+                break
+        except (
+            requests.Timeout, requests.ConnectionError
+        ) as exc:
+            logger.warning(
+                "Layer %d attempt %d/%d failed (%s): %s",
+                layer_num, attempt, MAX_RETRIES, type(exc).__name__, exc,
+            )
+        else:
+            if value is None:
+                logger.warning(
+                    "Layer %d attempt %d/%d: JSON parse failed",
+                    layer_num, attempt, MAX_RETRIES,
+                )
+        if value is None and attempt < MAX_RETRIES:
+            time.sleep(2)
+    return value
+
+
+# ---------------------------------------------------------------------------
 # Main public function
 # ---------------------------------------------------------------------------
 
@@ -484,37 +533,9 @@ def generate_report(
                 ),
             },
         )
-        anomaly_description: Optional[str] = None
-        for attempt in range(1, MAX_RETRIES + 1):
-            try:
-                response1 = call_ollama(prompt1)
-                parsed1 = extract_json(response1)
-                if (
-                    parsed1 is not None
-                    and "anomaly_description" in parsed1
-                ):
-                    anomaly_description = (
-                        parsed1["anomaly_description"]
-                    )
-                    break
-            except (
-                requests.Timeout, requests.ConnectionError
-            ) as exc:
-                logger.warning(
-                    "Layer 1 attempt %d/%d failed (%s): %s",
-                    attempt, MAX_RETRIES, type(exc).__name__, exc,
-                )
-            else:
-                if anomaly_description is None:
-                    logger.warning(
-                        "Layer 1 attempt %d/%d: JSON parse failed",
-                        attempt, MAX_RETRIES,
-                    )
-            if (
-                anomaly_description is None
-                and attempt < MAX_RETRIES
-            ):
-                time.sleep(2)
+        anomaly_description = _call_layer_with_retry(
+            1, prompt1, "anomaly_description"
+        )
 
         if anomaly_description is None:
             raise RuntimeError(
@@ -534,35 +555,9 @@ def generate_report(
                 ),
             },
         )
-        possible_cause: Optional[str] = None
-        for attempt in range(1, MAX_RETRIES + 1):
-            try:
-                response2 = call_ollama(prompt2)
-                parsed2 = extract_json(response2)
-                if (
-                    parsed2 is not None
-                    and "possible_cause" in parsed2
-                ):
-                    possible_cause = parsed2["possible_cause"]
-                    break
-            except (
-                requests.Timeout, requests.ConnectionError
-            ) as exc:
-                logger.warning(
-                    "Layer 2 attempt %d/%d failed (%s): %s",
-                    attempt, MAX_RETRIES, type(exc).__name__, exc,
-                )
-            else:
-                if possible_cause is None:
-                    logger.warning(
-                        "Layer 2 attempt %d/%d: JSON parse failed",
-                        attempt, MAX_RETRIES,
-                    )
-            if (
-                possible_cause is None
-                and attempt < MAX_RETRIES
-            ):
-                time.sleep(2)
+        possible_cause = _call_layer_with_retry(
+            2, prompt2, "possible_cause"
+        )
 
         if possible_cause is None:
             raise RuntimeError(
@@ -586,37 +581,9 @@ def generate_report(
                 ),
             },
         )
-        recommended_action: Optional[Any] = None
-        for attempt in range(1, MAX_RETRIES + 1):
-            try:
-                response3 = call_ollama(prompt3)
-                parsed3 = extract_json(response3)
-                if (
-                    parsed3 is not None
-                    and "recommended_action" in parsed3
-                ):
-                    recommended_action = (
-                        parsed3["recommended_action"]
-                    )
-                    break
-            except (
-                requests.Timeout, requests.ConnectionError
-            ) as exc:
-                logger.warning(
-                    "Layer 3 attempt %d/%d failed (%s): %s",
-                    attempt, MAX_RETRIES, type(exc).__name__, exc,
-                )
-            else:
-                if recommended_action is None:
-                    logger.warning(
-                        "Layer 3 attempt %d/%d: JSON parse failed",
-                        attempt, MAX_RETRIES,
-                    )
-            if (
-                recommended_action is None
-                and attempt < MAX_RETRIES
-            ):
-                time.sleep(2)
+        recommended_action = _call_layer_with_retry(
+            3, prompt3, "recommended_action"
+        )
 
         if recommended_action is None:
             raise RuntimeError(
