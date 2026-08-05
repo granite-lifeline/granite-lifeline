@@ -452,9 +452,12 @@ def _call_layer_with_retry(
             if parsed is not None and response_key in parsed:
                 value = parsed[response_key]
                 break
-        except (
-            requests.Timeout, requests.ConnectionError
-        ) as exc:
+        except requests.RequestException as exc:
+            # Covers Timeout/ConnectionError as well as HTTPError from
+            # call_ollama()'s raise_for_status() (e.g. a transient 5xx
+            # while the model is still loading) — these are just as
+            # retryable as a timeout, and previously skipped retries
+            # entirely, propagating straight to the empty fallback report.
             logger.warning(
                 "Layer %d attempt %d/%d failed (%s): %s",
                 layer_num, attempt, MAX_RETRIES, type(exc).__name__, exc,
