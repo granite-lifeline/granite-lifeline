@@ -15,6 +15,45 @@ from pathlib import Path
 from statistics import mean
 from typing import List, Tuple
 
+NEGATION_WORDS = {"no", "not", "never", "without", "n't", "unconfirmed"}
+
+
+def _find_unnegated_phrases(
+    text: str, phrases: List[str], window: int = 3
+) -> List[str]:
+    """
+    Return the phrases from `phrases` that appear in `text` without a
+    negation word in the preceding `window` words.
+
+    A bare substring/word match on a phrase like "confirmed" flags
+    negated wording such as "not confirmed" or "no confirmed fault
+    yet" as if it were an unhedged claim, which is the opposite of
+    what it means. This checks a small word window before each match
+    for a negation cue before counting it as a hit. Word-boundary
+    matching also means a phrase embedded in a larger word (e.g.
+    "confirmed" inside "unconfirmed") is not matched at all.
+    """
+    lower = text.lower()
+    hits: List[str] = []
+    for phrase in phrases:
+        pattern = re.compile(r"\b" + re.escape(phrase) + r"\b")
+        found_unnegated = False
+        for match in pattern.finditer(lower):
+            preceding_words = re.findall(
+                r"[a-z']+", lower[:match.start()]
+            )[-window:]
+            negated = any(
+                neg in word
+                for word in preceding_words
+                for neg in NEGATION_WORDS
+            )
+            if not negated:
+                found_unnegated = True
+                break
+        if found_unnegated:
+            hits.append(phrase)
+    return hits
+
 
 @dataclass
 class ReportQualityScore:
@@ -235,15 +274,18 @@ def evaluate_hedging_appropriateness(
             "could suggest, etc.)"
         )
 
-    # Check for confirmed fault language
+    # Check for confirmed fault language (skipping negated wording
+    # such as "not confirmed" or "no confirmed fault yet" — a bare
+    # substring match previously flagged "no confirmed fault yet" as
+    # an unhedged claim, which is the opposite of what it says)
     confirmed_phrases = [
         "confirmed", "is definitely", "has failed", "is broken",
         "is faulty", "has malfunctioned", "is damaged"
     ]
-    found_confirmed = [
-        phrase for phrase in confirmed_phrases
-        if phrase in cause or phrase in desc
-    ]
+    found_confirmed = sorted(set(
+        _find_unnegated_phrases(cause, confirmed_phrases)
+        + _find_unnegated_phrases(desc, confirmed_phrases)
+    ))
     if found_confirmed:
         score -= 0.4
         notes.append(
@@ -256,7 +298,7 @@ def evaluate_hedging_appropriateness(
         "the fault is", "the problem is", "has failed",
         "is broken", "is faulty"
     ]
-    if any(claim in desc for claim in fault_claims):
+    if _find_unnegated_phrases(desc, fault_claims):
         score -= 0.2
         notes.append(
             "anomaly_description claims confirmed fault"
