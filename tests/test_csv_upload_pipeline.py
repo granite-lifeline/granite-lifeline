@@ -16,6 +16,7 @@ from dashboard.csv_pipeline import (
     ModelBatchRunnerUnavailable,
     UploadedCsvPipelineError,
     get_csv_progress_stage,
+    run_uploaded_csv_history_batch,
     run_uploaded_csv_batch,
 )
 from dashboard.csv_validator import (
@@ -791,6 +792,133 @@ def test_run_uploaded_csv_batch_reports_progress(monkeypatch, tmp_path: Path):
         (90, "Generating diagnostic report..."),
         (100, "Preparing dashboard results..."),
     ]
+
+
+def test_run_uploaded_csv_history_batch_runs_each_trip_in_order(
+    monkeypatch,
+):
+    import dashboard.csv_pipeline as csv_pipeline
+
+    calls: list[str] = []
+    progress_events: list[tuple[int, str]] = []
+    file_names = [
+        "2018-02-28_Seat_Leon_RT_S_Normal.csv",
+        "2018-03-01_Seat_Leon_RT_S_Normal.csv",
+        "2018-03-02_Seat_Leon_RT_S_Normal.csv",
+        "2018-03-07_Seat_Leon_RT_S_Normal.csv",
+        "2018-03-08_Seat_Leon_RT_S_Normal.csv",
+    ]
+    risk_scores = [0.378, 0.7577, 0.4472, 0.7256, 0.7846]
+
+    def fake_run_uploaded_csv_batch(
+        csv_bytes: bytes,
+        original_filename: str,
+        progress_callback=None,
+    ):
+        calls.append(original_filename)
+        index = file_names.index(original_filename)
+        if progress_callback is not None:
+            progress_callback(65, "Estimating component risk...")
+        return {
+            "cooling_degradation": {
+                **_model_output(),
+                "timestamp": f"2018-03-{index + 1:02d}T10:00:00Z",
+                "risk_score": risk_scores[index],
+                "risk_level": "Medium",
+            },
+            "_data_source": {"cooling_degradation": "uploaded"},
+        }
+
+    monkeypatch.setattr(
+        csv_pipeline, "run_uploaded_csv_batch", fake_run_uploaded_csv_batch
+    )
+
+    result = run_uploaded_csv_history_batch(
+        [(f"trip-{index}".encode("utf-8"), name)
+         for index, name in enumerate(file_names)],
+        progress_callback=lambda percent, message: progress_events.append(
+            (percent, message)
+        ),
+    )
+
+    assert calls == file_names
+    assert result["latest_dashboard_data"]["cooling_degradation"][
+        "risk_score"
+    ] == 0.7846
+    assert result["trip_results"] == [
+        {
+            "trip_id": "trip_0001",
+            "file_name": "2018-02-28_Seat_Leon_RT_S_Normal.csv",
+            "component": "cooling_degradation",
+            "timestamp": "2018-03-01T10:00:00Z",
+            "risk_score": 0.378,
+            "risk_level": "Medium",
+        },
+        {
+            "trip_id": "trip_0002",
+            "file_name": "2018-03-01_Seat_Leon_RT_S_Normal.csv",
+            "component": "cooling_degradation",
+            "timestamp": "2018-03-02T10:00:00Z",
+            "risk_score": 0.7577,
+            "risk_level": "Medium",
+        },
+        {
+            "trip_id": "trip_0003",
+            "file_name": "2018-03-02_Seat_Leon_RT_S_Normal.csv",
+            "component": "cooling_degradation",
+            "timestamp": "2018-03-03T10:00:00Z",
+            "risk_score": 0.4472,
+            "risk_level": "Medium",
+        },
+        {
+            "trip_id": "trip_0004",
+            "file_name": "2018-03-07_Seat_Leon_RT_S_Normal.csv",
+            "component": "cooling_degradation",
+            "timestamp": "2018-03-04T10:00:00Z",
+            "risk_score": 0.7256,
+            "risk_level": "Medium",
+        },
+        {
+            "trip_id": "trip_0005",
+            "file_name": "2018-03-08_Seat_Leon_RT_S_Normal.csv",
+            "component": "cooling_degradation",
+            "timestamp": "2018-03-05T10:00:00Z",
+            "risk_score": 0.7846,
+            "risk_level": "Medium",
+        },
+    ]
+    assert progress_events[0] == (
+        13,
+        "Analysing trip 1 of 5: Estimating component risk...",
+    )
+    assert progress_events[-1] == (100, "Preparing dashboard results...")
+
+
+def test_run_uploaded_csv_history_batch_requires_five_trips():
+    with pytest.raises(
+        UploadedCsvPipelineError,
+        match="at least five chronological trips",
+    ):
+        run_uploaded_csv_history_batch([(b"csv", "trip.csv")])
+
+
+def test_run_uploaded_csv_history_batch_requires_risk_score(monkeypatch):
+    import dashboard.csv_pipeline as csv_pipeline
+
+    monkeypatch.setattr(
+        csv_pipeline,
+        "run_uploaded_csv_batch",
+        lambda csv_bytes, original_filename, progress_callback=None: {
+            "cooling_degradation": {"timestamp": "2018-03-01T10:00:00Z"},
+            "_data_source": {"cooling_degradation": "uploaded"},
+        },
+    )
+
+    with pytest.raises(UploadedCsvPipelineError, match="risk_score"):
+        run_uploaded_csv_history_batch(
+            [(b"csv", f"2018-03-0{index}_trip.csv")
+             for index in range(1, 6)]
+        )
 
 
 def test_csv_progress_stage_mapping_is_user_facing():

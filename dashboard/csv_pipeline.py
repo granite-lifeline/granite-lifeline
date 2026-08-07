@@ -35,6 +35,8 @@ MODEL_LAYER_VENV_PYTHON = (
 # measured; tune once real TTM batch-run timings are available.
 MODEL_LAYER_TIMEOUT_SECONDS = 120
 ProgressCallback = Callable[[int, str], None]
+UploadedCsvTrip = tuple[bytes, str]
+HISTORY_MIN_TRIPS = 5
 CSV_PROGRESS_STAGES = {
     "checking_upload": (5, "Checking uploaded CSV..."),
     "preparing_upload": (10, "Preparing drive data..."),
@@ -262,3 +264,104 @@ def run_uploaded_csv_batch(
         )
         _emit_progress_stage(progress_callback, "preparing_dashboard")
         return dashboard_data
+
+
+def _first_dashboard_component(
+    dashboard_data: Dict[str, Any],
+) -> tuple[str, Dict[str, Any]]:
+    for component_key, component_data in dashboard_data.items():
+        if component_key == "_data_source":
+            continue
+        if isinstance(component_data, dict):
+            return component_key, component_data
+    raise UploadedCsvPipelineError(
+        "The analysis did not return any component report."
+    )
+
+
+def _trip_timestamp_from_name(original_filename: str) -> str:
+    try:
+        trip_date = datetime.strptime(original_filename[:10], "%Y-%m-%d")
+    except ValueError:
+        return ""
+    return trip_date.replace(tzinfo=timezone.utc).isoformat().replace(
+        "+00:00", "Z"
+    )
+
+
+def _trip_progress_callback(
+    progress_callback: Optional[ProgressCallback],
+    trip_number: int,
+    trip_count: int,
+) -> ProgressCallback:
+    def update(percent: int, message: str) -> None:
+        overall = int(
+            round(((trip_number - 1) + (percent / 100.0)) / trip_count * 100)
+        )
+        overall = max(0, min(100, overall))
+        _emit_progress(
+            progress_callback,
+            overall,
+            f"Analysing trip {trip_number} of {trip_count}: {message}",
+        )
+
+    return update
+
+
+def run_uploaded_csv_history_batch(
+    csv_trips: list[UploadedCsvTrip],
+    progress_callback: Optional[ProgressCallback] = None,
+) -> Dict[str, Any]:
+    """
+    Run an ordered set of uploaded CSV trips through the existing pipeline.
+
+    The caller is responsible for sorting by filename date before calling this
+    function.  GL-434 will turn ``trip_results`` into ``risk_history`` and
+    attach the failure-estimation fields to the latest report.
+    """
+    if len(csv_trips) < HISTORY_MIN_TRIPS:
+        raise UploadedCsvPipelineError(
+            "Failure prediction needs at least five chronological trips."
+        )
+
+    trip_results: list[Dict[str, Any]] = []
+    latest_dashboard_data: Dict[str, Any] | None = None
+    trip_count = len(csv_trips)
+
+    for index, (csv_bytes, original_filename) in enumerate(csv_trips, start=1):
+        dashboard_data = run_uploaded_csv_batch(
+            csv_bytes,
+            original_filename,
+            progress_callback=_trip_progress_callback(
+                progress_callback, index, trip_count
+            ),
+        )
+        component_key, component_data = _first_dashboard_component(
+            dashboard_data
+        )
+        risk_score = component_data.get("risk_score")
+        if risk_score is None:
+            raise UploadedCsvPipelineError(
+                f"{original_filename} did not return a risk_score."
+            )
+
+        trip_results.append(
+            {
+                "trip_id": f"trip_{index:04d}",
+                "file_name": original_filename,
+                "component": component_key,
+                "timestamp": (
+                    component_data.get("timestamp")
+                    or _trip_timestamp_from_name(original_filename)
+                ),
+                "risk_score": risk_score,
+                "risk_level": component_data.get("risk_level"),
+            }
+        )
+        latest_dashboard_data = dashboard_data
+
+    _emit_progress(progress_callback, 100, "Preparing dashboard results...")
+    return {
+        "latest_dashboard_data": latest_dashboard_data or {},
+        "trip_results": trip_results,
+    }
