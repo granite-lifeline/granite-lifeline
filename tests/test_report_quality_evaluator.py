@@ -116,6 +116,22 @@ class TestEvaluateReadability:
         score, notes = evaluate_readability(report)
         assert any("raw field names" in n for n in notes)
 
+    def test_rpm_is_not_treated_as_raw_field_name(self):
+        """
+        Found via qa_cross_validation: "engine RPM" is plain,
+        commonly-understood English for a car owner, unlike
+        coolant_temp/maf/map — prompt_chain_validator.py's equivalent
+        list already excludes it for the same reason.
+        """
+        report = {
+            "anomaly_description": (
+                "Vehicle speed and engine RPM are also normal."
+            ),
+            "possible_cause": "Could relate to sensor tolerance.",
+        }
+        score, notes = evaluate_readability(report)
+        assert not any("raw field names" in n for n in notes)
+
 
 class TestEvaluateActionability:
     def test_appropriate_action_count_and_urgency(self):

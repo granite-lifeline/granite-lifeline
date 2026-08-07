@@ -208,10 +208,16 @@ def evaluate_readability(report: dict) -> Tuple[float, List[str]]:
         report.get("possible_cause", "")
     )
 
-    # Check for unexplained raw field names
+    # Check for unexplained raw field names. "rpm" is deliberately
+    # excluded — unlike coolant_temp/maf/map/etc., "RPM" is
+    # commonly-understood plain English for a car owner, not an
+    # internal snake_case field name. prompt_chain_validator.py's
+    # equivalent list already excludes it for the same reason; found
+    # via qa_cross_validation, where this list flagged "engine RPM"
+    # as unexplained jargon while the validator correctly did not.
     raw_fields = [
         "coolant_temp", "maf", "map", "accel_pedal_d",
-        "accel_pedal_e", "tps", "rpm", "throttle_pos"
+        "accel_pedal_e", "tps", "throttle_pos"
     ]
     found_raw_fields = [
         field for field in raw_fields if field in full_text.lower()
