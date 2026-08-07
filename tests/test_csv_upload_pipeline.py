@@ -125,6 +125,81 @@ def test_csv_upload_ui_no_file_uses_polished_empty_state(monkeypatch):
     assert "gl-empty-state" in html
 
 
+def test_csv_history_upload_ui_no_file_uses_polished_empty_state(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+
+    overview._handle_uploaded_csv_history_submit([], tokens)
+
+    html = "".join(rendered)
+    assert "Choose CSV files first" in html
+    assert "at least five chronological" in html
+    assert "gl-empty-state" in html
+
+
+def test_csv_history_upload_requires_five_files(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+    csv_bytes = _valid_csv_bytes()
+
+    overview._handle_uploaded_csv_history_submit(
+        [
+            _FakeUpload(csv_bytes, "2018-03-01_Seat_Leon_RT_S_Normal.csv"),
+            _FakeUpload(csv_bytes, "2018-03-02_Seat_Leon_RT_S_Normal.csv"),
+        ],
+        tokens,
+    )
+
+    html = "".join(rendered)
+    assert "Upload At Least 5 CSV Files" in html
+    assert "You selected 2 CSV files" in html
+
+
+def test_csv_history_upload_sorts_files_by_name_date(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+    csv_bytes = _valid_csv_bytes()
+
+    overview._handle_uploaded_csv_history_submit(
+        [
+            _FakeUpload(csv_bytes, "2018-03-08_Seat_Leon_RT_S_Normal.csv"),
+            _FakeUpload(csv_bytes, "2018-03-01_Seat_Leon_RT_S_Normal.csv"),
+            _FakeUpload(csv_bytes, "2018-02-28_Seat_Leon_RT_S_Normal.csv"),
+            _FakeUpload(csv_bytes, "2018-03-07_Seat_Leon_RT_S_Normal.csv"),
+            _FakeUpload(csv_bytes, "2018-03-02_Seat_Leon_RT_S_Normal.csv"),
+        ],
+        tokens,
+    )
+
+    assert overview.st.session_state["uploaded_csv_history_file_names"] == [
+        "2018-02-28_Seat_Leon_RT_S_Normal.csv",
+        "2018-03-01_Seat_Leon_RT_S_Normal.csv",
+        "2018-03-02_Seat_Leon_RT_S_Normal.csv",
+        "2018-03-07_Seat_Leon_RT_S_Normal.csv",
+        "2018-03-08_Seat_Leon_RT_S_Normal.csv",
+    ]
+    html = "".join(rendered)
+    assert "Trip History Handler Ready" in html
+    assert "sorted by filename date" in html
+
+
+def test_csv_history_upload_rejects_missing_filename_date(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+    csv_bytes = _valid_csv_bytes()
+
+    overview._handle_uploaded_csv_history_submit(
+        [
+            _FakeUpload(csv_bytes, "trip-one.csv"),
+            _FakeUpload(csv_bytes, "2018-03-01_Seat_Leon_RT_S_Normal.csv"),
+            _FakeUpload(csv_bytes, "2018-03-02_Seat_Leon_RT_S_Normal.csv"),
+            _FakeUpload(csv_bytes, "2018-03-07_Seat_Leon_RT_S_Normal.csv"),
+            _FakeUpload(csv_bytes, "2018-03-08_Seat_Leon_RT_S_Normal.csv"),
+        ],
+        tokens,
+    )
+
+    html = "".join(rendered)
+    assert "File Name Date Required" in html
+    assert "trip-one.csv must start with a YYYY-MM-DD trip date" in html
+
+
 def test_csv_upload_ui_empty_file_uses_danger_card(monkeypatch):
     overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
 

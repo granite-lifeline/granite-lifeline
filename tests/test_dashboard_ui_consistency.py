@@ -317,7 +317,7 @@ def test_csv_upload_entry_accepts_multiple_files():
 
     assert overview_src.count("accept_multiple_files=True") >= 2
     assert '"CSV files"' in overview_src
-    assert "def _first_uploaded_csv" in overview_src
+    assert "def _handle_uploaded_csv_history_submit" in overview_src
 
 
 def test_upload_pages_link_to_local_run_guide():

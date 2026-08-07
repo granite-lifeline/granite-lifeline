@@ -55,6 +55,7 @@ from ui_components import (
 # ---------------------------------------------------------------------------
 
 CSV_ANALYSIS_RUNNING_KEY = "csv_analysis_running"
+HISTORY_CSV_MIN_FILES = 5
 
 
 def _set_csv_analysis_running(is_running: bool) -> None:
@@ -414,6 +415,32 @@ def _show_pipeline_error(title: str, message: str, tokens: dict) -> None:
     )
 
 
+def _show_pipeline_note(title: str, message: str, tokens: dict) -> None:
+    st.markdown(
+        warning_banner_html(
+            html.escape(message), tokens, label=html.escape(title)
+        ),
+        unsafe_allow_html=True,
+    )
+
+
+def _show_missing_csv_columns(missing_cols: list[str], tokens: dict) -> None:
+    items_html = "".join(
+        f'<li style="margin-bottom:4px;">{html.escape(c)}</li>'
+        for c in missing_cols
+    )
+    body = (
+        f'<ul style="color:{tokens["danger_text"]};'
+        f'font-size:14px;margin:8px 0 0 0;'
+        f'padding-left:20px;line-height:1.7;">'
+        f'{items_html}</ul>'
+    )
+    st.markdown(
+        danger_card_html("Missing Required Columns", body, tokens),
+        unsafe_allow_html=True,
+    )
+
+
 def _clear_csv_analysis_loading(target) -> None:
     """Remove the loading card before showing a terminal state."""
     if hasattr(target, "empty"):
@@ -502,6 +529,144 @@ def _first_uploaded_csv(uploaded_file):
     return uploaded_file
 
 
+def _uploaded_csv_files(uploaded_file) -> list:
+    if uploaded_file is None:
+        return []
+    if isinstance(uploaded_file, list):
+        return uploaded_file
+    return [uploaded_file]
+
+
+def _uploaded_csv_date(uploaded_file) -> datetime:
+    name = getattr(uploaded_file, "name", "")
+    try:
+        return datetime.strptime(name[:10], "%Y-%m-%d")
+    except ValueError as exc:
+        raise ValueError(
+            f"{name} must start with a YYYY-MM-DD trip date."
+        ) from exc
+
+
+def _sort_uploaded_csv_files(uploaded_files: list) -> list:
+    return sorted(
+        uploaded_files,
+        key=lambda file: (_uploaded_csv_date(file), getattr(file, "name", "")),
+    )
+
+
+def _validate_uploaded_csv_file(uploaded_file, tokens: dict):
+    csv_bytes = uploaded_file.getvalue()
+    if not csv_bytes.strip():
+        _show_pipeline_error(
+            "Empty File",
+            "The uploaded file appears to be empty. "
+            "Please upload a valid OBD-II CSV file.",
+            tokens,
+        )
+        return None
+
+    try:
+        df = pd.read_csv(io.BytesIO(csv_bytes))
+    except EmptyDataError:
+        _show_pipeline_error(
+            "Empty File",
+            "The uploaded file does not contain any CSV rows.",
+            tokens,
+        )
+        return None
+    except Exception as exc:
+        _show_pipeline_error(
+            "Unreadable CSV",
+            f"The uploaded file could not be parsed as CSV. {exc}",
+            tokens,
+        )
+        return None
+
+    if df.empty:
+        _show_pipeline_error(
+            "Empty File",
+            "The uploaded file does not contain any data rows.",
+            tokens,
+        )
+        return None
+
+    cols_ok, missing_cols = validate_csv_columns(df)
+    rows_ok = validate_csv_min_rows(df)
+
+    if not cols_ok:
+        _show_missing_csv_columns(missing_cols, tokens)
+        return None
+
+    if not rows_ok:
+        _show_pipeline_error(
+            "Insufficient Data",
+            "Your file contains fewer than 700 rows. Please upload at "
+            "least 15 minutes of driving data recorded at 1 Hz.",
+            tokens,
+        )
+        return None
+
+    return csv_bytes, df
+
+
+def _handle_uploaded_csv_history_submit(uploaded_files, tokens: dict) -> None:
+    """Validate a trip-history CSV set before the history pipeline exists."""
+    uploaded_files = _uploaded_csv_files(uploaded_files)
+    if not uploaded_files:
+        st.markdown(
+            empty_state_html(
+                "Choose CSV files first",
+                "Select at least five chronological OBD-II CSV files, "
+                "then run the analysis again.",
+                tokens,
+                icon_name="help-circle",
+                max_width="560px",
+                margin="12px auto 0 auto",
+            ),
+            unsafe_allow_html=True,
+        )
+        return
+
+    if len(uploaded_files) == 1:
+        _handle_uploaded_csv_submit(uploaded_files[0], tokens)
+        return
+
+    if len(uploaded_files) < HISTORY_CSV_MIN_FILES:
+        _show_pipeline_error(
+            "Upload At Least 5 CSV Files",
+            "Failure prediction needs at least five chronological trips. "
+            f"You selected {len(uploaded_files)} CSV files.",
+            tokens,
+        )
+        return
+
+    try:
+        sorted_files = _sort_uploaded_csv_files(uploaded_files)
+    except ValueError as exc:
+        _show_pipeline_error("File Name Date Required", str(exc), tokens)
+        return
+
+    checked_files = []
+    for uploaded_file in sorted_files:
+        checked = _validate_uploaded_csv_file(uploaded_file, tokens)
+        if checked is None:
+            return
+        checked_files.append((uploaded_file, *checked))
+
+    st.session_state["uploaded_csv_history"] = [
+        uploaded_file for uploaded_file, _csv_bytes, _df in checked_files
+    ]
+    st.session_state["uploaded_csv_history_file_names"] = [
+        uploaded_file.name for uploaded_file, _csv_bytes, _df in checked_files
+    ]
+    _show_pipeline_note(
+        "Trip History Handler Ready",
+        "The selected CSV files are valid and sorted by filename date. "
+        "The history execution pipeline will use this ordered set next.",
+        tokens,
+    )
+
+
 def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
     """Validate an uploaded CSV and run the dashboard upload pipeline."""
     uploaded_file = _first_uploaded_csv(uploaded_file)
@@ -519,70 +684,11 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
         )
         return
 
-    csv_bytes = uploaded_file.getvalue()
-    if not csv_bytes.strip():
-        _show_pipeline_error(
-            "Empty File",
-            "The uploaded file appears to be empty. "
-            "Please upload a valid OBD-II CSV file.",
-            tokens,
-        )
-        return
-
     st.session_state["uploaded_csv"] = uploaded_file
-    try:
-        df = pd.read_csv(io.BytesIO(csv_bytes))
-    except EmptyDataError:
-        _show_pipeline_error(
-            "Empty File",
-            "The uploaded file does not contain any CSV rows.",
-            tokens,
-        )
+    checked = _validate_uploaded_csv_file(uploaded_file, tokens)
+    if checked is None:
         return
-    except Exception as exc:
-        _show_pipeline_error(
-            "Unreadable CSV",
-            f"The uploaded file could not be parsed as CSV. {exc}",
-            tokens,
-        )
-        return
-
-    if df.empty:
-        _show_pipeline_error(
-            "Empty File",
-            "The uploaded file does not contain any data rows.",
-            tokens,
-        )
-        return
-
-    cols_ok, missing_cols = validate_csv_columns(df)
-    rows_ok = validate_csv_min_rows(df)
-
-    if not cols_ok:
-        items_html = "".join(
-            f'<li style="margin-bottom:4px;">{html.escape(c)}</li>'
-            for c in missing_cols
-        )
-        body = (
-            f'<ul style="color:{tokens["danger_text"]};'
-            f'font-size:14px;margin:8px 0 0 0;'
-            f'padding-left:20px;line-height:1.7;">'
-            f'{items_html}</ul>'
-        )
-        st.markdown(
-            danger_card_html("Missing Required Columns", body, tokens),
-            unsafe_allow_html=True,
-        )
-        return
-
-    if not rows_ok:
-        _show_pipeline_error(
-            "Insufficient Data",
-            "Your file contains fewer than 700 rows. Please upload at "
-            "least 15 minutes of driving data recorded at 1 Hz.",
-            tokens,
-        )
-        return
+    csv_bytes, df = checked
 
     _set_csv_analysis_running(True)
     loading_slot = st.empty()
@@ -836,7 +942,7 @@ def _show_csv_uploader(tokens: dict) -> None:
 
     # ── Validation feedback ──
     if submit_clicked:
-        _handle_uploaded_csv_submit(uploaded_files, tokens)
+        _handle_uploaded_csv_history_submit(uploaded_files, tokens)
 
 
 def _component_label(component_key: str) -> str:
@@ -1644,7 +1750,7 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
 
     # ── Validation feedback ──
     if submit_clicked:
-        _handle_uploaded_csv_submit(uploaded_files, tokens)
+        _handle_uploaded_csv_history_submit(uploaded_files, tokens)
 
     # ── Secondary: demo data entry ──
     st.markdown(
