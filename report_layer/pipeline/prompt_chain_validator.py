@@ -14,6 +14,45 @@ import re
 from dataclasses import dataclass
 from typing import Any, List
 
+NEGATION_WORDS = {"no", "not", "never", "without", "n't", "unconfirmed"}
+
+
+def _find_unnegated_phrases(
+    text: str, phrases: List[str], window: int = 3
+) -> List[str]:
+    """
+    Return the phrases from `phrases` that appear in `text` without a
+    negation word in the preceding `window` words.
+
+    A bare substring/word match on a phrase like "confirmed" flags
+    negated wording such as "not confirmed" or "no confirmed fault
+    yet" as if it were an unhedged claim, which is the opposite of
+    what it means. This checks a small word window before each match
+    for a negation cue before counting it as a hit. Word-boundary
+    matching also means a phrase embedded in a larger word (e.g.
+    "confirmed" inside "unconfirmed") is not matched at all.
+    """
+    lower = text.lower()
+    hits: List[str] = []
+    for phrase in phrases:
+        pattern = re.compile(r"\b" + re.escape(phrase) + r"\b")
+        found_unnegated = False
+        for match in pattern.finditer(lower):
+            preceding_words = re.findall(
+                r"[a-z']+", lower[:match.start()]
+            )[-window:]
+            negated = any(
+                neg in word
+                for word in preceding_words
+                for neg in NEGATION_WORDS
+            )
+            if not negated:
+                found_unnegated = True
+                break
+        if found_unnegated:
+            hits.append(phrase)
+    return hits
+
 
 @dataclass
 class ValidationResult:
@@ -84,17 +123,17 @@ def validate_layer1(output: str) -> ValidationResult:
                 )
                 score -= 0.2
 
-    # Check for confirmed fault language
+    # Check for confirmed fault language (skipping negated wording such
+    # as "not confirmed" or "no confirmed fault yet")
     confirmed_phrases = [
         "confirmed", "is definitely", "has failed", "is broken"
     ]
-    for phrase in confirmed_phrases:
-        if phrase in output.lower():
-            warnings.append(
-                f"Contains confirmed fault language: '{phrase}'"
-            )
-            score -= 0.2
-            break  # Only warn once for confirmed language
+    unnegated_hits = _find_unnegated_phrases(output, confirmed_phrases)
+    if unnegated_hits:
+        warnings.append(
+            f"Contains confirmed fault language: '{unnegated_hits[0]}'"
+        )
+        score -= 0.2
 
     # Check minimum length
     word_count = len(output.split())
@@ -173,17 +212,17 @@ def validate_layer2(output: str, layer1_output: str) -> ValidationResult:
         )
         score -= 0.2
 
-    # Check for confirmed fault language
+    # Check for confirmed fault language (skipping negated wording such
+    # as "not confirmed" or "no confirmed fault yet")
     confirmed_phrases = [
         "confirmed", "is definitely", "has failed", "is broken"
     ]
-    for phrase in confirmed_phrases:
-        if phrase in output.lower():
-            warnings.append(
-                f"Contains confirmed fault language: '{phrase}'"
-            )
-            score -= 0.2
-            break
+    unnegated_hits = _find_unnegated_phrases(output, confirmed_phrases)
+    if unnegated_hits:
+        warnings.append(
+            f"Contains confirmed fault language: '{unnegated_hits[0]}'"
+        )
+        score -= 0.2
 
     # Check minimum length
     word_count = len(output.split())
