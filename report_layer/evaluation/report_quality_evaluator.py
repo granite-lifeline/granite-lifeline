@@ -87,6 +87,21 @@ def evaluate_factual_grounding(
     - possible_cause connects to signals in context
     - recommended_action is consistent with risk_level
 
+    Score boundaries (only the extremes are described in detail here,
+    following Yamauchi et al.'s finding that precisely defining the
+    top and bottom of a rubric matters far more than describing every
+    intermediate point):
+    - Highest (1.0): anomaly_description quotes a number that also
+      appears in the input context, possible_cause uses at least one
+      signal-related word (signal/reading/sensor/temperature/
+      pressure/value/measurement), and recommended_action contains at
+      least one risk-appropriate urgency word for any risk level.
+    - Lowest (0.2, the floor given the three -0.3/-0.3/-0.2
+      deductions below — this function cannot return 0.0):
+      anomaly_description has no digits at all, possible_cause has
+      none of the signal-related words, and recommended_action has no
+      urgency wording at all.
+
     Args:
         report: Report dict with anomaly_description, possible_cause,
                 recommended_action
@@ -164,6 +179,19 @@ def evaluate_readability(report: dict) -> Tuple[float, List[str]]:
     - Absence of unexplained raw field names
     - Absence of unexplained acronyms
     - Average sentence length in anomaly_description
+
+    Score boundaries (extremes only, see evaluate_factual_grounding
+    for why):
+    - Highest (1.0): no raw field name (coolant_temp, maf, map,
+      accel_pedal_d/e, tps, rpm, throttle_pos) appears anywhere in
+      anomaly_description + possible_cause, no acronym
+      (OBD/ECM/PCM/DTC/MAF/MAP/TPS/IAT) appears without a nearby
+      parenthetical explanation, and anomaly_description's average
+      sentence length is 30 words or fewer.
+    - Lowest (0.2, the floor given the three -0.3/-0.3/-0.2
+      deductions below — this function cannot return 0.0): at least
+      one raw field name is present, at least one acronym is present
+      unexplained, and the average sentence length exceeds 30 words.
 
     Args:
         report: Report dict with anomaly_description, possible_cause,
@@ -248,6 +276,22 @@ def evaluate_hedging_appropriateness(
     - Presence of hedging phrases in possible_cause
     - Absence of confirmed fault language
     - anomaly_description avoids claiming confirmed fault
+
+    Score boundaries (extremes only, see evaluate_factual_grounding
+    for why):
+    - Highest (1.0): possible_cause contains a hedging phrase (may
+      indicate / could suggest / might / possibly / etc.) or
+      negated-certainty wording (not confirmed, unconfirmed), neither
+      possible_cause nor anomaly_description contains an unnegated
+      confirmed/is-definitely/has-failed/is-broken/is-faulty/
+      has-malfunctioned/is-damaged phrase, and anomaly_description
+      contains no unnegated the-fault-is/the-problem-is/has-failed/
+      is-broken/is-faulty claim.
+    - Lowest (0.0, this function can reach the true floor): none of
+      the above hold — no hedging anywhere, and an unnegated
+      confirmed-fault claim in both possible_cause/
+      anomaly_description and a separate fault claim in
+      anomaly_description.
 
     Args:
         report: Report dict with anomaly_description, possible_cause
@@ -340,6 +384,19 @@ def evaluate_actionability(
     - recommended_action has 2-4 items
     - Each action is at least 10 words
     - Urgency language matches risk_level
+
+    Score boundaries (extremes only, see evaluate_factual_grounding
+    for why):
+    - Highest (1.0): recommended_action has 2 to 4 items, every item
+      is at least 10 words, and at least one item contains a wording
+      cue matching risk_level (High: soon/prompt/immediately/avoid/
+      urgent; Medium: soon/check/inspect/schedule; Low: monitor/
+      next service/when convenient/observe).
+    - Lowest (0.1, the floor given the -0.3/-0.3/-0.3 deductions
+      below when combined with the too-few-items case — this
+      function cannot return 0.0): fewer than 2 items, at least one
+      item under 10 words, and no risk-appropriate wording cue
+      anywhere in the actions.
 
     Args:
         report: Report dict with recommended_action
