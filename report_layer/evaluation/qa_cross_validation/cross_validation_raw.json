@@ -169,11 +169,11 @@
       "2": 0.8,
       "3": 1.0
     },
-    "evaluator_overall": 0.75,
+    "evaluator_overall": 0.85,
     "evaluator_dims": {
       "factual_grounding": 1.0,
       "readability": 0.7,
-      "hedging_appropriateness": 0.6,
+      "hedging_appropriateness": 1.0,
       "actionability": 0.7
     }
   },

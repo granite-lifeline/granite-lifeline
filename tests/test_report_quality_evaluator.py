@@ -101,6 +101,22 @@ class TestEvaluateHedgingAppropriateness:
         score, notes = evaluate_hedging_appropriateness(report)
         assert any("lacks hedging" in n for n in notes)
 
+    def test_possible_explanation_counts_as_hedging(self):
+        # layer2_cause.txt's own "Good example" blocks open with this
+        # exact phrasing in five different scenarios — found via the
+        # 5-type perturbation regression test, where real generated
+        # output using it was scored as having no hedging at all.
+        report = {
+            "anomaly_description": "The MAF reading is slightly high.",
+            "possible_cause": (
+                "Possible explanations include light dust or oil on "
+                "the mass airflow sensor surface, a slightly loose "
+                "connector, or normal variation during driving."
+            ),
+        }
+        score, notes = evaluate_hedging_appropriateness(report)
+        assert not any("lacks hedging" in n for n in notes)
+
 
 class TestEvaluateFactualGrounding:
     def test_report_with_no_numbers_is_penalised(self):

@@ -219,10 +219,15 @@ def validate_layer2(output: str, layer1_output: str) -> ValidationResult:
 
     # Check for hedging phrases. Negated-certainty wording ("not
     # confirmed", "unconfirmed") is also a valid form of hedging, even
-    # though it doesn't match the phrase list below.
+    # though it doesn't match the phrase list below. "possible
+    # explanation" is layer2_cause.txt's own canonical hedging opener
+    # — it appears in five of the prompt's "Good example" blocks — but
+    # was missing from this list, found via the perturbation
+    # regression test on real generated output that used exactly this
+    # phrasing.
     hedging_phrases = [
         "may indicate", "could suggest", "could be related to",
-        "might", "possibly", "could be"
+        "might", "possibly", "could be", "possible explanation"
     ]
     has_hedging = any(
         phrase in output.lower() for phrase in hedging_phrases

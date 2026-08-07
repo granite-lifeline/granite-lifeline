@@ -195,6 +195,18 @@ class TestValidateLayer2:
         )
         assert any("hedging" in w.lower() for w in result.warnings)
 
+    def test_possible_explanation_counts_as_hedging(self):
+        # layer2_cause.txt's own "Good example" blocks open with this
+        # exact phrasing in five different scenarios — real generated
+        # output using it was previously scored as having no hedging.
+        result = validate_layer2(
+            "Possible explanations include light dust or oil on the "
+            "mass airflow sensor surface, a slightly loose connector, "
+            "or normal variation during driving.",
+            GOOD_LAYER1,
+        )
+        assert not any("hedging" in w.lower() for w in result.warnings)
+
 
 class TestValidateLayer3:
     def test_good_actions_pass_without_warnings(self):

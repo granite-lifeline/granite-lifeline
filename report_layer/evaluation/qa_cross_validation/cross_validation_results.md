@@ -5,7 +5,7 @@ prompt_chain_validator.validate_chain() and report_quality_evaluator.evaluate_re
 | Anomaly type | Risk | Validator all-passed | Validator warnings | Evaluator overall | Agreement |
 |---|---|---|---|---|---|
 | cooling_degradation | Low | True | 0 | 1.00 | both clean |
-| air_intake_maf_anomaly | Low | True | 2 | 0.75 | both flag |
+| air_intake_maf_anomaly | Low | True | 2 | 0.85 | both flag |
 | accelerator_pedal_sensor | Medium | True | 0 | 1.00 | both clean |
 | intake_air_temperature_sensor_fault | High | True | 1 | 0.93 | both flag |
 | map_load_signal_plausibility_fault | High | True | 1 | 0.93 | both flag |
@@ -129,3 +129,7 @@ Generation time: 43.8s
   - Check the vacuum hoses connected to the MAP sensor for cracks, splits, or loose fittings, as these can cause incorrect pressure readings.
   - Schedule an appointment with a mechanic within the next few days to verify the sensor’s operation and ensure the engine control system is receiving accurate data.
 
+
+## Update: possible-explanation hedging fix
+
+After the 5-type perturbation test found that "Possible explanations include..." (the exact opener used in five of layer2_cause.txt's own Good example blocks) was not recognized as hedging, "possible explanation" was added to both hedging_phrases lists. This raised air_intake_maf_anomaly's evaluator score from overall=0.75 to 0.85 (hedging 0.60 to 1.00) — the remaining 0.85 is from the two other, already-documented issues (raw field name "maf", missing action urgency), which the validator independently flagged in the first pass.

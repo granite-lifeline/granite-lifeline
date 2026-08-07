@@ -328,10 +328,15 @@ def evaluate_hedging_appropriateness(
     # wording ("not confirmed", "unconfirmed") is also a valid form of
     # hedging, even though it doesn't match the phrase list below —
     # without this, rephrasing "may indicate X" as "X is not
-    # confirmed" was scored as if it had no hedging at all.
+    # confirmed" was scored as if it had no hedging at all. "possible
+    # explanation" is layer2_cause.txt's own canonical hedging opener
+    # (five of the prompt's "Good example" blocks use it) but was
+    # missing here, found via the perturbation regression test on
+    # real generated output using exactly that phrasing.
     hedging_phrases = [
         "may indicate", "could suggest", "could be related to",
-        "might", "possibly", "may be", "could be", "suggests"
+        "might", "possibly", "may be", "could be", "suggests",
+        "possible explanation"
     ]
     found_hedging = [
         phrase for phrase in hedging_phrases if phrase in cause
