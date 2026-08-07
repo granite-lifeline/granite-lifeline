@@ -220,6 +220,26 @@ def test_csv_history_upload_sorts_files_by_name_date(monkeypatch):
     assert "Analysing trip history..." in html
 
 
+def test_selected_csv_file_list_renders_below_uploader(monkeypatch):
+    overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
+
+    overview._show_selected_csv_files(
+        [
+            _FakeUpload(b"a" * 2048, "2018-03-01_Seat_Leon.csv"),
+            _FakeUpload(b"b" * 1024, "bad<script>.csv"),
+        ],
+        tokens,
+    )
+
+    html = "".join(rendered)
+    assert "csv-selected-files" in html
+    assert "csv-selected-file-name" in html
+    assert "2018-03-01_Seat_Leon.csv" in html
+    assert "2.0KB" in html
+    assert "bad&lt;script&gt;.csv" in html
+    assert "bad<script>.csv" not in html
+
+
 def test_csv_history_upload_rejects_missing_filename_date(monkeypatch):
     overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
     csv_bytes = _valid_csv_bytes()
