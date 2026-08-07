@@ -1018,7 +1018,8 @@ def _show_csv_uploader(tokens: dict) -> None:
             order: 2 !important;
         }}
         .st-key-csv_upload_section
-            [data-testid="stFileUploaderDropzone"] [data-testid="stFileChips"] {{
+            [data-testid="stFileUploaderDropzone"]
+            [data-testid="stFileChips"] {{
             align-items: center !important;
             display: flex !important;
             justify-content: center !important;
@@ -1026,7 +1027,8 @@ def _show_csv_uploader(tokens: dict) -> None:
         }}
         .st-key-csv_upload_section
             [data-testid="stFileUploaderDropzone"]
-            [data-testid="stFileChips"] > div:has([data-testid="stFileChip"]) {{
+            [data-testid="stFileChips"]
+            > div:has([data-testid="stFileChip"]) {{
             display: none !important;
         }}
         .st-key-csv_upload_section
@@ -1870,7 +1872,8 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             order: 2 !important;
         }}
         .st-key-landing_upload_card
-            [data-testid="stFileUploaderDropzone"] [data-testid="stFileChips"] {{
+            [data-testid="stFileUploaderDropzone"]
+            [data-testid="stFileChips"] {{
             align-items: center !important;
             display: flex !important;
             justify-content: center !important;
@@ -1878,7 +1881,8 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
         }}
         .st-key-landing_upload_card
             [data-testid="stFileUploaderDropzone"]
-            [data-testid="stFileChips"] > div:has([data-testid="stFileChip"]) {{
+            [data-testid="stFileChips"]
+            > div:has([data-testid="stFileChip"]) {{
             display: none !important;
         }}
         .st-key-landing_upload_card
