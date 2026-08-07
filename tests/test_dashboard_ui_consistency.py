@@ -206,6 +206,21 @@ def test_selected_file_upload_button_is_hidden():
     assert '[data-testid="stFileUploaderDeleteBtn"]' in src
 
 
+def test_uploaded_file_list_stays_below_upload_button():
+    """Selected files should stack below the fixed upload button."""
+    src = _read("dashboard/pages/overview.py")
+
+    assert "def _show_selected_csv_files" in src
+    assert src.count("_show_selected_csv_files(uploaded_files, tokens)") == 2
+    assert '<div class="csv-selected-files">' in src
+    assert ".csv-selected-files" in src
+    assert '[data-testid="stFileChips"]' in src
+    assert '[data-testid="stFileChip"]' in src
+    assert '[data-testid="stFileChipDeleteBtn"]' in src
+    assert '[data-testid="stFileUploaderFile"]' in src
+    assert "display: none !important;" in src
+
+
 def test_local_run_page_has_guide_layout_and_copy_commands():
     """GL-426: local-run help uses a structured guide page."""
     app_src = _read("dashboard/app.py")

@@ -546,6 +546,97 @@ def _sort_uploaded_csv_files(uploaded_files: list) -> list:
     )
 
 
+def _uploaded_file_size_text(uploaded_file) -> str:
+    size = getattr(uploaded_file, "size", None)
+    if size is None:
+        size = len(uploaded_file.getvalue())
+    if size >= 1024 * 1024:
+        return f"{size / (1024 * 1024):.1f}MB"
+    return f"{size / 1024:.1f}KB"
+
+
+def _show_selected_csv_files(uploaded_files, tokens: dict) -> None:
+    files = _uploaded_csv_files(uploaded_files)
+    if not files:
+        return
+
+    file_icon = lucide_icon("file-text", size=22, color=tokens["surface"])
+    rows = []
+    for uploaded_file in files:
+        name = html.escape(getattr(uploaded_file, "name", "uploaded.csv"))
+        size_text = html.escape(_uploaded_file_size_text(uploaded_file))
+        rows.append(
+            '<div class="csv-selected-file">'
+            '<div class="csv-selected-file-icon">'
+            f'{file_icon}'
+            '</div>'
+            '<div class="csv-selected-file-copy">'
+            f'<div class="csv-selected-file-name">{name}</div>'
+            f'<div class="csv-selected-file-size">{size_text}</div>'
+            '</div>'
+            '</div>'
+        )
+
+    st.markdown(
+        f"""
+        <div class="csv-selected-files">
+            {''.join(rows)}
+        </div>
+        <style>
+        .csv-selected-files {{
+            display:flex;
+            flex-direction:column;
+            gap:10px;
+            margin:12px auto 16px auto;
+            max-width:min(380px, 100%);
+            width:100%;
+        }}
+        .csv-selected-file {{
+            align-items:center;
+            background:{tokens["surface"]};
+            border:1px solid {tokens["border"]};
+            border-radius:10px;
+            box-sizing:border-box;
+            display:flex;
+            gap:12px;
+            min-height:54px;
+            padding:8px 12px;
+            width:100%;
+        }}
+        .csv-selected-file-icon {{
+            align-items:center;
+            background:{tokens["text"]};
+            border-radius:8px;
+            display:flex;
+            flex:0 0 38px;
+            height:38px;
+            justify-content:center;
+            width:38px;
+        }}
+        .csv-selected-file-copy {{
+            min-width:0;
+        }}
+        .csv-selected-file-name {{
+            color:{tokens["text"]};
+            font-size:14px;
+            font-weight:600;
+            line-height:1.2;
+            overflow:hidden;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+        }}
+        .csv-selected-file-size {{
+            color:{tokens["text_secondary"]};
+            font-size:12px;
+            line-height:1.3;
+            margin-top:3px;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def _validate_uploaded_csv_file(uploaded_file, tokens: dict):
     csv_bytes = uploaded_file.getvalue()
     if not csv_bytes.strip():
@@ -865,9 +956,21 @@ def _show_csv_uploader(tokens: dict) -> None:
             background: transparent !important;
             border: none !important;
             display: flex !important;
+            flex-direction: column !important;
+            gap: 14px !important;
             justify-content: center !important;
-            min-height: 58px !important;
+            min-height: 118px !important;
             padding: 0 !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] > div {{
+            align-items: center !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+            justify-content: center !important;
+            max-width: 100% !important;
+            width: 100% !important;
         }}
         .st-key-csv_upload_section
             [data-testid="stFileUploaderDropzoneInstructions"] {{
@@ -885,6 +988,8 @@ def _show_csv_uploader(tokens: dict) -> None:
             [data-testid="stFileUploader"] section {{
             align-items: center !important;
             display: flex !important;
+            flex-direction: column !important;
+            gap: 14px !important;
             justify-content: center !important;
             padding: 0 !important;
             width: 100% !important;
@@ -905,7 +1010,50 @@ def _show_csv_uploader(tokens: dict) -> None:
             min-width: 132px !important;
             padding: 0 24px !important;
             position: relative !important;
+            order: 1 !important;
             width: 132px !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] > div > * {{
+            order: 2 !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] [data-testid="stFileChips"] {{
+            align-items: center !important;
+            display: flex !important;
+            justify-content: center !important;
+            width: 100% !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"]
+            [data-testid="stFileChips"] > div:has([data-testid="stFileChip"]) {{
+            display: none !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileChip"] {{
+            display: none !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileChipDeleteBtn"] {{
+            display: none !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderFile"] {{
+            display: none !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] section > div {{
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            max-width: 100% !important;
+            order: 2 !important;
+            width: 100% !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] section > div > div {{
+            max-width: 100% !important;
+            width: 100% !important;
         }}
         .st-key-csv_upload_section
             [data-testid="stFileUploaderDropzone"] button * {{
@@ -992,6 +1140,7 @@ def _show_csv_uploader(tokens: dict) -> None:
                     key="csv_file_uploader",
                     label_visibility="collapsed",
                 )
+                _show_selected_csv_files(uploaded_files, tokens)
                 analysis_running = bool(
                     st.session_state.get(CSV_ANALYSIS_RUNNING_KEY, False)
                 )
@@ -1662,9 +1811,21 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             background: transparent !important;
             border: none !important;
             display: flex !important;
+            flex-direction: column !important;
+            gap: 14px !important;
             justify-content: center !important;
-            min-height: 64px !important;
+            min-height: 124px !important;
             padding: 0 !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] > div {{
+            align-items: center !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+            justify-content: center !important;
+            max-width: 100% !important;
+            width: 100% !important;
         }}
         .st-key-landing_upload_card
             [data-testid="stFileUploaderDropzoneInstructions"] {{
@@ -1679,6 +1840,8 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
         .st-key-landing_upload_card [data-testid="stFileUploader"] section {{
             align-items: center !important;
             display: flex !important;
+            flex-direction: column !important;
+            gap: 14px !important;
             justify-content: center !important;
             padding: 0 !important;
             width: 100% !important;
@@ -1699,7 +1862,50 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             min-width: 140px !important;
             padding: 0 26px !important;
             position: relative !important;
+            order: 1 !important;
             width: 140px !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] > div > * {{
+            order: 2 !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] [data-testid="stFileChips"] {{
+            align-items: center !important;
+            display: flex !important;
+            justify-content: center !important;
+            width: 100% !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"]
+            [data-testid="stFileChips"] > div:has([data-testid="stFileChip"]) {{
+            display: none !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileChip"] {{
+            display: none !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileChipDeleteBtn"] {{
+            display: none !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderFile"] {{
+            display: none !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] section > div {{
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            max-width: 100% !important;
+            order: 2 !important;
+            width: 100% !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] section > div > div {{
+            max-width: 100% !important;
+            width: 100% !important;
         }}
         .st-key-landing_upload_card
             [data-testid="stFileUploaderDropzone"] button * {{
@@ -1799,6 +2005,7 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
                     key="landing_csv_uploader",
                     label_visibility="collapsed",
                 )
+                _show_selected_csv_files(uploaded_files, tokens)
                 # Run Analysis button — full width inside the card col
                 analysis_running = bool(
                     st.session_state.get(CSV_ANALYSIS_RUNNING_KEY, False)
