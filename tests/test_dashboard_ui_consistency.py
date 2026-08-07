@@ -311,6 +311,15 @@ def test_local_run_navigation_and_upload_behaviour_are_preserved():
     )
 
 
+def test_csv_upload_entry_accepts_multiple_files():
+    """GL-431: upload entry allows choosing a trip-history CSV set."""
+    overview_src = _read("dashboard/pages/overview.py")
+
+    assert overview_src.count("accept_multiple_files=True") >= 2
+    assert '"CSV files"' in overview_src
+    assert "def _first_uploaded_csv" in overview_src
+
+
 def test_upload_pages_link_to_local_run_guide():
     """GL-426: upload areas use a button instead of a large inline guide."""
     src = _read("dashboard/pages/overview.py")

@@ -495,8 +495,16 @@ def _show_csv_analysis_loading(
     )
 
 
+def _first_uploaded_csv(uploaded_file):
+    """Keep the old single-file path working while multi-upload is wired."""
+    if isinstance(uploaded_file, list):
+        return uploaded_file[0] if uploaded_file else None
+    return uploaded_file
+
+
 def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
     """Validate an uploaded CSV and run the dashboard upload pipeline."""
+    uploaded_file = _first_uploaded_csv(uploaded_file)
     if uploaded_file is None:
         st.markdown(
             empty_state_html(
@@ -809,9 +817,10 @@ def _show_csv_uploader(tokens: dict) -> None:
         with upload_col:
             with st.container(key="csv_upload_section"):
                 _show_csv_upload_heading(tokens)
-                uploaded_file = st.file_uploader(
-                    "CSV file",
+                uploaded_files = st.file_uploader(
+                    "CSV files",
                     type=["csv"],
+                    accept_multiple_files=True,
                     key="csv_file_uploader",
                     label_visibility="collapsed",
                 )
@@ -827,7 +836,7 @@ def _show_csv_uploader(tokens: dict) -> None:
 
     # ── Validation feedback ──
     if submit_clicked:
-        _handle_uploaded_csv_submit(uploaded_file, tokens)
+        _handle_uploaded_csv_submit(uploaded_files, tokens)
 
 
 def _component_label(component_key: str) -> str:
@@ -1615,9 +1624,10 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
         with card_col:
             with st.container(key="landing_upload_card"):
                 _show_csv_upload_heading(tokens)
-                uploaded_file = st.file_uploader(
-                    "CSV file",
+                uploaded_files = st.file_uploader(
+                    "CSV files",
                     type=["csv"],
+                    accept_multiple_files=True,
                     key="landing_csv_uploader",
                     label_visibility="collapsed",
                 )
@@ -1634,7 +1644,7 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
 
     # ── Validation feedback ──
     if submit_clicked:
-        _handle_uploaded_csv_submit(uploaded_file, tokens)
+        _handle_uploaded_csv_submit(uploaded_files, tokens)
 
     # ── Secondary: demo data entry ──
     st.markdown(
