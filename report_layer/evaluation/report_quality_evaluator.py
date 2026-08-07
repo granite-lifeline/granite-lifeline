@@ -16,22 +16,25 @@ from statistics import mean
 from typing import List, Tuple
 
 NEGATION_WORDS = {"no", "not", "never", "without", "n't", "unconfirmed"}
+CLAUSE_BOUNDARY = re.compile(r"[.,;:]|\bbut\b|\bhowever\b|\balthough\b")
 
 
-def _find_unnegated_phrases(
-    text: str, phrases: List[str], window: int = 3
-) -> List[str]:
+def _find_unnegated_phrases(text: str, phrases: List[str]) -> List[str]:
     """
     Return the phrases from `phrases` that appear in `text` without a
-    negation word in the preceding `window` words.
+    negation word earlier in the same clause.
 
     A bare substring/word match on a phrase like "confirmed" flags
     negated wording such as "not confirmed" or "no confirmed fault
     yet" as if it were an unhedged claim, which is the opposite of
-    what it means. This checks a small word window before each match
-    for a negation cue before counting it as a hit. Word-boundary
-    matching also means a phrase embedded in a larger word (e.g.
-    "confirmed" inside "unconfirmed") is not matched at all.
+    what it means. A fixed word-count window before the match is not
+    reliable for this: real sentences such as "no specific fault has
+    been confirmed yet" put four words between the negation and the
+    phrase. This instead scans back to the start of the current
+    clause (the nearest preceding ./,/;/:/but/however/although) and
+    checks that whole span for a negation cue. Word-boundary matching
+    also means a phrase embedded in a larger word (e.g. "confirmed"
+    inside "unconfirmed") is not matched at all.
     """
     lower = text.lower()
     hits: List[str] = []
@@ -39,12 +42,15 @@ def _find_unnegated_phrases(
         pattern = re.compile(r"\b" + re.escape(phrase) + r"\b")
         found_unnegated = False
         for match in pattern.finditer(lower):
-            preceding_words = re.findall(
-                r"[a-z']+", lower[:match.start()]
-            )[-window:]
+            preceding = lower[:match.start()]
+            boundaries = list(CLAUSE_BOUNDARY.finditer(preceding))
+            clause_start = boundaries[-1].end() if boundaries else 0
+            clause_words = re.findall(
+                r"[a-z']+", preceding[clause_start:]
+            )
             negated = any(
                 neg in word
-                for word in preceding_words
+                for word in clause_words
                 for neg in NEGATION_WORDS
             )
             if not negated:
@@ -255,7 +261,11 @@ def evaluate_hedging_appropriateness(
     cause = report.get("possible_cause", "").lower()
     desc = report.get("anomaly_description", "").lower()
 
-    # Check for hedging phrases in possible_cause
+    # Check for hedging phrases in possible_cause. Negated-certainty
+    # wording ("not confirmed", "unconfirmed") is also a valid form of
+    # hedging, even though it doesn't match the phrase list below —
+    # without this, rephrasing "may indicate X" as "X is not
+    # confirmed" was scored as if it had no hedging at all.
     hedging_phrases = [
         "may indicate", "could suggest", "could be related to",
         "might", "possibly", "may be", "could be", "suggests"
@@ -263,10 +273,22 @@ def evaluate_hedging_appropriateness(
     found_hedging = [
         phrase for phrase in hedging_phrases if phrase in cause
     ]
-    if found_hedging:
-        notes.append(
-            f"Uses appropriate hedging: {', '.join(found_hedging[:2])}"
-        )
+    certainty_markers = ["confirmed", "definite", "certain"]
+    has_negated_certainty = bool(
+        cause
+    ) and any(
+        marker in cause for marker in certainty_markers
+    ) and not _find_unnegated_phrases(cause, certainty_markers)
+    if found_hedging or has_negated_certainty:
+        if not found_hedging:
+            notes.append(
+                "Uses appropriate hedging via negated certainty "
+                "language (e.g. 'not confirmed')"
+            )
+        else:
+            notes.append(
+                f"Uses appropriate hedging: {', '.join(found_hedging[:2])}"
+            )
     else:
         score -= 0.4
         notes.append(

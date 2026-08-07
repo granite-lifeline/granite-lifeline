@@ -66,6 +66,24 @@ class TestEvaluateHedgingAppropriateness:
         assert any("confirmed fault language" in n for n in notes)
         assert score < 1.0
 
+    def test_negated_certainty_counts_as_hedging(self):
+        """
+        Rephrasing "may indicate X" as "X is not confirmed" is just as
+        hedged, but doesn't match the hedging_phrases keyword list —
+        found by the perturbation regression test
+        (report_layer/evaluation/perturbation_regression/).
+        """
+        report = {
+            "anomaly_description": "Coolant temperature is elevated.",
+            "possible_cause": (
+                "No specific fault has been confirmed yet, but the "
+                "elevated coolant temperature is consistent with the "
+                "cooling system not effectively removing heat."
+            ),
+        }
+        score, notes = evaluate_hedging_appropriateness(report)
+        assert not any("lacks hedging" in n for n in notes)
+
     def test_missing_hedging_in_cause_is_penalised(self):
         report = {
             "anomaly_description": "Coolant temperature is elevated.",

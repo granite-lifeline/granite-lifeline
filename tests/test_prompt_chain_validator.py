@@ -71,16 +71,24 @@ class TestFindUnnegatedPhrases:
             "confirmed"
         ]
 
-    def test_negation_outside_window_does_not_suppress(self):
-        # "no" is far more than `window` words before "confirmed", so
-        # it should not be treated as negating it.
+    def test_negation_in_a_different_sentence_does_not_suppress(self):
+        # The "No" belongs to an earlier, separate sentence (clause
+        # boundary at the period), so it must not be treated as
+        # negating "confirmed" in the following sentence.
         text = (
             "No, that reading is unrelated. The thermostat fault is "
             "confirmed by three separate diagnostic checks today."
         )
-        assert _find_unnegated_phrases(
-            text, ["confirmed"], window=3
-        ) == ["confirmed"]
+        assert _find_unnegated_phrases(text, ["confirmed"]) == [
+            "confirmed"
+        ]
+
+    def test_negation_several_words_before_phrase_still_suppresses(self):
+        # Real sentences often put several words between the negation
+        # and the phrase — a fixed small word-count window would miss
+        # this; clause-scoped negation should not.
+        text = "No specific fault has been confirmed yet."
+        assert _find_unnegated_phrases(text, ["confirmed"]) == []
 
 
 class TestValidateLayer1:
@@ -154,6 +162,16 @@ class TestValidateLayer2:
         assert any(
             "confirmed fault language" in w for w in result.warnings
         )
+
+    def test_negated_certainty_counts_as_hedging(self):
+        text = (
+            "No specific fault has been confirmed yet, but the "
+            "elevated coolant temperature is consistent with the "
+            "cooling system not effectively removing heat from the "
+            "engine during normal driving conditions."
+        )
+        result = validate_layer2(text, GOOD_LAYER1)
+        assert not any("hedging" in w.lower() for w in result.warnings)
 
     def test_missing_hedging_is_flagged(self):
         result = validate_layer2(
