@@ -15,16 +15,11 @@ from pathlib import Path
 from statistics import mean
 from typing import List, Tuple
 
-NEGATION_WORDS = {"no", "not", "never", "without", "n't", "unconfirmed"}
-CLAUSE_BOUNDARY = re.compile(r"[.,;:]|\bbut\b|\bhowever\b|\balthough\b")
-
-# Phrases that contain a NEGATION_WORDS trigger ("no", "without") but do
-# not semantically negate what follows — some intensify certainty instead
-# ("no doubt", "without question"). Masked out of the clause text before
-# scanning for negation cues, the same role NegEx's pseudo-negation
-# phrase list plays for clinical-note negation (Chapman et al., 2001) —
-# adapted here for certainty/hedging rather than finding-presence.
-PSEUDO_NEGATIONS = ("no doubt", "without doubt", "without question", "no question")
+from report_layer.negation_constants import (
+    CLAUSE_BOUNDARY,
+    NEGATION_WORDS,
+    PSEUDO_NEGATIONS,
+)
 
 
 def _find_unnegated_phrases(text: str, phrases: List[str]) -> List[str]:
