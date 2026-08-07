@@ -15,6 +15,51 @@ from pathlib import Path
 from statistics import mean
 from typing import List, Tuple
 
+NEGATION_WORDS = {"no", "not", "never", "without", "n't", "unconfirmed"}
+CLAUSE_BOUNDARY = re.compile(r"[.,;:]|\bbut\b|\bhowever\b|\balthough\b")
+
+
+def _find_unnegated_phrases(text: str, phrases: List[str]) -> List[str]:
+    """
+    Return the phrases from `phrases` that appear in `text` without a
+    negation word earlier in the same clause.
+
+    A bare substring/word match on a phrase like "confirmed" flags
+    negated wording such as "not confirmed" or "no confirmed fault
+    yet" as if it were an unhedged claim, which is the opposite of
+    what it means. A fixed word-count window before the match is not
+    reliable for this: real sentences such as "no specific fault has
+    been confirmed yet" put four words between the negation and the
+    phrase. This instead scans back to the start of the current
+    clause (the nearest preceding ./,/;/:/but/however/although) and
+    checks that whole span for a negation cue. Word-boundary matching
+    also means a phrase embedded in a larger word (e.g. "confirmed"
+    inside "unconfirmed") is not matched at all.
+    """
+    lower = text.lower()
+    hits: List[str] = []
+    for phrase in phrases:
+        pattern = re.compile(r"\b" + re.escape(phrase) + r"\b")
+        found_unnegated = False
+        for match in pattern.finditer(lower):
+            preceding = lower[:match.start()]
+            boundaries = list(CLAUSE_BOUNDARY.finditer(preceding))
+            clause_start = boundaries[-1].end() if boundaries else 0
+            clause_words = re.findall(
+                r"[a-z']+", preceding[clause_start:]
+            )
+            negated = any(
+                neg in word
+                for word in clause_words
+                for neg in NEGATION_WORDS
+            )
+            if not negated:
+                found_unnegated = True
+                break
+        if found_unnegated:
+            hits.append(phrase)
+    return hits
+
 
 @dataclass
 class ReportQualityScore:
@@ -41,6 +86,21 @@ def evaluate_factual_grounding(
     - anomaly_description references specific signal values
     - possible_cause connects to signals in context
     - recommended_action is consistent with risk_level
+
+    Score boundaries (only the extremes are described in detail here,
+    following Yamauchi et al.'s finding that precisely defining the
+    top and bottom of a rubric matters far more than describing every
+    intermediate point):
+    - Highest (1.0): anomaly_description quotes a number that also
+      appears in the input context, possible_cause uses at least one
+      signal-related word (signal/reading/sensor/temperature/
+      pressure/value/measurement), and recommended_action contains at
+      least one risk-appropriate urgency word for any risk level.
+    - Lowest (0.2, the floor given the three -0.3/-0.3/-0.2
+      deductions below — this function cannot return 0.0):
+      anomaly_description has no digits at all, possible_cause has
+      none of the signal-related words, and recommended_action has no
+      urgency wording at all.
 
     Args:
         report: Report dict with anomaly_description, possible_cause,
@@ -119,6 +179,19 @@ def evaluate_readability(report: dict) -> Tuple[float, List[str]]:
     - Absence of unexplained raw field names
     - Absence of unexplained acronyms
     - Average sentence length in anomaly_description
+
+    Score boundaries (extremes only, see evaluate_factual_grounding
+    for why):
+    - Highest (1.0): no raw field name (coolant_temp, maf, map,
+      accel_pedal_d/e, tps, rpm, throttle_pos) appears anywhere in
+      anomaly_description + possible_cause, no acronym
+      (OBD/ECM/PCM/DTC/MAF/MAP/TPS/IAT) appears without a nearby
+      parenthetical explanation, and anomaly_description's average
+      sentence length is 30 words or fewer.
+    - Lowest (0.2, the floor given the three -0.3/-0.3/-0.2
+      deductions below — this function cannot return 0.0): at least
+      one raw field name is present, at least one acronym is present
+      unexplained, and the average sentence length exceeds 30 words.
 
     Args:
         report: Report dict with anomaly_description, possible_cause,
@@ -204,6 +277,22 @@ def evaluate_hedging_appropriateness(
     - Absence of confirmed fault language
     - anomaly_description avoids claiming confirmed fault
 
+    Score boundaries (extremes only, see evaluate_factual_grounding
+    for why):
+    - Highest (1.0): possible_cause contains a hedging phrase (may
+      indicate / could suggest / might / possibly / etc.) or
+      negated-certainty wording (not confirmed, unconfirmed), neither
+      possible_cause nor anomaly_description contains an unnegated
+      confirmed/is-definitely/has-failed/is-broken/is-faulty/
+      has-malfunctioned/is-damaged phrase, and anomaly_description
+      contains no unnegated the-fault-is/the-problem-is/has-failed/
+      is-broken/is-faulty claim.
+    - Lowest (0.0, this function can reach the true floor): none of
+      the above hold — no hedging anywhere, and an unnegated
+      confirmed-fault claim in both possible_cause/
+      anomaly_description and a separate fault claim in
+      anomaly_description.
+
     Args:
         report: Report dict with anomaly_description, possible_cause
 
@@ -216,7 +305,11 @@ def evaluate_hedging_appropriateness(
     cause = report.get("possible_cause", "").lower()
     desc = report.get("anomaly_description", "").lower()
 
-    # Check for hedging phrases in possible_cause
+    # Check for hedging phrases in possible_cause. Negated-certainty
+    # wording ("not confirmed", "unconfirmed") is also a valid form of
+    # hedging, even though it doesn't match the phrase list below —
+    # without this, rephrasing "may indicate X" as "X is not
+    # confirmed" was scored as if it had no hedging at all.
     hedging_phrases = [
         "may indicate", "could suggest", "could be related to",
         "might", "possibly", "may be", "could be", "suggests"
@@ -224,10 +317,22 @@ def evaluate_hedging_appropriateness(
     found_hedging = [
         phrase for phrase in hedging_phrases if phrase in cause
     ]
-    if found_hedging:
-        notes.append(
-            f"Uses appropriate hedging: {', '.join(found_hedging[:2])}"
-        )
+    certainty_markers = ["confirmed", "definite", "certain"]
+    has_negated_certainty = bool(
+        cause
+    ) and any(
+        marker in cause for marker in certainty_markers
+    ) and not _find_unnegated_phrases(cause, certainty_markers)
+    if found_hedging or has_negated_certainty:
+        if not found_hedging:
+            notes.append(
+                "Uses appropriate hedging via negated certainty "
+                "language (e.g. 'not confirmed')"
+            )
+        else:
+            notes.append(
+                f"Uses appropriate hedging: {', '.join(found_hedging[:2])}"
+            )
     else:
         score -= 0.4
         notes.append(
@@ -235,15 +340,18 @@ def evaluate_hedging_appropriateness(
             "could suggest, etc.)"
         )
 
-    # Check for confirmed fault language
+    # Check for confirmed fault language (skipping negated wording
+    # such as "not confirmed" or "no confirmed fault yet" — a bare
+    # substring match previously flagged "no confirmed fault yet" as
+    # an unhedged claim, which is the opposite of what it says)
     confirmed_phrases = [
         "confirmed", "is definitely", "has failed", "is broken",
         "is faulty", "has malfunctioned", "is damaged"
     ]
-    found_confirmed = [
-        phrase for phrase in confirmed_phrases
-        if phrase in cause or phrase in desc
-    ]
+    found_confirmed = sorted(set(
+        _find_unnegated_phrases(cause, confirmed_phrases)
+        + _find_unnegated_phrases(desc, confirmed_phrases)
+    ))
     if found_confirmed:
         score -= 0.4
         notes.append(
@@ -256,7 +364,7 @@ def evaluate_hedging_appropriateness(
         "the fault is", "the problem is", "has failed",
         "is broken", "is faulty"
     ]
-    if any(claim in desc for claim in fault_claims):
+    if _find_unnegated_phrases(desc, fault_claims):
         score -= 0.2
         notes.append(
             "anomaly_description claims confirmed fault"
@@ -276,6 +384,19 @@ def evaluate_actionability(
     - recommended_action has 2-4 items
     - Each action is at least 10 words
     - Urgency language matches risk_level
+
+    Score boundaries (extremes only, see evaluate_factual_grounding
+    for why):
+    - Highest (1.0): recommended_action has 2 to 4 items, every item
+      is at least 10 words, and at least one item contains a wording
+      cue matching risk_level (High: soon/prompt/immediately/avoid/
+      urgent; Medium: soon/check/inspect/schedule; Low: monitor/
+      next service/when convenient/observe).
+    - Lowest (0.1, the floor given the -0.3/-0.3/-0.3 deductions
+      below when combined with the too-few-items case — this
+      function cannot return 0.0): fewer than 2 items, at least one
+      item under 10 words, and no risk-appropriate wording cue
+      anywhere in the actions.
 
     Args:
         report: Report dict with recommended_action
