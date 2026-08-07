@@ -31,6 +31,13 @@ class TestFindUnnegatedPhrases:
             "no confirmed fault yet", ["confirmed"]
         ) == []
 
+    def test_no_doubt_is_not_treated_as_negation(self):
+        # "no doubt" is a pseudo-negation: it contains "no" but
+        # intensifies certainty rather than negating it.
+        assert _find_unnegated_phrases(
+            "there is no doubt this is confirmed", ["confirmed"]
+        ) == ["confirmed"]
+
 
 class TestEvaluateHedgingAppropriateness:
     def test_no_confirmed_fault_yet_is_not_penalised(self):

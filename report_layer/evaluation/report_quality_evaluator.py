@@ -18,6 +18,14 @@ from typing import List, Tuple
 NEGATION_WORDS = {"no", "not", "never", "without", "n't", "unconfirmed"}
 CLAUSE_BOUNDARY = re.compile(r"[.,;:]|\bbut\b|\bhowever\b|\balthough\b")
 
+# Phrases that contain a NEGATION_WORDS trigger ("no", "without") but do
+# not semantically negate what follows — some intensify certainty instead
+# ("no doubt", "without question"). Masked out of the clause text before
+# scanning for negation cues, the same role NegEx's pseudo-negation
+# phrase list plays for clinical-note negation (Chapman et al., 2001) —
+# adapted here for certainty/hedging rather than finding-presence.
+PSEUDO_NEGATIONS = ("no doubt", "without doubt", "without question", "no question")
+
 
 def _find_unnegated_phrases(text: str, phrases: List[str]) -> List[str]:
     """
@@ -30,13 +38,18 @@ def _find_unnegated_phrases(text: str, phrases: List[str]) -> List[str]:
     what it means. A fixed word-count window before the match is not
     reliable for this: real sentences such as "no specific fault has
     been confirmed yet" put four words between the negation and the
-    phrase. This instead scans back to the start of the current
-    clause (the nearest preceding ./,/;/:/but/however/although) and
-    checks that whole span for a negation cue. Word-boundary matching
-    also means a phrase embedded in a larger word (e.g. "confirmed"
-    inside "unconfirmed") is not matched at all.
+    phrase (NegEx's own tuned scope is a 0-5 token window — this
+    scans back to the current clause instead, so it isn't sensitive
+    to exact word count at all). Word-boundary matching also means a
+    phrase embedded in a larger word (e.g. "confirmed" inside
+    "unconfirmed") is not matched at all. Pseudo-negation phrases
+    (PSEUDO_NEGATIONS) are masked out first, so "no doubt this is
+    confirmed" is correctly read as an unhedged claim rather than a
+    negated one.
     """
     lower = text.lower()
+    for pseudo in PSEUDO_NEGATIONS:
+        lower = lower.replace(pseudo, " " * len(pseudo))
     hits: List[str] = []
     for phrase in phrases:
         pattern = re.compile(r"\b" + re.escape(phrase) + r"\b")

@@ -90,6 +90,19 @@ class TestFindUnnegatedPhrases:
         text = "No specific fault has been confirmed yet."
         assert _find_unnegated_phrases(text, ["confirmed"]) == []
 
+    def test_no_doubt_is_not_treated_as_negation(self):
+        # "no doubt" contains the negation trigger "no" but actually
+        # intensifies certainty rather than negating it — a
+        # pseudo-negation, analogous to NegEx's pseudo-negation phrase
+        # list for clinical negation detection.
+        text = (
+            "There is no doubt this fault is confirmed by the "
+            "diagnostic scan."
+        )
+        assert _find_unnegated_phrases(text, ["confirmed"]) == [
+            "confirmed"
+        ]
+
 
 class TestValidateLayer1:
     def test_good_output_has_no_confirmed_language_warning(self):
