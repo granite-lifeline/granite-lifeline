@@ -228,6 +228,11 @@ def add_estimate_to_output(
     annotated = dict(output)
     annotated.update(estimate.interface_fields())
     notes = list(annotated.get("notes", []))
+    if estimate.estimated_failure_probability is not None:
+        notes = [
+            note for note in notes
+            if not str(note).startswith("Failure estimate unavailable:")
+        ]
     for note in estimate.notes:
         if note not in notes:
             notes.append(note)

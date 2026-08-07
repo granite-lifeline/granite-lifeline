@@ -63,3 +63,32 @@ def test_estimate_fields_and_notes_are_added_to_interface_output():
     assert output["estimated_cycles_to_failure"] == 4
     assert output["estimated_failure_probability"] is not None
     assert output["notes"][0] == "existing note"
+
+
+def test_available_estimate_removes_old_unavailable_note():
+    estimate = estimate_from_history(pd.read_csv(FIXTURE))
+    output = add_estimate_to_output({
+        "notes": [
+            "Failure estimate unavailable: need at least 5 "
+            "chronological trips; found 1.",
+            "existing note",
+        ],
+    }, estimate)
+
+    assert output["estimated_failure_probability"] is not None
+    assert "existing note" in output["notes"]
+    assert not any(
+        note.startswith("Failure estimate unavailable:")
+        for note in output["notes"]
+    )
+
+
+def test_missing_estimate_keeps_unavailable_note():
+    estimate = estimate_from_history(history([0.1, 0.2, 0.3, 0.4]))
+    output = add_estimate_to_output({"notes": []}, estimate)
+
+    assert output["estimated_failure_probability"] is None
+    assert any(
+        note.startswith("Failure estimate unavailable:")
+        for note in output["notes"]
+    )
