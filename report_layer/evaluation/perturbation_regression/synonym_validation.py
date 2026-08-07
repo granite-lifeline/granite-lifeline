@@ -153,8 +153,17 @@ def write_markdown(sanity, results) -> None:
             )
         f.write("\n## Conclusion\n\n")
         f.write(
-            "**None of our 11 single-word SYNONYMS pairs are registered "
-            "WordNet antonyms.** The two pairs that actually caused "
+            "**10 of the 11 single-word SYNONYMS pairs are comparable in "
+            "WordNet, and none of those 10 are registered antonyms.** "
+            "The 11th pair (advisable/recommended) is not a confirmed-clean "
+            "result — WordNet found no path between any of their synsets "
+            "at all (best_path_similarity=None), because \"advisable\" "
+            "(adjective) and \"recommended\" (participial adjective) don't "
+            "align in WordNet's part-of-speech structure. This is the "
+            "method giving no verdict, not a verdict of \"clean\" — a "
+            "structural coverage gap in the check itself, not evidence "
+            "either way about whether the two words are safe synonyms. "
+            "The two pairs that actually caused "
             "instability in the perturbation tests — indicate/suggest and "
             "possible/potential — are also the two strongest matches "
             "(shares_synset=True, path_similarity=1.0), i.e. WordNet's "
