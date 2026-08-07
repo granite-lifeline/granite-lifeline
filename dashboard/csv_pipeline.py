@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 from uuid import uuid4
 
+import pandas as pd
+
 try:
     from data_loader import load_model_output_for_dashboard
 except ImportError:  # package import during tests
@@ -308,6 +310,64 @@ def _trip_progress_callback(
     return update
 
 
+def _build_risk_history(
+    trip_results: list[Dict[str, Any]],
+) -> list[Dict[str, Any]]:
+    return [
+        {
+            "trip_id": trip["trip_id"],
+            "window_id": f'{trip["trip_id"]}_w000',
+            "timestamp": trip["timestamp"],
+            "risk_score": trip["risk_score"],
+        }
+        for trip in trip_results
+    ]
+
+
+def _load_failure_estimation_helpers():
+    model_src = _REPO_ROOT / "model_layer" / "ttm-related" / "src"
+    model_src_text = str(model_src)
+    if model_src_text not in sys.path:
+        sys.path.insert(0, model_src_text)
+    try:
+        from model.failure_estimation import (
+            add_estimate_to_output,
+            estimate_from_history,
+        )
+    except Exception as exc:
+        raise UploadedCsvPipelineError(
+            "Failure estimation is not available for uploaded history."
+        ) from exc
+    return estimate_from_history, add_estimate_to_output
+
+
+def _add_failure_estimate_to_latest_report(
+    latest_dashboard_data: Dict[str, Any],
+    risk_history: list[Dict[str, Any]],
+) -> Dict[str, Any]:
+    component_key, component_data = _first_dashboard_component(
+        latest_dashboard_data
+    )
+    estimate_from_history, add_estimate_to_output = (
+        _load_failure_estimation_helpers()
+    )
+    try:
+        estimate = estimate_from_history(pd.DataFrame(risk_history))
+    except Exception as exc:
+        raise UploadedCsvPipelineError(
+            "Failure estimation could not complete for uploaded history."
+        ) from exc
+    annotated_component = add_estimate_to_output(component_data, estimate)
+    annotated_component["risk_history"] = risk_history
+
+    updated = dict(latest_dashboard_data)
+    updated[component_key] = annotated_component
+    data_source = dict(updated.get("_data_source", {}))
+    data_source[component_key] = "uploaded_history"
+    updated["_data_source"] = data_source
+    return updated
+
+
 def run_uploaded_csv_history_batch(
     csv_trips: list[UploadedCsvTrip],
     progress_callback: Optional[ProgressCallback] = None,
@@ -316,8 +376,8 @@ def run_uploaded_csv_history_batch(
     Run an ordered set of uploaded CSV trips through the existing pipeline.
 
     The caller is responsible for sorting by filename date before calling this
-    function.  GL-434 will turn ``trip_results`` into ``risk_history`` and
-    attach the failure-estimation fields to the latest report.
+    function.  The returned dashboard data uses the last trip as the current
+    report, with the full trip history and failure-estimation fields attached.
     """
     if len(csv_trips) < HISTORY_MIN_TRIPS:
         raise UploadedCsvPipelineError(
@@ -360,8 +420,13 @@ def run_uploaded_csv_history_batch(
         )
         latest_dashboard_data = dashboard_data
 
+    risk_history = _build_risk_history(trip_results)
+    dashboard_data = _add_failure_estimate_to_latest_report(
+        latest_dashboard_data or {}, risk_history
+    )
     _emit_progress(progress_callback, 100, "Preparing dashboard results...")
     return {
-        "latest_dashboard_data": latest_dashboard_data or {},
+        "dashboard_data": dashboard_data,
         "trip_results": trip_results,
+        "risk_history": risk_history,
     }

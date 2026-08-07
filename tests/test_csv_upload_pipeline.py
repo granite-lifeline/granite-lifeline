@@ -157,6 +157,34 @@ def test_csv_history_upload_requires_five_files(monkeypatch):
 def test_csv_history_upload_sorts_files_by_name_date(monkeypatch):
     overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
     csv_bytes = _valid_csv_bytes()
+    calls: list[str] = []
+    rerun_calls: list[bool] = []
+
+    def fake_run_uploaded_csv_history_batch(csv_trips, progress_callback=None):
+        calls.extend(file_name for _body, file_name in csv_trips)
+        if progress_callback is not None:
+            progress_callback(88, "Analysing trip history...")
+        return {
+            "dashboard_data": {
+                "cooling_degradation": {
+                    **_model_output(),
+                    "anomaly_description": "Trip history shows rising risk.",
+                    "estimated_cycles_to_failure": 2,
+                    "estimated_failure_probability": 0.8386,
+                    "risk_history": [],
+                },
+                "_data_source": {"cooling_degradation": "uploaded_history"},
+            },
+            "trip_results": [],
+            "risk_history": [],
+        }
+
+    monkeypatch.setattr(
+        overview,
+        "run_uploaded_csv_history_batch",
+        fake_run_uploaded_csv_history_batch,
+    )
+    monkeypatch.setattr(overview.st, "rerun", lambda: rerun_calls.append(True))
 
     overview._handle_uploaded_csv_history_submit(
         [
@@ -169,16 +197,27 @@ def test_csv_history_upload_sorts_files_by_name_date(monkeypatch):
         tokens,
     )
 
-    assert overview.st.session_state["uploaded_csv_history_file_names"] == [
+    expected_file_names = [
         "2018-02-28_Seat_Leon_RT_S_Normal.csv",
         "2018-03-01_Seat_Leon_RT_S_Normal.csv",
         "2018-03-02_Seat_Leon_RT_S_Normal.csv",
         "2018-03-07_Seat_Leon_RT_S_Normal.csv",
         "2018-03-08_Seat_Leon_RT_S_Normal.csv",
     ]
+    assert overview.st.session_state[
+        "uploaded_csv_history_file_names"
+    ] == expected_file_names
+    assert calls == expected_file_names
+    assert overview.st.session_state["dashboard_data"]["cooling_degradation"][
+        "estimated_cycles_to_failure"
+    ] == 2
+    assert overview.st.session_state["dashboard_mode"] == "dashboard"
+    assert overview.st.session_state["csv_analysis_running"] is False
+    assert rerun_calls == [True]
     html = "".join(rendered)
-    assert "Trip History Handler Ready" in html
-    assert "sorted by filename date" in html
+    assert "Analysing your CSV..." in html
+    assert "88%" in html
+    assert "Analysing trip history..." in html
 
 
 def test_csv_history_upload_rejects_missing_filename_date(monkeypatch):
@@ -842,9 +881,52 @@ def test_run_uploaded_csv_history_batch_runs_each_trip_in_order(
     )
 
     assert calls == file_names
-    assert result["latest_dashboard_data"]["cooling_degradation"][
+    assert result["dashboard_data"]["cooling_degradation"][
         "risk_score"
     ] == 0.7846
+    assert result["dashboard_data"]["cooling_degradation"][
+        "estimated_cycles_to_failure"
+    ] == 2
+    assert result["dashboard_data"]["cooling_degradation"][
+        "estimated_failure_probability"
+    ] is not None
+    assert result["dashboard_data"]["cooling_degradation"][
+        "risk_history"
+    ] == [
+        {
+            "trip_id": "trip_0001",
+            "window_id": "trip_0001_w000",
+            "timestamp": "2018-03-01T10:00:00Z",
+            "risk_score": 0.378,
+        },
+        {
+            "trip_id": "trip_0002",
+            "window_id": "trip_0002_w000",
+            "timestamp": "2018-03-02T10:00:00Z",
+            "risk_score": 0.7577,
+        },
+        {
+            "trip_id": "trip_0003",
+            "window_id": "trip_0003_w000",
+            "timestamp": "2018-03-03T10:00:00Z",
+            "risk_score": 0.4472,
+        },
+        {
+            "trip_id": "trip_0004",
+            "window_id": "trip_0004_w000",
+            "timestamp": "2018-03-04T10:00:00Z",
+            "risk_score": 0.7256,
+        },
+        {
+            "trip_id": "trip_0005",
+            "window_id": "trip_0005_w000",
+            "timestamp": "2018-03-05T10:00:00Z",
+            "risk_score": 0.7846,
+        },
+    ]
+    assert result["dashboard_data"]["_data_source"] == {
+        "cooling_degradation": "uploaded_history"
+    }
     assert result["trip_results"] == [
         {
             "trip_id": "trip_0001",

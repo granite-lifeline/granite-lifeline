@@ -17,6 +17,7 @@ from csv_pipeline import (
     CSV_PROGRESS_STAGES,
     ModelBatchRunnerUnavailable,
     UploadedCsvPipelineError,
+    run_uploaded_csv_history_batch,
     run_uploaded_csv_batch,
 )
 from data_store import get_data_source, get_mock_data, get_overview_components
@@ -415,15 +416,6 @@ def _show_pipeline_error(title: str, message: str, tokens: dict) -> None:
     )
 
 
-def _show_pipeline_note(title: str, message: str, tokens: dict) -> None:
-    st.markdown(
-        warning_banner_html(
-            html.escape(message), tokens, label=html.escape(title)
-        ),
-        unsafe_allow_html=True,
-    )
-
-
 def _show_missing_csv_columns(missing_cols: list[str], tokens: dict) -> None:
     items_html = "".join(
         f'<li style="margin-bottom:4px;">{html.escape(c)}</li>'
@@ -659,12 +651,82 @@ def _handle_uploaded_csv_history_submit(uploaded_files, tokens: dict) -> None:
     st.session_state["uploaded_csv_history_file_names"] = [
         uploaded_file.name for uploaded_file, _csv_bytes, _df in checked_files
     ]
-    _show_pipeline_note(
-        "Trip History Handler Ready",
-        "The selected CSV files are valid and sorted by filename date. "
-        "The history execution pipeline will use this ordered set next.",
-        tokens,
+
+    _set_csv_analysis_running(True)
+    loading_slot = st.empty()
+    progress_percent, progress_message = CSV_PROGRESS_STAGES[
+        "checking_upload"
+    ]
+    _show_csv_analysis_loading(
+        loading_slot, tokens, progress_percent, progress_message
     )
+
+    def update_progress(percent: int, message: str) -> None:
+        _show_csv_analysis_loading(loading_slot, tokens, percent, message)
+
+    should_rerun = False
+    try:
+        try:
+            result = run_uploaded_csv_history_batch(
+                [
+                    (csv_bytes, uploaded_file.name)
+                    for uploaded_file, csv_bytes, _df in checked_files
+                ],
+                progress_callback=update_progress,
+            )
+        except TimeoutError:
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error(
+                "Analysis Timed Out",
+                "The analysis pipeline timed out. Please try uploading a "
+                "shorter drive session.",
+                tokens,
+            )
+            return
+        except ModelBatchRunnerUnavailable as exc:
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error(
+                "Model Analysis Unavailable", str(exc), tokens
+            )
+            return
+        except UploadedCsvPipelineError as exc:
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error("Analysis Unavailable", str(exc), tokens)
+            return
+        except Exception as exc:
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error(
+                "Analysis Unavailable",
+                f"The analysis pipeline could not complete. {exc}",
+                tokens,
+            )
+            return
+
+        dashboard_data = result.get("dashboard_data", {})
+        components = {
+            k: v for k, v in dashboard_data.items() if k != "_data_source"
+        }
+        if not components or all(
+            not c.get("anomaly_description") for c in components.values()
+        ):
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error(
+                "Analysis Timed Out",
+                "The diagnostic report could not be generated in time. "
+                "Please try again or upload a shorter drive session.",
+                tokens,
+            )
+            return
+
+        st.session_state["dashboard_data"] = dashboard_data
+        st.session_state["validated_df"] = checked_files[-1][2]
+        st.session_state["dashboard_mode"] = "dashboard"
+        should_rerun = True
+    finally:
+        _set_csv_analysis_running(False)
+
+    if should_rerun:
+        st.rerun()
 
 
 def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
