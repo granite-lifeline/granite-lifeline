@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 from uuid import uuid4
 
+import pandas as pd
+
 try:
     from data_loader import load_model_output_for_dashboard
 except ImportError:  # package import during tests
@@ -35,6 +37,8 @@ MODEL_LAYER_VENV_PYTHON = (
 # measured; tune once real TTM batch-run timings are available.
 MODEL_LAYER_TIMEOUT_SECONDS = 120
 ProgressCallback = Callable[[int, str], None]
+UploadedCsvTrip = tuple[bytes, str]
+HISTORY_MIN_TRIPS = 5
 CSV_PROGRESS_STAGES = {
     "checking_upload": (5, "Checking uploaded CSV..."),
     "preparing_upload": (10, "Preparing drive data..."),
@@ -262,3 +266,167 @@ def run_uploaded_csv_batch(
         )
         _emit_progress_stage(progress_callback, "preparing_dashboard")
         return dashboard_data
+
+
+def _first_dashboard_component(
+    dashboard_data: Dict[str, Any],
+) -> tuple[str, Dict[str, Any]]:
+    for component_key, component_data in dashboard_data.items():
+        if component_key == "_data_source":
+            continue
+        if isinstance(component_data, dict):
+            return component_key, component_data
+    raise UploadedCsvPipelineError(
+        "The analysis did not return any component report."
+    )
+
+
+def _trip_timestamp_from_name(original_filename: str) -> str:
+    try:
+        trip_date = datetime.strptime(original_filename[:10], "%Y-%m-%d")
+    except ValueError:
+        return ""
+    return trip_date.replace(tzinfo=timezone.utc).isoformat().replace(
+        "+00:00", "Z"
+    )
+
+
+def _trip_progress_callback(
+    progress_callback: Optional[ProgressCallback],
+    trip_number: int,
+    trip_count: int,
+) -> ProgressCallback:
+    def update(percent: int, message: str) -> None:
+        overall = int(
+            round(((trip_number - 1) + (percent / 100.0)) / trip_count * 100)
+        )
+        overall = max(0, min(100, overall))
+        _emit_progress(
+            progress_callback,
+            overall,
+            f"Analysing trip {trip_number} of {trip_count}: {message}",
+        )
+
+    return update
+
+
+def _build_risk_history(
+    trip_results: list[Dict[str, Any]],
+) -> list[Dict[str, Any]]:
+    return [
+        {
+            "trip_id": trip["trip_id"],
+            "window_id": f'{trip["trip_id"]}_w000',
+            "timestamp": trip["timestamp"],
+            "risk_score": trip["risk_score"],
+        }
+        for trip in trip_results
+    ]
+
+
+def _load_failure_estimation_helpers():
+    model_src = _REPO_ROOT / "model_layer" / "ttm-related" / "src"
+    model_src_text = str(model_src)
+    if model_src_text not in sys.path:
+        sys.path.insert(0, model_src_text)
+    try:
+        from model.failure_estimation import (
+            add_estimate_to_output,
+            estimate_from_history,
+        )
+    except Exception as exc:
+        raise UploadedCsvPipelineError(
+            "Failure estimation is not available for uploaded history."
+        ) from exc
+    return estimate_from_history, add_estimate_to_output
+
+
+def _add_failure_estimate_to_latest_report(
+    latest_dashboard_data: Dict[str, Any],
+    risk_history: list[Dict[str, Any]],
+) -> Dict[str, Any]:
+    component_key, component_data = _first_dashboard_component(
+        latest_dashboard_data
+    )
+    estimate_from_history, add_estimate_to_output = (
+        _load_failure_estimation_helpers()
+    )
+    try:
+        estimate = estimate_from_history(pd.DataFrame(risk_history))
+    except Exception as exc:
+        raise UploadedCsvPipelineError(
+            "Failure estimation could not complete for uploaded history."
+        ) from exc
+    annotated_component = add_estimate_to_output(component_data, estimate)
+    annotated_component["risk_history"] = risk_history
+
+    updated = dict(latest_dashboard_data)
+    updated[component_key] = annotated_component
+    data_source = dict(updated.get("_data_source", {}))
+    data_source[component_key] = "uploaded_history"
+    updated["_data_source"] = data_source
+    return updated
+
+
+def run_uploaded_csv_history_batch(
+    csv_trips: list[UploadedCsvTrip],
+    progress_callback: Optional[ProgressCallback] = None,
+) -> Dict[str, Any]:
+    """
+    Run an ordered set of uploaded CSV trips through the existing pipeline.
+
+    The caller is responsible for sorting by filename date before calling this
+    function.  The returned dashboard data uses the last trip as the current
+    report, with the full trip history and failure-estimation fields attached.
+    """
+    if len(csv_trips) < HISTORY_MIN_TRIPS:
+        raise UploadedCsvPipelineError(
+            "Failure prediction needs at least five chronological trips."
+        )
+
+    trip_results: list[Dict[str, Any]] = []
+    latest_dashboard_data: Dict[str, Any] | None = None
+    trip_count = len(csv_trips)
+
+    for index, (csv_bytes, original_filename) in enumerate(csv_trips, start=1):
+        dashboard_data = run_uploaded_csv_batch(
+            csv_bytes,
+            original_filename,
+            progress_callback=_trip_progress_callback(
+                progress_callback, index, trip_count
+            ),
+        )
+        component_key, component_data = _first_dashboard_component(
+            dashboard_data
+        )
+        risk_score = component_data.get("risk_score")
+        if risk_score is None:
+            raise UploadedCsvPipelineError(
+                f"{original_filename} did not return a risk_score."
+            )
+
+        trip_results.append(
+            {
+                "trip_id": f"trip_{index:04d}",
+                "file_name": original_filename,
+                "component": component_key,
+                "timestamp": (
+                    component_data.get("timestamp")
+                    or _trip_timestamp_from_name(original_filename)
+                ),
+                "risk_score": risk_score,
+                "risk_level": component_data.get("risk_level"),
+            }
+        )
+        latest_dashboard_data = dashboard_data
+
+    risk_history = _build_risk_history(trip_results)
+    dashboard_data = _add_failure_estimate_to_latest_report(
+        latest_dashboard_data or {}, risk_history
+    )
+    _emit_progress(progress_callback, 100, "Preparing dashboard results...")
+    return {
+        "dashboard_data": dashboard_data,
+        "trip_results": trip_results,
+        "risk_history": risk_history,
+    }
