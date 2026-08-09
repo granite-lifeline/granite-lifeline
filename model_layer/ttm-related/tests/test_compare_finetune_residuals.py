@@ -3,9 +3,15 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+import torch
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from model.compare_finetune_residuals import build_comparison  # noqa: E402
+from model.compare_finetune_residuals import (  # noqa: E402
+    build_comparison,
+    cross_signal_correlation_error,
+)
 from model.kit_residual_detector import MODEL_SIGNALS  # noqa: E402
 
 
@@ -36,3 +42,17 @@ def test_comparison_rejects_small_overall_improvement():
     assert result["overall"]["improvement_pct"] == 4.0
     assert result["decision_rule"]["non_worse_signals"] == 6
     assert result["decision_rule"]["clear_improvement"] is False
+
+
+def test_cross_signal_correlation_error_is_zero_for_exact_forecast():
+    truth = torch.tensor(
+        [[[1.0, 2.0], [2.0, 4.0], [3.0, 6.0], [4.0, 8.0]]]
+    )
+    observed = torch.ones_like(truth, dtype=torch.bool)
+
+    error, pairs = cross_signal_correlation_error(
+        truth.clone(), truth, observed
+    )
+
+    assert pairs == 1
+    assert error == pytest.approx(0.0)
