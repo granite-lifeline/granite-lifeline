@@ -22,11 +22,12 @@ embedding model has a one-time warm-up cost on first use per process
 metadata filter vs semantic search — it is amortized here with one
 discarded warm-up call per collection before timed trials begin.
 
-Run: python3 report_layer/evaluation/v4-meta-semantic-comparison/retrieval_comparison_5type_rerun.py
+Run:
+python3 report_layer/evaluation/v4-meta-semantic-comparison/\
+    retrieval_comparison_5type_rerun.py
 """
 
 import sys
-import time
 from pathlib import Path
 from statistics import mean
 
@@ -43,7 +44,8 @@ from retrieval_comparison import (  # noqa: E402
     test_method_d,
 )
 
-# Current 5 anomaly types (shared.anomaly_mapping.GROUND_KNOWLEDGE_ANOMALY_TYPES),
+# Current 5 anomaly types
+# (shared.anomaly_mapping.GROUND_KNOWLEDGE_ANOMALY_TYPES),
 # reusing the original script's symptom phrasing where the anomaly type
 # is unchanged; intake_air_temperature_sensor_fault reuses the old
 # intake_air_temperature_sensor_or_heat_soak_fault symptom text (same
@@ -115,12 +117,16 @@ def run() -> None:
             "c_ok": c_ok, "c_ms": mean(c_times),
             "d_ok": d_ok, "d_ms": mean(d_times),
         }
+        a_ms = results[anomaly_type]['a_ms']
+        b_ms = results[anomaly_type]['b_ms']
+        c_ms = results[anomaly_type]['c_ms']
+        d_ms = results[anomaly_type]['d_ms']
         print(
             f"{anomaly_type:<40} "
-            f"A:{'OK' if a_ok else 'X'} {results[anomaly_type]['a_ms']:6.3f}ms  "
-            f"B:{'OK' if b_ok else 'X'} {results[anomaly_type]['b_ms']:6.2f}ms  "
-            f"C:{'OK' if c_ok else 'X'} {results[anomaly_type]['c_ms']:6.3f}ms  "
-            f"D:{'OK' if d_ok else 'X'} {results[anomaly_type]['d_ms']:6.2f}ms"
+            f"A:{'OK' if a_ok else 'X'} {a_ms:6.3f}ms  "
+            f"B:{'OK' if b_ok else 'X'} {b_ms:6.2f}ms  "
+            f"C:{'OK' if c_ok else 'X'} {c_ms:6.3f}ms  "
+            f"D:{'OK' if d_ok else 'X'} {d_ms:6.2f}ms"
         )
 
     print()

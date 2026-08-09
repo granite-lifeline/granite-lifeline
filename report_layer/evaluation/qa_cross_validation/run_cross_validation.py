@@ -17,7 +17,8 @@ generated report with report_quality_evaluator.evaluate_report(), and
 reports where the two mechanisms agree or disagree.
 
 Requires local Ollama running with granite4.1:8b.
-Run: python3 report_layer/evaluation/qa_cross_validation/run_cross_validation.py
+Run:
+python3 report_layer/evaluation/qa_cross_validation/run_cross_validation.py
 """
 
 import json
@@ -35,7 +36,9 @@ from report_layer.pipeline.context_injection import build_context  # noqa: E402
 from report_layer.pipeline.prompt_chain_validator import (  # noqa: E402
     validate_chain,
 )
-from report_layer.pipeline.report_generator import generate_report  # noqa: E402
+from report_layer.pipeline.report_generator import (  # noqa: E402
+    generate_report,
+)
 from shared.interface_models import ModelLayerOutput  # noqa: E402
 
 FIXTURES_DIR = (
@@ -203,7 +206,8 @@ def write_outputs(results) -> None:
             )
             f.write("**Generated report:**\n\n")
             f.write(
-                f"- anomaly_description: {r['report']['anomaly_description']}\n\n"
+                "- anomaly_description: "
+                f"{r['report']['anomaly_description']}\n\n"
             )
             f.write(f"- possible_cause: {r['report']['possible_cause']}\n\n")
             f.write("- recommended_action:\n")

@@ -10,7 +10,9 @@ report_layer/evaluation/qa_cross_validation/run_cross_validation.py —
 no new Ollama calls needed, since the text and its real context are
 already saved in cross_validation_raw.json.
 
-Run: python3 report_layer/evaluation/perturbation_regression/run_perturbation_test_5type.py
+Run:
+python3 report_layer/evaluation/perturbation_regression/\
+    run_perturbation_test_5type.py
 """
 
 import json

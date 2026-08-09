@@ -34,7 +34,9 @@ from report_layer.pipeline.context_injection import build_context  # noqa: E402
 from report_layer.pipeline.prompt_chain_validator import (  # noqa: E402
     validate_chain,
 )
-from report_layer.pipeline.report_generator import generate_report  # noqa: E402
+from report_layer.pipeline.report_generator import (  # noqa: E402
+    generate_report,
+)
 from shared.interface_models import ModelLayerOutput  # noqa: E402
 
 FIXTURE_PATH = (
@@ -195,7 +197,8 @@ def write_outputs(runs) -> None:
                 + "\n"
             )
             f.write(
-                f"- validator warnings: {r['validator_warnings'] or '(none)'}\n\n"
+                "- validator warnings: "
+                f"{r['validator_warnings'] or '(none)'}\n\n"
             )
 
     print(f"\nWritten: {out_dir / 'stability_test_results.md'}")

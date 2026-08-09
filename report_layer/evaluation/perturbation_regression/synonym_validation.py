@@ -26,7 +26,8 @@ Also runs the same check against Theil et al.'s own example pair
 (probably/certainly) as a sanity check that this method actually
 would have caught the case they reported.
 
-Run: python3 report_layer/evaluation/perturbation_regression/synonym_validation.py
+Run:
+python3 report_layer/evaluation/perturbation_regression/synonym_validation.py
 """
 
 from nltk.corpus import wordnet as wn
@@ -108,7 +109,8 @@ def run() -> None:
         results.append(result)
         flag = "ANTONYM FLAG" if result["direct_antonyms"] else ""
         print(
-            f"{result['pair']:<28} shares_synset={result['shares_synset']!s:<6} "
+            f"{result['pair']:<28} "
+            f"shares_synset={result['shares_synset']!s:<6} "
             f"path_sim={result['best_path_similarity']} {flag}"
         )
 
@@ -118,19 +120,28 @@ def run() -> None:
 def write_markdown(sanity, results) -> None:
     from pathlib import Path
 
-    out_path = Path(__file__).resolve().parent / "synonym_validation_results.md"
+    out_path = (
+        Path(__file__).resolve().parent
+        / "synonym_validation_results.md"
+    )
     with open(out_path, "w") as f:
-        f.write("# Synonym Pair Validation (WordNet, lightweight — Theil et al. check)\n\n")
         f.write(
-            "Checks whether the hand-picked synonym pairs used in the perturbation "
-            "regression tests are supported by WordNet, and specifically whether any "
-            "are registered antonyms — the failure mode Theil et al. report for "
-            "distributional/embedding-based synonym search (their example: "
-            "\"probably\"/\"certainly\" ranked as close neighbours despite opposite "
-            "polarity). No embedding model was trained or downloaded; WordNet's "
-            "explicit antonym relation is used instead, which directly labels polarity "
+            "# Synonym Pair Validation (WordNet, lightweight — "
+            "Theil et al. check)\n\n"
+        )
+        f.write(
+            "Checks whether the hand-picked synonym pairs used in the "
+            "perturbation regression tests are supported by WordNet, "
+            "and specifically whether any are registered antonyms — "
+            "the failure mode Theil et al. report for "
+            "distributional/embedding-based synonym search (their "
+            "example: \"probably\"/\"certainly\" ranked as close "
+            "neighbours despite opposite polarity). No embedding model "
+            "was trained or downloaded; WordNet's explicit antonym "
+            "relation is used instead, which directly labels polarity "
             "rather than only giving a similarity score.\n\n"
         )
+
         def fmt_sim(v):
             return f"{v:.2f}" if v is not None else "—"
 

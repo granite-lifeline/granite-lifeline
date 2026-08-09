@@ -1,6 +1,7 @@
 """
-Shared negation-detection constants for report_layer.pipeline.prompt_chain_validator
-and report_layer.evaluation.report_quality_evaluator.
+Shared negation-detection constants for
+report_layer.pipeline.prompt_chain_validator and
+report_layer.evaluation.report_quality_evaluator.
 
 These two modules each implement their own _find_unnegated_phrases()
 (deliberately not sharing that function itself — one is production

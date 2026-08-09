@@ -15,7 +15,9 @@ whether the negation-aware fix in evaluate_hedging_appropriateness()
 (see report_quality_evaluator.py NEGATION_WORDS /
 _find_unnegated_phrases) actually holds up under paraphrase.
 
-Run: python3 report_layer/evaluation/perturbation_regression/run_perturbation_test.py
+Run:
+python3 report_layer/evaluation/perturbation_regression/\
+    run_perturbation_test.py
 """
 
 import json
@@ -348,7 +350,10 @@ def write_markdown(rows) -> None:
             "the fix, hedging_appropriateness should be unaffected by "
             "this rewrite.\n"
         )
-    print(f"\nConsistency: {stable_checks}/{total_checks} ({consistency:.1f}%)")
+    print(
+        f"\nConsistency: {stable_checks}/{total_checks} "
+        f"({consistency:.1f}%)"
+    )
     print(f"Markdown report written to: {output_path}")
 
 
