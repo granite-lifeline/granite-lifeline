@@ -29,6 +29,10 @@ from shared.interface_models import (  # noqa: E402
 from report_layer.pipeline.context_injection import (  # noqa: E402
     build_context_with_rag,
 )
+from report_layer.pipeline.prompt_chain_validator import (  # noqa: E402
+    format_validation_summary,
+    validate_chain,
+)
 
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
 MODEL = "granite4.1:8b"
@@ -172,13 +176,25 @@ def _clean_possible_cause_text(text: str) -> str:
     """Keep possible_cause distinct from the description/projection."""
     sentences = _split_sentences(text)
     filtered = []
-    projection_markers = (
+    dropped: List[str] = []
+    # Numeric-restatement markers: only drop the sentence when it also
+    # contains a digit. "risk score" in particular is also used for
+    # legitimate qualitative clarification the prompts explicitly ask
+    # for (e.g. "risk_score indicates severity, not a failure
+    # probability") — stripping every mention of it regardless of
+    # content silently deleted that clarification.
+    numeric_projection_markers = (
         "failure probability",
         "probability of crossing",
         "high-risk threshold within",
         "within the next",
         "cycles to failure",
         "risk score",
+    )
+    # Risk-level restatement markers: dropped regardless of digits,
+    # since these restate the categorical risk_level in words rather
+    # than a number ("do not reclassify risk in this section").
+    risk_level_markers = (
         "risk level is",
         "risk level remains",
         "overall risk level",
@@ -189,13 +205,26 @@ def _clean_possible_cause_text(text: str) -> str:
         "should be monitored",
         "monitor to ensure",
     )
+    has_digit = re.compile(r"\d")
     for sentence in sentences:
         lower = sentence.lower()
-        if any(marker in lower for marker in projection_markers):
+        if any(
+            marker in lower for marker in numeric_projection_markers
+        ) and has_digit.search(sentence):
+            dropped.append(sentence)
+            continue
+        if any(marker in lower for marker in risk_level_markers):
+            dropped.append(sentence)
             continue
         if any(marker in lower for marker in monitoring_markers):
+            dropped.append(sentence)
             continue
         filtered.append(sentence)
+    if dropped:
+        logger.debug(
+            "possible_cause: dropped %d redundant sentence(s): %s",
+            len(dropped), dropped,
+        )
     return " ".join(filtered) if filtered else text
 
 
@@ -418,6 +447,58 @@ def _extract_risk_history_payload(
 
 
 # ---------------------------------------------------------------------------
+# Layer call with retry
+# ---------------------------------------------------------------------------
+
+def _call_layer_with_retry(
+    layer_num: int,
+    prompt: str,
+    response_key: str,
+) -> Optional[Any]:
+    """
+    Call Ollama for one prompt-chain layer, retrying on request failure
+    or JSON parse/key failure.
+
+    Args:
+        layer_num: Layer number (1, 2, or 3), used only for log messages.
+        prompt: Rendered prompt text for this layer.
+        response_key: JSON key expected in the parsed response
+            (e.g. "anomaly_description").
+
+    Returns:
+        The value at response_key once obtained, or None if every
+        retry failed.
+    """
+    value: Optional[Any] = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            response = call_ollama(prompt)
+            parsed = extract_json(response)
+            if parsed is not None and response_key in parsed:
+                value = parsed[response_key]
+                break
+        except requests.RequestException as exc:
+            # Covers Timeout/ConnectionError as well as HTTPError from
+            # call_ollama()'s raise_for_status() (e.g. a transient 5xx
+            # while the model is still loading) — these are just as
+            # retryable as a timeout, and previously skipped retries
+            # entirely, propagating straight to the empty fallback report.
+            logger.warning(
+                "Layer %d attempt %d/%d failed (%s): %s",
+                layer_num, attempt, MAX_RETRIES, type(exc).__name__, exc,
+            )
+        else:
+            if value is None:
+                logger.warning(
+                    "Layer %d attempt %d/%d: JSON parse failed",
+                    layer_num, attempt, MAX_RETRIES,
+                )
+        if value is None and attempt < MAX_RETRIES:
+            time.sleep(2)
+    return value
+
+
+# ---------------------------------------------------------------------------
 # Main public function
 # ---------------------------------------------------------------------------
 
@@ -480,37 +561,9 @@ def generate_report(
                 ),
             },
         )
-        anomaly_description: Optional[str] = None
-        for attempt in range(1, MAX_RETRIES + 1):
-            try:
-                response1 = call_ollama(prompt1)
-                parsed1 = extract_json(response1)
-                if (
-                    parsed1 is not None
-                    and "anomaly_description" in parsed1
-                ):
-                    anomaly_description = (
-                        parsed1["anomaly_description"]
-                    )
-                    break
-            except (
-                requests.Timeout, requests.ConnectionError
-            ) as exc:
-                logger.warning(
-                    "Layer 1 attempt %d/%d failed (%s): %s",
-                    attempt, MAX_RETRIES, type(exc).__name__, exc,
-                )
-            else:
-                if anomaly_description is None:
-                    logger.warning(
-                        "Layer 1 attempt %d/%d: JSON parse failed",
-                        attempt, MAX_RETRIES,
-                    )
-            if (
-                anomaly_description is None
-                and attempt < MAX_RETRIES
-            ):
-                time.sleep(2)
+        anomaly_description = _call_layer_with_retry(
+            1, prompt1, "anomaly_description"
+        )
 
         if anomaly_description is None:
             raise RuntimeError(
@@ -530,35 +583,9 @@ def generate_report(
                 ),
             },
         )
-        possible_cause: Optional[str] = None
-        for attempt in range(1, MAX_RETRIES + 1):
-            try:
-                response2 = call_ollama(prompt2)
-                parsed2 = extract_json(response2)
-                if (
-                    parsed2 is not None
-                    and "possible_cause" in parsed2
-                ):
-                    possible_cause = parsed2["possible_cause"]
-                    break
-            except (
-                requests.Timeout, requests.ConnectionError
-            ) as exc:
-                logger.warning(
-                    "Layer 2 attempt %d/%d failed (%s): %s",
-                    attempt, MAX_RETRIES, type(exc).__name__, exc,
-                )
-            else:
-                if possible_cause is None:
-                    logger.warning(
-                        "Layer 2 attempt %d/%d: JSON parse failed",
-                        attempt, MAX_RETRIES,
-                    )
-            if (
-                possible_cause is None
-                and attempt < MAX_RETRIES
-            ):
-                time.sleep(2)
+        possible_cause = _call_layer_with_retry(
+            2, prompt2, "possible_cause"
+        )
 
         if possible_cause is None:
             raise RuntimeError(
@@ -582,37 +609,9 @@ def generate_report(
                 ),
             },
         )
-        recommended_action: Optional[Any] = None
-        for attempt in range(1, MAX_RETRIES + 1):
-            try:
-                response3 = call_ollama(prompt3)
-                parsed3 = extract_json(response3)
-                if (
-                    parsed3 is not None
-                    and "recommended_action" in parsed3
-                ):
-                    recommended_action = (
-                        parsed3["recommended_action"]
-                    )
-                    break
-            except (
-                requests.Timeout, requests.ConnectionError
-            ) as exc:
-                logger.warning(
-                    "Layer 3 attempt %d/%d failed (%s): %s",
-                    attempt, MAX_RETRIES, type(exc).__name__, exc,
-                )
-            else:
-                if recommended_action is None:
-                    logger.warning(
-                        "Layer 3 attempt %d/%d: JSON parse failed",
-                        attempt, MAX_RETRIES,
-                    )
-            if (
-                recommended_action is None
-                and attempt < MAX_RETRIES
-            ):
-                time.sleep(2)
+        recommended_action = _call_layer_with_retry(
+            3, prompt3, "recommended_action"
+        )
 
         if recommended_action is None:
             raise RuntimeError(
@@ -632,6 +631,22 @@ def generate_report(
             recommended_action,
             validated,
         )
+
+        # Step 4b: Validate the cleaned chain output. Never blocks or
+        # retries — validate_chain() never raises, so this only adds
+        # visibility (via logging) into quality issues that previously
+        # had no runtime signal at all.
+        validation_results = validate_chain(
+            anomaly_description,
+            possible_cause,
+            recommended_action,
+            validated.risk_level or "Low",
+        )
+        if not all(result.passed for result in validation_results):
+            logger.warning(
+                "Prompt chain validation flagged issues:\n%s",
+                format_validation_summary(validation_results),
+            )
 
         # Step 5: Assemble successful output
         result = {

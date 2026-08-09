@@ -1,0 +1,102 @@
+[
+  {
+    "run": 1,
+    "elapsed_seconds": 39.7,
+    "anomaly_description": "The cooling system is showing a low-risk pattern where several key signals are outside their normal ranges. Specifically, the coolant temperature is slightly below the expected range at 89.0°C (normal 90.0-95.0°C), and the rate at which it is changing is unusual (–0.2951°C/min instead of 0.0-2.0°C/min). Additionally, the mass airflow sensor reading exceeds its normal limit (3266.3368g vs. 0.0-2500.0g). Despite these abnormal readings, the overall risk level is classified as Low, meaning there is no urgent concern at this time. The model estimates only a very low 0.31% probability of reaching a higher-risk threshold within the next 10 trips. In plain terms, while the cooling system shows some weak signals that should be monitored, it does not indicate an imminent problem and can be checked during routine maintenance.",
+    "possible_cause": "The slightly lower-than-expected coolant temperature and unusually slow cooling rate may indicate a minor sensor reading issue or an early sign of reduced cooling fan effectiveness. The elevated mass airflow sensor reading suggests possible light contamination on the sensor surface, but overall risk remains low with no strong evidence of a mechanical fault.",
+    "recommended_action": [
+      "Check the coolant level in the reservoir tank when the engine is cool and ensure it's between the MIN and MAX marks.",
+      "Inspect the mass airflow sensor for any visible dirt or contamination; gently clean if needed, but avoid touching the sensing element directly.",
+      "Monitor the vehicle’s temperature gauge during normal driving to see if the reading stabilizes within the expected range (90–95 °C).",
+      "If the warning light reappears or you notice any unusual engine behavior, have a mechanic inspect the cooling system and sensor wiring for potential issues."
+    ],
+    "validator_warnings": [],
+    "evaluator_overall": 1.0,
+    "evaluator_dims": {
+      "factual_grounding": 1.0,
+      "readability": 1.0,
+      "hedging_appropriateness": 1.0,
+      "actionability": 1.0
+    }
+  },
+  {
+    "run": 2,
+    "elapsed_seconds": 11.3,
+    "anomaly_description": "The cooling system is showing a low-risk pattern where several key signals are outside their normal ranges. Specifically, the coolant temperature is slightly below the expected range at 89.0°C (normal 90.0-95.0°C), and the rate at which it is changing is unusual (–0.2951°C/min instead of 0.0-2.0°C/min). Additionally, the mass airflow sensor reading exceeds its normal limit (3266.3368g vs. 0.0-2500.0g). Despite these abnormal readings, the overall risk level is classified as Low, meaning there is no urgent concern at this time. The model estimates only a very low 0.31% probability of reaching a higher-risk threshold within the next 10 trips. In plain terms, while the cooling system shows some weak signals that should be monitored, it does not indicate an imminent problem and can be checked during routine maintenance.",
+    "possible_cause": "The slightly lower-than-expected coolant temperature and unusually slow cooling rate may indicate a minor sensor reading issue or an early sign of reduced cooling fan effectiveness. The elevated mass airflow sensor reading suggests possible light contamination on the sensor surface, but overall risk remains low with no strong evidence of a mechanical fault.",
+    "recommended_action": [
+      "Check the coolant level in the reservoir tank when the engine is cool and ensure it's between the MIN and MAX marks.",
+      "Inspect the mass airflow sensor for any visible dirt or contamination; gently clean if needed, but avoid touching the sensing element directly.",
+      "Monitor the vehicle’s temperature gauge during normal driving to see if the reading stabilizes within the expected range (90–95 °C).",
+      "If the warning light reappears or you notice any unusual engine behavior, have a mechanic inspect the cooling system and sensor wiring for potential issues."
+    ],
+    "validator_warnings": [],
+    "evaluator_overall": 1.0,
+    "evaluator_dims": {
+      "factual_grounding": 1.0,
+      "readability": 1.0,
+      "hedging_appropriateness": 1.0,
+      "actionability": 1.0
+    }
+  },
+  {
+    "run": 3,
+    "elapsed_seconds": 11.3,
+    "anomaly_description": "The cooling system is showing a low-risk pattern where several key signals are outside their normal ranges. Specifically, the coolant temperature is slightly below the expected range at 89.0°C (normal 90.0-95.0°C), and the rate at which it is changing is unusual (–0.2951°C/min instead of 0.0-2.0°C/min). Additionally, the mass airflow sensor reading exceeds its normal limit (3266.3368g vs. 0.0-2500.0g). Despite these abnormal readings, the overall risk level is classified as Low, meaning there is no urgent concern at this time. The model estimates only a very low 0.31% probability of reaching a higher-risk threshold within the next 10 trips. In plain terms, while the cooling system shows some weak signals that should be monitored, it does not indicate an imminent problem and can be checked during routine maintenance.",
+    "possible_cause": "The slightly lower-than-expected coolant temperature and unusually slow cooling rate may indicate a minor sensor reading issue or an early sign of reduced cooling fan effectiveness. The elevated mass airflow sensor reading suggests possible light contamination on the sensor surface, but overall risk remains low with no strong evidence of a mechanical fault.",
+    "recommended_action": [
+      "Check the coolant level in the reservoir tank when the engine is cool and ensure it's between the MIN and MAX marks.",
+      "Inspect the mass airflow sensor for any visible dirt or contamination; gently clean if needed, but avoid touching the sensing element directly.",
+      "Monitor the vehicle’s temperature gauge during normal driving to see if the reading stabilizes within the expected range (90–95 °C).",
+      "If the warning light reappears or you notice any unusual engine behavior, have a mechanic inspect the cooling system and sensor wiring for potential issues."
+    ],
+    "validator_warnings": [],
+    "evaluator_overall": 1.0,
+    "evaluator_dims": {
+      "factual_grounding": 1.0,
+      "readability": 1.0,
+      "hedging_appropriateness": 1.0,
+      "actionability": 1.0
+    }
+  },
+  {
+    "run": 4,
+    "elapsed_seconds": 11.3,
+    "anomaly_description": "The cooling system is showing a low-risk pattern where several key signals are outside their normal ranges. Specifically, the coolant temperature is slightly below the expected range at 89.0°C (normal 90.0-95.0°C), and the rate at which it is changing is unusual (–0.2951°C/min instead of 0.0-2.0°C/min). Additionally, the mass airflow sensor reading exceeds its normal limit (3266.3368g vs. 0.0-2500.0g). Despite these abnormal readings, the overall risk level is classified as Low, meaning there is no urgent concern at this time. The model estimates only a very low 0.31% probability of reaching a higher-risk threshold within the next 10 trips. In plain terms, while the cooling system shows some weak signals that should be monitored, it does not indicate an imminent problem and can be checked during routine maintenance.",
+    "possible_cause": "The slightly lower-than-expected coolant temperature and unusually slow cooling rate may indicate a minor sensor reading issue or an early sign of reduced cooling fan effectiveness. The elevated mass airflow sensor reading suggests possible light contamination on the sensor surface, but overall risk remains low with no strong evidence of a mechanical fault.",
+    "recommended_action": [
+      "Check the coolant level in the reservoir tank when the engine is cool and ensure it's between the MIN and MAX marks.",
+      "Inspect the mass airflow sensor for any visible dirt or contamination; gently clean if needed, but avoid touching the sensing element directly.",
+      "Monitor the vehicle’s temperature gauge during normal driving to see if the reading stabilizes within the expected range (90–95 °C).",
+      "If the warning light reappears or you notice any unusual engine behavior, have a mechanic inspect the cooling system and sensor wiring for potential issues."
+    ],
+    "validator_warnings": [],
+    "evaluator_overall": 1.0,
+    "evaluator_dims": {
+      "factual_grounding": 1.0,
+      "readability": 1.0,
+      "hedging_appropriateness": 1.0,
+      "actionability": 1.0
+    }
+  },
+  {
+    "run": 5,
+    "elapsed_seconds": 11.3,
+    "anomaly_description": "The cooling system is showing a low-risk pattern where several key signals are outside their normal ranges. Specifically, the coolant temperature is slightly below the expected range at 89.0°C (normal 90.0-95.0°C), and the rate at which it is changing is unusual (–0.2951°C/min instead of 0.0-2.0°C/min). Additionally, the mass airflow sensor reading exceeds its normal limit (3266.3368g vs. 0.0-2500.0g). Despite these abnormal readings, the overall risk level is classified as Low, meaning there is no urgent concern at this time. The model estimates only a very low 0.31% probability of reaching a higher-risk threshold within the next 10 trips. In plain terms, while the cooling system shows some weak signals that should be monitored, it does not indicate an imminent problem and can be checked during routine maintenance.",
+    "possible_cause": "The slightly lower-than-expected coolant temperature and unusually slow cooling rate may indicate a minor sensor reading issue or an early sign of reduced cooling fan effectiveness. The elevated mass airflow sensor reading suggests possible light contamination on the sensor surface, but overall risk remains low with no strong evidence of a mechanical fault.",
+    "recommended_action": [
+      "Check the coolant level in the reservoir tank when the engine is cool and ensure it's between the MIN and MAX marks.",
+      "Inspect the mass airflow sensor for any visible dirt or contamination; gently clean if needed, but avoid touching the sensing element directly.",
+      "Monitor the vehicle’s temperature gauge during normal driving to see if the reading stabilizes within the expected range (90–95 °C).",
+      "If the warning light reappears or you notice any unusual engine behavior, have a mechanic inspect the cooling system and sensor wiring for potential issues."
+    ],
+    "validator_warnings": [],
+    "evaluator_overall": 1.0,
+    "evaluator_dims": {
+      "factual_grounding": 1.0,
+      "readability": 1.0,
+      "hedging_appropriateness": 1.0,
+      "actionability": 1.0
+    }
+  }
+]
