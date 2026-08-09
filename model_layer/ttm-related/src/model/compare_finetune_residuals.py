@@ -259,6 +259,12 @@ def write_markdown(path: Path, payload: Mapping[str, Any]) -> None:
         if decision["clear_improvement"]
         else "not a clear improvement"
     )
+    zero_shot_corr_err = payload["zero_shot"][
+        "mean_cross_signal_correlation_error"
+    ]
+    fine_tuned_corr_err = payload["fine_tuned"][
+        "mean_cross_signal_correlation_error"
+    ]
     text = "\n".join(
         [
             "# Fine-tuned TTM Residual Comparison",
@@ -274,10 +280,8 @@ def write_markdown(path: Path, payload: Mapping[str, Any]) -> None:
             "",
             (
                 "Mean absolute correlation error (lower is better): "
-                f"zero-shot "
-                f"`{payload['zero_shot']['mean_cross_signal_correlation_error']:.4f}`, "
-                f"fine-tuned "
-                f"`{payload['fine_tuned']['mean_cross_signal_correlation_error']:.4f}`."
+                f"zero-shot `{zero_shot_corr_err:.4f}`, "
+                f"fine-tuned `{fine_tuned_corr_err:.4f}`."
             ),
             "",
             "## Decision Rule",
