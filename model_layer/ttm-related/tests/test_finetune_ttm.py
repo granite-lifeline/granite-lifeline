@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[0]))
 from group1_fixtures import make_multi_segment_frame  # noqa: E402
 from model.finetune_ttm import (  # noqa: E402
     build_forecast_dataset,
+    channel_mixing_model_kwargs,
     filter_by_segments,
     flatten_segment_ids,
     validate_segment_contiguity,
@@ -69,6 +70,15 @@ def test_build_forecast_dataset_uses_ttm_context_and_prediction_shapes():
         DEFAULT_PREDICTION_LENGTH,
         len(MODEL_SIGNALS),
     ]
+
+
+def test_channel_mixing_overrides_are_opt_in_and_six_channel():
+    assert channel_mixing_model_kwargs(False) == {}
+    assert channel_mixing_model_kwargs(True) == {
+        "num_input_channels": len(MODEL_SIGNALS),
+        "enable_forecast_channel_mixing": True,
+        "fcm_use_mixer": True,
+    }
 
 
 def test_build_forecast_dataset_rejects_non_numeric_model_signal():

@@ -337,6 +337,13 @@ def build_run_config(
             "learning_rate": args.learning_rate,
             "batch_size": args.batch_size,
         },
+        "channel_mixing": {
+            "enabled": args.enable_channel_mixing,
+            "num_input_channels": (
+                len(MODEL_SIGNALS) if args.enable_channel_mixing else None
+            ),
+            "fcm_use_mixer": args.enable_channel_mixing,
+        },
         "train": summarize_dataset(
             train_frame, train_dataset, train_segments
         ),
@@ -373,6 +380,7 @@ def create_trainer(
         args.model_path,
         context_length=args.context_length,
         prediction_length=args.prediction_length,
+        **channel_mixing_model_kwargs(args.enable_channel_mixing),
     )
     training_args = TrainingArguments(
         output_dir=str(args.output_dir / "checkpoints"),
@@ -397,6 +405,24 @@ def create_trainer(
         eval_dataset=validation_dataset,
         data_collator=ttm_data_collator,
     )
+
+
+def channel_mixing_model_kwargs(enabled: bool) -> dict[str, Any]:
+    """Return the minimal TTM forecast-channel-mixing overrides.
+
+    The released R2 checkpoint uses a channel-independent backbone.  For
+    the experiment we preserve that pretrained backbone and add only TTM's
+    forecast reconciliation head.  The head is newly initialized and must
+    therefore be fine-tuned before inference.  ``num_input_channels`` is
+    fixed to the ordered Model Layer signal contract.
+    """
+    if not enabled:
+        return {}
+    return {
+        "num_input_channels": len(MODEL_SIGNALS),
+        "enable_forecast_channel_mixing": True,
+        "fcm_use_mixer": True,
+    }
 
 
 def copy_manifest(manifest_path: Path, output_dir: Path) -> None:
@@ -461,6 +487,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--logging-steps", type=int, default=10)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--enable-channel-mixing",
+        action="store_true",
+        help=(
+            "Fine-tune a six-signal TTM forecast-channel mixer on top of "
+            "the pretrained common-channel backbone. Disabled by default "
+            "so existing fine-tuning remains reproducible."
+        ),
+    )
     parser.add_argument(
         "--max-train-segments",
         type=int,
