@@ -409,6 +409,12 @@ def _get_pdf_styles(tools: Dict[str, Any]):
         textColor=colors.HexColor(PDF_DARK),
     ))
     styles.add(ParagraphStyle(
+        name="ReportDiagnosticBody",
+        parent=styles["ReportBody"],
+        fontSize=10.5,
+        leading=16.5,
+    ))
+    styles.add(ParagraphStyle(
         name="ReportMuted",
         parent=styles["BodyText"],
         fontName="Helvetica",
@@ -676,6 +682,7 @@ def _add_text_panel(
     title: str,
     body: Any,
     body_is_html: bool = False,
+    body_style_name: str = "ReportBody",
 ):
     Paragraph = tools["Paragraph"]
     Table = tools["Table"]
@@ -685,7 +692,7 @@ def _add_text_panel(
     table = Table(
         [[
             Paragraph(pdf_text(title), styles["ReportPanelTitle"]),
-            Paragraph(body_text, styles["ReportBody"]),
+            Paragraph(body_text, styles[body_style_name]),
         ]],
         colWidths=[42 * mm, 126 * mm],
         hAlign="CENTER",
@@ -709,6 +716,7 @@ def _add_list_panel(
     styles,
     title: str,
     items: Iterable[Any],
+    body_style_name: str = "ReportBody",
 ):
     clean_items = list(items) or [NOT_AVAILABLE]
     body = "<br/>".join(
@@ -721,6 +729,7 @@ def _add_list_panel(
         title,
         body,
         body_is_html=True,
+        body_style_name=body_style_name,
     )
 
 
@@ -833,6 +842,7 @@ def build_diagnostic_pdf_bytes(
             styles,
             "What's Happening",
             report["anomaly_description"],
+            body_style_name="ReportDiagnosticBody",
         )
         _add_text_panel(
             elements,
@@ -840,6 +850,7 @@ def build_diagnostic_pdf_bytes(
             styles,
             "Why This Matters",
             report["possible_cause"],
+            body_style_name="ReportDiagnosticBody",
         )
         _add_list_panel(
             elements,
@@ -847,6 +858,7 @@ def build_diagnostic_pdf_bytes(
             styles,
             "What You Should Do",
             report["recommended_action"],
+            body_style_name="ReportDiagnosticBody",
         )
 
     doc.build(
