@@ -2133,32 +2133,28 @@ body.presentation-mode .validation-limit { font-size:15px; }
         <div class="report-stage" data-report-stage="6">
           <div class="report-validation">
             <div class="report-eval-card">
-              <div class="model-kicker">Three fixed cooling scenarios</div>
-              <h3>Did RAG improve the report?</h3>
-              <div class="eval-bars">
-                <div class="eval-row baseline"><span>Fixed template</span><div class="eval-track"><i style="width:93%"></i></div><b>0.93</b></div>
-                <div class="eval-row"><span>RAG + LLM</span><div class="eval-track"><i style="width:95%"></i></div><b>0.95</b></div>
-              </div>
+              <div class="model-kicker">Live gate · every answer</div>
+              <h3>Check before continuing</h3>
               <div class="eval-result-grid">
-                <div class="eval-result"><strong>1.00</strong><span>factual grounding in all three scenarios</span></div>
-                <div class="eval-result"><strong>100%</strong><span>exact-match retrieval accuracy</span></div>
+                <div class="eval-result"><strong>JSON</strong><span>required structure is complete</span></div>
+                <div class="eval-result"><strong>Meaning</strong><span>certainty and actions match the evidence</span></div>
+              </div>
+              <div class="eval-bars">
+                <div class="eval-row"><span>Pass threshold</span><div class="eval-track"><i style="width:80%"></i></div><b>0.8</b></div>
               </div>
             </div>
             <div class="report-eval-card">
-              <div class="model-kicker">Where the difference mattered</div>
-              <h3>Did uncertainty stay visible?</h3>
-              <div class="eval-bars">
-                <div class="eval-row baseline"><span>Template hedging</span><div class="eval-track"><i style="width:60%"></i></div><b>0.60</b></div>
-                <div class="eval-row"><span>RAG hedging</span><div class="eval-track"><i style="width:100%"></i></div><b>1.00</b></div>
-              </div>
+              <div class="model-kicker">Below threshold</div>
+              <h3>Correct, then check again</h3>
               <div class="eval-result-grid">
-                <div class="eval-result"><strong>2 / 3</strong><span>readability matched or beat the template</span></div>
-                <div class="eval-result"><strong>0.70</strong><span>one high-risk readability regression</span></div>
+                <div class="eval-result"><strong>1</strong><span>targeted correction using validator feedback</span></div>
+                <div class="eval-result"><strong>2nd check</strong><span>only a corrected answer may continue</span></div>
               </div>
+              <div class="comparison-copy">Still unsafe? Preserve the vehicle evidence and show an explicit generation error.</div>
             </div>
           </div>
-          <div class="honest-boundary">Limitation: these are three automated, keyword-scored scenarios—not review by an automotive expert.</div>
-          <p class="report-takeaway">RAG’s clearest gain was communicating uncertainty without changing the facts.</p>
+          <div class="honest-boundary">Limitation: rule-based checks cannot recognise every subtle unsupported mechanical claim without real-failure reports and expert review.</div>
+          <p class="report-takeaway">Every answer must pass before it can enter the next stage.</p>
         </div>
 
       </div>
@@ -2177,7 +2173,7 @@ body.presentation-mode .validation-limit { font-size:15px; }
       </div>
     </div>
     <script type="application/json" class="slide-notes">
-    {"title":"Challenge 3: Explaining Risk Without Inventing a Diagnosis","script":"We already know what changed, how serious it may be and which signals support it. But the owner still needs to know what it means and what to do. A deterministic template can produce a valid report, and for a small fixed knowledge base it is a reasonable alternative. Its limitation is flexibility: every combination of anomaly, risk, confidence, signals and missing fields needs another predefined branch. We therefore use a Large Language Model as a communication tool. It connects the supplied evidence, adjusts urgency and certainty, and translates technical fields into owner language. Direct generation was flexible but could invent unsupported facts. Retrieval-Augmented Generation addresses this by retrieving verified knowledge before the model writes. The facts remain fixed while the explanation adapts to the current case. Compared with a fixed template, the advantage is adaptive communication—not new automotive facts.","notes":["LLM means Large Language Model: a model that generates and adapts natural language from supplied context","RAG means Retrieval-Augmented Generation: verified knowledge is retrieved before generation","JSON means JavaScript Object Notation: a structured machine-readable field format","The template comparison is a design comparison, not a completed experiment","End on the communication advantage and move directly to the completed architecture"]}
+    {"title":"Challenge 3: Explaining Risk Without Inventing a Diagnosis","script":"We already know what changed, how serious it may be and which signals support it. But the owner still needs to know what it means and what to do. Pure retrieval is reliable but fixed and technical. A Large Language Model is readable but may add unsupported claims. We therefore use Retrieval-Augmented Generation: verified knowledge is retrieved before the model explains it in the context of this vehicle. Across three cooling cases, grounded reports scored 0.95 compared with 0.93 without grounding. During operation, every answer must pass JSON and semantic validation before the next begins. Below 0.8, validator feedback triggers one targeted correction and a second check. If it still fails, the evidence is preserved and the Dashboard shows an explicit error.","notes":["LLM means Large Language Model: a model that generates and adapts natural language from supplied context","RAG means Retrieval-Augmented Generation: verified knowledge is retrieved before generation","JSON means JavaScript Object Notation: a structured machine-readable field format","The remaining limitation is the coverage of the semantic rules, not a missing correction step","End on the live safety gate and move directly to the completed architecture"]}
     </script>
   </div>
 
