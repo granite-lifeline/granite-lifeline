@@ -1324,9 +1324,24 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 
 /* ====== LIVE DASHBOARD DEMO ====== */
 .demo-wrap { width: 100%; max-width: 1320px; margin-top: clamp(12px,2vh,20px); display: flex; flex-direction: column; align-items: center; }
-.demo-frame { position: relative; width: 100%; height: clamp(390px, 57vh, 500px); background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 20px; box-shadow: 0 12px 46px rgba(29,29,31,0.09); overflow: hidden; }
-.demo-panel { position: absolute; inset: 0; display: flex; flex-direction: column; padding: clamp(20px,2.7vh,30px) clamp(24px,2.7vw,38px); opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
+.demo-frame { position: relative; width: 100%; height: clamp(390px, 57vh, 500px); background: transparent; border: 0; border-radius: 18px; overflow: hidden; }
+.demo-panel { position: absolute; inset: 0; box-sizing: border-box; display: flex; flex-direction: column; padding: 0 clamp(18px,2vw,30px); opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
 .slide.active .demo-panel.active { opacity: 1; pointer-events: auto; }
+.dash-shot-panel { gap: 10px; background: transparent; }
+.dash-shot-label { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,0.9fr); align-items: start; gap: 18px; width: 100%; box-sizing: border-box; color: var(--text); font-size: clamp(11.5px,0.95vw,13.5px); font-weight: 750; line-height: 1.22; white-space: normal; overflow: visible; }
+.dash-shot-label span { min-width: 0; color: var(--text-dim); font-size: clamp(10px,0.85vw,11.5px); font-weight: 500; line-height: 1.25; text-align: right; white-space: normal; overflow-wrap: anywhere; }
+.dash-shot-stage { position: relative; flex: 1; min-height: 0; display: flex; overflow: hidden; border-radius: 16px; }
+.dash-real-shot { width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; }
+.dash-real-shot.dash-zoom-shot { width: 96%; height: 96%; margin: auto; object-fit: contain; }
+.dash-real-shot.dash-component-shot { object-position: center 52%; }
+.dash-run-hotspot { position: absolute; inset: 0; z-index: 2; border: 0; background: transparent; cursor: pointer; }
+.dash-details-hotspot { position: absolute; inset: 0; z-index: 2; border: 0; background: transparent; cursor: pointer; }
+.dash-run-hotspot:focus-visible, .dash-details-hotspot:focus-visible { outline: 4px solid rgba(15,98,254,0.45); outline-offset: 3px; }
+.dash-scroll-card { flex: 1; width: 100%; min-height: 0; overflow-y: auto; overflow-x: hidden; border-radius: 0; background: transparent; scroll-behavior: smooth; }
+.dash-scroll-card img { width: 100%; max-width: none; max-height: none; height: auto; display: block; }
+.dash-scroll-card::-webkit-scrollbar { width: 10px; }
+.dash-scroll-card::-webkit-scrollbar-track { background: rgba(141,150,170,0.14); border-radius: 999px; }
+.dash-scroll-card::-webkit-scrollbar-thumb { background: rgba(89,98,120,0.48); border-radius: 999px; }
 .dash-demo-head { display:flex; align-items:center; gap:16px; padding-bottom:16px; border-bottom:1px solid var(--border); }
 .dash-demo-brand { width:40px; height:40px; border-radius:12px; display:grid; place-items:center; background:var(--accent-blue); color:#fff; font-weight:800; }
 .dash-demo-title { flex:1; text-align:left; }
@@ -1378,6 +1393,39 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .demo-next-btn { font-family: var(--font-body); font-size: clamp(12px,1.05vw,14px); font-weight: 600; color: #fff; background: var(--accent-blue); border: none; padding: 8px 18px; border-radius: 20px; cursor: pointer; transition: all 0.25s ease; box-shadow: 0 4px 16px rgba(15,98,254,0.25); }
 .demo-next-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(15,98,254,0.32); }
 .demo-caption { font-size: clamp(11px,1vw,13px); color: var(--text-dim); margin-top: 10px; }
+
+/* ====== DASHBOARD SUPPORT FEATURES ====== */
+.support-slide { padding-top:clamp(28px,4vh,44px); padding-bottom:clamp(20px,3vh,32px); }
+.support-slide h2 { max-width:1180px; font-size:clamp(26px,2.45vw,38px); line-height:1.12; }
+.support-slide .subtitle { max-width:780px; font-size:clamp(14px,1.25vw,18px); line-height:1.35; }
+.support-showcase { width:100%; max-width:1180px; display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:stretch; margin-top:clamp(17px,2.8vh,25px); }
+.support-card { min-height:335px; padding:19px 22px; border:1.5px solid var(--border); border-radius:16px; background:rgba(255,255,255,.84); box-shadow:0 14px 38px rgba(32,63,109,.08); text-align:left; display:flex; flex-direction:column; }
+.support-card.dark { background:#11161d; color:#fff; border-color:rgba(120,169,255,.28); }
+.support-kicker { font-family:var(--font-mono); font-size:10px; font-weight:800; letter-spacing:.1em; color:var(--accent-blue); text-transform:uppercase; margin-bottom:10px; }
+.support-card.dark .support-kicker { color:#78a9ff; }
+.support-card h3 { font-size:clamp(20px,1.65vw,25px); line-height:1.08; margin:0 0 9px; }
+.support-card p { margin:0; color:var(--text-dim); font-size:clamp(11.5px,.92vw,13.5px); line-height:1.42; }
+.support-card.dark p { color:rgba(255,255,255,.66); }
+.local-steps { display:grid; gap:10px; margin-top:19px; }
+.local-step { display:grid; grid-template-columns:31px 1fr; gap:11px; align-items:start; padding:12px 13px; border-radius:12px; background:rgba(15,98,254,.065); }
+.local-step b { width:28px; height:28px; display:grid; place-items:center; border-radius:50%; background:var(--accent-blue); color:#fff; font-family:var(--font-mono); font-size:11px; }
+.local-step strong { display:block; font-size:clamp(12.5px,1vw,14.5px); line-height:1.15; }
+.local-step span { display:block; margin-top:4px; color:var(--text-dim); font-size:clamp(10.5px,.82vw,12px); line-height:1.32; }
+.whatif-panel { margin-top:19px; display:grid; gap:12px; }
+.whatif-tabs { display:flex; flex-wrap:wrap; gap:8px; }
+.whatif-chip { appearance:none; border:0; padding:8px 10px; border-radius:999px; background:rgba(120,169,255,.14); color:#dbeafe; font-family:var(--font-body); font-size:clamp(10px,.82vw,12px); font-weight:700; cursor:pointer; transition:background .18s ease,color .18s ease,transform .18s ease; }
+.whatif-chip:hover { transform:translateY(-1px); background:rgba(120,169,255,.22); }
+.whatif-chip.active { background:#78a9ff; color:#0b1020; }
+.whatif-chip:focus-visible { outline:3px solid rgba(120,169,255,.55); outline-offset:3px; }
+.whatif-meter { padding:14px; border-radius:13px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); }
+.whatif-meter-head { display:flex; justify-content:space-between; gap:12px; font-size:clamp(12px,.95vw,14px); font-weight:800; }
+.whatif-meter-track { height:11px; margin:11px 0; border-radius:999px; background:rgba(255,255,255,.14); overflow:hidden; }
+.whatif-meter-fill { width:72%; height:100%; border-radius:inherit; background:linear-gradient(90deg,#78a9ff,#ff832b); }
+.whatif-breakdown { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+.whatif-mini { min-height:66px; padding:11px; border-radius:12px; background:rgba(255,255,255,.08); }
+.whatif-mini strong { display:block; font-size:clamp(13.5px,1.05vw,16px); }
+.whatif-mini span { display:block; margin-top:5px; color:rgba(255,255,255,.6); font-size:clamp(10.5px,.82vw,12px); line-height:1.3; }
+.support-boundary { margin-top:auto; padding:11px 13px; border-left:4px solid #ff832b; background:rgba(255,131,43,.10); color:rgba(255,255,255,.78); font-size:clamp(10.5px,.82vw,12px); line-height:1.35; }
 
 /* ====== CONCLUSION ====== */
 .slide.conclusion-slide { justify-content:center; padding-top:clamp(38px,5vh,56px); padding-bottom:clamp(22px,3vh,34px); }
@@ -2516,63 +2564,26 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
     <div class="demo-wrap anim-3">
       <div class="demo-frame">
 
-        <div class="demo-panel active" id="demoPanel0">
-          <div class="dash-demo-head">
-            <div class="dash-demo-brand">GL</div>
-            <div class="dash-demo-title"><strong>Your Vehicle Health</strong><span>Latest trip · OBD-II monitoring</span></div>
-            <div class="dash-demo-status">Attention needed</div>
-          </div>
-          <div class="dash-demo-banner"><strong>Cooling System needs attention</strong><span>Select the highlighted card to understand why.</span></div>
-          <div class="dash-component-grid">
-            <button class="dash-component cooling" onclick="setDemoStep(1)">
-              <div class="dash-component-top"><div class="dash-component-name">Cooling System</div><div class="dash-risk high">HIGH</div></div>
-              <div class="dash-score">86<small>/100</small></div>
-              <div class="dash-meter"><span style="width:86%"></span></div>
-              <div class="dash-component-foot"><span>Risk is rising</span><b>View details →</b></div>
-            </button>
-            <div class="dash-component">
-              <div class="dash-component-top"><div class="dash-component-name">Air Intake</div><div class="dash-risk medium">MEDIUM</div></div>
-              <div class="dash-score">61<small>/100</small></div>
-              <div class="dash-meter"><span style="width:61%;background:#ff832b"></span></div>
-              <div class="dash-component-foot"><span>Monitor</span><span>Stable</span></div>
-            </div>
-            <div class="dash-component">
-              <div class="dash-component-top"><div class="dash-component-name">Accelerator</div><div class="dash-risk low">LOW</div></div>
-              <div class="dash-score">22<small>/100</small></div>
-              <div class="dash-meter"><span style="width:22%;background:#24a148"></span></div>
-              <div class="dash-component-foot"><span>No action</span><span>Stable</span></div>
-            </div>
+        <div class="demo-panel dash-shot-panel active" id="demoPanel0">
+          <div class="dash-shot-label">Upload a real OBD-II CSV <span>Starting point for the owner</span></div>
+          <div class="dash-shot-stage">
+            <img class="dash-real-shot dash-zoom-shot" src="assets/dashboard-upload.png" alt="Dashboard upload page">
+            <button class="dash-run-hotspot" onclick="setDemoStep(1)" title="Run Analysis"></button>
           </div>
         </div>
 
-        <div class="demo-panel" id="demoPanel1">
-          <div class="dash-detail-head">
-            <button class="dash-back" onclick="setDemoStep(0)">← Overview</button>
-            <div class="dash-detail-title"><strong>Cooling System</strong><span>Why this warning appeared</span></div>
-            <div class="dash-detail-risk"><strong>High · 86</strong><span>risk score</span></div>
+        <div class="demo-panel dash-shot-panel" id="demoPanel1">
+          <div class="dash-shot-label">Component overview <span>Risk scores across vehicle systems</span></div>
+          <div class="dash-shot-stage">
+            <img class="dash-real-shot dash-zoom-shot dash-component-shot" src="assets/dashboard-components.png" alt="Dashboard component overview">
+            <button class="dash-details-hotspot" onclick="setDemoStep(2)" title="View Cooling System details"></button>
           </div>
-          <div class="dash-detail-grid">
-            <div class="dash-evidence">
-              <div class="dash-section-label">Evidence from this trip</div>
-              <div class="dash-metrics">
-                <div class="dash-metric"><strong>104°C</strong><span>usual range 90–95°C</span></div>
-                <div class="dash-metric"><strong>3.4°C/min</strong><span>usual rise 0–2°C/min</span></div>
-              </div>
-              <div class="dash-section-label">Risk across recent windows</div>
-              <div class="dash-trend">
-                <div class="dash-trend-bar" style="height:45%"><span>45</span></div>
-                <div class="dash-trend-bar" style="height:52%"><span>52</span></div>
-                <div class="dash-trend-bar" style="height:61%"><span>61</span></div>
-                <div class="dash-trend-bar" style="height:70%"><span>70</span></div>
-                <div class="dash-trend-bar" style="height:86%"><span>86</span></div>
-              </div>
-            </div>
-            <div class="dash-action">
-              <div class="dash-section-label">What this means for you</div>
-              <div class="dash-action-row"><strong>What changed?</strong><span>Coolant is above its usual range and rising faster than expected.</span></div>
-              <div class="dash-action-row"><strong>What might it mean?</strong><span>The cooling system may be under stress—for example low coolant, radiator trouble or pump degradation.</span></div>
-              <div class="dash-action-row"><strong>What should I do?</strong><span>Avoid heavy driving. Check coolant when the engine is cool, and arrange a cooling-system inspection soon.</span></div>
-            </div>
+        </div>
+
+        <div class="demo-panel dash-shot-panel" id="demoPanel2">
+          <div class="dash-shot-label">Diagnostic report <span>Scroll down for evidence, explanation and next actions</span></div>
+          <div class="dash-scroll-card">
+            <img src="assets/dashboard-detail-report-long.png" alt="Dashboard risk detail and generated report">
           </div>
         </div>
 
@@ -2580,20 +2591,69 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 
       <div class="demo-controls">
         <div class="demo-dots">
-          <button class="demo-dot-btn active" id="demoDot0" onclick="setDemoStep(0)" title="Normal driving">1</button>
-          <button class="demo-dot-btn" id="demoDot1" onclick="setDemoStep(1)" title="Cooling-system detail">2</button>
+          <button class="demo-dot-btn active" id="demoDot0" onclick="setDemoStep(0)" title="CSV upload">1</button>
+          <button class="demo-dot-btn" id="demoDot1" onclick="setDemoStep(1)" title="Component overview">2</button>
+          <button class="demo-dot-btn" id="demoDot2" onclick="setDemoStep(2)" title="Diagnostic report">3</button>
         </div>
-        <button class="demo-next-btn" onclick="nextDemoStep()">Next Step &rarr;</button>
+        <button class="demo-next-btn" onclick="nextDemoStep()">Nest &rarr;</button>
       </div>
-      <p class="demo-caption">1. Vehicle overview &middot; 2. Evidence, meaning and action</p>
     </div>
     <script type="application/json" class="slide-notes">
-    {"title":"Dashboard Demo","script":"This is what the owner finally sees. The overview does not ask them to interpret raw sensor values. It shows which vehicle system needs attention and how serious the signal is. When I open Cooling System, the dashboard preserves the evidence—104 degrees, a faster-than-usual rise and an increasing risk trend—but pairs it with three direct answers: what changed, what it might mean and what to do next.","notes":["Click Cooling System or Next Step to open the detail view","The values come from dashboard/tests/ui_required_data.json","Keep the demo focused on the owner decision, not every dashboard feature"]}
+    {"title":"Dashboard Demo","script":"This is what the owner finally sees in the real dashboard. First, they upload an OBD-II CSV instead of reading raw sensor files. Then the overview summarises the vehicle systems by risk, so the owner can immediately see which area needs attention. The final view keeps the evidence visible at the top, and scrolling down shows the plain-language explanation and next actions in the same detail page.","notes":["Use Next Step to move through upload, overview, then the scrollable detail/report card","Scroll inside the final card to reveal the owner report","Keep the demo focused on the owner journey, not every dashboard feature"]}
     </script>
   </div>
 
-  <!-- ===== 12 / CONCLUSION — COMPLETE RESULT ===== -->
-  <div class="slide conclusion-slide" data-slide="11">
+  <!-- ===== 12 / DASHBOARD SUPPORT FEATURES ===== -->
+  <div class="slide support-slide" data-slide="11">
+    <p class="slide-tag anim-1">Dashboard support</p>
+    <h2 class="anim-2">The dashboard also supports <span class="highlight-blue">local setup and scenario exploration.</span></h2>
+    <p class="subtitle anim-2">These features help reviewers run the project and explore risk changes without changing the model output.</p>
+
+    <div class="support-showcase anim-3">
+      <section class="support-card">
+        <div class="support-kicker">How to Run Locally</div>
+        <h3>A built-in setup guide opens from the upload page.</h3>
+        <p>The dashboard gives reviewers a guided local setup flow, without leaving them to search through project files.</p>
+        <div class="local-steps">
+          <div class="local-step"><b>1</b><div><strong>Prepare project</strong><span>Get the repo ready locally.</span></div></div>
+          <div class="local-step"><b>2</b><div><strong>Install tools</strong><span>Set up Python, model and RAG dependencies.</span></div></div>
+          <div class="local-step"><b>3</b><div><strong>Start Granite</strong><span>Run the local model service.</span></div></div>
+          <div class="local-step"><b>4</b><div><strong>Open dashboard</strong><span>Launch the Streamlit interface.</span></div></div>
+        </div>
+      </section>
+
+      <section class="support-card dark">
+        <div class="support-kicker">What-If Analysis</div>
+        <h3>Explore how driving conditions could shift risk.</h3>
+        <p>What-If is a dashboard-side decision-support view. It compares scenarios and sliders, but it does not create a new mechanical diagnosis.</p>
+        <div class="whatif-panel">
+          <div class="whatif-tabs">
+            <button class="whatif-chip" type="button" data-scenario="hard" onclick="setWhatIfScenario('hard')">Hard Acceleration</button>
+            <button class="whatif-chip active" type="button" data-scenario="hills" onclick="setWhatIfScenario('hills')">Hills or Heavy Load</button>
+            <button class="whatif-chip" type="button" data-scenario="hot" onclick="setWhatIfScenario('hot')">Hot Day Highway</button>
+            <button class="whatif-chip" type="button" data-scenario="traffic" onclick="setWhatIfScenario('traffic')">Stuck in Traffic</button>
+            <button class="whatif-chip" type="button" data-scenario="easy" onclick="setWhatIfScenario('easy')">Easy Commute</button>
+          </div>
+          <div class="whatif-meter">
+            <div class="whatif-meter-head"><span>Cooling System projection</span><strong id="whatifScore">72%</strong></div>
+            <div class="whatif-meter-track"><div class="whatif-meter-fill" id="whatifFill"></div></div>
+            <p id="whatifScenarioText">Selected scenario: climbing a slope, towing, or carrying extra weight.</p>
+          </div>
+          <div class="whatif-breakdown">
+            <div class="whatif-mini"><strong id="whatifFactorOne">+ engine load</strong><span id="whatifFactorOneText">Longer high-load running can increase cooling-system stress.</span></div>
+            <div class="whatif-mini"><strong id="whatifFactorTwo">+ uncertainty</strong><span id="whatifFactorTwoText">Shown as exploration, not calibrated failure probability.</span></div>
+          </div>
+        </div>
+        <div class="support-boundary">Boundary: local setup enables a reproducible demo; What-If explains possible direction of change, not a fresh TTM/RAG inference.</div>
+      </section>
+    </div>
+    <script type="application/json" class="slide-notes">
+    {"title":"Dashboard Support Features","script":"Behind the owner-facing result, the dashboard also supports local setup and scenario exploration. How to Run Locally gives reviewers a guided setup path from the upload page, while What-If Analysis lets them explore how driving conditions might shift displayed risk. The key boundary is that these features improve usability and exploration, but they do not create a new model diagnosis.","notes":["How to Run Locally content is based on develop dashboard/pages/local_run.py","Do not show the exact local run commands on this slide","Do not describe What-If output as a re-run of the TTM or report generator"]}
+    </script>
+  </div>
+
+  <!-- ===== 13 / CONCLUSION — COMPLETE RESULT ===== -->
+  <div class="slide conclusion-slide" data-slide="12">
     <div class="glow-blob glow-blue" style="bottom:-130px;right:-90px;"></div>
     <p class="slide-tag anim-1">Conclusion</p>
     <h2 class="anim-2">From OBD-II data to <span class="blue">guidance an owner can act on.</span></h2>
@@ -2637,8 +2697,8 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
     </script>
   </div>
 
-  <!-- ===== 13 / CONCLUSION — EVIDENCE BOUNDARY ===== -->
-  <div class="slide conclusion-slide" data-slide="12">
+  <!-- ===== 14 / CONCLUSION — EVIDENCE BOUNDARY ===== -->
+  <div class="slide conclusion-slide" data-slide="13">
     <div class="glow-blob glow-orange" style="top:-120px;right:-80px;"></div>
     <p class="slide-tag anim-1">Conclusion</p>
     <h2 class="anim-2">What have we demonstrated&mdash;and <span class="blue">what remains unproven?</span></h2>
@@ -2666,8 +2726,8 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
     </script>
   </div>
 
-  <!-- ===== 14 / CONCLUSION — FUTURE WORK ===== -->
-  <div class="slide conclusion-slide" data-slide="13">
+  <!-- ===== 15 / CONCLUSION — FUTURE WORK ===== -->
+  <div class="slide conclusion-slide" data-slide="14">
     <div class="glow-blob glow-blue" style="bottom:-150px;left:-100px;"></div>
     <p class="slide-tag anim-1">Future work</p>
     <h2 class="anim-2">How do we move from <span class="blue">one vehicle dataset</span> to broader use?</h2>
@@ -4466,14 +4526,77 @@ function resetReport() {
    Independent of the deck's slide navigation.
    =========================================== */
 let demoStep = 0;
+const demoPanelCount = 3;
 function setDemoStep(n) {
   demoStep = n;
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < demoPanelCount; i++) {
     document.getElementById('demoPanel' + i).classList.toggle('active', i === n);
     document.getElementById('demoDot' + i).classList.toggle('active', i === n);
   }
 }
-function nextDemoStep() { setDemoStep((demoStep + 1) % 2); }
+function nextDemoStep() { setDemoStep((demoStep + 1) % demoPanelCount); }
+
+/* ===========================================
+   WHAT-IF MINI CONTROLS
+   Dashboard support slide scenario switching.
+   =========================================== */
+const whatIfScenarios = {
+  hard: {
+    score: 78,
+    text: 'Selected scenario: frequent hard acceleration with repeated high-load bursts.',
+    factorOne: '+ acceleration load',
+    factorOneText: 'Sharp throttle changes can raise short-window cooling stress.',
+    factorTwo: '+ monitoring need',
+    factorTwoText: 'Best used to compare direction of change, not as a new diagnosis.'
+  },
+  hills: {
+    score: 72,
+    text: 'Selected scenario: climbing a slope, towing, or carrying extra weight.',
+    factorOne: '+ engine load',
+    factorOneText: 'Longer high-load running can increase cooling-system stress.',
+    factorTwo: '+ uncertainty',
+    factorTwoText: 'Shown as exploration, not calibrated failure probability.'
+  },
+  hot: {
+    score: 68,
+    text: 'Selected scenario: long motorway cruising on a hot day.',
+    factorOne: '+ ambient heat',
+    factorOneText: 'Higher outside temperature can make cooling margins tighter.',
+    factorTwo: '+ sustained run',
+    factorTwoText: 'The view highlights possible risk movement for discussion.'
+  },
+  traffic: {
+    score: 63,
+    text: 'Selected scenario: stop-and-go city driving with extended idling.',
+    factorOne: '+ idle time',
+    factorOneText: 'Low airflow during traffic can increase temperature sensitivity.',
+    factorTwo: '+ fan reliance',
+    factorTwoText: 'Cooling fan behaviour becomes more important in this scenario.'
+  },
+  easy: {
+    score: 41,
+    text: 'Selected scenario: short relaxed driving in cooler weather.',
+    factorOne: '- load',
+    factorOneText: 'Lower demand can reduce expected cooling-system stress.',
+    factorTwo: '+ baseline',
+    factorTwoText: 'This helps compare against the current risk display.'
+  }
+};
+
+function setWhatIfScenario(key) {
+  const scenario = whatIfScenarios[key];
+  if (!scenario) return;
+  document.querySelectorAll('.whatif-chip').forEach((chip) => {
+    chip.classList.toggle('active', chip.dataset.scenario === key);
+  });
+  document.getElementById('whatifScore').textContent = scenario.score + '%';
+  document.getElementById('whatifFill').style.width = scenario.score + '%';
+  document.getElementById('whatifScenarioText').textContent = scenario.text;
+  document.getElementById('whatifFactorOne').textContent = scenario.factorOne;
+  document.getElementById('whatifFactorOneText').textContent = scenario.factorOneText;
+  document.getElementById('whatifFactorTwo').textContent = scenario.factorTwo;
+  document.getElementById('whatifFactorTwoText').textContent = scenario.factorTwoText;
+}
 
 /* ===========================================
    BACKUP SLIDES (Q&A reference overlay)
