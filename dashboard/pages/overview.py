@@ -802,9 +802,9 @@ def _handle_uploaded_csv_history_submit(uploaded_files, tokens: dict) -> None:
         ):
             _clear_csv_analysis_loading(loading_slot)
             _show_pipeline_error(
-                "Analysis Timed Out",
-                "The diagnostic report could not be generated in time. "
-                "Please try again or upload a shorter drive session.",
+                "Report Generation Unavailable",
+                "The vehicle evidence was preserved, but a safe diagnostic "
+                "report could not be generated. Please try again.",
                 tokens,
             )
             return
@@ -891,19 +891,18 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
             )
             return
 
-        # report_generator.generate_report() never raises — an LLM
-        # timeout or connection failure surfaces as an empty
-        # anomaly_description instead of an exception, so detect that
-        # fallback here rather than in a never-triggered except clause.
+        # report_generator.generate_report() fails closed: exhausted technical
+        # retries or a semantic correction that still fails validation returns
+        # an empty report while preserving the original vehicle evidence.
         components = {k: v for k, v in result.items() if k != "_data_source"}
         if not components or all(
             not c.get("anomaly_description") for c in components.values()
         ):
             _clear_csv_analysis_loading(loading_slot)
             _show_pipeline_error(
-                "Analysis Timed Out",
-                "The diagnostic report could not be generated in time. "
-                "Please try again or upload a shorter drive session.",
+                "Report Generation Unavailable",
+                "The vehicle evidence was preserved, but a safe diagnostic "
+                "report could not be generated. Please try again.",
                 tokens,
             )
             return
