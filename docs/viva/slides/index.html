@@ -995,6 +995,94 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .validation-gate-mini.warn i { background:var(--accent-red); }
 .validation-gate-mini.warn span { color:var(--danger-text); }
 .report-limit-note { width:min(100%,1120px); padding:10px 16px; border-left:5px solid var(--accent-red); border-radius:9px; background:rgba(218,30,40,.055); color:var(--danger-text); text-align:center; font-size:13.5px; line-height:1.3; font-weight:720; }
+
+/* Challenge 3 v6 — a shorter, evidence-led story with one purpose per screen. */
+.report-stage-wrap { min-height:clamp(405px,51vh,520px); }
+.report-story-layout { max-width:1320px; grid-template-columns:minmax(320px,.42fr) minmax(0,.58fr); gap:30px; }
+.report-design-panel { min-height:330px; color:var(--text); background:linear-gradient(145deg,#f7f9ff 0%,#edf3ff 100%); border:1.5px solid rgba(15,98,254,.22); box-shadow:0 16px 42px rgba(15,98,254,.08); }
+.report-design-panel p { color:var(--text-muted); }
+.report-design-panel .model-kicker { color:var(--accent-blue); }
+.report-design-panel .report-definition { color:var(--text); background:rgba(255,255,255,.68); border-color:rgba(15,98,254,.22); }
+.report-stage[data-report-stage="0"] .fixed-owner-report { min-height:330px; }
+.report-methods { width:100%; max-width:1320px; display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+.report-method { min-height:285px; padding:28px; border:1px solid var(--border); border-radius:18px; background:rgba(255,255,255,.86); box-shadow:0 14px 38px rgba(29,29,31,.055); display:flex; flex-direction:column; justify-content:center; }
+.report-method.selected { border:2px solid var(--accent-blue); background:linear-gradient(145deg,#f7faff,#edf3ff); }
+.report-method .method-num { color:var(--accent-blue); font:750 11px/1 var(--font-mono); letter-spacing:.08em; text-transform:uppercase; }
+.report-method h3 { margin:16px 0 13px; font-size:26px; line-height:1.08; }
+.report-method p { margin:0; color:var(--text-muted); font-size:15px; line-height:1.45; }
+.report-method strong { margin-top:22px; color:var(--accent-blue); font:750 13px/1.35 var(--font-mono); }
+.three-call-flow { width:100%; max-width:1320px; display:grid; grid-template-columns:repeat(3,1fr); gap:42px; position:relative; }
+.three-call-flow::before { content:""; position:absolute; left:13%; right:13%; top:50%; height:2px; background:rgba(15,98,254,.28); }
+.call-card { position:relative; z-index:1; min-height:290px; padding:25px 26px; border:1px solid var(--border); border-top:5px solid var(--accent-blue); border-radius:16px; background:#fff; box-shadow:0 14px 38px rgba(29,29,31,.06); display:flex; flex-direction:column; justify-content:center; }
+.call-card h3 { margin:13px 0 16px; font-size:25px; }
+.call-card .call-source { color:var(--text-muted); font-size:14px; line-height:1.45; }
+.call-card .call-rule { margin-top:19px; padding:12px 13px; border-left:4px solid var(--accent-blue); background:rgba(15,98,254,.055); font-size:14px; line-height:1.35; font-weight:700; }
+.case-compare { width:100%; max-width:1320px; display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.case-card { min-height:315px; padding:25px 28px; border:1px solid var(--border); border-radius:18px; background:#fff; box-shadow:0 14px 38px rgba(29,29,31,.055); display:flex; flex-direction:column; justify-content:center; }
+.case-card.grounded { border:2px solid var(--accent-blue); background:linear-gradient(145deg,#fff,#f1f5ff); }
+.case-input { display:flex; gap:8px; flex-wrap:wrap; margin:14px 0 18px; }
+.case-input span { padding:7px 10px; border-radius:16px; background:rgba(15,98,254,.07); color:var(--accent-blue); font:700 10.5px/1 var(--font-mono); }
+.case-card blockquote { margin:0; padding:15px 17px; border-left:4px solid #8d8d8d; background:rgba(29,29,31,.035); color:var(--text); font-size:15px; line-height:1.45; }
+.case-card.grounded blockquote { border-left-color:var(--accent-blue); background:rgba(15,98,254,.05); }
+.case-card .case-result { margin-top:17px; color:var(--text-muted); font-size:13.5px; line-height:1.4; }
+.case-card .case-result b { color:var(--accent-blue); }
+.correction-flow { width:100%; max-width:1320px; display:grid; grid-template-columns:1fr 92px 1fr; gap:22px; align-items:stretch; }
+.correction-card { min-height:315px; padding:27px 30px; border:1px solid var(--border); border-radius:18px; background:#fff; box-shadow:0 14px 38px rgba(29,29,31,.055); display:flex; flex-direction:column; justify-content:center; }
+.correction-card.bad { border-color:rgba(218,30,40,.28); }
+.correction-card.good { border:2px solid var(--accent-blue); background:linear-gradient(145deg,#fff,#f1f5ff); }
+.correction-card blockquote { margin:17px 0 0; font-size:18px; line-height:1.42; font-weight:650; }
+.correction-feedback { margin-top:18px; display:grid; gap:7px; }
+.correction-feedback span { padding:8px 10px; border-left:4px solid var(--accent-red); background:rgba(218,30,40,.05); color:var(--danger-text); font-size:12.5px; font-weight:700; }
+.correction-score { margin-top:17px; color:var(--accent-blue); font:750 20px/1 var(--font-mono); }
+.correction-arrow { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--accent-blue); font:750 12px/1.25 var(--font-mono); text-align:center; }
+.correction-arrow b { font-size:30px; }
+.failure-state { width:100%; max-width:1120px; min-height:340px; padding:36px 42px; border:1.5px solid rgba(15,98,254,.22); border-radius:22px; background:linear-gradient(135deg,#eef4ff 0%,#fff 55%,#fff2f2 100%); box-shadow:0 20px 54px rgba(29,29,31,.09); display:grid; grid-template-columns:160px 1fr; gap:32px; align-items:center; }
+.failure-icon { width:132px; height:132px; margin:auto; border-radius:50%; display:grid; place-items:center; color:var(--accent-red); background:rgba(218,30,40,.08); font-size:62px; }
+.failure-copy .model-kicker { color:var(--accent-blue); }
+.failure-copy h3 { margin:14px 0 12px; font-size:34px; }
+.failure-copy p { margin:0; max-width:64ch; color:var(--text-muted); font-size:18px; line-height:1.45; }
+.failure-copy .failure-preserved { margin-top:20px; padding:13px 15px; border-left:5px solid var(--accent-blue); background:rgba(255,255,255,.72); color:var(--text); font-size:15px; font-weight:700; }
+
+/* Challenge 3 v7 — presentation-scale hierarchy and visual-first composition. */
+.report-stage-wrap { min-height:clamp(430px,55vh,555px); margin-top:4px; }
+.report-stage { justify-content:center; padding:0; gap:18px; }
+.report-stage-label { margin-top:4px; font-size:clamp(13px,1.05vw,17px); }
+.report-methods { max-width:1340px; grid-template-columns:.9fr .9fr 1.2fr; align-items:center; gap:22px; }
+.report-method { min-height:285px; padding:34px 32px; border:none; box-shadow:0 18px 46px rgba(20,50,100,.08); }
+.report-method.selected { min-height:320px; border:2px solid var(--accent-blue); box-shadow:0 24px 60px rgba(15,98,254,.16); }
+.report-method h3 { margin:0 0 14px; font-size:clamp(27px,2.05vw,34px); }
+.report-method p { font-size:clamp(16px,1.18vw,19px); line-height:1.4; }
+.report-method strong { margin-top:24px; font-size:14px; }
+.report-definition { max-width:900px; padding:13px 22px; font-size:clamp(15px,1.08vw,18px); text-align:center; }
+.three-call-flow { max-width:1340px; gap:56px; }
+.three-call-flow::before { left:10%; right:10%; height:4px; background:linear-gradient(90deg,rgba(15,98,254,.18),rgba(15,98,254,.72),rgba(15,98,254,.18)); }
+.call-card { min-height:335px; padding:34px; border:none; border-top:6px solid var(--accent-blue); box-shadow:0 18px 46px rgba(20,50,100,.08); }
+.call-card h3 { margin:14px 0 20px; font-size:clamp(27px,2vw,34px); }
+.call-card .call-source { font-size:clamp(16px,1.16vw,19px); }
+.call-card .call-rule { margin-top:24px; padding:15px 16px; font-size:clamp(15px,1.08vw,18px); }
+.case-compare { max-width:1340px; gap:28px; }
+.case-card { min-height:370px; padding:34px 38px; border:none; box-shadow:0 18px 46px rgba(20,50,100,.08); }
+.case-card.grounded { border:2px solid var(--accent-blue); box-shadow:0 24px 60px rgba(15,98,254,.14); }
+.case-input { margin:18px 0 24px; gap:10px; }
+.case-input span { padding:9px 12px; font-size:12px; }
+.case-card blockquote { padding:20px 22px; font-size:clamp(18px,1.4vw,23px); line-height:1.42; }
+.case-card .case-result { margin-top:22px; font-size:clamp(15px,1.08vw,18px); }
+.correction-flow { max-width:1340px; grid-template-columns:1fr 110px 1fr; gap:26px; }
+.correction-card { min-height:380px; padding:34px 38px; border:none; box-shadow:0 18px 46px rgba(20,50,100,.08); }
+.correction-card.good { border:2px solid var(--accent-blue); box-shadow:0 24px 60px rgba(15,98,254,.14); }
+.correction-card blockquote { font-size:clamp(21px,1.65vw,27px); }
+.correction-feedback span { padding:11px 13px; font-size:14px; }
+.dashboard-proof { width:100%; max-width:1340px; display:grid; grid-template-columns:290px minmax(0,1fr); gap:26px; align-items:stretch; }
+.dashboard-proof-copy { padding:34px 30px; border-radius:20px; background:linear-gradient(155deg,#0b1f42,#153d7a); color:#fff; display:flex; flex-direction:column; justify-content:center; box-shadow:0 22px 54px rgba(16,46,98,.2); }
+.dashboard-proof-copy .method-num { color:#8db7ff; }
+.dashboard-proof-copy h3 { margin:17px 0 14px; font-size:30px; line-height:1.12; }
+.dashboard-proof-copy p { margin:0; color:#d6e4ff; font-size:17px; line-height:1.45; }
+.dashboard-proof-steps { min-height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; }
+.dashboard-proof-steps strong { font-family:var(--sans); font-size:clamp(30px,2.45vw,48px); line-height:1; color:#fff; }
+.dashboard-proof-steps span { font-size:30px; line-height:1; color:#78a7ff; }
+.dashboard-proof-shot { position:relative; min-width:0; height:280px; overflow:hidden; padding:0; border:14px solid #fff; border-radius:20px; background:#fff; box-shadow:0 22px 54px rgba(20,50,100,.12); }
+.dashboard-proof-shot img { position:absolute; left:0; bottom:0; display:block; width:100%; height:auto; border-radius:8px; }
+.report-limit-note { max-width:1080px; padding:12px 18px; font-size:15px; }
 @media (max-width:1050px) {
   .report-story-layout { grid-template-columns:1fr; }
   .report-design-panel { display:none; }
@@ -2351,143 +2439,105 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
     <h2 class="anim-2">How can we explain risk <span class="highlight-blue">without inventing a diagnosis?</span></h2>
     <p class="subtitle anim-2">Charlotte Yu &middot; Jintong He</p>
     <div class="report-stepper anim-3" id="reportStepper">
-      <div class="report-stage-label" id="reportStageLabel">Start with one real case</div>
+      <div class="report-stage-label" id="reportStageLabel">Choose how to explain the evidence</div>
       <div class="report-stage-wrap" id="reportStageWrap">
         <div class="report-stage" data-report-stage="0">
-          <div class="report-story-layout">
-            <div class="report-design-panel">
-              <div class="model-kicker">Our report design</div>
-              <h3>Three layers keep the report useful and bounded.</h3>
-              <div class="design-layers">
-                <div class="design-layer"><b>Evidence</b><span>What the vehicle data shows.</span></div>
-                <div class="design-layer"><b>Verified knowledge</b><span>What the evidence may mean and which actions are safe.</span></div>
-                <div class="design-layer"><b>Explanation</b><span>How those facts are communicated to the owner.</span></div>
-              </div>
-            </div>
-            <div class="fixed-owner-report">
-              <div class="fixed-report-head"><span>Owner report</span><b>Fixed structure</b></div>
-              <div class="fixed-report-body">
-                <section class="fixed-report-section empty"><h4>What happened?</h4><p>Vehicle evidence will appear here.</p></section>
-                <section class="fixed-report-section empty"><h4>What might cause it?</h4><p>Possible meaning will appear here.</p></section>
-                <section class="fixed-report-section empty"><h4>What should I do?</h4><p>Safe owner action will appear here.</p></section>
-              </div>
-              <div class="fixed-report-foot"><span>Same questions on every page</span><b>One real Seat Leon case</b></div>
-            </div>
+          <div class="report-methods">
+            <article class="report-method">
+              <div class="method-num">01 · Pure retrieval</div>
+              <h3>Verified but fixed</h3>
+              <p>Returns verified workshop knowledge in fixed wording.</p>
+              <strong>RELIABLE · NOT ADAPTIVE</strong>
+            </article>
+            <article class="report-method">
+              <div class="method-num">02 · Large Language Model (LLM)</div>
+              <h3>Readable but unbounded</h3>
+              <p>Explains clearly, but may add an unsupported claim.</p>
+              <strong>CLEAR · NOT GROUNDED</strong>
+            </article>
+            <article class="report-method selected">
+              <div class="method-num">03 · RAG + model</div>
+              <h3>Verified and readable</h3>
+              <p>Verified knowledge sets the boundary; the model explains this case.</p>
+              <strong>OUR DESIGN</strong>
+            </article>
           </div>
+          <div class="report-definition"><b>RAG — Retrieval-Augmented Generation</b> retrieves verified knowledge before the model writes.</div>
         </div>
 
         <div class="report-stage" data-report-stage="1">
-          <div class="report-story-layout">
-            <div class="report-design-panel">
-              <div class="model-kicker">Start with real JSON</div>
-              <h3>The evidence is structured—not written for an owner.</h3>
-              <div class="report-json-mini"><b>anomaly_type</b>: cooling_degradation<br><b>risk_level</b>: Medium<br><b>prediction_confidence</b>: 0.842<br><b>coolant rise</b>: 5.0486°C/min<br><b>projection</b>: 5 trips · 0.7502</div>
-            </div>
-            <div class="fixed-owner-report">
-              <div class="fixed-report-head"><span>Owner report</span><b>Directly formatted JSON</b></div>
-              <div class="fixed-report-body">
-                <section class="fixed-report-section"><h4>What happened?</h4><p>Cooling degradation detected. Medium risk, with 84.2% confidence.</p></section>
-                <section class="fixed-report-section empty"><h4>What might cause it?</h4><p>No cause is provided by the JSON.</p></section>
-                <section class="fixed-report-section empty"><h4>What should I do?</h4><p>No owner action is provided by the JSON.</p></section>
-              </div>
-              <div class="fixed-report-foot"><span>Facts are present</span><b>Meaning is incomplete</b></div>
-            </div>
+          <div class="three-call-flow">
+            <article class="call-card">
+              <div class="method-num">Call 1</div>
+              <h3>What happened?</h3>
+              <div class="call-source">Uses current readings, reference ranges and risk evidence.</div>
+              <div class="call-rule">Describe the evidence. Do not guess a cause.</div>
+            </article>
+            <article class="call-card">
+              <div class="method-num">Call 2</div>
+              <h3>What might cause it?</h3>
+              <div class="call-source">Adds retrieved knowledge linked to the current signals.</div>
+              <div class="call-rule">Present supported possibilities—not a diagnosis.</div>
+            </article>
+            <article class="call-card">
+              <div class="method-num">Call 3</div>
+              <h3>What should I do?</h3>
+              <div class="call-source">Uses the current risk tier and verified action guidance.</div>
+              <div class="call-rule">Return safe actions. Do not invent a repair.</div>
+            </article>
           </div>
         </div>
 
         <div class="report-stage" data-report-stage="2">
-          <div class="report-story-layout">
-            <div class="report-design-panel light">
-              <div class="model-kicker">Use exact retrieval</div>
-              <h3>Verified knowledge makes the report correct and predictable.</h3>
-              <p>The anomaly type and risk select stored cooling guidance. The same matched case receives the same fixed wording.</p>
-              <div class="design-facts">
-                <div class="design-fact"><span>Possible meaning</span><b>sensor · fan · airflow</b></div>
-                <div class="design-fact"><span>Safe checks</span><b>coolant · leaks · fan</b></div>
-                <div class="design-fact"><span>Limitation</span><b>fixed wording</b></div>
-              </div>
-            </div>
-            <div class="fixed-owner-report">
-              <div class="fixed-report-head"><span>Owner report</span><b>Retrieval + fixed template</b></div>
-              <div class="fixed-report-body">
-                <section class="fixed-report-section"><h4>What happened?</h4><p>Cooling degradation was detected at Medium risk.</p></section>
-                <section class="fixed-report-section"><h4>What might cause it?</h4><p>Possible areas include a sensor reading issue, cooling-fan behaviour or restricted airflow.</p></section>
-                <section class="fixed-report-section"><h4>What should I do?</h4><p>Check coolant, visible leaks and fan operation; arrange an inspection soon.</p></section>
-              </div>
-              <div class="fixed-report-foot"><span>Verified facts</span><b>Same wording for the same match</b></div>
-            </div>
+          <div class="case-compare">
+            <article class="case-card">
+              <div class="method-num">Same uncertain case · without retrieval</div>
+              <div class="case-input"><span>93°C · NORMAL</span><span>51% confidence</span><span>Medium risk</span></div>
+              <blockquote>“The evidence is not strong enough to confirm a specific fault.”</blockquote>
+              <div class="case-result"><b>General caution</b> without a supported explanation.</div>
+            </article>
+            <article class="case-card grounded">
+              <div class="method-num">Same uncertain case · with RAG</div>
+              <div class="case-input"><span>93°C · NORMAL</span><span>51% confidence</span><span>Medium risk</span></div>
+              <blockquote>“The wider pattern may indicate a cooling-system issue, although the current temperature is normal.”</blockquote>
+              <div class="case-result"><b>Relevant possibility</b> without claiming a diagnosis.</div>
+            </article>
           </div>
         </div>
 
         <div class="report-stage" data-report-stage="3">
-          <div class="report-story-layout">
-            <div class="report-design-panel">
-              <div class="model-kicker">LLM without grounding</div>
-              <h3>The language improves—but the meaning can drift.</h3>
-              <div class="report-definition"><b>LLM — Large Language Model</b><br>A model that turns supplied context into natural language.</div>
-              <div class="design-facts">
-                <div class="design-fact"><span>Receives</span><b>vehicle JSON only</b></div>
-                <div class="design-fact"><span>Missing</span><b>verified knowledge + boundaries</b></div>
-                <div class="design-fact"><span>Real result</span><b>fluent but unsafe</b></div>
-              </div>
-            </div>
-            <div class="fixed-owner-report">
-              <div class="fixed-report-head"><span>Owner report</span><b>Actual Granite · no grounding</b></div>
-              <div class="fixed-report-body">
-                <section class="fixed-report-section unsafe"><h4>What happened?</h4><p>The report says there is a 75% probability of crossing High risk, <mark>“meaning failure could occur in about five more drive cycles.”</mark></p></section>
-                <section class="fixed-report-section"><h4>What might cause it?</h4><p>It suggests a sensor issue, cooling-fan behaviour or early cooling inefficiency.</p></section>
-                <section class="fixed-report-section"><h4>What should I do?</h4><p>Check the sensor and fan, monitor the gauge and arrange an inspection.</p></section>
-              </div>
-              <div class="fixed-report-foot"><span>Verbatim unsafe claim highlighted</span><b>baseline_report.json</b></div>
-            </div>
+          <div class="correction-flow">
+            <article class="correction-card bad">
+              <div class="method-num">Controlled unsafe answer · score 0.40</div>
+              <blockquote>“coolant_temp is high and the cooling fan has failed.”</blockquote>
+              <div class="correction-feedback"><span>Internal field name exposed</span><span>Unsupported confirmed failure</span><span>Explanation too short</span></div>
+            </article>
+            <div class="correction-arrow"><b>→</b><span>RENAME THE FIELD<br>HEDGE THE CLAIM<br>COMPLETE THE EXPLANATION</span></div>
+            <article class="correction-card good">
+              <div class="method-num">Corrected by the model · score 1.00</div>
+              <blockquote>“The engine's coolant temperature is running higher than normal. This abnormal reading may need prompt attention to prevent overheating.”</blockquote>
+              <div class="correction-score">PASS · 1.00</div>
+            </article>
           </div>
         </div>
 
         <div class="report-stage" data-report-stage="4">
-          <div class="report-story-layout">
-            <div class="report-design-panel light">
-              <div class="model-kicker">Combine both strengths</div>
-              <h3>RAG keeps the facts fixed while the explanation adapts.</h3>
-              <div class="report-definition"><b>RAG — Retrieval-Augmented Generation</b><br>Verified knowledge and interpretation rules are retrieved before the LLM writes.</div>
-              <div class="design-facts">
-                <div class="design-fact"><span>Retrieval adds</span><b>causes · actions · boundaries</b></div>
-                <div class="design-fact"><span>LLM adds</span><b>clear, case-specific language</b></div>
+          <div class="dashboard-proof">
+              <div class="dashboard-proof-copy">
+                <div class="method-num">Validated report</div>
+                <div class="dashboard-proof-steps" aria-label="Evidence becomes explanation and action">
+                  <strong>Evidence</strong>
+                  <span aria-hidden="true">↓</span>
+                  <strong>Explanation</strong>
+                  <span aria-hidden="true">↓</span>
+                  <strong>Action</strong>
+                </div>
               </div>
-            </div>
-            <div class="fixed-owner-report">
-              <div class="fixed-report-head"><span>Owner report</span><b>Actual Granite + RAG</b></div>
-              <div class="fixed-report-body">
-                <section class="fixed-report-section"><h4>What happened?</h4><p>Coolant is below its reference range and rising unusually quickly. Overall risk is Medium.</p></section>
-                <section class="fixed-report-section"><h4>What might cause it?</h4><p>This may suggest a sensor reading issue, intermittent cooling-fan behaviour or minor airflow restriction—not a confirmed fault.</p></section>
-                <section class="fixed-report-section"><h4>What should I do?</h4><p>Check coolant, hoses, leaks and fan operation; arrange a cooling-system inspection within the next few days.</p></section>
-              </div>
-              <div class="fixed-report-foot"><span>75.02% = chance of crossing High risk</span><b>Not mechanical-failure probability</b></div>
+            <div class="dashboard-proof-shot">
+              <img src="assets/dashboard-report.png" alt="Real dashboard screenshot cropped to the generated diagnostic report">
             </div>
           </div>
-        </div>
-
-        <div class="report-stage" data-report-stage="5">
-          <div class="report-story-layout">
-            <div class="report-design-panel">
-              <div class="model-kicker">Validate before delivery</div>
-              <h3>Every section is checked against its source.</h3>
-              <div class="validation-gates-mini">
-                <div class="validation-gate-mini"><i>1</i><b>Evidence supported?</b><span>PASS</span></div>
-                <div class="validation-gate-mini warn"><i>2</i><b>Knowledge and uncertainty?</b><span>WARNING</span></div>
-                <div class="validation-gate-mini"><i>3</i><b>Action allowed?</b><span>PASS</span></div>
-              </div>
-            </div>
-            <div class="fixed-owner-report">
-              <div class="fixed-report-head"><span>Owner report</span><b>Real validation result</b></div>
-              <div class="fixed-report-body">
-                <section class="fixed-report-section validated"><h4>What happened?</h4><p>Coolant is below its reference range and rising unusually quickly. Overall risk is Medium.</p></section>
-                <section class="fixed-report-section warning"><h4>What might cause it?</h4><p>This may suggest a sensor reading issue, intermittent cooling-fan behaviour or minor airflow restriction—not a confirmed fault.</p></section>
-                <section class="fixed-report-section validated"><h4>What should I do?</h4><p>Check coolant, hoses, leaks and fan operation; arrange a cooling-system inspection within the next few days.</p></section>
-              </div>
-              <div class="fixed-report-foot"><span>Description 1.0 · Cause 0.8 · Action 1.0</span><b>validation.json</b></div>
-            </div>
-          </div>
-          <div class="report-limit-note">Current limitation: the validator flags unsafe wording, but does not yet block or regenerate the report.</div>
+          <div class="report-limit-note">However, the validator can detect only the unsafe patterns represented in its current rules.</div>
         </div>
       </div>
       <div class="ch-controls">
@@ -2498,13 +2548,12 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
           <div class="ch-dot" data-report-dot="2" onclick="reportGoTo(2)"></div>
           <div class="ch-dot" data-report-dot="3" onclick="reportGoTo(3)"></div>
           <div class="ch-dot" data-report-dot="4" onclick="reportGoTo(4)"></div>
-          <div class="ch-dot" data-report-dot="5" onclick="reportGoTo(5)"></div>
         </div>
         <button class="ch-nav-btn primary" id="reportNextBtn" onclick="reportNext()">Next &rarr;</button>
       </div>
     </div>
     <script type="application/json" class="slide-notes">
-    {"title":"Challenge 3: One Fixed Report, Six Design States","script":"Our report design has three layers: vehicle evidence, verified knowledge and owner-facing explanation. We keep one fixed report structure on screen and change only its content. The real JSON contains evidence but no cause or action. Exact retrieval adds verified guidance, although its wording is fixed. A Large Language Model can produce a more natural explanation, but our real ungrounded Granite run incorrectly turns a risk-threshold projection into a possible failure time. Retrieval-Augmented Generation combines verified knowledge and interpretation boundaries with flexible language, producing the final grounded report. The validator then checks the description, cause and action against their sources. Today it reports warnings but does not yet block or regenerate the output.","notes":["LLM is expanded as Large Language Model on first use","RAG is expanded as Retrieval-Augmented Generation on first use","All numerical inputs come from the committed Seat Leon real-case artefacts","The no-grounding quotation is verbatim from baseline_report.json generated with granite4.1:8b","The final report is condensed from rag_report.json without adding facts","75.02 percent means probability of crossing the High-risk score threshold within ten trips—not probability of mechanical failure","Full reproducibility artefacts are stored under report_layer/evaluation/viva_real_case"]}
+    {"title":"Challenge 3: From Evidence to a Safe Owner Report","script":"We have structured evidence, but the driver still needs three answers: what happened, what might cause it and what should I do? We compared pure retrieval, a Large Language Model, or LLM, alone and RAG. Retrieval is verified but fixed; the model is readable but may add unsupported claims. RAG combines verified knowledge with case-specific language. Because each question uses different evidence and rules, we generate the three answers separately. Each call sees only the inputs needed for one question and follows its own boundary, so observations, possible causes and actions are less likely to be mixed together. A failed answer can also be corrected without regenerating the other two. We then tested the same uncertain cooling case with and without retrieval. RAG connected the mixed evidence to relevant cooling-system possibilities without presenting them as a diagnosis. Every answer also passes a live validator. In a controlled correction run, the validator found three exact problems: replace the internal field name with plain language, change the confirmed fan failure into a supported possibility and complete the explanation. Those instructions were returned to the model with the original answer for one targeted rewrite. The revised answer was checked again and improved from 0.40 to 1.00. If a safe answer still cannot be generated, the original evidence is preserved and the Dashboard shows an explicit error.","notes":["LLM means Large Language Model","RAG means Retrieval-Augmented Generation","The uncertain-case excerpts come from the committed RAG versus baseline evaluation","The correction example is a controlled live validator run, not a naturally failed production report","The remaining limitation is the coverage of the current semantic rules"]}
     </script>
   </div>
 
@@ -4471,14 +4520,13 @@ function resetModel() {
    Evidence + knowledge → grounded owner report.
    =========================================== */
 let reportCurrent = 0;
-const reportTotal = 6;
+const reportTotal = 5;
 const reportLabels = [
-  'Our report design has three layers',
-  'Start with structured vehicle evidence',
-  'Use verified knowledge with fixed wording',
-  'What happens when an LLM writes without grounding?',
-  'Combine retrieval and an LLM with RAG',
-  'Validate every claim before delivery'
+  'Choose how to translate evidence',
+  'One question per focused call',
+  'Test the same case with and without retrieval',
+  'Correct unsafe wording before delivery',
+  'Show the validated report in the dashboard'
 ];
 
 function renderReport() {
