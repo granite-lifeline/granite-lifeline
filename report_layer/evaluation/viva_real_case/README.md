@@ -34,3 +34,13 @@ presented as one.
 repository's three-stage report pipeline and `granite4.1:8b`. The validation
 artifact records the current evaluator output. The evaluator emits warnings
 and scores; it is not yet a blocking production gate.
+
+## Dashboard-ready file
+
+`dashboard_report.json` is the complete `ReportLayerOutput` list for the
+dashboard. It combines the final grounded report with the six chronological
+trip-level mean risk scores from `real_case_projection.json`. Loading this
+file displays the current Medium risk, the six-point Risk Score Trend, and the
+five-trip High-risk-threshold projection. The history values are aggregations
+of the 22 committed model windows; they are not duplicated or invented
+readings.

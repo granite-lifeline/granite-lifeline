@@ -199,10 +199,11 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .story-scene[data-story-step="1"] .story-scene-label,
 .story-scene[data-story-step="0"] .story-photo-note,
 .story-scene[data-story-step="1"] .story-photo-note { padding-inline:8px; }
-.story-knowledge { position:absolute; z-index:6; left:50%; bottom:clamp(72px,7.5vh,90px); transform:translateX(-50%); visibility:hidden; opacity:0; width:max-content; max-width:calc(100% - 48px); display:grid; grid-template-columns:1fr; gap:7px; align-items:center; padding:12px 22px; border:1px solid rgba(15,98,254,.14); border-radius:9px; background:rgba(255,255,255,.92); color:var(--text-muted); text-align:center; transition:opacity .25s ease; }
+.story-knowledge { position:absolute; z-index:6; left:50%; bottom:clamp(68px,7vh,84px); transform:translateX(-50%); visibility:hidden; opacity:0; width:min(900px,calc(100% - 48px)); display:grid; grid-template-columns:1fr; gap:7px; align-items:center; padding:14px 26px; border:1px solid rgba(15,98,254,.14); border-radius:9px; background:rgba(255,255,255,.94); color:var(--text-muted); text-align:center; transition:opacity .25s ease; }
 .story-knowledge.visible { visibility:visible; opacity:1; }
-.story-knowledge strong { color:var(--text); font-size:14px; line-height:1.3; }
+.story-knowledge strong { color:var(--text); font-size:clamp(15px,1.25vw,18px); line-height:1.35; }
 .story-knowledge strong > span { display:block; }
+.story-knowledge strong > span:first-child { margin-bottom:3px; font-size:1.08em; }
 .obd-signal-list { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:5px; }
 .obd-signal-list span { padding:4px 7px; border-radius:5px; background:rgba(15,98,254,.07); color:var(--accent-blue); font:9px/1 var(--font-mono); }
 .story-code-crop { flex:0 0 auto; width:100%; aspect-ratio:1859/846; margin:0; overflow:hidden; border-radius:14px; border:1px solid rgba(255,255,255,.14); box-shadow:0 20px 46px rgba(0,0,0,.3); }
@@ -226,7 +227,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .reactive-stamp { font-family:var(--font-body); color:#fff; border:1px solid rgba(120,169,255,.42); background:rgba(15,98,254,.13); padding:12px 16px; border-radius:10px; text-align:center; font-size:clamp(13px,1.25vw,17px); font-weight:600; }
 .story-scene[data-story-step="3"] { gap:22px; }
 .reactive-flow { width:100%; display:grid; grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr) 34px minmax(0,1fr); align-items:stretch; gap:13px; }
-.reactive-step { height:128px; min-width:0; padding:16px; border:1px solid rgba(166,200,255,.32); border-radius:14px; background:rgba(255,255,255,.075); display:flex; flex-direction:column; justify-content:space-between; }
+.reactive-step { height:128px; min-width:0; padding:16px; border:1px solid rgba(166,200,255,.32); border-radius:14px; background:rgba(255,255,255,.075); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
 .reactive-step-num { font:600 10px/1 var(--font-mono); color:#78a9ff; letter-spacing:.1em; }
 .reactive-step strong { font-size:clamp(16px,1.55vw,21px); line-height:1.18; color:#fff; }
 .reactive-step span { font:10.5px/1.4 var(--font-mono); color:rgba(255,255,255,.72); }
@@ -267,7 +268,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .motivation-copy { display:flex; flex-direction:column; justify-content:center; }
 .pdm-logic { display:grid; gap:12px; }
 .pdm-logic-node { min-height:112px; padding:20px; border-radius:15px; background:#fff; border:1px solid var(--border); box-shadow:0 12px 30px rgba(24,48,83,.06); display:flex; flex-direction:column; justify-content:center; }
-.pdm-logic-node.output { color:#fff; background:#101318; border-color:#101318; }
+.pdm-logic-node.output { color:#fff; background:radial-gradient(circle at 78% 20%,rgba(120,169,255,.34),transparent 38%),linear-gradient(145deg,#173f92,#0b245d); border-color:rgba(15,98,254,.45); }
 .pdm-logic-kicker { font:600 9px/1 var(--font-mono); color:var(--accent-blue); letter-spacing:.1em; text-transform:uppercase; }
 .pdm-logic-node.output .pdm-logic-kicker { color:#78a9ff; }
 .pdm-logic-node strong { margin-top:8px; font-size:clamp(19px,2vw,27px); line-height:1.1; }
@@ -285,21 +286,21 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .pdm-proof figcaption { position:absolute; left:10px; bottom:10px; padding:7px 9px; border-radius:7px; color:#fff; background:rgba(16,19,24,.88); backdrop-filter:blur(8px); font:600 9px/1.25 var(--font-mono); letter-spacing:.035em; box-shadow:0 4px 14px rgba(0,0,0,.18); }
 .pdm-proof figcaption strong { display:block; color:#78a9ff; font-family:var(--font-body); font-size:12px; letter-spacing:0; margin-bottom:2px; }
 .pdm-source { grid-column:1/-1; margin-top:-2px; font:8.5px/1.35 var(--font-mono); color:var(--text-dim); text-align:right; }
-.oxmaint-evidence { min-height:310px; padding:18px; border-radius:16px; background:#182678; color:#fff; border:1px solid rgba(255,184,76,.72); box-shadow:0 18px 42px rgba(24,38,120,.16); display:flex; flex-direction:column; }
-.oxmaint-head { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; padding-bottom:13px; border-bottom:1px solid rgba(255,255,255,.2); }
-.oxmaint-head strong { font-size:clamp(18px,1.8vw,24px); line-height:1.1; }
+.oxmaint-evidence { min-height:310px; padding:24px 26px 20px; border-radius:18px; background:radial-gradient(circle at 86% 14%,rgba(69,137,255,.42),transparent 36%),linear-gradient(145deg,#173f92,#101f67 58%,#142b76); color:#fff; border:1px solid rgba(120,169,255,.55); box-shadow:0 22px 52px rgba(18,49,119,.2); display:flex; flex-direction:column; }
+.oxmaint-head { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; padding-bottom:17px; border-bottom:1px solid rgba(255,255,255,.2); }
+.oxmaint-head strong { font-size:clamp(22px,2.2vw,30px); line-height:1.1; }
 .oxmaint-head span { font:9px/1.35 var(--font-mono); color:#ffc66d; text-align:right; }
 .oxmaint-data-flow { display:flex; align-items:center; justify-content:center; gap:9px; padding:12px 0; font:600 10px/1 var(--font-mono); color:#d8e2ff; letter-spacing:.04em; }
 .oxmaint-data-flow b { padding:7px 9px; border-radius:7px; background:rgba(255,255,255,.11); color:#fff; }
 .oxmaint-data-flow i { color:#ffc66d; font-style:normal; font-size:17px; }
-.oxmaint-alerts { display:grid; gap:8px; }
-.oxmaint-alert { display:grid; grid-template-columns:68px minmax(0,1fr) auto; gap:11px; align-items:center; padding:11px 12px; border-radius:10px; background:#fff; color:var(--text); }
+.oxmaint-alerts { display:grid; gap:12px; margin-top:18px; }
+.oxmaint-alert { display:grid; grid-template-columns:78px minmax(0,1fr) auto; gap:15px; align-items:center; padding:15px 16px; border-radius:12px; background:#fff; color:var(--text); }
 .oxmaint-alert-level { font:700 9px/1 var(--font-mono); color:#fff; background:#da1e28; border-radius:12px; padding:6px 8px; text-align:center; }
 .oxmaint-alert:nth-child(2) .oxmaint-alert-level { background:#d97400; }
 .oxmaint-alert:nth-child(3) .oxmaint-alert-level { background:#0f62fe; }
-.oxmaint-alert strong { display:block; font-size:12.5px; line-height:1.2; }
-.oxmaint-alert span { display:block; margin-top:3px; font:9px/1.3 var(--font-mono); color:var(--text-dim); }
-.oxmaint-action { font:600 9.5px/1.3 var(--font-mono); color:var(--accent-blue); text-align:right; max-width:126px; }
+.oxmaint-alert strong { display:block; font-size:15px; line-height:1.2; }
+.oxmaint-alert span { display:block; margin-top:4px; font:10px/1.3 var(--font-mono); color:var(--text-dim); }
+.oxmaint-action { font:600 10.5px/1.3 var(--font-mono); color:var(--accent-blue); text-align:right; max-width:150px; }
 .oxmaint-source { margin-top:auto; padding-top:10px; font:8px/1.3 var(--font-mono); color:rgba(255,255,255,.6); text-align:right; }
 .owner-impact { font-family:var(--font-body); color:#fff; border:1px solid rgba(255,131,43,.48); background:rgba(255,131,43,.14); padding:12px 16px; border-radius:10px; text-align:center; font-size:clamp(13px,1.25vw,17px); font-weight:600; }
 .owner-impact span { color:#ffb784; }
@@ -313,7 +314,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .pdm-zoom-source { font:9px/1.35 var(--font-mono); color:var(--text-dim); }
 .pdm-zoom-close { position:absolute; top:-14px; right:-14px; width:38px; height:38px; border:0; border-radius:50%; display:grid; place-items:center; color:#fff; background:var(--accent-blue); font-size:22px; line-height:1; cursor:pointer; box-shadow:0 8px 22px rgba(15,98,254,.32); }
 .pdm-zoom-close:hover { transform:scale(1.06); }
-.owner-bridge { width:min(1120px,100%); margin-top:18px; padding:15px 20px; display:grid; grid-template-columns:auto 1fr auto; gap:18px; align-items:center; background:#101318; color:#fff; border-radius:14px; }
+.owner-bridge { width:min(1120px,100%); margin-top:18px; padding:17px 20px; display:flex; justify-content:center; align-items:center; background:linear-gradient(110deg,#0b245d,#154aa5 58%,#0f62fe); color:#fff; border-radius:14px; text-align:center; box-shadow:0 15px 32px rgba(15,98,254,.2); }
 .owner-bridge-label { font:600 9px/1 var(--font-mono); color:#78a9ff; letter-spacing:.1em; text-transform:uppercase; white-space:nowrap; }
 .owner-bridge strong { font-size:clamp(16px,1.7vw,22px); line-height:1.25; font-weight:600; }
 .owner-bridge-output { padding-left:18px; border-left:1px solid rgba(255,255,255,.16); font:600 10px/1.35 var(--font-mono); color:#a6c8ff; white-space:nowrap; }
@@ -1466,6 +1467,8 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 :-webkit-full-screen .slide-counter,
 :-webkit-full-screen .nav-hints,
 :-webkit-full-screen .version-tag { display:none; }
+:fullscreen .slide.active,
+:-webkit-full-screen .slide.active { transform:translateY(0) scale(1.075); transform-origin:center; }
 
 .backup-overlay {
   position: fixed; inset: 0; z-index: 20000; background: var(--bg);
@@ -1638,30 +1641,26 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
       </div>
       <div class="story-visual" id="storyFlow">
         <div class="story-scene" data-story-step="0">
-          <div class="story-scene-label">01 · The owner’s first signal</div>
           <img class="story-photo" src="assets/check-engine-dashboard-v1.png" alt="Car dashboard with the amber check-engine warning light illuminated">
-          <div class="story-photo-note"><strong>CHECK ENGINE · ON</strong><span>Source · John Hughes, 2025</span></div>
+          <div class="story-photo-note"><span></span><span>Source · John Hughes, 2025</span></div>
         </div>
         <div class="story-scene" data-story-step="1">
-          <div class="story-scene-label">02 · The owner connects a consumer scan tool</div>
           <img class="story-photo" src="assets/bluedriver-scanner-v1.png" alt="Car owner holding a BlueDriver OBD-II scanner and its phone app">
-          <div class="story-photo-note"><strong>CONSUMER OBD-II SCANNER</strong><span>Source · BlueDriver</span></div>
+          <div class="story-photo-note"><span></span><span>Source · BlueDriver</span></div>
         </div>
         <div class="story-scene" data-story-step="2">
-          <div class="story-scene-label">03 · The tool returns a technical description</div>
           <div class="story-code-crop"><img src="assets/obd-consumer-tool-crop-v1.png" alt="EOBD Facile trouble-code screen showing P0670 and P0401 descriptions"></div>
           <div class="story-scope">Source · EOBD Facile, Google Play product listing, accessed July 2026</div>
         </div>
         <div class="story-scene" data-story-step="3">
-          <div class="story-scene-label">04 · The diagnosis is reactive</div>
           <div class="reactive-flow">
-            <div class="reactive-step"><span class="reactive-step-num">01 · DATA</span><strong>Sensor patterns change</strong><span>before the warning</span></div>
+            <div class="reactive-step"><strong>Vehicle data changes</strong></div>
             <div class="reactive-arrow">&rarr;</div>
-            <div class="reactive-step is-late"><span class="reactive-step-num">02 · FAULT</span><strong>A fault is recorded</strong><span>threshold crossed</span></div>
+            <div class="reactive-step is-late"><strong>Fault occurs</strong></div>
             <div class="reactive-arrow">&rarr;</div>
-            <div class="reactive-step"><span class="reactive-step-num">03 · OWNER</span><strong>Error code appears</strong><span>after the fault condition</span></div>
+            <div class="reactive-step"><strong>Warning appears</strong></div>
           </div>
-          <div class="owner-impact">By then, the owner may face <span>breakdown risk · repair cost · lost time.</span></div>
+          <div class="owner-impact">Late warning means <span>breakdown risk · repair cost · lost time.</span></div>
         </div>
       </div>
     </div>
@@ -1678,41 +1677,35 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
     </div>
     <div class="story-knowledge" id="storyKnowledge">
       <strong>
-        <span><span class="highlight-blue">OBD — On-Board Diagnostics:</span> the car’s built-in system for monitoring engine and emissions.</span>
-        <span><span class="highlight-blue">OBD-II:</span> the standardised second generation used by modern scan tools.</span>
+        <span><span class="highlight-blue">OBD-II — On-Board Diagnostics, Second Generation:</span></span>
+        <span>the standardised onboard system and port that monitors engine and emissions performance, and lets scan tools access live data and diagnostic trouble codes.</span>
       </strong>
     </div>
     <script type="application/json" class="slide-notes">
-    {"title":"Storyboard","script":"For a private owner, diagnosis usually starts when the warning light appears. They connect an OBD-II reader and receive a technical error code. But the vehicle's sensor patterns began changing before the fault condition was recorded. By the time the code appears, the owner may already face breakdown risk, repair cost and lost time. Reducing that loss means recognising the change earlier and acting before failure.","notes":["Beat 1: warning light appears","Beat 2: OBD-II exposes sensor readings and diagnostic trouble codes","Beat 3: the consumer tool returns technical information","Beat 4: reactive timing leaves the owner exposed to breakdown risk, cost and disruption","Transition: predictive maintenance uses the earlier data to support action before failure"]}
+    {"title":"Storyboard","script":"For a private owner, diagnosis usually starts when the warning light appears. They connect an OBD-II reader and receive live engine and emissions data together with diagnostic trouble codes. But the consumer tool still does not explain the likely problem, urgency or next action clearly. By the time the code appears, the owner may already face breakdown risk, repair cost and lost time. Could the same data warn the owner earlier?","notes":["Beat 1: warning light appears","Beat 2: OBD-II is the standardised vehicle interface used to access live engine and emissions data plus diagnostic trouble codes","Beat 3: the consumer tool returns codes and readings, but not a clear decision","Beat 4: late warning leaves the owner exposed to breakdown risk, cost and disruption","Transition: ask whether the same data could support an earlier warning"]}
     </script>
   </div>
 
   <!-- ===== 3 / MOTIVATION ===== -->
   <div class="slide" data-slide="2">
     <p class="slide-tag anim-1" data-edit-id="s2-tag">Our Motivation</p>
-    <h2 class="anim-2">Fleets already use <span class="highlight-blue">OBD data</span> for predictive maintenance.</h2>
+    <h2 class="anim-2">For professional fleets, <span class="highlight-blue">it already does.</span></h2>
     <div class="motivation-stage">
       <div class="motivation-copy anim-3">
         <div class="pdm-logic">
           <div class="pdm-logic-node">
-            <div class="pdm-logic-kicker">The input</div>
-            <strong>Continuous vehicle data</strong>
-            <span>OBD-II signals + fleet telematics</span>
+            <strong>Continuous OBD-II data</strong>
           </div>
           <div class="pdm-logic-arrow">&darr;</div>
           <div class="pdm-logic-node output">
-            <div class="pdm-logic-kicker">The capability</div>
             <strong>Predictive maintenance</strong>
-            <span>detect changes · prioritise · plan</span>
           </div>
         </div>
       </div>
-      <div class="oxmaint-evidence anim-4" aria-label="Oxmaint vendor dashboard example showing OBD and telematics data becoming fault alerts with recommended actions">
+      <div class="oxmaint-evidence anim-4" aria-label="Oxmaint vendor dashboard example showing live fleet fault alerts with recommended actions">
         <div class="oxmaint-head">
-          <strong>Live AI fault alerts</strong>
-          <span>FLEET OPERATIONS<br>PRIORITY QUEUE</span>
+          <strong>Live Fault Alerts</strong>
         </div>
-        <div class="oxmaint-data-flow"><b>OBD-II + telematics</b><i>&rarr;</i><b>early evidence</b><i>&rarr;</i><b>maintenance action</b></div>
         <div class="oxmaint-alerts">
           <div class="oxmaint-alert">
             <div class="oxmaint-alert-level">CRITICAL</div>
@@ -1734,12 +1727,10 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
       </div>
     </div>
     <div class="owner-bridge anim-5">
-      <span class="owner-bridge-label">Our goal</span>
-      <strong>Help private owners act before failure—with a clear, actionable report.</strong>
-      <span class="owner-bridge-output">without expert help</span>
+      <strong>Bring the same capability to private owners—without expert help.</strong>
     </div>
     <script type="application/json" class="slide-notes">
-    {"title":"Motivation","script":"Professional fleets already combine continuous OBD-II and telematics data with predictive-maintenance tools. In this Oxmaint vendor example, vehicle data becomes early fault evidence, and the evidence becomes a recommended maintenance action. Our goal is to bring that benefit to private owners: help them act before failure through a clear, understandable and actionable report, without requiring expert help. To produce that report, we first looked at the data.","notes":["OBD-II is both the consumer diagnostic interface and a source of time-series vehicle data","Oxmaint is presented as a vendor dashboard example, not independent performance validation","Do not use the vendor's numerical performance claims","Transition: To produce the report, we first looked at the data."]}
+    {"title":"Motivation","script":"Could a car warn its owner earlier? For professional fleets, it already does. Fleets continuously monitor OBD-II data so that changing vehicle behaviour can become early evidence and a maintenance action. This Oxmaint vendor example shows the kind of problem, urgency and recommendation a fleet operator can see. Our goal is to bring the same capability to private owners without requiring expert help. To build it, we began with the data.","notes":["Answer the storyboard question immediately: professional fleets already use continuous vehicle data for predictive maintenance","The vendor dashboard illustrates the capability; it is not independent performance validation","Point to problem, urgency and action","Transition: To build the same capability for a private owner, we began with the data."]}
     </script>
   </div>
 
@@ -2197,18 +2188,18 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
             <div class="json-artifact">
               <span class="model-kicker">JavaScript Object Notation (JSON) · structured machine-readable output</span>
               <pre>{
-  <span class="json-key">"timestamp"</span>: <span class="json-value">"2017-07-05T05:26:37Z"</span>,
+  <span class="json-key">"timestamp"</span>: <span class="json-value">"2017-07-28T06:46:23Z"</span>,
   <span class="json-key">"anomaly_type"</span>: <span class="json-value">"cooling_degradation"</span>,
-  <span class="json-key">"risk_score"</span>: <span class="json-value">0.585</span>,
+  <span class="json-key">"risk_score"</span>: <span class="json-value">0.5021</span>,
   <span class="json-key">"risk_level"</span>: <span class="json-value">"Medium"</span>,
   <span class="json-key">"component"</span>: <span class="json-value">"cooling_degradation"</span>,
-  <span class="json-key">"prediction_confidence"</span>: <span class="json-value">0.6534</span>,
+  <span class="json-key">"prediction_confidence"</span>: <span class="json-value">0.842</span>,
   <span class="json-key">"key_signals"</span>: [
-    { <span class="json-key">"feature"</span>: <span class="json-value">"coolant_temp"</span>, <span class="json-key">"value"</span>: <span class="json-value">98.0</span>, <span class="json-key">"unit"</span>: <span class="json-value">"°C"</span> },
-    { <span class="json-key">"feature"</span>: <span class="json-value">"ect_rate_180s"</span>, <span class="json-key">"value"</span>: <span class="json-value">1.5</span>, <span class="json-key">"unit"</span>: <span class="json-value">"°C/min"</span> }
+    { <span class="json-key">"feature"</span>: <span class="json-value">"coolant_temp"</span>, <span class="json-key">"value"</span>: <span class="json-value">85.0</span>, <span class="json-key">"unit"</span>: <span class="json-value">"°C"</span> },
+    { <span class="json-key">"feature"</span>: <span class="json-value">"ect_rate_180s"</span>, <span class="json-key">"value"</span>: <span class="json-value">5.0486</span>, <span class="json-key">"unit"</span>: <span class="json-value">"°C/min"</span> }
   ],
-  <span class="json-key">"estimated_cycles_to_failure"</span>: <span class="json-value">4</span>,
-  <span class="json-key">"estimated_failure_probability"</span>: <span class="json-value">1.0</span>
+  <span class="json-key">"estimated_cycles_to_failure"</span>: <span class="json-value">5</span>,
+  <span class="json-key">"estimated_failure_probability"</span>: <span class="json-value">0.7502</span>
 }</pre>
             </div>
           </div>
@@ -4265,7 +4256,7 @@ const storyCopy = [
   'Why has my Check Engine light come on?',
   'What data can OBD-II reveal?',
   'What does this code actually mean?',
-  'What does finding out this late cost me?'
+  'Could my car warn me earlier?'
 ];
 
 function renderStory() {
