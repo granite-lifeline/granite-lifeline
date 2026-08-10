@@ -26,6 +26,7 @@ def test_streamlit_app_routes_import_cleanly():
     assert callable(app.main)
     assert callable(app.show_overview_page)
     assert callable(app.show_detail_page)
+    assert callable(app.show_local_run_page)
     assert callable(app.show_what_if_page)
 
 
@@ -106,10 +107,12 @@ def test_literal_lucide_icons_are_registered():
 def test_main_dashboard_pages_use_shared_consistency_helpers():
     overview_src = _read("dashboard/pages/overview.py")
     detail_src = _read("dashboard/pages/detail.py")
+    local_run_src = _read("dashboard/pages/local_run.py")
     what_if_src = _read("dashboard/pages/what_if.py")
 
     assert "page_title_html(" in overview_src
     assert "page_title_html(" in detail_src
+    assert "page_title_html(" in local_run_src
     assert "page_title_html(" in what_if_src
 
     assert "empty_state_html(" in overview_src
@@ -167,7 +170,8 @@ def test_csv_analysis_loading_state_is_visible_and_disables_buttons():
 
     assert "CSV_ANALYSIS_RUNNING_KEY" in src
     assert "Analysing your CSV..." in src
-    assert "Analyzing data..." in src
+    assert "CSV_PROGRESS_STAGES" in src
+    assert "checking_upload" in src
     assert "csv-analysis-percent" in src
     assert "conic-gradient(" in src
     assert "csv-analysis-progress-rail" not in src
@@ -180,15 +184,188 @@ def test_csv_analysis_loading_state_is_visible_and_disables_buttons():
     assert ".st-key-landing_run_btn button:disabled" in src
 
 
+def test_csv_analysis_loading_is_cleared_before_failure_states():
+    """GL-415: failure and timeout states should replace loading feedback."""
+    src = _read("dashboard/pages/overview.py")
+
+    assert "def _clear_csv_analysis_loading" in src
+    assert 'hasattr(target, "empty")' in src
+    assert src.count("_clear_csv_analysis_loading(loading_slot)") >= 5
+
+
 def test_selected_file_upload_button_is_hidden():
     """GL-386: selected file row should not show a second Upload button."""
     src = _read("dashboard/pages/overview.py")
 
     assert '[data-testid="stFileUploaderDropzone"] button::after' in src
     assert '[data-testid="stFileUploader"] button::after' not in src
+    assert "section > div + button" in src
+    assert "> button:not(:first-child)" in src
     assert '.st-key-csv_upload_section' in src
     assert '.st-key-landing_upload_card' in src
     assert '[data-testid="stFileUploaderDeleteBtn"]' in src
+
+
+def test_uploaded_file_list_stays_below_upload_button():
+    """Selected files should stack below the fixed upload button."""
+    src = _read("dashboard/pages/overview.py")
+
+    assert "def _show_selected_csv_files" in src
+    assert src.count("_show_selected_csv_files(uploaded_files, tokens)") == 2
+    assert '<div class="csv-selected-files">' in src
+    assert ".csv-selected-files" in src
+    assert '[data-testid="stFileChips"]' in src
+    assert '[data-testid="stFileChip"]' in src
+    assert '[data-testid="stFileChipDeleteBtn"]' in src
+    assert '[data-testid="stFileUploaderFile"]' in src
+    assert "display: none !important;" in src
+
+
+def test_local_run_page_has_guide_layout_and_copy_commands():
+    """GL-426: local-run help uses a structured guide page."""
+    app_src = _read("dashboard/app.py")
+    src = _read("dashboard/pages/local_run.py")
+
+    assert "from pages.local_run import show_local_run_page" in app_src
+    assert 'st.session_state["page"] == "local_run"' in app_src
+    assert "show_local_run_page()" in app_src
+    assert "def show_local_run_page() -> None" in src
+    assert "How to Run Locally" in src
+    assert "Setup overview" in src
+    assert (
+        "Follow these steps to run the app on your computer and try "
+        in src
+    )
+    assert "data, model, report, and dashboard pipeline" not in src
+    assert "Prepare project" in src
+    assert "Install tools" in src
+    assert "Start Granite" in src
+    assert "Open dashboard" in src
+    assert "Why local setup is needed" not in src
+    assert "Before running" in src
+    assert "Copy commands" in src
+    assert "Setup overview included" in src
+    assert "uv run streamlit run dashboard/app.py" in src
+
+
+def test_local_run_copy_commands_are_grouped_by_step():
+    """GL-427: commands should be grouped into easy-to-copy blocks."""
+    src = _read("dashboard/pages/local_run.py")
+
+    assert "def _command_block(" in src
+    assert "Copy this block" in src
+    assert "local-run-command-label" in src
+    assert "local-run-copy-hint" in src
+    assert "local-run-command-note" in src
+    assert 'with st.container(key=f"local_run_command_{number}")' in src
+    assert "Project setup" in src
+    assert "Install command" in src
+    assert "Report helper commands" in src
+    assert "Dashboard commands" in src
+    assert (
+        "git clone https://github.com/granite-lifeline/granite-lifeline.git\\n"
+        in src
+    )
+    assert "ollama serve\\nollama pull granite4.1:8b" in src
+    assert (
+        "uv run python -m report_layer.rag.symptom_knowledge_indexer\\n"
+        in src
+    )
+
+
+def test_local_run_page_uses_consistent_dashboard_styling():
+    """GL-428: local-run guide follows Dashboard and What-If styling."""
+    overview_src = _read("dashboard/pages/overview.py")
+    src = _read("dashboard/pages/local_run.py")
+
+    assert 'background: transparent !important;' in overview_src
+    assert 'border: 1.5px solid {tokens["border"]} !important;' in overview_src
+    assert 'background: {hex_to_rgba(tokens["accent"], 0.07)} !important;' in (
+        overview_src
+    )
+    assert ".st-key-local_run_commands_card" in src
+    assert 'background: {tokens["glass_surface"]};' in src
+    assert 'border: 1px solid {tokens["glass_border"]};' in src
+    assert 'border-radius: 16px;' in src
+    assert 'box-shadow: 0 2px 12px {tokens["shadow"]};' in src
+    assert ".local-run-command-label" in src
+    assert 'background: {tokens["surface_alt"]};' in src
+    assert 'border-radius: 12px 12px 0 0;' in src
+    assert '[data-testid="stCodeBlock"]' in src
+    assert 'border-radius: 0 0 12px 12px;' in src
+    assert 'border-left: 4px solid {tokens["accent"]};' in src
+    assert ".st-key-local_run_back_btn button:active" in src
+    assert "@media (max-width: 760px)" in src
+
+
+def test_local_run_navigation_and_upload_behaviour_are_preserved():
+    """GL-429: local-run UI navigation should not break upload behaviour."""
+    overview_src = _read("dashboard/pages/overview.py")
+    local_run_src = _read("dashboard/pages/local_run.py")
+
+    assert 'st.session_state["page"] = "local_run"' in overview_src
+    assert 'st.session_state["page"] = "overview"' in local_run_src
+    assert 'key="local_run_back_btn"' in local_run_src
+    assert "st.rerun()" in local_run_src
+
+    # Upload behaviour still uses the existing upload and analysis widgets.
+    assert 'key="landing_csv_uploader"' in overview_src
+    assert 'key="landing_run_btn"' in overview_src
+    assert 'key="csv_file_uploader"' in overview_src
+    assert 'key="csv_submit_btn"' in overview_src
+    assert '"Analysing..." if analysis_running else "Run Analysis"' in (
+        overview_src
+    )
+    assert "disabled=analysis_running" in overview_src
+
+    # Command blocks remain individually addressable for UI testing.
+    for index in range(1, 5):
+        assert re.search(rf"_command_block\(\s+{index},", local_run_src)
+    assert 'with st.container(key=f"local_run_command_{number}")' in (
+        local_run_src
+    )
+
+
+def test_csv_upload_entry_accepts_multiple_files():
+    """GL-431: upload entry allows choosing a trip-history CSV set."""
+    overview_src = _read("dashboard/pages/overview.py")
+
+    assert overview_src.count("accept_multiple_files=True") >= 2
+    assert '"CSV files"' in overview_src
+    assert "def _handle_uploaded_csv_history_submit" in overview_src
+
+
+def test_upload_pages_link_to_local_run_guide():
+    """GL-426: upload areas use a button instead of a large inline guide."""
+    src = _read("dashboard/pages/overview.py")
+
+    assert "def _show_local_run_button(tokens: dict, key: str)" in src
+    assert "How to Run Locally" in src
+    assert 'st.session_state["page"] = "local_run"' in src
+    assert '_show_local_run_button(tokens, "landing_local_run_btn")' in src
+    assert (
+        '_show_local_run_button(tokens, "dashboard_upload_local_run_btn")'
+        in src
+    )
+
+
+def test_upload_layout_no_longer_renders_inline_local_run_card():
+    """GL-426: upload cards stay focused on upload and analysis."""
+    src = _read("dashboard/pages/overview.py")
+
+    assert 'with st.container(key="dashboard_upload_pair")' in src
+    assert 'with st.container(key="landing_upload_pair")' in src
+    assert ".st-key-dashboard_upload_pair" in src
+    assert ".st-key-landing_upload_pair" in src
+    assert "max-width: 1160px !important;" in src
+    assert "max-width: 560px !important;" in src
+    assert "min-height: 315px !important;" in src
+    assert 'st.columns([1, 2, 1], gap="large")' in src
+    assert "_show_how_to_run_locally" not in src
+    assert '_show_how_to_run_locally(tokens, "landing_local_run")' not in src
+    assert (
+        '_show_how_to_run_locally(tokens, "dashboard_local_run")' not in src
+    )
 
 
 def test_what_if_level_pill_centered_and_bar_left_filled():

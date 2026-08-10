@@ -14,8 +14,10 @@ from pandas.errors import EmptyDataError
 from anomaly_display import COMPONENT_DISPLAY_NAMES
 from csv_validator import validate_csv_columns, validate_csv_min_rows
 from csv_pipeline import (
+    CSV_PROGRESS_STAGES,
     ModelBatchRunnerUnavailable,
     UploadedCsvPipelineError,
+    run_uploaded_csv_history_batch,
     run_uploaded_csv_batch,
 )
 from data_store import get_data_source, get_mock_data, get_overview_components
@@ -54,6 +56,7 @@ from ui_components import (
 # ---------------------------------------------------------------------------
 
 CSV_ANALYSIS_RUNNING_KEY = "csv_analysis_running"
+HISTORY_CSV_MIN_FILES = 5
 
 
 def _set_csv_analysis_running(is_running: bool) -> None:
@@ -357,6 +360,47 @@ def _show_csv_upload_heading(tokens: dict) -> None:
     )
 
 
+def _show_local_run_button(tokens: dict, key: str) -> None:
+    """Render the page link for local setup instructions."""
+    st.markdown(
+        f"""
+        <style>
+        div.st-key-{key} button,
+        .st-key-{key} button {{
+            background: transparent !important;
+            border: 1.5px solid {tokens["border"]} !important;
+            border-radius: 10px !important;
+            color: {tokens["text"]} !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            min-height: 38px !important;
+            transition: background 0.15s ease, border-color 0.15s ease,
+                        color 0.15s ease !important;
+            width: 100% !important;
+        }}
+        div.st-key-{key} button *,
+        div.st-key-{key} button:hover *,
+        .st-key-{key} button *,
+        .st-key-{key} button:hover * {{
+            color: inherit !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+        }}
+        div.st-key-{key} button:hover,
+        .st-key-{key} button:hover {{
+            background: {hex_to_rgba(tokens["accent"], 0.07)} !important;
+            border-color: {tokens["accent"]} !important;
+            color: {tokens["accent"]} !important;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    if st.button("How to Run Locally", key=key, use_container_width=True):
+        st.session_state["page"] = "local_run"
+        st.rerun()
+
+
 def _error_paragraph(message: str, tokens: dict) -> str:
     return (
         f'<p style="color:{tokens["danger_text"]};font-size:14px;'
@@ -370,6 +414,29 @@ def _show_pipeline_error(title: str, message: str, tokens: dict) -> None:
         danger_card_html(title, _error_paragraph(message, tokens), tokens),
         unsafe_allow_html=True,
     )
+
+
+def _show_missing_csv_columns(missing_cols: list[str], tokens: dict) -> None:
+    items_html = "".join(
+        f'<li style="margin-bottom:4px;">{html.escape(c)}</li>'
+        for c in missing_cols
+    )
+    body = (
+        f'<ul style="color:{tokens["danger_text"]};'
+        f'font-size:14px;margin:8px 0 0 0;'
+        f'padding-left:20px;line-height:1.7;">'
+        f'{items_html}</ul>'
+    )
+    st.markdown(
+        danger_card_html("Missing Required Columns", body, tokens),
+        unsafe_allow_html=True,
+    )
+
+
+def _clear_csv_analysis_loading(target) -> None:
+    """Remove the loading card before showing a terminal state."""
+    if hasattr(target, "empty"):
+        target.empty()
 
 
 def _show_csv_analysis_loading(
@@ -421,8 +488,6 @@ def _show_csv_analysis_loading(
             position: relative;
             z-index: 1;
         }}
-            width: 42px;
-        }}
         .csv-analysis-title {{
             color: {tokens["text"]};
             font-size: 15px;
@@ -449,8 +514,315 @@ def _show_csv_analysis_loading(
     )
 
 
+def _first_uploaded_csv(uploaded_file):
+    """Keep the old single-file path working while multi-upload is wired."""
+    if isinstance(uploaded_file, list):
+        return uploaded_file[0] if uploaded_file else None
+    return uploaded_file
+
+
+def _uploaded_csv_files(uploaded_file) -> list:
+    if uploaded_file is None:
+        return []
+    if isinstance(uploaded_file, list):
+        return uploaded_file
+    return [uploaded_file]
+
+
+def _uploaded_csv_date(uploaded_file) -> datetime:
+    name = getattr(uploaded_file, "name", "")
+    try:
+        return datetime.strptime(name[:10], "%Y-%m-%d")
+    except ValueError as exc:
+        raise ValueError(
+            f"{name} must start with a YYYY-MM-DD trip date."
+        ) from exc
+
+
+def _sort_uploaded_csv_files(uploaded_files: list) -> list:
+    return sorted(
+        uploaded_files,
+        key=lambda file: (_uploaded_csv_date(file), getattr(file, "name", "")),
+    )
+
+
+def _uploaded_file_size_text(uploaded_file) -> str:
+    size = getattr(uploaded_file, "size", None)
+    if size is None:
+        size = len(uploaded_file.getvalue())
+    if size >= 1024 * 1024:
+        return f"{size / (1024 * 1024):.1f}MB"
+    return f"{size / 1024:.1f}KB"
+
+
+def _show_selected_csv_files(uploaded_files, tokens: dict) -> None:
+    files = _uploaded_csv_files(uploaded_files)
+    if not files:
+        return
+
+    file_icon = lucide_icon("file-text", size=22, color=tokens["surface"])
+    rows = []
+    for uploaded_file in files:
+        name = html.escape(getattr(uploaded_file, "name", "uploaded.csv"))
+        size_text = html.escape(_uploaded_file_size_text(uploaded_file))
+        rows.append(
+            '<div class="csv-selected-file">'
+            '<div class="csv-selected-file-icon">'
+            f'{file_icon}'
+            '</div>'
+            '<div class="csv-selected-file-copy">'
+            f'<div class="csv-selected-file-name">{name}</div>'
+            f'<div class="csv-selected-file-size">{size_text}</div>'
+            '</div>'
+            '</div>'
+        )
+
+    st.markdown(
+        f"""
+        <div class="csv-selected-files">
+            {''.join(rows)}
+        </div>
+        <style>
+        .csv-selected-files {{
+            display:flex;
+            flex-direction:column;
+            gap:10px;
+            margin:12px auto 16px auto;
+            max-width:min(380px, 100%);
+            width:100%;
+        }}
+        .csv-selected-file {{
+            align-items:center;
+            background:{tokens["surface"]};
+            border:1px solid {tokens["border"]};
+            border-radius:10px;
+            box-sizing:border-box;
+            display:flex;
+            gap:12px;
+            min-height:54px;
+            padding:8px 12px;
+            width:100%;
+        }}
+        .csv-selected-file-icon {{
+            align-items:center;
+            background:{tokens["text"]};
+            border-radius:8px;
+            display:flex;
+            flex:0 0 38px;
+            height:38px;
+            justify-content:center;
+            width:38px;
+        }}
+        .csv-selected-file-copy {{
+            min-width:0;
+        }}
+        .csv-selected-file-name {{
+            color:{tokens["text"]};
+            font-size:14px;
+            font-weight:600;
+            line-height:1.2;
+            overflow:hidden;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+        }}
+        .csv-selected-file-size {{
+            color:{tokens["text_secondary"]};
+            font-size:12px;
+            line-height:1.3;
+            margin-top:3px;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _validate_uploaded_csv_file(uploaded_file, tokens: dict):
+    csv_bytes = uploaded_file.getvalue()
+    if not csv_bytes.strip():
+        _show_pipeline_error(
+            "Empty File",
+            "The uploaded file appears to be empty. "
+            "Please upload a valid OBD-II CSV file.",
+            tokens,
+        )
+        return None
+
+    try:
+        df = pd.read_csv(io.BytesIO(csv_bytes))
+    except EmptyDataError:
+        _show_pipeline_error(
+            "Empty File",
+            "The uploaded file does not contain any CSV rows.",
+            tokens,
+        )
+        return None
+    except Exception as exc:
+        _show_pipeline_error(
+            "Unreadable CSV",
+            f"The uploaded file could not be parsed as CSV. {exc}",
+            tokens,
+        )
+        return None
+
+    if df.empty:
+        _show_pipeline_error(
+            "Empty File",
+            "The uploaded file does not contain any data rows.",
+            tokens,
+        )
+        return None
+
+    cols_ok, missing_cols = validate_csv_columns(df)
+    rows_ok = validate_csv_min_rows(df)
+
+    if not cols_ok:
+        _show_missing_csv_columns(missing_cols, tokens)
+        return None
+
+    if not rows_ok:
+        _show_pipeline_error(
+            "Insufficient Data",
+            "Your file contains fewer than 700 rows. Please upload at "
+            "least 15 minutes of driving data recorded at 1 Hz.",
+            tokens,
+        )
+        return None
+
+    return csv_bytes, df
+
+
+def _handle_uploaded_csv_history_submit(uploaded_files, tokens: dict) -> None:
+    """Validate a trip-history CSV set before the history pipeline exists."""
+    uploaded_files = _uploaded_csv_files(uploaded_files)
+    if not uploaded_files:
+        st.markdown(
+            empty_state_html(
+                "Choose CSV files first",
+                "Select at least five chronological OBD-II CSV files, "
+                "then run the analysis again.",
+                tokens,
+                icon_name="help-circle",
+                max_width="560px",
+                margin="12px auto 0 auto",
+            ),
+            unsafe_allow_html=True,
+        )
+        return
+
+    if len(uploaded_files) == 1:
+        _handle_uploaded_csv_submit(uploaded_files[0], tokens)
+        return
+
+    if len(uploaded_files) < HISTORY_CSV_MIN_FILES:
+        _show_pipeline_error(
+            "Upload At Least 5 CSV Files",
+            "Failure prediction needs at least five chronological trips. "
+            f"You selected {len(uploaded_files)} CSV files.",
+            tokens,
+        )
+        return
+
+    try:
+        sorted_files = _sort_uploaded_csv_files(uploaded_files)
+    except ValueError as exc:
+        _show_pipeline_error("File Name Date Required", str(exc), tokens)
+        return
+
+    checked_files = []
+    for uploaded_file in sorted_files:
+        checked = _validate_uploaded_csv_file(uploaded_file, tokens)
+        if checked is None:
+            return
+        checked_files.append((uploaded_file, *checked))
+
+    st.session_state["uploaded_csv_history"] = [
+        uploaded_file for uploaded_file, _csv_bytes, _df in checked_files
+    ]
+    st.session_state["uploaded_csv_history_file_names"] = [
+        uploaded_file.name for uploaded_file, _csv_bytes, _df in checked_files
+    ]
+
+    _set_csv_analysis_running(True)
+    loading_slot = st.empty()
+    progress_percent, progress_message = CSV_PROGRESS_STAGES[
+        "checking_upload"
+    ]
+    _show_csv_analysis_loading(
+        loading_slot, tokens, progress_percent, progress_message
+    )
+
+    def update_progress(percent: int, message: str) -> None:
+        _show_csv_analysis_loading(loading_slot, tokens, percent, message)
+
+    should_rerun = False
+    try:
+        try:
+            result = run_uploaded_csv_history_batch(
+                [
+                    (csv_bytes, uploaded_file.name)
+                    for uploaded_file, csv_bytes, _df in checked_files
+                ],
+                progress_callback=update_progress,
+            )
+        except TimeoutError:
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error(
+                "Analysis Timed Out",
+                "The analysis pipeline timed out. Please try uploading a "
+                "shorter drive session.",
+                tokens,
+            )
+            return
+        except ModelBatchRunnerUnavailable as exc:
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error(
+                "Model Analysis Unavailable", str(exc), tokens
+            )
+            return
+        except UploadedCsvPipelineError as exc:
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error("Analysis Unavailable", str(exc), tokens)
+            return
+        except Exception as exc:
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error(
+                "Analysis Unavailable",
+                f"The analysis pipeline could not complete. {exc}",
+                tokens,
+            )
+            return
+
+        dashboard_data = result.get("dashboard_data", {})
+        components = {
+            k: v for k, v in dashboard_data.items() if k != "_data_source"
+        }
+        if not components or all(
+            not c.get("anomaly_description") for c in components.values()
+        ):
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error(
+                "Analysis Timed Out",
+                "The diagnostic report could not be generated in time. "
+                "Please try again or upload a shorter drive session.",
+                tokens,
+            )
+            return
+
+        st.session_state["dashboard_data"] = dashboard_data
+        st.session_state["validated_df"] = checked_files[-1][2]
+        st.session_state["dashboard_mode"] = "dashboard"
+        should_rerun = True
+    finally:
+        _set_csv_analysis_running(False)
+
+    if should_rerun:
+        st.rerun()
+
+
 def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
     """Validate an uploaded CSV and run the dashboard upload pipeline."""
+    uploaded_file = _first_uploaded_csv(uploaded_file)
     if uploaded_file is None:
         st.markdown(
             empty_state_html(
@@ -465,75 +837,20 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
         )
         return
 
-    csv_bytes = uploaded_file.getvalue()
-    if not csv_bytes.strip():
-        _show_pipeline_error(
-            "Empty File",
-            "The uploaded file appears to be empty. "
-            "Please upload a valid OBD-II CSV file.",
-            tokens,
-        )
-        return
-
     st.session_state["uploaded_csv"] = uploaded_file
-    try:
-        df = pd.read_csv(io.BytesIO(csv_bytes))
-    except EmptyDataError:
-        _show_pipeline_error(
-            "Empty File",
-            "The uploaded file does not contain any CSV rows.",
-            tokens,
-        )
+    checked = _validate_uploaded_csv_file(uploaded_file, tokens)
+    if checked is None:
         return
-    except Exception as exc:
-        _show_pipeline_error(
-            "Unreadable CSV",
-            f"The uploaded file could not be parsed as CSV. {exc}",
-            tokens,
-        )
-        return
-
-    if df.empty:
-        _show_pipeline_error(
-            "Empty File",
-            "The uploaded file does not contain any data rows.",
-            tokens,
-        )
-        return
-
-    cols_ok, missing_cols = validate_csv_columns(df)
-    rows_ok = validate_csv_min_rows(df)
-
-    if not cols_ok:
-        items_html = "".join(
-            f'<li style="margin-bottom:4px;">{html.escape(c)}</li>'
-            for c in missing_cols
-        )
-        body = (
-            f'<ul style="color:{tokens["danger_text"]};'
-            f'font-size:14px;margin:8px 0 0 0;'
-            f'padding-left:20px;line-height:1.7;">'
-            f'{items_html}</ul>'
-        )
-        st.markdown(
-            danger_card_html("Missing Required Columns", body, tokens),
-            unsafe_allow_html=True,
-        )
-        return
-
-    if not rows_ok:
-        _show_pipeline_error(
-            "Insufficient Data",
-            "Your file contains fewer than 700 rows. Please upload at "
-            "least 15 minutes of driving data recorded at 1 Hz.",
-            tokens,
-        )
-        return
+    csv_bytes, df = checked
 
     _set_csv_analysis_running(True)
     loading_slot = st.empty()
-    progress_message = "Analyzing data..."
-    _show_csv_analysis_loading(loading_slot, tokens, 0, progress_message)
+    progress_percent, progress_message = CSV_PROGRESS_STAGES[
+        "checking_upload"
+    ]
+    _show_csv_analysis_loading(
+        loading_slot, tokens, progress_percent, progress_message
+    )
 
     def update_progress(percent: int, message: str) -> None:
         _show_csv_analysis_loading(loading_slot, tokens, percent, message)
@@ -547,6 +864,7 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
                 progress_callback=update_progress,
             )
         except TimeoutError:
+            _clear_csv_analysis_loading(loading_slot)
             _show_pipeline_error(
                 "Analysis Timed Out",
                 "The analysis pipeline timed out. Please try uploading a "
@@ -555,14 +873,17 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
             )
             return
         except ModelBatchRunnerUnavailable as exc:
+            _clear_csv_analysis_loading(loading_slot)
             _show_pipeline_error(
                 "Model Analysis Unavailable", str(exc), tokens
             )
             return
         except UploadedCsvPipelineError as exc:
+            _clear_csv_analysis_loading(loading_slot)
             _show_pipeline_error("Analysis Unavailable", str(exc), tokens)
             return
         except Exception as exc:
+            _clear_csv_analysis_loading(loading_slot)
             _show_pipeline_error(
                 "Analysis Unavailable",
                 f"The analysis pipeline could not complete. {exc}",
@@ -578,6 +899,7 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
         if not components or all(
             not c.get("anomaly_description") for c in components.values()
         ):
+            _clear_csv_analysis_loading(loading_slot)
             _show_pipeline_error(
                 "Analysis Timed Out",
                 "The diagnostic report could not be generated in time. "
@@ -612,7 +934,15 @@ def _show_csv_uploader(tokens: dict) -> None:
             border: 1px solid {tokens["glass_border"]} !important;
             border-radius: 16px !important;
             box-shadow: 0 2px 12px {tokens["shadow"]} !important;
+            box-sizing: border-box !important;
+            margin: 0 auto !important;
+            max-width: 560px !important;
+            min-height: 315px !important;
             padding: 20px 24px !important;
+        }}
+        .st-key-dashboard_upload_pair {{
+            margin: 0 auto !important;
+            max-width: 1160px !important;
         }}
         /* ── Drop-zone ── */
         .st-key-csv_upload_section
@@ -626,9 +956,21 @@ def _show_csv_uploader(tokens: dict) -> None:
             background: transparent !important;
             border: none !important;
             display: flex !important;
+            flex-direction: column !important;
+            gap: 14px !important;
             justify-content: center !important;
-            min-height: 58px !important;
+            min-height: 118px !important;
             padding: 0 !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] > div {{
+            align-items: center !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+            justify-content: center !important;
+            max-width: 100% !important;
+            width: 100% !important;
         }}
         .st-key-csv_upload_section
             [data-testid="stFileUploaderDropzoneInstructions"] {{
@@ -646,6 +988,8 @@ def _show_csv_uploader(tokens: dict) -> None:
             [data-testid="stFileUploader"] section {{
             align-items: center !important;
             display: flex !important;
+            flex-direction: column !important;
+            gap: 14px !important;
             justify-content: center !important;
             padding: 0 !important;
             width: 100% !important;
@@ -666,7 +1010,52 @@ def _show_csv_uploader(tokens: dict) -> None:
             min-width: 132px !important;
             padding: 0 24px !important;
             position: relative !important;
+            order: 1 !important;
             width: 132px !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] > div > * {{
+            order: 2 !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"]
+            [data-testid="stFileChips"] {{
+            align-items: center !important;
+            display: flex !important;
+            justify-content: center !important;
+            width: 100% !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"]
+            [data-testid="stFileChips"]
+            > div:has([data-testid="stFileChip"]) {{
+            display: none !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileChip"] {{
+            display: none !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileChipDeleteBtn"] {{
+            display: none !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderFile"] {{
+            display: none !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] section > div {{
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            max-width: 100% !important;
+            order: 2 !important;
+            width: 100% !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] section > div > div {{
+            max-width: 100% !important;
+            width: 100% !important;
         }}
         .st-key-csv_upload_section
             [data-testid="stFileUploaderDropzone"] button * {{
@@ -698,6 +1087,13 @@ def _show_csv_uploader(tokens: dict) -> None:
             color: {tokens["accent"]} !important;
         }}
         .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] section > div + button,
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] section
+            > button:not(:first-child) {{
+            display: none !important;
+        }}
+        .st-key-csv_upload_section
             [data-testid="stFileUploaderDeleteBtn"] {{
             display: none !important;
         }}
@@ -706,10 +1102,17 @@ def _show_csv_uploader(tokens: dict) -> None:
             background-color: {tokens["accent"]} !important;
             color: {tokens["accent_contrast"]} !important;
             border: none !important;
-            border-radius: 10px !important;
-            font-weight: 600 !important;
-            font-size: 14px !important;
+            border-radius: 12px !important;
+            font-weight: 700 !important;
+            font-size: 15px !important;
+            min-height: 46px !important;
             transition: opacity 0.15s ease !important;
+        }}
+        .st-key-csv_submit_btn button *,
+        .st-key-csv_submit_btn button p {{
+            color: {tokens["accent_contrast"]} !important;
+            font-size: 15px !important;
+            font-weight: 700 !important;
         }}
         .st-key-csv_submit_btn button:hover {{
             opacity: 0.88 !important;
@@ -723,27 +1126,36 @@ def _show_csv_uploader(tokens: dict) -> None:
         unsafe_allow_html=True,
     )
 
-    with st.container(key="csv_upload_section"):
-        _show_csv_upload_heading(tokens)
-        uploaded_file = st.file_uploader(
-            "CSV file",
-            type=["csv"],
-            key="csv_file_uploader",
-            label_visibility="collapsed",
-        )
-        analysis_running = bool(
-            st.session_state.get(CSV_ANALYSIS_RUNNING_KEY, False)
-        )
-        submit_clicked = st.button(
-            "Analysing..." if analysis_running else "Run Analysis",
-            key="csv_submit_btn",
-            use_container_width=True,
-            disabled=analysis_running,
-        )
+    with st.container(key="dashboard_upload_pair"):
+        _, local_btn_col = st.columns([4, 1])
+        with local_btn_col:
+            _show_local_run_button(tokens, "dashboard_upload_local_run_btn")
+
+        _, upload_col, _ = st.columns([1, 2, 1], gap="large")
+        with upload_col:
+            with st.container(key="csv_upload_section"):
+                _show_csv_upload_heading(tokens)
+                uploaded_files = st.file_uploader(
+                    "CSV files",
+                    type=["csv"],
+                    accept_multiple_files=True,
+                    key="csv_file_uploader",
+                    label_visibility="collapsed",
+                )
+                _show_selected_csv_files(uploaded_files, tokens)
+                analysis_running = bool(
+                    st.session_state.get(CSV_ANALYSIS_RUNNING_KEY, False)
+                )
+                submit_clicked = st.button(
+                    "Analysing..." if analysis_running else "Run Analysis",
+                    key="csv_submit_btn",
+                    use_container_width=True,
+                    disabled=analysis_running,
+                )
 
     # ── Validation feedback ──
     if submit_clicked:
-        _handle_uploaded_csv_submit(uploaded_file, tokens)
+        _handle_uploaded_csv_history_submit(uploaded_files, tokens)
 
 
 def _component_label(component_key: str) -> str:
@@ -1336,7 +1748,7 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
     _recover_csv_analysis_running_state()
 
     # ── Minimal nav bar: brand left, theme toggle right ──
-    nav_left, nav_right = st.columns([10, 1])
+    nav_left, nav_help, nav_right = st.columns([7, 2, 1])
     with nav_left:
         st.markdown(
             f'<div style="padding:8px 0 24px 0;">'
@@ -1344,6 +1756,9 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             f'color:{tokens["text"]};">Granite Lifeline</span></div>',
             unsafe_allow_html=True,
         )
+    with nav_help:
+        st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
+        _show_local_run_button(tokens, "landing_local_run_btn")
     with nav_right:
         _show_theme_toggle(dark_mode, tokens)
 
@@ -1378,9 +1793,15 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             border: 1px solid {tokens["glass_border"]} !important;
             border-radius: 20px !important;
             box-shadow: 0 4px 24px {tokens["shadow"]} !important;
+            box-sizing: border-box !important;
             padding: 32px 32px 24px 32px !important;
             max-width: 560px !important;
+            min-height: 315px !important;
             margin: 0 auto !important;
+        }}
+        .st-key-landing_upload_pair {{
+            margin: 0 auto !important;
+            max-width: 1160px !important;
         }}
         /* Larger drop-zone */
         .st-key-landing_upload_card [data-testid="stFileUploader"] {{
@@ -1392,9 +1813,21 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             background: transparent !important;
             border: none !important;
             display: flex !important;
+            flex-direction: column !important;
+            gap: 14px !important;
             justify-content: center !important;
-            min-height: 64px !important;
+            min-height: 124px !important;
             padding: 0 !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] > div {{
+            align-items: center !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+            justify-content: center !important;
+            max-width: 100% !important;
+            width: 100% !important;
         }}
         .st-key-landing_upload_card
             [data-testid="stFileUploaderDropzoneInstructions"] {{
@@ -1409,6 +1842,8 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
         .st-key-landing_upload_card [data-testid="stFileUploader"] section {{
             align-items: center !important;
             display: flex !important;
+            flex-direction: column !important;
+            gap: 14px !important;
             justify-content: center !important;
             padding: 0 !important;
             width: 100% !important;
@@ -1429,7 +1864,52 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             min-width: 140px !important;
             padding: 0 26px !important;
             position: relative !important;
+            order: 1 !important;
             width: 140px !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] > div > * {{
+            order: 2 !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"]
+            [data-testid="stFileChips"] {{
+            align-items: center !important;
+            display: flex !important;
+            justify-content: center !important;
+            width: 100% !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"]
+            [data-testid="stFileChips"]
+            > div:has([data-testid="stFileChip"]) {{
+            display: none !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileChip"] {{
+            display: none !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileChipDeleteBtn"] {{
+            display: none !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderFile"] {{
+            display: none !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] section > div {{
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            max-width: 100% !important;
+            order: 2 !important;
+            width: 100% !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] section > div > div {{
+            max-width: 100% !important;
+            width: 100% !important;
         }}
         .st-key-landing_upload_card
             [data-testid="stFileUploaderDropzone"] button * {{
@@ -1461,6 +1941,13 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             color: {tokens["accent"]} !important;
         }}
         .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] section > div + button,
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] section
+            > button:not(:first-child) {{
+            display: none !important;
+        }}
+        .st-key-landing_upload_card
             [data-testid="stFileUploaderDeleteBtn"] {{
             display: none !important;
         }}
@@ -1476,6 +1963,12 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             padding: 13px 0 !important;
             margin-top: 4px !important;
             transition: opacity 0.15s ease !important;
+        }}
+        .st-key-landing_run_btn button *,
+        .st-key-landing_run_btn button p {{
+            color: {tokens["accent_contrast"]} !important;
+            font-size: 15px !important;
+            font-weight: 700 !important;
         }}
         .st-key-landing_run_btn button:hover {{ opacity: 0.88 !important; }}
         .st-key-landing_run_btn button:disabled {{
@@ -1504,30 +1997,33 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
     )
 
     # ── Upload card — centered via columns ──
-    _, card_col, _ = st.columns([1, 4, 1])
-    with card_col:
-        with st.container(key="landing_upload_card"):
-            _show_csv_upload_heading(tokens)
-            uploaded_file = st.file_uploader(
-                "CSV file",
-                type=["csv"],
-                key="landing_csv_uploader",
-                label_visibility="collapsed",
-            )
-            # Run Analysis button — full width inside the card col
-            analysis_running = bool(
-                st.session_state.get(CSV_ANALYSIS_RUNNING_KEY, False)
-            )
-            submit_clicked = st.button(
-                "Analysing..." if analysis_running else "Run Analysis",
-                key="landing_run_btn",
-                use_container_width=True,
-                disabled=analysis_running,
-            )
+    with st.container(key="landing_upload_pair"):
+        _, card_col, _ = st.columns([1, 2, 1], gap="large")
+        with card_col:
+            with st.container(key="landing_upload_card"):
+                _show_csv_upload_heading(tokens)
+                uploaded_files = st.file_uploader(
+                    "CSV files",
+                    type=["csv"],
+                    accept_multiple_files=True,
+                    key="landing_csv_uploader",
+                    label_visibility="collapsed",
+                )
+                _show_selected_csv_files(uploaded_files, tokens)
+                # Run Analysis button — full width inside the card col
+                analysis_running = bool(
+                    st.session_state.get(CSV_ANALYSIS_RUNNING_KEY, False)
+                )
+                submit_clicked = st.button(
+                    "Analysing..." if analysis_running else "Run Analysis",
+                    key="landing_run_btn",
+                    use_container_width=True,
+                    disabled=analysis_running,
+                )
 
     # ── Validation feedback ──
     if submit_clicked:
-        _handle_uploaded_csv_submit(uploaded_file, tokens)
+        _handle_uploaded_csv_history_submit(uploaded_files, tokens)
 
     # ── Secondary: demo data entry ──
     st.markdown(
