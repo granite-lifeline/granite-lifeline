@@ -84,8 +84,8 @@ img, .image-container { max-width: 100%; max-height: min(50vh, 400px); object-fi
   display: flex; flex-direction: column; justify-content: center; align-items: center;
   padding: clamp(20px, 3.5vh, 40px) clamp(1.5rem, 5vw, 4rem);
   opacity: 0; pointer-events: none;
-  transform: translateY(16px) scale(0.985);
-  transition: opacity 0.5s cubic-bezier(.22,1,.36,1), transform 0.5s cubic-bezier(.22,1,.36,1);
+  transform: translateY(8px) scale(0.992);
+  transition: opacity .2s cubic-bezier(.22,1,.36,1), transform .2s cubic-bezier(.22,1,.36,1);
   overflow: hidden;
 }
 .slide.active { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
@@ -141,20 +141,20 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 @keyframes fadeInUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
 @keyframes scaleReveal { 0% { opacity:0; transform: scale(0.9); } 100% { opacity:1; transform: scale(1); } }
 @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 0 rgba(15,98,254,0); } 50% { box-shadow: 0 0 16px rgba(15,98,254,0.18); } }
-.slide.active .anim-1 { animation: fadeInUp 0.35s cubic-bezier(.22,1,.36,1) 0.05s both; }
-.slide.active .anim-2 { animation: fadeInUp 0.35s cubic-bezier(.22,1,.36,1) 0.15s both; }
-.slide.active .anim-3 { animation: fadeInUp 0.4s cubic-bezier(.22,1,.36,1) 0.25s both; }
-.slide.active .anim-4 { animation: fadeInUp 0.35s cubic-bezier(.22,1,.36,1) 0.35s both; }
-.slide.active .anim-5 { animation: fadeInUp 0.35s cubic-bezier(.22,1,.36,1) 0.45s both; }
-.slide.active .bounce-1 { animation: scaleReveal 0.4s cubic-bezier(.22,1,.36,1) 0.1s both; }
-.slide.active .bounce-2 { animation: scaleReveal 0.4s cubic-bezier(.22,1,.36,1) 0.2s both; }
-.slide.active .bounce-3 { animation: scaleReveal 0.4s cubic-bezier(.22,1,.36,1) 0.3s both; }
-.slide.active .bounce-4 { animation: scaleReveal 0.4s cubic-bezier(.22,1,.36,1) 0.4s both; }
-.slide.active .bounce-5 { animation: scaleReveal 0.4s cubic-bezier(.22,1,.36,1) 0.5s both; }
-.slide.active .stag-1 { animation: fadeInUp 0.4s ease 0.1s both; }
-.slide.active .stag-2 { animation: fadeInUp 0.4s ease 0.18s both; }
-.slide.active .stag-3 { animation: fadeInUp 0.4s ease 0.26s both; }
-.slide.active .stag-4 { animation: fadeInUp 0.4s ease 0.34s both; }
+.slide.active .anim-1 { animation: fadeInUp .18s cubic-bezier(.22,1,.36,1) .02s both; }
+.slide.active .anim-2 { animation: fadeInUp .18s cubic-bezier(.22,1,.36,1) .06s both; }
+.slide.active .anim-3 { animation: fadeInUp .2s cubic-bezier(.22,1,.36,1) .1s both; }
+.slide.active .anim-4 { animation: fadeInUp .18s cubic-bezier(.22,1,.36,1) .14s both; }
+.slide.active .anim-5 { animation: fadeInUp .18s cubic-bezier(.22,1,.36,1) .18s both; }
+.slide.active .bounce-1 { animation: scaleReveal .2s cubic-bezier(.22,1,.36,1) .04s both; }
+.slide.active .bounce-2 { animation: scaleReveal .2s cubic-bezier(.22,1,.36,1) .08s both; }
+.slide.active .bounce-3 { animation: scaleReveal .2s cubic-bezier(.22,1,.36,1) .12s both; }
+.slide.active .bounce-4 { animation: scaleReveal .2s cubic-bezier(.22,1,.36,1) .16s both; }
+.slide.active .bounce-5 { animation: scaleReveal .2s cubic-bezier(.22,1,.36,1) .2s both; }
+.slide.active .stag-1 { animation: fadeInUp .2s ease .04s both; }
+.slide.active .stag-2 { animation: fadeInUp .2s ease .08s both; }
+.slide.active .stag-3 { animation: fadeInUp .2s ease .12s both; }
+.slide.active .stag-4 { animation: fadeInUp .2s ease .16s both; }
 
 /* ====== STORYBOARD (Slide 2) — one cinematic scene, four controlled beats ====== */
 .story-canvas { width: min(1080px,100%); min-height: clamp(300px,43vh,390px); margin-top: clamp(12px,2vh,20px); display:grid; grid-template-columns:minmax(0,.78fr) minmax(0,1.22fr); background:#101318; color:#fff; border-radius:24px; overflow:hidden; box-shadow:0 28px 70px rgba(29,29,31,.18); position:relative; }
@@ -782,12 +782,6 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .eval-result span { display:block; margin-top:8px; color:var(--text-muted); font-size:11.5px; line-height:1.3; }
 .honest-boundary { width:100%; max-width:1260px; padding:13px 18px; border:2px solid rgba(218,30,40,.34); border-left:7px solid var(--accent-red); border-radius:11px; background:rgba(218,30,40,.05); color:var(--danger-text); font-size:16px; line-height:1.3; font-weight:750; text-align:center; }
 .report-stage[data-report-stage="4"] { padding-top:clamp(9px,1.3vh,15px); gap:9px; }
-.report-stage[data-report-stage="6"] { padding-top:clamp(4px,.7vh,8px); gap:10px; }
-.report-stage[data-report-stage="6"] .report-validation { max-width:1240px; gap:18px; }
-.report-stage[data-report-stage="6"] .report-eval-card { min-height:240px; padding:20px 24px; }
-.report-stage[data-report-stage="6"] .report-eval-card h3 { margin:10px 0 15px; font-size:23px; }
-.report-stage[data-report-stage="6"] .honest-boundary { padding:10px 16px; font-size:14px; line-height:1.22; }
-.report-stage[data-report-stage="6"] .report-takeaway { font-size:clamp(18px,1.75vw,26px); }
 .report-stage[data-report-stage="1"] .report-takeaway { margin-top:clamp(8px,1.4vh,16px); }
 
 /* Report validation — three evidence-backed decisions, read as one assurance path. */
@@ -852,6 +846,164 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .comparison-tags { display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
 .comparison-tags span { padding:7px 10px; border-radius:16px; background:var(--bg-card-hover); color:var(--text-muted); font:700 10.5px/1 var(--font-mono); }
 .comparison-report.adaptive .comparison-tags span { color:var(--accent-blue); background:rgba(15,98,254,.08); }
+
+/* Challenge 3 v3 — one real case, carried from evidence to owner action. */
+.real-case-grid { max-width:1260px; grid-template-columns:1.12fr 64px .88fr; }
+.real-case-grid .report-json-card,.real-case-grid .owner-questions { min-height:280px; }
+.report-example-flow { max-width:1300px; grid-template-columns:.88fr 56px 1.24fr 56px .88fr; }
+.template-card.compact { min-height:240px; }
+.knowledge-card p { font:600 13px/1.6 var(--font-mono); }
+.lower-takeaway { margin-top:8px; }
+.direct-generation { width:100%; max-width:1220px; display:grid; grid-template-columns:.72fr 58px 1.28fr; gap:18px; align-items:stretch; }
+.llm-identity-card.compact { min-height:285px; padding:25px 29px; }
+.generated-quote { min-height:285px; padding:28px 32px; border:1px solid var(--border); border-radius:17px; background:var(--bg-card); box-shadow:0 14px 38px rgba(29,29,31,.06); display:flex; flex-direction:column; justify-content:center; }
+.generated-quote > p { margin:17px 0 0; font-size:clamp(17px,1.6vw,22px); line-height:1.45; font-weight:620; }
+.generated-quote mark { color:var(--danger-text); background:rgba(218,30,40,.09); padding:1px 3px; }
+.unsafe-callout { margin-top:18px; padding:12px 14px; border-left:5px solid var(--accent-red); background:rgba(218,30,40,.055); color:var(--danger-text); font-size:14px; line-height:1.35; font-weight:720; }
+.rag-case-flow { width:100%; max-width:1320px; display:grid; grid-template-columns:.72fr 36px .82fr 46px 1.36fr; gap:12px; align-items:stretch; }
+.rag-input-card,.owner-mini-report { min-height:270px; padding:24px 26px; border:1px solid var(--border); border-radius:16px; background:var(--bg-card); box-shadow:0 12px 34px rgba(29,29,31,.055); display:flex; flex-direction:column; justify-content:center; }
+.rag-input-card b { margin-top:17px; color:var(--accent-blue); font:750 18px/1.1 var(--font-mono); }
+.rag-input-card span { margin-top:5px; color:var(--text-muted); font-size:12.5px; line-height:1.3; }
+.rag-plus { display:grid; place-items:center; color:var(--accent-blue); font:750 25px/1 var(--font-mono); }
+.owner-mini-report { border:2px solid var(--accent-blue); background:rgba(15,98,254,.025); }
+.owner-mini-report h3 { margin:13px 0 10px; font-size:26px; }
+.owner-mini-report p { margin:7px 0 0; color:var(--text); font-size:13px; line-height:1.38; }
+.owner-mini-report p b { display:inline-block; min-width:104px; color:var(--accent-blue); }
+.acronym-explainer { width:min(100%,1160px); display:grid; grid-template-columns:auto 1fr; gap:20px; align-items:center; padding:13px 20px; border:1.5px solid rgba(15,98,254,.25); border-radius:11px; background:rgba(255,255,255,.78); }
+.acronym-explainer b { color:var(--accent-blue); font-size:15px; }
+.acronym-explainer span { color:var(--text); font-size:14px; line-height:1.35; font-weight:620; }
+.real-validation-path { width:100%; max-width:1320px; display:grid; grid-template-columns:1.15fr 34px .72fr 34px .72fr 34px .72fr; gap:9px; align-items:stretch; }
+.validation-intro,.validation-gate { min-height:240px; padding:22px 23px; border:1px solid var(--border); border-radius:15px; background:var(--bg-card); box-shadow:0 12px 34px rgba(29,29,31,.055); display:flex; flex-direction:column; justify-content:center; }
+.validation-intro h3 { margin:14px 0 10px; font-size:27px; line-height:1.1; }
+.validation-intro p { margin:0; color:var(--text-muted); font-size:14px; line-height:1.4; }
+.validation-arrow { display:grid; place-items:center; color:var(--accent-blue); font:750 22px/1 var(--font-mono); }
+.validation-gate { align-items:center; text-align:center; }
+.validation-gate i { width:34px; height:34px; display:grid; place-items:center; border-radius:50%; color:#fff; background:var(--accent-blue); font:750 14px/1 var(--font-mono); font-style:normal; }
+.validation-gate b { margin-top:14px; font-size:22px; }
+.validation-gate span { margin-top:9px; color:var(--text-muted); font:600 11px/1.45 var(--font-mono); }
+.validation-gate strong { margin-top:17px; padding:6px 10px; border-radius:14px; color:var(--accent-blue); background:rgba(15,98,254,.08); font:750 10px/1 var(--font-mono); }
+.validation-gate.warning { border-color:rgba(218,30,40,.28); }
+.validation-gate.warning i { background:var(--accent-red); }
+.validation-gate.warning strong { color:var(--danger-text); background:rgba(218,30,40,.08); }
+.validation-truth { width:min(100%,1180px); display:grid; grid-template-columns:auto 1fr; gap:18px; align-items:center; padding:12px 18px; border-left:6px solid var(--accent-red); border-radius:9px; background:rgba(218,30,40,.055); }
+.validation-truth b { color:var(--danger-text); font-size:15px; }
+.validation-truth span { color:var(--text); font-size:13.5px; line-height:1.35; font-weight:620; }
+.report-stage[data-report-stage="4"] { gap:10px; }
+.report-stage[data-report-stage="4"] .report-takeaway { font-size:clamp(18px,1.7vw,25px); }
+
+/* Challenge 3 v4 — one report, improved one evidence-backed change at a time. */
+.report-stage { transition:opacity .18s ease,transform .18s ease; padding-top:clamp(9px,1.2vh,14px); }
+.report-evolution { width:100%; max-width:1390px; display:grid; grid-template-columns:minmax(250px,.34fr) minmax(0,.66fr); gap:clamp(22px,2.3vw,34px); align-items:stretch; }
+.report-rationale { min-height:325px; padding:clamp(22px,2.5vw,32px); border-radius:17px; color:#fff; background:#101318; box-shadow:0 18px 44px rgba(29,29,31,.14); display:flex; flex-direction:column; justify-content:center; }
+.report-rationale.light { color:var(--text); background:rgba(255,255,255,.8); border:1px solid var(--border); box-shadow:0 14px 36px rgba(29,29,31,.055); }
+.report-rationale h3 { margin:13px 0 17px; font-size:clamp(23px,2vw,30px); line-height:1.1; }
+.report-rationale p { margin:0; color:rgba(255,255,255,.72); font-size:14px; line-height:1.48; }
+.report-rationale.light p { color:var(--text-muted); }
+.rationale-facts { display:grid; gap:9px; margin-top:18px; }
+.rationale-fact { display:flex; justify-content:space-between; gap:14px; padding-top:9px; border-top:1px solid rgba(255,255,255,.13); font:650 11.5px/1.3 var(--font-mono); }
+.report-rationale.light .rationale-fact { border-color:var(--border); }
+.rationale-fact span { color:rgba(255,255,255,.55); }
+.report-rationale.light .rationale-fact span { color:var(--text-muted); }
+.rationale-fact b { color:#78a9ff; text-align:right; }
+.evolution-comparison { min-height:325px; display:grid; grid-template-columns:minmax(0,1fr) 42px minmax(0,1fr); gap:12px; align-items:stretch; }
+.report-version { position:relative; padding:22px 23px; border-radius:17px; background:var(--bg-card); border:1px solid var(--border); box-shadow:0 14px 36px rgba(29,29,31,.055); display:flex; flex-direction:column; }
+.report-version.previous { background:rgba(255,255,255,.56); }
+.report-version.current { border:2px solid var(--accent-blue); background:rgba(15,98,254,.025); box-shadow:0 18px 46px rgba(15,98,254,.09); }
+.version-label { display:flex; justify-content:space-between; gap:10px; align-items:center; color:var(--text-dim); font:750 10px/1 var(--font-mono); letter-spacing:.08em; text-transform:uppercase; }
+.version-label b { color:var(--accent-blue); }
+.report-version h3 { margin:15px 0 13px; font-size:clamp(19px,1.6vw,24px); line-height:1.12; }
+.report-lines { display:grid; gap:8px; }
+.report-line { padding:9px 11px; border-left:3px solid var(--outline-variant); background:rgba(29,29,31,.025); color:var(--text-muted); font-size:12.5px; line-height:1.35; }
+.report-line b { display:block; margin-bottom:3px; color:var(--text); font-size:12px; }
+.report-line.added { border-color:var(--accent-blue); background:rgba(15,98,254,.065); color:var(--text); }
+.report-line.added b { color:var(--accent-blue); }
+.report-line.unsafe { border-color:var(--accent-red); background:rgba(218,30,40,.06); color:var(--danger-text); font-weight:700; }
+.report-line.corrected { border-color:var(--accent-blue); background:rgba(15,98,254,.065); font-weight:650; }
+.report-line.empty { border-style:dashed; color:var(--text-dim); }
+.version-source { margin-top:auto; padding-top:12px; color:var(--text-dim); font:700 9.5px/1.25 var(--font-mono); letter-spacing:.03em; text-transform:uppercase; }
+.version-arrow { display:grid; place-items:center; color:var(--accent-blue); font:750 25px/1 var(--font-mono); }
+.change-ribbon { width:min(100%,1180px); margin-top:2px; padding:10px 18px; border-left:5px solid var(--accent-blue); border-radius:9px; background:rgba(15,98,254,.055); text-align:center; font-size:clamp(15px,1.35vw,19px); line-height:1.25; font-weight:740; }
+.change-ribbon.warning { border-color:var(--accent-red); background:rgba(218,30,40,.055); color:var(--danger-text); }
+.report-acronym { width:min(100%,1040px); display:flex; justify-content:center; gap:10px; padding:9px 15px; border:1px solid rgba(15,98,254,.22); border-radius:9px; background:rgba(255,255,255,.78); color:var(--text); font-size:13px; line-height:1.3; font-weight:620; }
+.report-acronym b { color:var(--accent-blue); }
+.validator-mini { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-top:18px; }
+.validator-mini div { padding:9px 7px; border-top:3px solid var(--accent-blue); background:rgba(15,98,254,.06); text-align:center; }
+.validator-mini .warn { border-color:var(--accent-orange); background:rgba(245,124,0,.07); }
+.validator-mini b { display:block; font-size:11px; }
+.validator-mini span { display:block; margin-top:5px; color:var(--text-muted); font:750 9px/1 var(--font-mono); }
+.report-stage[data-report-stage="3"] .report-evolution { margin-bottom:0; }
+.report-stage[data-report-stage="3"] .report-acronym { margin-top:-2px; }
+.report-stage[data-report-stage="4"] { padding-top:9px; }
+@media (max-width:1050px) {
+  .report-evolution { grid-template-columns:1fr; }
+  .report-rationale { display:none; }
+}
+
+/* Challenge 3 v5 — one fixed owner-report frame; each design changes its content. */
+.report-stage-wrap { min-height:clamp(405px,50vh,505px); }
+.report-stage { padding-top:clamp(11px,1.5vh,18px); gap:10px; }
+.report-story-layout { width:100%; max-width:1360px; display:grid; grid-template-columns:minmax(300px,.4fr) minmax(0,.6fr); gap:clamp(22px,2.4vw,34px); align-items:stretch; }
+.report-design-panel { min-height:350px; padding:clamp(24px,2.5vw,34px); border-radius:18px; color:#fff; background:#101318; box-shadow:0 18px 44px rgba(29,29,31,.14); display:flex; flex-direction:column; justify-content:center; }
+.report-design-panel.light { color:var(--text); background:rgba(255,255,255,.82); border:1px solid var(--border); box-shadow:0 14px 36px rgba(29,29,31,.055); }
+.report-design-panel h3 { margin:12px 0 15px; font-size:clamp(24px,2.1vw,31px); line-height:1.08; text-wrap:balance; }
+.report-design-panel p { max-width:52ch; margin:0; color:rgba(255,255,255,.7); font-size:14px; line-height:1.48; }
+.report-design-panel.light p { color:var(--text-muted); }
+.design-facts { display:grid; gap:9px; margin-top:18px; }
+.design-fact { display:flex; justify-content:space-between; gap:16px; padding-top:10px; border-top:1px solid rgba(255,255,255,.13); color:rgba(255,255,255,.57); font:650 11.5px/1.35 var(--font-mono); }
+.report-design-panel.light .design-fact { border-color:var(--border); color:var(--text-muted); }
+.design-fact b { color:#78a9ff; text-align:right; }
+.report-design-panel.light .design-fact b { color:var(--accent-blue); }
+.design-layers { display:grid; gap:9px; margin-top:18px; counter-reset:report-layer; }
+.design-layer { position:relative; padding:13px 14px 13px 48px; border-left:3px solid var(--accent-blue); background:rgba(15,98,254,.075); }
+.design-layer::before { counter-increment:report-layer; content:"0" counter(report-layer); position:absolute; left:14px; top:15px; color:var(--accent-blue); font:750 10px/1 var(--font-mono); }
+.design-layer b { display:block; font-size:15px; }
+.design-layer span { display:block; margin-top:4px; color:rgba(255,255,255,.63); font-size:12px; line-height:1.35; }
+.report-json-mini { margin-top:17px; padding:14px 16px; border-radius:10px; background:#080a0d; color:rgba(255,255,255,.74); font:600 11.5px/1.52 var(--font-mono); }
+.report-json-mini b { color:#78a9ff; }
+.report-definition { margin-top:16px; padding:13px 15px; border:1px solid rgba(15,98,254,.22); border-radius:10px; background:rgba(15,98,254,.06); color:var(--text); font-size:13px; line-height:1.4; font-weight:630; }
+.report-definition b { color:var(--accent-blue); }
+.report-design-panel:not(.light) .report-definition { color:#fff; border-color:rgba(120,169,255,.28); background:rgba(120,169,255,.08); }
+
+.fixed-owner-report { min-height:350px; padding:22px 25px 20px; border:2px solid var(--accent-blue); border-radius:18px; background:rgba(255,255,255,.88); box-shadow:0 18px 46px rgba(15,98,254,.09); display:flex; flex-direction:column; }
+.fixed-report-head { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; padding-bottom:13px; border-bottom:1px solid var(--border); }
+.fixed-report-head span { color:var(--accent-blue); font:750 10px/1 var(--font-mono); letter-spacing:.09em; text-transform:uppercase; }
+.fixed-report-head b { color:var(--text-dim); font:700 9.5px/1 var(--font-mono); letter-spacing:.05em; text-transform:uppercase; text-align:right; }
+.fixed-report-body { display:grid; grid-template-rows:repeat(3,1fr); gap:9px; margin-top:12px; flex:1; }
+.fixed-report-section { position:relative; padding:11px 14px 10px 17px; border-left:4px solid var(--accent-blue); background:rgba(15,98,254,.055); opacity:0; transform:translateY(5px); }
+.report-stage.active .fixed-report-section { animation:reportFill .2s ease forwards; }
+.report-stage.active .fixed-report-section:nth-child(2) { animation-delay:.05s; }
+.report-stage.active .fixed-report-section:nth-child(3) { animation-delay:.1s; }
+@keyframes reportFill { to { opacity:1; transform:translateY(0); } }
+.fixed-report-section h4 { margin:0 0 5px; color:var(--accent-blue); font-size:13px; line-height:1.1; }
+.fixed-report-section p { margin:0; color:var(--text); font-size:13px; line-height:1.34; }
+.fixed-report-section.empty { border:1px dashed var(--outline-variant); border-left:4px dashed var(--accent-blue); background:rgba(29,29,31,.025); }
+.fixed-report-section.empty p { color:var(--text-dim); font-family:var(--font-mono); }
+.fixed-report-section.unsafe { border-color:var(--accent-red); background:rgba(218,30,40,.055); }
+.fixed-report-section.unsafe h4,.fixed-report-section.unsafe mark { color:var(--danger-text); }
+.fixed-report-section mark { background:rgba(218,30,40,.09); font-weight:750; }
+.fixed-report-section.validated::after { content:"PASS"; position:absolute; top:10px; right:12px; color:var(--accent-blue); font:750 9px/1 var(--font-mono); letter-spacing:.06em; }
+.fixed-report-section.warning::after { content:"WARNING"; position:absolute; top:10px; right:12px; color:var(--danger-text); font:750 9px/1 var(--font-mono); letter-spacing:.05em; }
+.fixed-report-foot { display:flex; justify-content:space-between; gap:14px; margin-top:11px; color:var(--text-dim); font:700 9px/1.25 var(--font-mono); letter-spacing:.03em; text-transform:uppercase; }
+.fixed-report-foot b { color:var(--accent-blue); }
+.validation-gates-mini { display:grid; gap:8px; margin-top:17px; }
+.validation-gate-mini { display:grid; grid-template-columns:25px 1fr auto; gap:10px; align-items:center; padding:10px 11px; border:1px solid rgba(15,98,254,.2); border-radius:9px; background:rgba(15,98,254,.04); }
+.validation-gate-mini i { width:23px; height:23px; display:grid; place-items:center; border-radius:50%; color:#fff; background:var(--accent-blue); font:750 10px/1 var(--font-mono); font-style:normal; }
+.validation-gate-mini b { font-size:13px; }
+.validation-gate-mini span { color:var(--accent-blue); font:750 9px/1 var(--font-mono); }
+.validation-gate-mini.warn { border-color:rgba(218,30,40,.22); background:rgba(218,30,40,.035); }
+.validation-gate-mini.warn i { background:var(--accent-red); }
+.validation-gate-mini.warn span { color:var(--danger-text); }
+.report-limit-note { width:min(100%,1120px); padding:10px 16px; border-left:5px solid var(--accent-red); border-radius:9px; background:rgba(218,30,40,.055); color:var(--danger-text); text-align:center; font-size:13.5px; line-height:1.3; font-weight:720; }
+@media (max-width:1050px) {
+  .report-story-layout { grid-template-columns:1fr; }
+  .report-design-panel { display:none; }
+}
+
+/* Keep presentation motion perceptible but never slow the speaker down. */
+.story-scene,.model-stage,.ch-stage,.demo-panel { transition-duration:.2s !important; }
+.pipe-arrow.is-on::after { animation-duration:.65s; }
+.slide.active .artifact-flow,.slide.active .artifact-flow.handoff .handoff-input,.slide.active .artifact-flow.handoff .artifact-transform,.slide.active .artifact-flow.handoff .handoff-output { animation-duration:.2s; animation-delay:.08s; }
+.slide.active .handoff-identity .identity-now,.slide.active .handoff-identity .identity-next { animation-duration:.75s; animation-delay:.25s; }
 
 /* ====== CHALLENGE 1 STEPPER (problem x3 -> solution, click-through + dots) ====== */
 .ch-stepper { width:100%; max-width:1640px; display:flex; flex-direction:column; align-items:center; gap:clamp(7px,1vh,11px); margin-top:4px; }
@@ -1063,6 +1215,51 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .validation-result-cell.triggered { background:rgba(15,98,254,.05); }
 .validation-result-cell.triggered strong { color:var(--accent-blue); }
 .validation-summary { padding:14px 18px; border-left:3px solid var(--accent-blue); background:rgba(15,98,254,.045); text-align:center; font-size:16px; font-weight:650; }
+.data-pipeline-overview { width:100%; max-width:1500px; display:grid; grid-template-columns:1fr 54px 1.28fr 54px 1fr 54px 1fr; align-items:stretch; }
+.data-pipeline-node { min-height:210px; padding:24px 22px; border:1px solid var(--border); border-radius:15px; background:var(--bg-card); display:flex; flex-direction:column; justify-content:center; text-align:center; box-shadow:0 12px 32px rgba(29,29,31,.055); }
+.data-pipeline-node > span,.proxy-family-panel .mini,.proxy-checks .mini { color:var(--accent-blue); font:700 11px/1 var(--font-mono); letter-spacing:.08em; text-transform:uppercase; }
+.data-pipeline-node strong { margin:15px 0 11px; font-size:22px; line-height:1.14; }
+.data-pipeline-node small { color:var(--text-muted); font:12px/1.5 var(--font-mono); }
+.data-pipeline-node.state-node { border-color:rgba(15,98,254,.35); background:rgba(15,98,254,.035); }
+.pipeline-state-row { margin-top:9px; padding:9px 10px; border-radius:8px; background:#fff; color:var(--text-muted); font:11px/1.35 var(--font-mono); }
+.pipeline-state-row b { color:var(--text); }
+.data-pipeline-node.output-node { border:2px solid var(--accent-blue); }
+.data-pipeline-arrow { display:grid; place-items:center; color:var(--accent-blue); font:750 25px/1 var(--font-mono); }
+.node-exit { position:absolute; left:50%; top:calc(100% + 15px); transform:translateX(-50%); width:190px; padding:10px 12px; border:1px solid var(--border); border-top:3px solid #8d8d8d; border-radius:9px; background:#fff; color:var(--text-muted); font:11px/1.35 var(--font-mono); }
+.node-exit::before { content:""; position:absolute; left:50%; bottom:100%; width:2px; height:16px; background:#8d8d8d; }
+.node-exit b { display:block; color:var(--accent-blue); margin-top:3px; }
+.success-node { position:relative; }
+.proxy-basis-flow { width:100%; max-width:1380px; display:grid; grid-template-columns:.9fr 70px 1.4fr 70px .72fr; align-items:center; }
+.proxy-source-stack { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; }
+.proxy-source { min-height:150px; padding:20px 16px; border:1px solid var(--border); border-radius:14px; background:#fff; display:flex; flex-direction:column; justify-content:center; text-align:center; }
+.proxy-source strong { font-size:19px; }
+.proxy-source span { margin-top:8px; color:var(--text-muted); font-size:12px; line-height:1.35; }
+.proxy-plus { color:var(--accent-blue); font-size:24px; font-weight:750; }
+.proxy-family-panel { min-height:238px; padding:24px; border:1.5px solid rgba(15,98,254,.35); border-radius:16px; background:rgba(15,98,254,.035); }
+.proxy-families { margin-top:18px; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.proxy-families > span { min-height:54px; padding:9px 12px; border-radius:8px; background:#fff; display:flex; align-items:center; gap:10px; font-size:13px; font-weight:650; line-height:1.2; }
+.proxy-families span:last-child { grid-column:1 / -1; }
+.proxy-family-icon { width:31px; height:31px; flex:0 0 31px; display:grid; place-items:center; border-radius:7px; background:rgba(15,98,254,.08); color:var(--accent-blue); }
+.proxy-family-icon svg { width:21px; height:21px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.proxy-family-label { font-style:normal; }
+.proxy-checks { min-height:210px; padding:25px 20px; border:2px solid var(--accent-blue); border-radius:16px; background:#fff; display:flex; flex-direction:column; justify-content:center; text-align:center; }
+.check-dots { margin-top:22px; display:grid; grid-template-columns:repeat(4,14px); gap:12px; justify-content:center; }
+.check-dots i { width:14px; height:14px; border-radius:50%; background:var(--accent-blue); box-shadow:0 0 0 5px rgba(15,98,254,.08); }
+.severity-matrix { width:min(100%,760px); margin:0 auto; display:grid; grid-template-columns:150px repeat(3,1fr); gap:8px; align-items:center; padding:16px 22px; border:1px solid var(--border); border-radius:13px; background:#fff; }
+.severity-matrix b,.severity-matrix strong { text-align:center; font:700 12px/1 var(--font-mono); }
+.severity-matrix strong { text-align:left; color:var(--text-muted); }
+.severity-matrix i { width:18px; height:18px; margin:auto; border:2px solid var(--accent-blue); border-radius:50%; }
+.severity-matrix i.on { background:var(--accent-blue); box-shadow:0 0 0 5px rgba(15,98,254,.08); }
+.validation-outcome { width:100%; max-width:1080px; display:grid; grid-template-columns:1fr 70px 1fr; align-items:center; }
+.validation-outcome-card { min-height:230px; padding:30px; border-radius:17px; background:#fff; border:1px solid var(--border); display:flex; flex-direction:column; justify-content:center; text-align:center; box-shadow:0 15px 38px rgba(29,29,31,.06); }
+.validation-outcome-card.injected { border:2px solid var(--accent-blue); background:rgba(15,98,254,.035); }
+.validation-outcome-card strong { color:var(--accent-blue); font:750 52px/1 var(--font-mono); }
+.validation-outcome-card span { margin-top:16px; font-size:23px; font-weight:750; text-transform:uppercase; }
+.validation-outcome-card small { margin-top:9px; color:var(--text-muted); font-size:14px; }
+.validation-outcome-divider { text-align:center; color:var(--accent-blue); font-size:32px; font-weight:750; }
+.validation-boundary-main { width:min(100%,1080px); padding:15px 22px; border-left:6px solid var(--accent-red); border-radius:10px; background:rgba(218,30,40,.06); text-align:center; }
+.validation-boundary-main strong { color:var(--danger-text); font-size:18px; text-transform:uppercase; }
+.validation-boundary-main span { display:block; margin-top:6px; color:var(--text-muted); font-size:13px; }
 
 /* -- Summary step: 3-problem overview grid, click a card to jump in -- */
 .ch-summary-grid { display: flex; gap: clamp(12px,1.8vw,22px); width: 100%; max-width: 820px; }
@@ -1242,6 +1439,34 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 }
 .backup-toggle-btn:hover { opacity: 1; border-color: var(--border-hover); }
 
+.fullscreen-toggle-btn {
+  position: fixed; top: 18px; left: 24px; z-index: 110;
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 34px; padding: 7px 12px;
+  font-family: var(--font-mono); font-size: 11.5px; font-weight: 650; color: var(--text-dim);
+  background: rgba(255,255,255,.84); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 5px 18px rgba(15,35,80,.08); backdrop-filter: blur(10px);
+  cursor: pointer; transition: transform .18s ease, color .18s ease, border-color .18s ease, background .18s ease;
+}
+.fullscreen-toggle-btn:hover { color: var(--accent-blue); border-color: var(--accent-blue); background:#fff; transform:translateY(-1px); }
+.fullscreen-toggle-btn:active { transform:translateY(0) scale(.98); }
+.fullscreen-toggle-btn:focus-visible { outline:3px solid rgba(15,98,254,.24); outline-offset:3px; }
+.fullscreen-toggle-btn .fullscreen-icon { font-size:15px; line-height:1; }
+:fullscreen .fullscreen-toggle-btn,
+:-webkit-full-screen .fullscreen-toggle-btn { display:none; }
+:fullscreen .branding,
+:fullscreen .slide-nav,
+:fullscreen .progress-bar,
+:fullscreen .slide-counter,
+:fullscreen .nav-hints,
+:fullscreen .version-tag,
+:-webkit-full-screen .branding,
+:-webkit-full-screen .slide-nav,
+:-webkit-full-screen .progress-bar,
+:-webkit-full-screen .slide-counter,
+:-webkit-full-screen .nav-hints,
+:-webkit-full-screen .version-tag { display:none; }
+
 .backup-overlay {
   position: fixed; inset: 0; z-index: 20000; background: var(--bg);
   display: flex; flex-direction: column; opacity: 0; pointer-events: none;
@@ -1363,8 +1588,11 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 <div class="slide-nav" id="slideNav"></div>
 <div class="progress-bar" id="progress"></div>
 <div class="slide-counter" id="counter"></div>
-<div class="nav-hints"><span><kbd>&larr;</kbd><kbd>&rarr;</kbd> navigate &nbsp;&middot;&nbsp; <kbd>B</kbd> backup</span></div>
+<div class="nav-hints"><span><kbd>&larr;</kbd><kbd>&rarr;</kbd> navigate &nbsp;&middot;&nbsp; <kbd>F</kbd> fullscreen &nbsp;&middot;&nbsp; <kbd>B</kbd> backup</span></div>
 <div class="version-tag" data-edit-id="version-tag">v3.1 &middot; Viva Synced Draft &middot; 2 Aug 2026</div>
+<button class="fullscreen-toggle-btn" id="fullscreenToggle" type="button" onclick="toggleFullscreen()" title="Enter fullscreen (F)" aria-label="Enter fullscreen">
+  <span class="fullscreen-icon" aria-hidden="true">⛶</span><span id="fullscreenLabel">Full screen</span>
+</button>
 <button class="backup-toggle-btn" onclick="toggleBackup()" title="Backup slides — Q&amp;A reference (B)">&#8862; Backup (B)</button>
 
 <div class="pdm-zoom" id="pdmZoom" aria-hidden="true" onclick="closePdmZoom()">
@@ -1537,7 +1765,6 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
           <div class="data-signal-line">
             <div class="data-detail-row"><b>SIGNALS</b><span>coolant · MAP · RPM · speed · intake temp · MAF · throttle · ambient temp · pedal D · pedal E</span></div>
             <div class="data-detail-row"><b>TRAFFIC</b><span>56 normal · 14 free-flow · 11 congestion</span></div>
-            <div class="data-detail-row"><b>SPECIAL</b><span>emergency braking · acceleration · icy road · measurement error</span></div>
           </div>
         </div>
         <div class="data-fit">
@@ -2067,208 +2294,162 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
             <div class="handoff-identity"><span class="identity-now">Model output</span><span class="identity-next">Report input</span></div>
             <span>Real run JSON</span>
           </div>
-          <div class="artifact-file">kit_residual_sample.json</div>
-          <div class="artifact-code">anomaly_type <b>cooling_degradation</b><br>risk_score <b>0.585 · Medium</b><br>confidence <b>0.6534</b><br>key signals <b>coolant 98°C (normal 90–95)</b>, warming rate <b>1.5°C/min (normal 0–2)</b><br>projection (illustrative) <b>4 trips · 100%</b></div>
+          <div class="artifact-file">real_case_input.json</div>
+          <div class="artifact-code">anomaly_type <b>cooling_degradation</b><br>risk_score <b>0.5021 · Medium</b><br>confidence <b>84.2%</b><br>key signals <b>coolant 85°C (reference 90–95)</b>, warming rate <b>5.05°C/min (reference 0–2)</b><br>risk-threshold projection <b>5 trips · 75.02% within 10 trips</b></div>
         </div>
       </div>
       <div class="pipeline-question">How could we explain the evidence without inventing a diagnosis?</div>
-      <div class="truth-label">SOURCE · model_layer/ttm-related/outputs/kit_residual_sample.json</div>
+      <div class="truth-label">SOURCE · report_layer/evaluation/viva_real_case/real_case_input.json</div>
     </div>
     <script type="application/json" class="slide-notes">
-    {"title":"Pipeline — Model Output Becomes Report Input","script":"We can now see what changed, how serious it may be, and which system is most likely involved. This is the real repository output: cooling degradation, medium risk, confidence 0.6534, and the key signals that support it. The JSON is the Model Layer's output; then it becomes the Report Layer's input. That creates Challenge 3: how could we explain this evidence without inventing a diagnosis?","notes":["Input appears first","TTM transformation appears second","Real Model output appears last, then relabels itself as Report input","Do not reveal the generated report before Challenge 3","The projection field (4 trips · 100%) is an illustrative fixture, not a measured result — all 81 trips are healthy so there is no real rising trend to project"]}
+    {"title":"Pipeline — Evidence Ready for Explanation","script":"We can now see what changed, how serious it may be and which system is most likely involved. This real Seat Leon case combines 22 windows from six recorded trips. It identifies cooling degradation, Medium risk and 84.2 percent confidence. The repository's trend estimator projects that the risk score may cross the High-risk threshold in five trips, with a 75.02 percent chance of crossing within the next ten trips. That is a risk-threshold projection, not a probability of mechanical breakdown. The next challenge is to explain this evidence without inventing a diagnosis.","notes":["All values come from report_layer/evaluation/viva_real_case","75.02 percent is explicitly not mechanical-failure probability","Do not reveal the generated report before Challenge 3"]}
     </script>
   </div>
 
-  <!-- ===== 9 / CHALLENGE 3: GROUNDED OWNER REPORT ===== -->
+  <!-- ===== 9 / CHALLENGE 3: ONE REAL CASE, EVIDENCE → OWNER REPORT ===== -->
   <div class="slide" data-slide="8">
     <p class="slide-tag anim-1">Challenge 3 of 3</p>
     <h2 class="anim-2">How can we explain risk <span class="highlight-blue">without inventing a diagnosis?</span></h2>
     <p class="subtitle anim-2">Charlotte Yu &middot; Jintong He</p>
     <div class="report-stepper anim-3" id="reportStepper">
-      <div class="report-stage-label" id="reportStageLabel">What the owner still needs</div>
+      <div class="report-stage-label" id="reportStageLabel">Start with one real case</div>
       <div class="report-stage-wrap" id="reportStageWrap">
         <div class="report-stage" data-report-stage="0">
-          <div class="report-question-grid">
-            <div class="report-json-card">
-              <div class="model-kicker">Structured evidence</div>
-              <h3>The system can already detect the risk</h3>
-              <pre><b>anomaly_type</b>  cooling_degradation
-<b>risk_level</b>   Medium
-<b>confidence</b>   65.34%
-<b>key_signal</b>   coolant slope rising
-<b>projection</b>    4 trips · 100% (illustrative)</pre>
+          <div class="report-story-layout">
+            <div class="report-design-panel">
+              <div class="model-kicker">Our report design</div>
+              <h3>Three layers keep the report useful and bounded.</h3>
+              <div class="design-layers">
+                <div class="design-layer"><b>Evidence</b><span>What the vehicle data shows.</span></div>
+                <div class="design-layer"><b>Verified knowledge</b><span>What the evidence may mean and which actions are safe.</span></div>
+                <div class="design-layer"><b>Explanation</b><span>How those facts are communicated to the owner.</span></div>
+              </div>
             </div>
-            <div class="report-combine">→</div>
-            <div class="owner-questions">
-              <div class="model-kicker">But the owner still asks</div>
-              <h3>What does this mean for me?</h3>
-              <div class="owner-question">What is happening?</div>
-              <div class="owner-question">What might it mean?</div>
-              <div class="owner-question">What should I do?</div>
+            <div class="fixed-owner-report">
+              <div class="fixed-report-head"><span>Owner report</span><b>Fixed structure</b></div>
+              <div class="fixed-report-body">
+                <section class="fixed-report-section empty"><h4>What happened?</h4><p>Vehicle evidence will appear here.</p></section>
+                <section class="fixed-report-section empty"><h4>What might cause it?</h4><p>Possible meaning will appear here.</p></section>
+                <section class="fixed-report-section empty"><h4>What should I do?</h4><p>Safe owner action will appear here.</p></section>
+              </div>
+              <div class="fixed-report-foot"><span>Same questions on every page</span><b>One real Seat Leon case</b></div>
             </div>
           </div>
-          <p class="report-takeaway">The risk is visible. Its meaning—and the next action—are not.</p>
         </div>
 
         <div class="report-stage" data-report-stage="1">
-          <div class="template-flow">
-            <div class="template-card">
-              <div class="model-kicker">Deterministic input</div>
-              <h3>Known anomaly + risk</h3>
-              <p>The model fields can select a fixed knowledge entry.</p>
-              <div class="template-code"><b>IF</b> anomaly = cooling_degradation<br><b>AND</b> risk = Medium</div>
+          <div class="report-story-layout">
+            <div class="report-design-panel">
+              <div class="model-kicker">Start with real JSON</div>
+              <h3>The evidence is structured—not written for an owner.</h3>
+              <div class="report-json-mini"><b>anomaly_type</b>: cooling_degradation<br><b>risk_level</b>: Medium<br><b>prediction_confidence</b>: 0.842<br><b>coolant rise</b>: 5.0486°C/min<br><b>projection</b>: 5 trips · 0.7502</div>
             </div>
-            <div class="ground-arrow">→</div>
-            <div class="template-card">
-              <div class="model-kicker">Pure retrieval</div>
-              <h3>Fetch fixed content</h3>
-              <p>Real ChromaDB lookup — the full causes list and the stored medium-risk action text, unedited.</p>
-              <div class="template-code">causes = <b>46 listed causes</b><br>actions = <b>"...check radiator for mud or clogging..."</b></div>
-            </div>
-            <div class="ground-arrow">→</div>
-            <div class="template-card output">
-              <div class="model-kicker">Template report</div>
-              <h3>Correct, but not owner-shaped</h3>
-              <p>“Cooling degradation detected. Inspect the cooling system.”</p>
-              <div class="template-code"><b>Same matched case</b><br>→ same fixed wording, regardless of confidence or signal detail</div>
+            <div class="fixed-owner-report">
+              <div class="fixed-report-head"><span>Owner report</span><b>Directly formatted JSON</b></div>
+              <div class="fixed-report-body">
+                <section class="fixed-report-section"><h4>What happened?</h4><p>Cooling degradation detected. Medium risk, with 84.2% confidence.</p></section>
+                <section class="fixed-report-section empty"><h4>What might cause it?</h4><p>No cause is provided by the JSON.</p></section>
+                <section class="fixed-report-section empty"><h4>What should I do?</h4><p>No owner action is provided by the JSON.</p></section>
+              </div>
+              <div class="fixed-report-foot"><span>Facts are present</span><b>Meaning is incomplete</b></div>
             </div>
           </div>
-          <p class="report-takeaway">A rule-based template can generate a valid report when every case follows a predefined path — but it can't adapt to this vehicle's confidence or signal detail.</p>
         </div>
 
         <div class="report-stage" data-report-stage="2">
-          <div class="llm-value">
-            <div class="llm-identity-card">
-              <strong>LLM</strong>
-              <h3>Large Language Model</h3>
-              <p>A model that generates and adapts natural language from supplied context. It is used here as a communication layer, not as a diagnostic source.</p>
+          <div class="report-story-layout">
+            <div class="report-design-panel light">
+              <div class="model-kicker">Use exact retrieval</div>
+              <h3>Verified knowledge makes the report correct and predictable.</h3>
+              <p>The anomaly type and risk select stored cooling guidance. The same matched case receives the same fixed wording.</p>
+              <div class="design-facts">
+                <div class="design-fact"><span>Possible meaning</span><b>sensor · fan · airflow</b></div>
+                <div class="design-fact"><span>Safe checks</span><b>coolant · leaks · fan</b></div>
+                <div class="design-fact"><span>Limitation</span><b>fixed wording</b></div>
+              </div>
             </div>
-            <div class="report-combine">→</div>
-            <div class="llm-jobs">
-              <div class="llm-job"><b>Synthesise</b><strong>Connect evidence</strong><span>Combine risk, confidence, signals and matched knowledge.</span></div>
-              <div class="llm-job"><b>Adapt</b><strong>Change emphasis</strong><span>Adjust urgency and certainty for the current evidence.</span></div>
-              <div class="llm-job"><b>Translate</b><strong>Guide the owner</strong><span>Turn technical fields into clear explanations and actions.</span></div>
+            <div class="fixed-owner-report">
+              <div class="fixed-report-head"><span>Owner report</span><b>Retrieval + fixed template</b></div>
+              <div class="fixed-report-body">
+                <section class="fixed-report-section"><h4>What happened?</h4><p>Cooling degradation was detected at Medium risk.</p></section>
+                <section class="fixed-report-section"><h4>What might cause it?</h4><p>Possible areas include a sensor reading issue, cooling-fan behaviour or restricted airflow.</p></section>
+                <section class="fixed-report-section"><h4>What should I do?</h4><p>Check coolant, visible leaks and fan operation; arrange an inspection soon.</p></section>
+              </div>
+              <div class="fixed-report-foot"><span>Verified facts</span><b>Same wording for the same match</b></div>
             </div>
           </div>
-          <div class="complexity-ribbon"><span>anomaly type</span><span>risk level</span><span>confidence</span><span>signal combination</span><span>missing fields</span></div>
-          <p class="report-takeaway">The facts stay deterministic. The explanation becomes adaptive.</p>
         </div>
 
         <div class="report-stage" data-report-stage="3">
-          <div class="plain-llm-flow">
-            <div class="plain-llm-card">
-              <div class="model-kicker">Real run · no retrieval</div>
-              <h3>Same evidence, same LLM — no verified reference</h3>
-              <p>Same input, same Granite model, but fault knowledge replaced with the code's own RAG-unavailable fallback text.</p>
-              <div class="comparison-copy">"...possibly due to a partially restricted cooling system or an airflow issue...early signs of a thermostat not fully opening, debris in the radiator, or a sensor beginning to drift."</div>
-            </div>
-            <div class="report-combine">→</div>
-            <div class="plain-llm-card risk">
-              <div class="model-kicker">Limitation</div>
-              <h3>Fluent, but not verifiably grounded</h3>
-              <div class="risk-list">
-                <div>These causes come from the model's training data, not a cited source</div>
-                <div>No way to check if "debris in the radiator" is actually likely for this vehicle</div>
-                <div>Still relies on the prompt alone to avoid inventing a probability or date</div>
-                <div>Wording and cause selection can vary run to run for the same evidence</div>
+          <div class="report-story-layout">
+            <div class="report-design-panel">
+              <div class="model-kicker">LLM without grounding</div>
+              <h3>The language improves—but the meaning can drift.</h3>
+              <div class="report-definition"><b>LLM — Large Language Model</b><br>A model that turns supplied context into natural language.</div>
+              <div class="design-facts">
+                <div class="design-fact"><span>Receives</span><b>vehicle JSON only</b></div>
+                <div class="design-fact"><span>Missing</span><b>verified knowledge + boundaries</b></div>
+                <div class="design-fact"><span>Real result</span><b>fluent but unsafe</b></div>
               </div>
             </div>
+            <div class="fixed-owner-report">
+              <div class="fixed-report-head"><span>Owner report</span><b>Actual Granite · no grounding</b></div>
+              <div class="fixed-report-body">
+                <section class="fixed-report-section unsafe"><h4>What happened?</h4><p>The report says there is a 75% probability of crossing High risk, <mark>“meaning failure could occur in about five more drive cycles.”</mark></p></section>
+                <section class="fixed-report-section"><h4>What might cause it?</h4><p>It suggests a sensor issue, cooling-fan behaviour or early cooling inefficiency.</p></section>
+                <section class="fixed-report-section"><h4>What should I do?</h4><p>Check the sensor and fan, monitor the gauge and arrange an inspection.</p></section>
+              </div>
+              <div class="fixed-report-foot"><span>Verbatim unsafe claim highlighted</span><b>baseline_report.json</b></div>
+            </div>
           </div>
-          <p class="report-takeaway">Flexible language alone was not enough. It also had to be traceable to a real source.</p>
         </div>
 
         <div class="report-stage" data-report-stage="4">
-          <div class="grounding-flow">
-            <div class="ground-card">
-              <div class="model-kicker">Vehicle-specific evidence</div>
-              <h3>What is happening now?</h3>
-              <div class="ground-lines">
-                <div class="ground-line"><span>Anomaly</span><b>cooling degradation</b></div>
-                <div class="ground-line"><span>Risk</span><b class="blue">Medium · 0.585</b></div>
-                <div class="ground-line"><span>Confidence</span><b>65.34%</b></div>
-                <div class="ground-line"><span>Risk projection (illustrative)</span><b>4 trips · 100%</b></div>
+          <div class="report-story-layout">
+            <div class="report-design-panel light">
+              <div class="model-kicker">Combine both strengths</div>
+              <h3>RAG keeps the facts fixed while the explanation adapts.</h3>
+              <div class="report-definition"><b>RAG — Retrieval-Augmented Generation</b><br>Verified knowledge and interpretation rules are retrieved before the LLM writes.</div>
+              <div class="design-facts">
+                <div class="design-fact"><span>Retrieval adds</span><b>causes · actions · boundaries</b></div>
+                <div class="design-fact"><span>LLM adds</span><b>clear, case-specific language</b></div>
               </div>
             </div>
-            <div class="ground-arrow">+</div>
-            <div class="ground-card">
-              <div class="model-kicker">Exact knowledge retrieval</div>
-              <h3>Verified cooling guidance</h3>
-              <div class="ground-lines">
-                <div class="ground-line"><span>Possible causes</span><b>46 listed (pump, thermostat, radiator…)</b></div>
-                <div class="ground-line"><span>Safe action</span><b>"…check radiator for mud or clogging…"</b></div>
-                <div class="ground-line"><span>Certainty</span><b>moderate wording</b></div>
-                <div class="ground-line"><span>Priority</span><b>medium-risk guidance</b></div>
+            <div class="fixed-owner-report">
+              <div class="fixed-report-head"><span>Owner report</span><b>Actual Granite + RAG</b></div>
+              <div class="fixed-report-body">
+                <section class="fixed-report-section"><h4>What happened?</h4><p>Coolant is below its reference range and rising unusually quickly. Overall risk is Medium.</p></section>
+                <section class="fixed-report-section"><h4>What might cause it?</h4><p>This may suggest a sensor reading issue, intermittent cooling-fan behaviour or minor airflow restriction—not a confirmed fault.</p></section>
+                <section class="fixed-report-section"><h4>What should I do?</h4><p>Check coolant, hoses, leaks and fan operation; arrange a cooling-system inspection within the next few days.</p></section>
               </div>
+              <div class="fixed-report-foot"><span>75.02% = chance of crossing High risk</span><b>Not mechanical-failure probability</b></div>
             </div>
-            <div class="ground-arrow">→</div>
-            <div class="ground-card output">
-              <div class="model-kicker">RAG · controlled generation</div>
-              <h3>Only supplied facts</h3>
-              <div class="ground-lines">
-                <div class="ground-line"><span>Use</span><b>evidence + retrieved knowledge</b></div>
-                <div class="ground-line"><span>Adapt</span><b>urgency + uncertainty</b></div>
-                <div class="ground-line"><span>Never invent</span><b>missing projections</b></div>
-                <div class="ground-line"><span>Never claim</span><b class="null">confirmed failure</b></div>
-              </div>
-            </div>
-          </div>
-          <div class="guardrail-strip">
-            <strong>RAG — Retrieval-Augmented Generation</strong>
-            <span>Retrieves verified knowledge before the Large Language Model writes. The facts stay fixed; the explanation adapts to the current evidence.</span>
           </div>
         </div>
 
         <div class="report-stage" data-report-stage="5">
-          <div class="report-comparison">
-            <div class="comparison-report">
-              <div class="model-kicker">Pure retrieval + fixed template</div>
-              <h3>Same facts, fixed wording</h3>
-              <div class="comparison-copy">Cooling degradation detected. Possible causes include low coolant, thermostat, radiator, fan or pump issues. Inspect the cooling system.</div>
-              <div class="comparison-tags"><span>correct facts</span><span>predictable</span><span>one stored path</span></div>
-            </div>
-            <div class="report-combine">→</div>
-            <div class="comparison-report adaptive">
-              <div class="model-kicker">RAG + LLM</div>
-              <h3>Same facts, case-specific wording</h3>
-              <div class="comparison-copy">Your vehicle's cooling system is showing signs of degradation. The coolant temperature sensor reads 98.0°C, which exceeds the normal range of 90.0–95.0°C. The model projects a 100% failure probability of crossing the High-risk threshold within an estimated 4 drive cycles.</div>
-              <div class="comparison-tags"><span>real Ollama run</span><span>no invented diagnosis</span><span>real projection preserved</span><span>action connected to risk</span></div>
-            </div>
-          </div>
-          <p class="report-takeaway">The advantage is adaptive communication, not new automotive facts.</p>
-        </div>
-
-        <div class="report-stage" data-report-stage="6">
-          <div class="report-assurance">
-            <div class="assurance-card selected">
-              <div class="assurance-step">01 · Choose the generator</div>
-              <h3>Which Granite model communicates best?</h3>
-              <div class="assurance-question">Four models were scored for clarity, grounding, valid JSON, action quality and uncertainty.</div>
-              <div class="assurance-result"><strong>Granite 4.1 · 8B</strong><span>Selected with the highest weighted score</span></div>
-              <div class="assurance-evidence"><b>4.85 / 5.00</b> · 100% JSON parsing across all three prompt stages</div>
-            </div>
-            <div class="assurance-arrow">→</div>
-            <div class="assurance-card selected">
-              <div class="assurance-step">02 · Choose and test retrieval</div>
-              <h3>Can RAG add verified help quickly?</h3>
-              <div class="assurance-question">Exact metadata matching was compared with semantic search; RAG reports were compared with the baseline.</div>
-              <div class="assurance-result"><strong>100% · ≈180× faster</strong><span>Exact metadata retrieval across five anomaly types</span></div>
-              <div class="assurance-evidence">RAG quality <b>0.95</b> vs baseline <b>0.93</b> · stronger uncertainty wording in mixed-signal cases</div>
-            </div>
-            <div class="assurance-arrow">→</div>
-            <div class="assurance-card">
-              <div class="assurance-step">03 · Check every prompt stage</div>
-              <h3>Does each answer follow its rules?</h3>
-              <div class="prompt-gates">
-                <div class="prompt-gate"><i>1</i><b>Describe the change</b><span>plain terms · no confirmed fault</span></div>
-                <div class="prompt-gate"><i>2</i><b>Explain possible causes</b><span>hedged · no overclaim</span></div>
-                <div class="prompt-gate"><i>3</i><b>Recommend an action</b><span>2–4 steps · urgency fits risk</span></div>
+          <div class="report-story-layout">
+            <div class="report-design-panel">
+              <div class="model-kicker">Validate before delivery</div>
+              <h3>Every section is checked against its source.</h3>
+              <div class="validation-gates-mini">
+                <div class="validation-gate-mini"><i>1</i><b>Evidence supported?</b><span>PASS</span></div>
+                <div class="validation-gate-mini warn"><i>2</i><b>Knowledge and uncertainty?</b><span>WARNING</span></div>
+                <div class="validation-gate-mini"><i>3</i><b>Action allowed?</b><span>PASS</span></div>
               </div>
-              <div class="assurance-evidence">A per-layer validator scores each rule (warnings + 0–1) — honest gap: production <code>generate_report()</code> doesn't call it yet, so today's live gate is JSON/key presence only.</div>
+            </div>
+            <div class="fixed-owner-report">
+              <div class="fixed-report-head"><span>Owner report</span><b>Real validation result</b></div>
+              <div class="fixed-report-body">
+                <section class="fixed-report-section validated"><h4>What happened?</h4><p>Coolant is below its reference range and rising unusually quickly. Overall risk is Medium.</p></section>
+                <section class="fixed-report-section warning"><h4>What might cause it?</h4><p>This may suggest a sensor reading issue, intermittent cooling-fan behaviour or minor airflow restriction—not a confirmed fault.</p></section>
+                <section class="fixed-report-section validated"><h4>What should I do?</h4><p>Check coolant, hoses, leaks and fan operation; arrange a cooling-system inspection within the next few days.</p></section>
+              </div>
+              <div class="fixed-report-foot"><span>Description 1.0 · Cause 0.8 · Action 1.0</span><b>validation.json</b></div>
             </div>
           </div>
-          <div class="assurance-summary">We selected the strongest generator, the fastest accurate retrieval path, and rules that check every part of the owner report.</div>
+          <div class="report-limit-note">Current limitation: the validator flags unsafe wording, but does not yet block or regenerate the report.</div>
         </div>
-
       </div>
       <div class="ch-controls">
         <button class="ch-nav-btn" id="reportBackBtn" onclick="reportPrev()">&larr; Back</button>
@@ -2279,13 +2460,12 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
           <div class="ch-dot" data-report-dot="3" onclick="reportGoTo(3)"></div>
           <div class="ch-dot" data-report-dot="4" onclick="reportGoTo(4)"></div>
           <div class="ch-dot" data-report-dot="5" onclick="reportGoTo(5)"></div>
-          <div class="ch-dot" data-report-dot="6" onclick="reportGoTo(6)"></div>
         </div>
         <button class="ch-nav-btn primary" id="reportNextBtn" onclick="reportNext()">Next &rarr;</button>
       </div>
     </div>
     <script type="application/json" class="slide-notes">
-    {"title":"Challenge 3: Explaining Risk Without Inventing a Diagnosis","script":"We already know what changed, how serious it may be and which signals support it. But the owner still needs to know what it means and what to do. A deterministic template can produce a valid report, and for a small fixed knowledge base it is a reasonable alternative. Its limitation is flexibility: every combination of anomaly, risk, confidence, signals and missing fields needs another predefined branch. We therefore use a Large Language Model as a communication tool. It connects the supplied evidence, adjusts urgency and certainty, and translates technical fields into owner language. Direct generation was flexible but could invent unsupported facts. Retrieval-Augmented Generation addresses this by retrieving verified knowledge before the model writes. The facts remain fixed while the explanation adapts to the current case. We then validated three decisions: Granite 4.1 8B achieved the highest model score; exact metadata retrieval was accurate and much faster than semantic search while RAG slightly improved report quality; and each prompt stage is checked against its own communication and safety rules.","notes":["LLM means Large Language Model: a model that generates and adapts natural language from supplied context","RAG means Retrieval-Augmented Generation: verified knowledge is retrieved before generation","JSON means JavaScript Object Notation: a structured machine-readable field format","Model selection: Granite 4.1 8B scored 4.85 out of 5 with 100 percent JSON parsing","Retrieval: metadata filtering achieved 100 percent accuracy and was about 180 times faster than semantic search","prompt_chain_validator.py checks each layer for raw field names, confirmed-fault language, hedging and length, returning warnings plus a 0-1 score per layer, but current production generate_report() does not call it — the live acceptance gate is JSON key presence only, so this is evaluation evidence, not yet a runtime safety guarantee","Say this limitation before being asked — it is the honest core of this slide","End on the three assurance decisions and move to the completed architecture"]}
+    {"title":"Challenge 3: One Fixed Report, Six Design States","script":"Our report design has three layers: vehicle evidence, verified knowledge and owner-facing explanation. We keep one fixed report structure on screen and change only its content. The real JSON contains evidence but no cause or action. Exact retrieval adds verified guidance, although its wording is fixed. A Large Language Model can produce a more natural explanation, but our real ungrounded Granite run incorrectly turns a risk-threshold projection into a possible failure time. Retrieval-Augmented Generation combines verified knowledge and interpretation boundaries with flexible language, producing the final grounded report. The validator then checks the description, cause and action against their sources. Today it reports warnings but does not yet block or regenerate the output.","notes":["LLM is expanded as Large Language Model on first use","RAG is expanded as Retrieval-Augmented Generation on first use","All numerical inputs come from the committed Seat Leon real-case artefacts","The no-grounding quotation is verbatim from baseline_report.json generated with granite4.1:8b","The final report is condensed from rag_report.json without adding facts","75.02 percent means probability of crossing the High-risk score threshold within ten trips—not probability of mechanical failure","Full reproducibility artefacts are stored under report_layer/evaluation/viva_real_case"]}
     </script>
   </div>
 
@@ -2307,7 +2487,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
         <div class="artifact-card handoff-input">
           <div class="artifact-label"><span>Evidence + verified guidance</span><span>Input</span></div>
           <div class="artifact-file">cooling_degradation · Medium</div>
-          <div class="artifact-code">confidence <b>65.34%</b><br>coolant trend <b>rising</b><br>possible systems <b>coolant · fan · pump</b><br>projection <b>4 trips · 100%</b></div>
+          <div class="artifact-code">confidence <b>84.2%</b><br>coolant <b>85°C · rising 5.05°C/min</b><br>possible systems <b>sensor · fan · coolant flow</b><br>risk-threshold projection <b>5 trips · 75.02% within 10 trips</b></div>
         </div>
         <div class="artifact-transform"><span>→</span><strong>GROUNDED<br>EXPLANATION</strong></div>
         <div class="artifact-card light handoff-output">
@@ -2316,7 +2496,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
             <span>Owner-facing result</span>
           </div>
           <div class="artifact-file">What this means for you</div>
-          <div class="artifact-code"><b>What changed</b> · coolant is rising faster than expected<br><b>What it may mean</b> · the cooling system may be losing efficiency<br><b>What to do</b> · avoid heavy driving and arrange an inspection soon</div>
+          <div class="artifact-code"><b>What changed</b> · coolant is low for this reference and rising too quickly<br><b>What it may mean</b> · a sensor or cooling-fan issue may be developing<br><b>What to do</b> · check coolant and leaks; arrange an inspection within days</div>
         </div>
       </div>
       <div class="pipeline-question">How does the owner see the warning, understand it, and take action?</div>
@@ -3761,39 +3941,21 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
   <div class="ch-stepper anim-3" id="c1Stepper">
     <div class="ch-stage-label" id="c1StageLabel">Cleaning and aligning every trip</div>
     <div class="ch-stage-wrap" id="c1StageWrap">
-      <div class="ch-stage active" data-ch-stage="0">
-        <div class="cleaning-flow">
-          <div class="cleaning-card raw">
-            <div class="mini">Raw OBD-II trip</div>
-            <h3>Readings are not yet comparable</h3>
-            <div class="cleaning-lines">
-              <span><i></i>Irregular timestamps</span>
-              <span><i></i>Short missing intervals</span>
-              <span><i></i>Values still need quality checks</span>
-            </div>
-          </div>
-          <div class="cleaning-process">
-            <span class="cleaning-arrow left">→</span>
-            <div class="cleaning-action">Align time<small>Resample every trip to 1 Hz</small></div>
-            <div class="cleaning-action">Treat short gaps<small>Fill only gaps up to 2 seconds</small></div>
-            <div class="cleaning-action">Keep quality evidence<small>Flag imputed or suspicious values</small></div>
-            <span class="cleaning-arrow right">→</span>
-          </div>
-          <div class="cleaning-card clean">
-            <div class="mini">Clean trip data</div>
-            <h3>One consistent timeline</h3>
-            <div class="cleaning-lines">
-              <span><i></i><b>1-second</b> timestamps</span>
-              <span><i></i>Standardised signal fields and units</span>
-              <span><i></i>Quality flags remain attached</span>
-            </div>
-          </div>
+      <div class="ch-stage" data-ch-stage="2">
+        <div class="data-pipeline-overview">
+          <div class="data-pipeline-node"><span>01 · Clean + align</span><strong>Comparable seconds</strong><small>Resample · missing values · suspicious values</small></div>
+          <div class="data-pipeline-arrow">→</div>
+          <div class="data-pipeline-node state-node"><span>02 · Add context</span><strong>Dual state machine</strong><div class="pipeline-state-row"><b>Thermal</b> off · warm-up · post-warm-up</div><div class="pipeline-state-row"><b>Driving</b> idle · steady · acceleration · deceleration · high load</div></div>
+          <div class="data-pipeline-arrow">→</div>
+          <div class="data-pipeline-node"><span>03 · Engineer features</span><strong>46-column contract</strong><small>Clean signals + context + reusable behaviour</small></div>
+          <div class="data-pipeline-arrow">→</div>
+          <div class="data-pipeline-node output-node"><span>04 · Apply proxies</span><strong>Traceable decisions</strong><small>proxy_decisions.csv</small></div>
         </div>
-        <div class="data-stage-question">Cleaning makes every trip comparable.</div>
-        <p class="ch-source">Source · cleaning_core.py · cleaning_config.yaml v3.0</p>
+        <div class="data-stage-question">We turn raw trips into evidence in four auditable stages.</div>
+        <p class="ch-source">Source · scripts 00–70 · production_features.csv · proxy_decisions.csv</p>
       </div>
 
-      <div class="ch-stage" data-ch-stage="1">
+      <div class="ch-stage active" data-ch-stage="0">
         <div class="data-compare">
           <div class="data-dataset">
             <div class="data-dataset-head"><span>Typical labelled dataset</span><span>data → condition</span></div>
@@ -3813,92 +3975,75 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
         <p class="ch-source">Source · KIT OBD-II filenames and docs/viva/data_challenge.md</p>
       </div>
 
-      <div class="ch-stage" data-ch-stage="2">
+      <div class="ch-stage" data-ch-stage="1">
         <div class="threshold-visual">
           <div class="threshold-chart">
-            <div class="wc-title">Real trip · coolant temperature from engine start to stable running</div>
+            <div class="wc-title">One threshold cannot describe two healthy states</div>
             <svg viewBox="0 0 620 220" preserveAspectRatio="none" aria-label="Coolant trace showing why a global threshold falsely flags normal warm-up">
-              <rect x="38" y="22" width="205" height="160" fill="rgba(218,30,40,.055)"/>
-              <rect x="243" y="22" width="337" height="160" fill="rgba(15,98,254,.045)"/>
+              <rect x="38" y="75" width="205" height="107" rx="7" fill="rgba(36,161,72,.09)"/>
+              <rect x="243" y="22" width="337" height="33" rx="7" fill="rgba(15,98,254,.08)"/>
               <line x1="38" y1="182" x2="588" y2="182" stroke="#b8b8bd"/>
               <line x1="38" y1="22" x2="38" y2="182" stroke="#b8b8bd"/>
-              <line x1="38" y1="88" x2="588" y2="88" stroke="#da1e28" stroke-width="2" stroke-dasharray="7 6"/>
+              <line x1="38" y1="57" x2="588" y2="57" stroke="#da1e28" stroke-width="2" stroke-dasharray="7 6"/>
               <line x1="243" y1="22" x2="243" y2="182" stroke="#0f62fe" stroke-dasharray="4 4"/>
               <polyline points="38,166 70,158 100,146 132,128 165,106 198,86 230,69 263,55 300,44 340,39 382,37 425,38 468,35 512,37 555,34 588,35" fill="none" stroke="#0f62fe" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="165" cy="106" r="6" fill="#24a148"/>
-              <text x="175" y="145" font-family="IBM Plex Mono" font-size="11" fill="#198038">58°C · normal warm-up</text>
-              <text x="78" y="207" font-family="IBM Plex Mono" font-size="11" fill="#a2191f">WARM-UP · false alarm zone</text>
-              <text x="348" y="207" font-family="IBM Plex Mono" font-size="11" fill="#0f62fe">POST-WARM-UP · evaluate here</text>
+              <circle cx="243" cy="60" r="6" fill="#24a148"/>
+              <text x="257" y="88" font-family="IBM Plex Mono" font-size="11" fill="#198038">80°C · meaning changes with context</text>
+              <text x="70" y="207" font-family="IBM Plex Mono" font-size="11" fill="#198038">WARM-UP · HEALTHY RANGE</text>
+              <text x="344" y="207" font-family="IBM Plex Mono" font-size="11" fill="#0f62fe">POST-WARM-UP · HEALTHY RANGE</text>
+              <text x="390" y="51" font-family="IBM Plex Mono" font-size="10" fill="#a2191f">GLOBAL MEAN ≈81°C</text>
               <text x="8" y="170" font-family="IBM Plex Mono" font-size="10" fill="#6e6e73">31°</text>
-              <text x="8" y="92" font-family="IBM Plex Mono" font-size="10" fill="#6e6e73">75°</text>
+              <text x="8" y="61" font-family="IBM Plex Mono" font-size="10" fill="#6e6e73">81°</text>
               <text x="8" y="40" font-family="IBM Plex Mono" font-size="10" fill="#6e6e73">95°</text>
             </svg>
           </div>
           <div class="threshold-key">
-            <div class="p0217-example-note">
-              <span class="code">P0217</span>
-              <span class="meaning">Engine over-temperature</span>
-              <span class="type">A standard OBD-II trouble code</span>
-            </div>
-            <div class="threshold-note"><strong>Global threshold</strong>Flags healthy warm-up as a fault.</div>
-            <div class="threshold-note good"><strong>Context-aware rule</strong>Runs only when its physical preconditions are satisfied.</div>
+            <div class="threshold-note"><strong>≈81°C · global mean</strong>One line ignores whether the engine is warming up or already stable.</div>
+            <div class="threshold-note good"><strong>Context first</strong>Warm-up mean ≈49°C. Post-warm-up mean ≈89.7°C.</div>
           </div>
         </div>
         <div class="data-stage-question">The same reading means something different in a different state.</div>
         <p class="ch-source">Source · 2017-07-05_Seat_Leon_RT_S_Stau.csv · Data-group Visual 2</p>
       </div>
 
-      <div class="ch-stage" data-ch-stage="3">
-        <div class="state-definition">
-          <div class="state-machine">
-            <div class="state-tier">
-              <div class="state-tier-label">1 · Thermal state</div>
-              <div class="state-options"><span class="state-option">engine off</span><span>→</span><span class="state-option">warm-up</span><span>→</span><span class="state-option on">post-warm-up</span></div>
-            </div>
-            <div class="state-tier">
-              <div class="state-tier-label">2 · Driving state</div>
-              <div class="state-options"><span class="state-option">idle</span><span class="state-option on">steady</span><span class="state-option">acceleration</span><span class="state-option">high load</span></div>
-            </div>
-            <div class="state-result">post_warmup__steady_driving</div>
-          </div>
-          <div class="data-compare-mark">→</div>
-          <div class="definition-card">
-            <div class="mini">Worked example · Real OBD-II code</div>
-            <h3>P0217 · Engine over-temperature</h3>
-            <div class="definition-rule">
-              <span><b>Context</b> · post-warm-up</span>
-              <span><b>Tier 1</b> · ≥105°C for ≥180s</span>
-              <span><b>Tier 2</b> · ≥110°C for ≥30s</span>
-            </div>
-            <div class="definition-basis">Real OBD-II code · healthy baseline · frozen calibration</div>
-          </div>
+      <div class="ch-stage" data-ch-stage="4">
+        <div class="proxy-basis-flow">
+          <div class="proxy-source-stack"><div class="proxy-source"><strong>OBD-II codes</strong><span>standard fault identities</span></div><div class="proxy-plus">+</div><div class="proxy-source"><strong>Automotive guidance</strong><span>physical conditions and thresholds</span></div></div>
+          <div class="data-pipeline-arrow">→</div>
+          <div class="proxy-family-panel"><div class="mini">5 proxy fault families</div><div class="proxy-families">
+            <span><b class="proxy-family-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10 14.2V5a2 2 0 0 1 4 0v9.2a4 4 0 1 1-4 0Z"/><path d="M12 8v8"/></svg></b><em class="proxy-family-label">Cooling degradation</em></span>
+            <span><b class="proxy-family-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h11c2.5 0 2.5-4 0-4"/><path d="M3 12h16c3 0 3 5 0 5"/><path d="M3 17h9"/></svg></b><em class="proxy-family-label">Air-intake / MAF anomaly</em></span>
+            <span><b class="proxy-family-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m8 4 7 2-3 13-7-2Z"/><path d="m12 7 5 1"/><path d="M15 19h5"/></svg></b><em class="proxy-family-label">Accelerator-pedal sensor</em></span>
+            <span><b class="proxy-family-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="3"/><path d="M9 8h6M9 12h6M9 16h3"/><path d="M3 8h2M19 8h2M3 16h2M19 16h2"/></svg></b><em class="proxy-family-label">Intake-air temperature</em></span>
+            <span><b class="proxy-family-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 17a8 8 0 1 1 16 0"/><path d="m12 13 4-4"/><path d="M7 18h10"/></svg></b><em class="proxy-family-label">MAP / load plausibility</em></span>
+          </div></div>
+          <div class="data-pipeline-arrow">→</div>
+          <div class="proxy-checks"><div class="mini">14 individual checks</div><div class="check-dots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
         </div>
-        <div class="data-stage-question">Context tells us when a fault definition is physically meaningful.</div>
-        <p class="ch-source">Source · operating_condition_analysis.py + calibration_registry.v1.json · Data-group Visual 1</p>
+        <div class="data-stage-question">Grounded rules define what evidence to look for—but do they respond as designed?</div>
+        <p class="ch-source">Source · SAE J2012/J1979 · calibration_registry.v1.json · docs/viva/data_challenge.md</p>
       </div>
 
-      <div class="ch-stage" data-ch-stage="4">
+      <div class="ch-stage" data-ch-stage="3">
         <div class="success-pipeline">
           <div class="success-node">
             <div class="mini">Input</div>
             <strong>Coolant evidence</strong>
             <span>engine on · post-warm-up · valid signals</span>
           </div>
-          <div class="success-arrow branch">
-            <div class="side-exit gate-fail"><div class="side-exit-card">Not enough usable data<b>not_evaluable</b></div></div>
-          </div>
+          <div class="success-arrow"></div>
           <div class="success-node">
             <div class="mini">Eligibility</div>
             <strong>Enough usable data?</strong>
             <span>continuous eligible window</span>
+            <div class="node-exit">No → <b>not_evaluable</b></div>
           </div>
-          <div class="success-arrow branch">
-            <div class="side-exit rule-fail"><div class="side-exit-card">Pattern does not persist<b>pass</b></div></div>
-          </div>
+          <div class="success-arrow"></div>
           <div class="success-node">
             <div class="mini">Persistent pattern</div>
             <strong>105°C for 180s</strong>
             <span>or 110°C for 30s</span>
+            <div class="node-exit">No → <b>pass</b></div>
           </div>
           <div class="success-arrow"></div>
           <div class="success-node output">
@@ -3916,37 +4061,33 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
           <div class="validation-steps">
             <div class="validation-step">
               <div class="validation-step-number">1</div>
-              <div><strong>Start with a healthy drive</strong><span>Original result: PASS</span></div>
+              <div><strong>Start healthy</strong><span>Baseline journey</span></div>
             </div>
             <div class="validation-step-arrow">→</div>
             <div class="validation-step">
               <div class="validation-step-number">2</div>
-              <div><strong>Change only coolant temperature</strong><span>104°C · 105°C · 110°C</span></div>
+              <div><strong>Change one signal</strong><span>Three severity levels</span></div>
             </div>
             <div class="validation-step-arrow">→</div>
             <div class="validation-step">
               <div class="validation-step-number">3</div>
-              <div><strong>Repeat on three drives</strong><span>Same rule, different real journeys</span></div>
+              <div><strong>Repeat</strong><span>Three trips at each level</span></div>
             </div>
           </div>
-          <div class="validation-results">
-            <div class="validation-result-cell">
-              <div class="temp">104°C</div>
-              <div><strong>PASS</strong><span>3 / 3 drives</span></div>
-            </div>
-            <div class="validation-result-cell triggered">
-              <div class="temp">105°C</div>
-              <div><strong>TRIGGERED</strong><span>3 / 3 drives</span></div>
-            </div>
-            <div class="validation-result-cell triggered">
-              <div class="temp">110°C</div>
-              <div><strong>TRIGGERED</strong><span>3 / 3 drives</span></div>
-            </div>
-          </div>
-          <div class="validation-summary">The same test was repeated across all 14 fault checks.</div>
+          <div class="severity-matrix"><div></div><b>Trip 1</b><b>Trip 2</b><b>Trip 3</b><strong>Mild</strong><i></i><i></i><i></i><strong>Moderate</strong><i></i><i></i><i></i><strong>Strong</strong><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <div class="validation-summary">3 levels × 3 trips = 9 observations for each check</div>
         </div>
-        <div class="validation-limit">This verifies the rules react correctly to simulated changes—not real vehicle faults.</div>
         <p class="ch-source">Source · docs/viva/data_challenge.md · fault_injection_summary_20260724T205415Z.csv</p>
+      </div>
+
+      <div class="ch-stage" data-ch-stage="6">
+        <div class="validation-outcome">
+          <div class="validation-outcome-card healthy"><strong>0</strong><span>positive decisions</span><small>on usable healthy data</small></div>
+          <div class="validation-outcome-divider">+</div>
+          <div class="validation-outcome-card injected"><strong>14 / 14</strong><span>checks responded</span><small>3 / 3 trips each at strongest injection</small></div>
+        </div>
+        <div class="validation-boundary-main"><strong>Simulated signals ≠ real mechanical failures</strong><span>Upper section: validation method</span></div>
+        <p class="ch-source">Source · docs/viva/data_challenge.md · Stage-4 fault-injection campaign</p>
       </div>
     </div>
 
@@ -3959,6 +4100,7 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
         <div class="ch-dot" data-ch-dot="3" onclick="c1GoTo(3)"></div>
         <div class="ch-dot" data-ch-dot="4" onclick="c1GoTo(4)"></div>
         <div class="ch-dot" data-ch-dot="5" onclick="c1GoTo(5)"></div>
+        <div class="ch-dot" data-ch-dot="6" onclick="c1GoTo(6)"></div>
       </div>
       <button class="ch-nav-btn primary" id="c1NextBtn" onclick="c1Next()">Next &rarr;</button>
     </div>
@@ -3969,12 +4111,15 @@ dataChallengeNotes.type = 'application/json';
 dataChallengeNotes.className = 'slide-notes';
 dataChallengeNotes.textContent = JSON.stringify({
   title: 'Challenge 1: Defining Fault Evidence Without Fault Examples',
-  script: 'A conventional supervised fault dataset contains sensor readings and known mechanical-condition labels. Our KIT data contains sensor readings and traffic labels, but no labelled mechanical faults, so we had to define the missing evidence ourselves. A single global threshold would not be trustworthy because the same reading means different things during warm-up, idle, steady driving or high load. We therefore identify operating context first, then apply a frozen, DTC-grounded definition only where it is physically meaningful. A decision requires persistent evidence; otherwise it passes or returns not evaluable. We checked the definitions against the healthy baseline and through 126 controlled fault-injection observations. This supports healthy-data specificity and synthetic detectability, not real-world recall.',
+  script: 'A conventional labelled dataset pairs sensor readings with verified mechanical conditions. Our KIT dataset records real road behaviour, but its labels describe traffic rather than faults. First, we show why one global threshold is misleading: the same 80-degree reading has a different meaning while warming up and after the engine becomes stable. We then clean and align every trip, identify thermal and driving context, engineer the 46-column feature contract, and apply proxy decisions. P0217 is the running example that makes the decision path concrete. The proxy library is grounded in OBD-II standards and automotive guidance: five fault families become fourteen executable checks. Finally, controlled tests show all fourteen rules respond at the strongest simulated change, while healthy data produces zero positive decisions. This validates rule behaviour on simulated evidence; it does not prove detection of real mechanical failures.',
   notes: [
     'Beat 1: typical labelled data versus the KIT label gap',
-    'Beat 2: Data group requested global-threshold visual',
-    'Beat 3: operating-condition state machine plus P0217 definition',
-    'Beat 4: judgement path and validation boundary'
+    'Beat 2: why a global mean near 81 degrees is not a fault threshold',
+    'Beat 3: cleaning, context, engineered features and proxy decisions',
+    'Beat 4: the P0217 decision path',
+    'Beat 5: five grounded proxy families become fourteen checks',
+    'Beat 6: three severities across three real trips',
+    'Beat 7: zero healthy positives, fourteen responsive checks, and the honest limitation'
   ]
 });
 document.querySelector('.slide[data-slide="4"]').appendChild(dataChallengeNotes);
@@ -4037,6 +4182,39 @@ function goTo(index) {
 function next() { goTo(current + 1); }
 function prev() { goTo(current - 1); }
 
+function isFullscreenActive() {
+  return Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+}
+
+function updateFullscreenControl() {
+  const active = isFullscreenActive();
+  const button = document.getElementById('fullscreenToggle');
+  const label = document.getElementById('fullscreenLabel');
+  if (!button || !label) return;
+  label.textContent = active ? 'Exit full screen' : 'Full screen';
+  button.title = active ? 'Exit fullscreen (F or Esc)' : 'Enter fullscreen (F)';
+  button.setAttribute('aria-label', active ? 'Exit fullscreen' : 'Enter fullscreen');
+  button.setAttribute('aria-pressed', String(active));
+}
+
+async function toggleFullscreen() {
+  try {
+    if (isFullscreenActive()) {
+      if (document.exitFullscreen) await document.exitFullscreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    } else {
+      const target = document.documentElement;
+      if (target.requestFullscreen) await target.requestFullscreen();
+      else if (target.webkitRequestFullscreen) target.webkitRequestFullscreen();
+    }
+  } finally {
+    updateFullscreenControl();
+  }
+}
+
+document.addEventListener('fullscreenchange', updateFullscreenControl);
+document.addEventListener('webkitfullscreenchange', updateFullscreenControl);
+
 document.addEventListener('keydown', (e) => {
   if (document.activeElement && document.activeElement.isContentEditable) return;
   if (pdmZoomOpen) {
@@ -4047,6 +4225,7 @@ document.addEventListener('keydown', (e) => {
     return;
   }
   if (backupOpen) return;
+  if (e.key.toLowerCase() === 'f') { e.preventDefault(); toggleFullscreen(); return; }
   if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
   if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
   if (e.key === 'Home') { e.preventDefault(); goTo(0); }
@@ -4072,6 +4251,7 @@ document.addEventListener('wheel', (e) => {
 }, { passive: true });
 
 updateUI();
+updateFullscreenControl();
 
 /* ===========================================
    STORYBOARD (Slide 2) — click-to-advance state
@@ -4139,20 +4319,21 @@ function resetStory() {
 
 /* ===========================================
    CHALLENGE 1 STEPPER (Slide 5) — click-through,
-   3 problem beats (real-data visuals) -> solution.
+   seven evidence-led beats from label gap to validation.
    Back button + dots allow jumping backward so a
    presenter can return mid-Q&A without losing place.
    =========================================== */
 let c1Current = 0;
-const c1Total = 6;
-const c1StageMap = [0, 1, 2, 3, 4, 5];
+const c1Total = 7;
+const c1StageMap = [0, 1, 2, 3, 4, 5, 6];
 const c1Labels = [
-  'Cleaning and aligning every trip',
   'The missing side of the dataset',
-  'Why context matters',
-  'Building the fault-definition architecture',
+  'Why one global threshold fails',
+  'Building the data architecture',
   'Applying the architecture',
-  'Validating the architecture'
+  'How we defined proxy fault evidence',
+  'Testing the proxy rules',
+  'Validation results'
 ];
 
 function renderC1() {
@@ -4239,15 +4420,14 @@ function resetModel() {
    Evidence + knowledge → grounded owner report.
    =========================================== */
 let reportCurrent = 0;
-const reportTotal = 7;
+const reportTotal = 6;
 const reportLabels = [
-  'What the owner still needs',
-  'Could fixed rules generate the report?',
-  'Why we chose a language model',
-  'The limitation of direct generation',
-  'Why we added retrieval-augmented generation',
-  'Pure retrieval vs adaptive explanation',
-  'What we validated, and what we did not'
+  'Our report design has three layers',
+  'Start with structured vehicle evidence',
+  'Use verified knowledge with fixed wording',
+  'What happens when an LLM writes without grounding?',
+  'Combine retrieval and an LLM with RAG',
+  'Validate every claim before delivery'
 ];
 
 function renderReport() {
