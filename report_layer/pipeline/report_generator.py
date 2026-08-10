@@ -30,8 +30,12 @@ from report_layer.pipeline.context_injection import (  # noqa: E402
     build_context_with_rag,
 )
 from report_layer.pipeline.prompt_chain_validator import (  # noqa: E402
+    ValidationResult,
     format_validation_summary,
     validate_chain,
+    validate_layer1,
+    validate_layer2,
+    validate_layer3,
 )
 
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
@@ -39,6 +43,22 @@ MODEL = "granite4.1:8b"
 TIMEOUT = 120
 AUDIENCE = "non-technical vehicle owner"
 MAX_RETRIES = 3
+MAX_CORRECTION_ATTEMPTS = 1
+
+# Below this score, prompt_chain_validator has flagged two or more
+# issues on a single layer (each check costs 0.2). Chosen from real
+# score distribution across 10 generated reports spanning all 5
+# current anomaly types (report_layer/evaluation/qa_cross_validation/
+# cross_validation_raw.json and prompt_refinement's
+# selected_window_reports/): every real layer scored 1.0 or 0.8,
+# never lower, so this threshold blocks only clearly bad output and
+# does not fire on any of the measured real reports. call_ollama()
+# runs at temperature=0 (confirmed byte-identical across 5 repeated
+# runs on the same input — see commit 73d4d81). A below-threshold layer
+# therefore receives one different, feedback-driven correction prompt
+# instead of a blind retry. If that corrected result still fails, the
+# pipeline uses its existing empty-report fallback.
+VALIDATOR_SCORE_THRESHOLD = 0.8
 
 logger = logging.getLogger(__name__)
 
@@ -498,6 +518,135 @@ def _call_layer_with_retry(
     return value
 
 
+def _build_correction_prompt(
+    layer_num: int,
+    original_prompt: str,
+    response_key: str,
+    current_value: Any,
+    validation: ValidationResult,
+) -> str:
+    """Build a targeted prompt from one layer's validator feedback."""
+    feedback = "\n".join(
+        f"- {warning}" for warning in validation.warnings
+    )
+    current_json = json.dumps(
+        {response_key: current_value},
+        ensure_ascii=False,
+        indent=2,
+    )
+    return (
+        f"You are correcting Layer {layer_num} of a vehicle-owner report.\n"
+        "The original task below contains the authoritative vehicle "
+        "evidence, retrieved knowledge, safety boundaries, and output "
+        "format.\n\n"
+        "ORIGINAL TASK\n"
+        f"{original_prompt}\n\n"
+        "CURRENT OUTPUT\n"
+        f"{current_json}\n\n"
+        "VALIDATOR FEEDBACK\n"
+        f"{feedback}\n\n"
+        "Correct only the listed problems. Preserve supported facts and "
+        "uncertainty. Do not add a diagnosis, measurement, cause, or action "
+        "that is absent from the original task. Return valid JSON only, "
+        f"with exactly the key \"{response_key}\"."
+    )
+
+
+def _clean_layer_value(
+    layer_num: int,
+    value: Any,
+    model_output: ModelLayerOutput,
+) -> Any:
+    """Apply the production owner-facing cleanup for one layer."""
+    if layer_num == 1:
+        return _clean_model_aware_text(str(value), model_output)
+    if layer_num == 2:
+        cleaned = _clean_model_aware_text(str(value), model_output)
+        return _clean_possible_cause_text(cleaned)
+    return _clean_recommended_actions(value, model_output)
+
+
+def _validate_layer_value(
+    layer_num: int,
+    value: Any,
+    layer1_output: str,
+    risk_level: str,
+) -> ValidationResult:
+    """Run the relevant live quality checks for one generated layer."""
+    if layer_num == 1:
+        return validate_layer1(str(value))
+    if layer_num == 2:
+        return validate_layer2(str(value), layer1_output)
+    return validate_layer3(value, risk_level)
+
+
+def _correct_and_validate_layer(
+    layer_num: int,
+    original_prompt: str,
+    response_key: str,
+    value: Any,
+    model_output: ModelLayerOutput,
+    layer1_output: str = "",
+) -> Any:
+    """Validate a layer and make one feedback-driven correction if needed."""
+    cleaned = _clean_layer_value(layer_num, value, model_output)
+    validation = _validate_layer_value(
+        layer_num,
+        cleaned,
+        layer1_output,
+        model_output.risk_level or "Low",
+    )
+    if validation.score >= VALIDATOR_SCORE_THRESHOLD:
+        return cleaned
+
+    logger.warning(
+        "Layer %d scored %.2f; requesting one targeted correction: %s",
+        layer_num,
+        validation.score,
+        "; ".join(validation.warnings),
+    )
+    corrected = cleaned
+    for _ in range(MAX_CORRECTION_ATTEMPTS):
+        correction_prompt = _build_correction_prompt(
+            layer_num,
+            original_prompt,
+            response_key,
+            corrected,
+            validation,
+        )
+        corrected_response = _call_layer_with_retry(
+            layer_num,
+            correction_prompt,
+            response_key,
+        )
+        if corrected_response is None:
+            break
+        corrected = _clean_layer_value(
+            layer_num,
+            corrected_response,
+            model_output,
+        )
+        validation = _validate_layer_value(
+            layer_num,
+            corrected,
+            layer1_output,
+            model_output.risk_level or "Low",
+        )
+        if validation.score >= VALIDATOR_SCORE_THRESHOLD:
+            logger.info(
+                "Layer %d passed after targeted correction (score %.2f)",
+                layer_num,
+                validation.score,
+            )
+            return corrected
+
+    raise RuntimeError(
+        f"Layer {layer_num} remained below the validation threshold after "
+        f"targeted correction (score {validation.score:.2f}): "
+        f"{'; '.join(validation.warnings)}"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Main public function
 # ---------------------------------------------------------------------------
@@ -561,14 +710,21 @@ def generate_report(
                 ),
             },
         )
-        anomaly_description = _call_layer_with_retry(
+        anomaly_description_raw = _call_layer_with_retry(
             1, prompt1, "anomaly_description"
         )
 
-        if anomaly_description is None:
+        if anomaly_description_raw is None:
             raise RuntimeError(
                 f"Layer 1 failed after {MAX_RETRIES} retries"
             )
+        anomaly_description = _correct_and_validate_layer(
+            1,
+            prompt1,
+            "anomaly_description",
+            anomaly_description_raw,
+            validated,
+        )
 
         # --- Layer 2: possible_cause ---
         prompt2 = render_prompt(
@@ -583,14 +739,22 @@ def generate_report(
                 ),
             },
         )
-        possible_cause = _call_layer_with_retry(
+        possible_cause_raw = _call_layer_with_retry(
             2, prompt2, "possible_cause"
         )
 
-        if possible_cause is None:
+        if possible_cause_raw is None:
             raise RuntimeError(
                 f"Layer 2 failed after {MAX_RETRIES} retries"
             )
+        possible_cause = _correct_and_validate_layer(
+            2,
+            prompt2,
+            "possible_cause",
+            possible_cause_raw,
+            validated,
+            anomaly_description,
+        )
 
         # --- Layer 3: recommended_action ---
         prompt3 = render_prompt(
@@ -609,33 +773,25 @@ def generate_report(
                 ),
             },
         )
-        recommended_action = _call_layer_with_retry(
+        recommended_action_raw = _call_layer_with_retry(
             3, prompt3, "recommended_action"
         )
 
-        if recommended_action is None:
+        if recommended_action_raw is None:
             raise RuntimeError(
                 f"Layer 3 failed after {MAX_RETRIES} retries"
             )
-
-        anomaly_description = _clean_model_aware_text(
+        recommended_action = _correct_and_validate_layer(
+            3,
+            prompt3,
+            "recommended_action",
+            recommended_action_raw,
+            validated,
             anomaly_description,
-            validated,
-        )
-        possible_cause = _clean_model_aware_text(
-            possible_cause,
-            validated,
-        )
-        possible_cause = _clean_possible_cause_text(possible_cause)
-        recommended_action = _clean_recommended_actions(
-            recommended_action,
-            validated,
         )
 
-        # Step 4b: Validate the cleaned chain output. Never blocks or
-        # retries — validate_chain() never raises, so this only adds
-        # visibility (via logging) into quality issues that previously
-        # had no runtime signal at all.
+        # Step 4b: Revalidate the complete cleaned chain as a final
+        # defence-in-depth check after the sequential per-layer gates.
         validation_results = validate_chain(
             anomaly_description,
             possible_cause,
@@ -646,6 +802,18 @@ def generate_report(
             logger.warning(
                 "Prompt chain validation flagged issues:\n%s",
                 format_validation_summary(validation_results),
+            )
+        failing_layers = [
+            result.layer
+            for result in validation_results
+            if result.score < VALIDATOR_SCORE_THRESHOLD
+        ]
+        if failing_layers:
+            raise RuntimeError(
+                f"Prompt chain validation blocked the report: "
+                f"layer(s) {failing_layers} scored below "
+                f"{VALIDATOR_SCORE_THRESHOLD}.\n"
+                f"{format_validation_summary(validation_results)}"
             )
 
         # Step 5: Assemble successful output
