@@ -238,6 +238,45 @@ class TestGenerateReportValidationGate(unittest.TestCase):
     @patch(
         "report_layer.pipeline.report_generator.requests.post"
     )
+    def test_score_exactly_at_threshold_is_not_blocked(
+        self, mock_post, mock_sleep
+    ):
+        # A score of exactly VALIDATOR_SCORE_THRESHOLD (0.8) is the
+        # single most common real case — 20-40% of real generated
+        # reports land here (one flagged issue on one layer). The gate
+        # must use a strict "<" comparison, not "<=": this is the
+        # boundary an off-by-one change would silently break, blocking
+        # a large share of otherwise-normal reports.
+        at_threshold_layer1 = json.dumps(
+            {
+                "anomaly_description": (
+                    "Your engine coolant_temp reading is running higher "
+                    "than normal. The current reading is 102 degrees "
+                    "Celsius, while the expected range is 90 to 95 "
+                    "degrees. Because the risk level is High, this may "
+                    "need prompt attention soon to avoid further strain "
+                    "on the cooling system."
+                )
+            }
+        )
+        mock_post.side_effect = [
+            _make_mock_response(at_threshold_layer1),
+            _make_mock_response(LAYER2_RESPONSE),
+            _make_mock_response(LAYER3_RESPONSE),
+        ]
+
+        result = generate_report(VALID_MODEL_OUTPUT)
+
+        self.assertTrue(len(result["anomaly_description"]) > 0)
+        self.assertTrue(len(result["possible_cause"]) > 0)
+        self.assertGreater(len(result["recommended_action"]), 0)
+
+    @patch(
+        "report_layer.pipeline.report_generator.time.sleep"
+    )
+    @patch(
+        "report_layer.pipeline.report_generator.requests.post"
+    )
     def test_passing_quality_output_is_not_blocked(
         self, mock_post, mock_sleep
     ):
