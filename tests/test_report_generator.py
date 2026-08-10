@@ -38,14 +38,41 @@ VALID_MODEL_OUTPUT = {
     "notes": [],
 }
 
+# Realistic enough to pass prompt_chain_validator.validate_chain() at
+# VALIDATOR_SCORE_THRESHOLD — word-count minimums, hedging language,
+# High-risk urgency wording. Placeholder-length text (e.g. "Visit a
+# mechanic") now correctly gets blocked by the live validation gate,
+# which is exactly the behavior the gate exists to test elsewhere; this
+# fixture instead represents a realistic passing generation.
 LAYER1_RESPONSE = json.dumps(
-    {"anomaly_description": "Engine coolant temperature is elevated."}
+    {
+        "anomaly_description": (
+            "Your engine's coolant temperature is running higher than "
+            "normal. The current reading is 102 degrees Celsius, while "
+            "the expected range is 90 to 95 degrees. Because the risk "
+            "level is High, this may need prompt attention soon to "
+            "avoid further strain on the cooling system."
+        )
+    }
 )
 LAYER2_RESPONSE = json.dumps(
-    {"possible_cause": "Possible thermostat or coolant system issue."}
+    {
+        "possible_cause": (
+            "This pattern may indicate a partially blocked radiator or "
+            "a thermostat that is not fully opening, which could "
+            "reduce how effectively the engine sheds heat."
+        )
+    }
 )
 LAYER3_RESPONSE = json.dumps(
-    {"recommended_action": ["Visit a mechanic", "Monitor temperature"]}
+    {
+        "recommended_action": [
+            "Avoid heavy driving or towing until the cooling system "
+            "has been inspected by a professional.",
+            "Schedule a prompt inspection of the radiator and "
+            "thermostat within the next few days.",
+        ]
+    }
 )
 
 PASS_THROUGH_FIELDS = [
@@ -163,6 +190,70 @@ class TestGenerateReportJsonParseFailure(unittest.TestCase):
         self.assertEqual(result["anomaly_description"], "")
         self.assertEqual(result["possible_cause"], "")
         self.assertEqual(result["recommended_action"], [])
+
+
+class TestGenerateReportValidationGate(unittest.TestCase):
+    """test_generate_report_validation_gate — low-quality output blocked."""
+
+    @patch(
+        "report_layer.pipeline.report_generator.time.sleep"
+    )
+    @patch(
+        "report_layer.pipeline.report_generator.requests.post"
+    )
+    def test_low_quality_output_falls_back(
+        self, mock_post, mock_sleep
+    ):
+        # Well-formed JSON, but short/unhedged text that
+        # prompt_chain_validator scores below VALIDATOR_SCORE_THRESHOLD
+        # on layers 2 and 3 (missing hedging, too-short action items).
+        # generate_report() must not return this content — it should
+        # go to the same empty-fallback path as a JSON parse failure.
+        low_quality_layer1 = json.dumps(
+            {"anomaly_description": "Engine coolant temperature is elevated."}
+        )
+        low_quality_layer2 = json.dumps(
+            {"possible_cause": "Possible thermostat or coolant system issue."}
+        )
+        low_quality_layer3 = json.dumps(
+            {"recommended_action": ["Visit a mechanic", "Monitor temperature"]}
+        )
+        mock_post.side_effect = [
+            _make_mock_response(low_quality_layer1),
+            _make_mock_response(low_quality_layer2),
+            _make_mock_response(low_quality_layer3),
+        ]
+
+        result = generate_report(VALID_MODEL_OUTPUT)
+
+        self.assertIsInstance(result, dict)
+        self.assertNotIn("report_generation_success", result)
+        self.assertEqual(result["anomaly_description"], "")
+        self.assertEqual(result["possible_cause"], "")
+        self.assertEqual(result["recommended_action"], [])
+
+    @patch(
+        "report_layer.pipeline.report_generator.time.sleep"
+    )
+    @patch(
+        "report_layer.pipeline.report_generator.requests.post"
+    )
+    def test_passing_quality_output_is_not_blocked(
+        self, mock_post, mock_sleep
+    ):
+        # Sanity check in the other direction: realistic text at or
+        # above the threshold must reach the owner, not be discarded.
+        mock_post.side_effect = [
+            _make_mock_response(LAYER1_RESPONSE),
+            _make_mock_response(LAYER2_RESPONSE),
+            _make_mock_response(LAYER3_RESPONSE),
+        ]
+
+        result = generate_report(VALID_MODEL_OUTPUT)
+
+        self.assertTrue(len(result["anomaly_description"]) > 0)
+        self.assertTrue(len(result["possible_cause"]) > 0)
+        self.assertGreater(len(result["recommended_action"]), 0)
 
 
 class TestGenerateReportInvalidInput(unittest.TestCase):
