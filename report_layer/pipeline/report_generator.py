@@ -40,6 +40,21 @@ TIMEOUT = 120
 AUDIENCE = "non-technical vehicle owner"
 MAX_RETRIES = 3
 
+# Below this score, prompt_chain_validator has flagged two or more
+# issues on a single layer (each check costs 0.2). Chosen from real
+# score distribution across 10 generated reports spanning all 5
+# current anomaly types (report_layer/evaluation/qa_cross_validation/
+# cross_validation_raw.json and prompt_refinement's
+# selected_window_reports/): every real layer scored 1.0 or 0.8,
+# never lower, so this threshold blocks only clearly bad output and
+# does not fire on any of the measured real reports. call_ollama()
+# runs at temperature=0 (confirmed byte-identical across 5 repeated
+# runs on the same input — see commit 73d4d81), so a failing layer
+# cannot be fixed by blindly retrying the same prompt; a below-
+# threshold report therefore goes straight to the existing
+# empty-fallback path rather than retrying.
+VALIDATOR_SCORE_THRESHOLD = 0.8
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_PROMPT_VALUES = {
@@ -632,10 +647,15 @@ def generate_report(
             validated,
         )
 
-        # Step 4b: Validate the cleaned chain output. Never blocks or
-        # retries — validate_chain() never raises, so this only adds
-        # visibility (via logging) into quality issues that previously
-        # had no runtime signal at all.
+        # Step 4b: Validate the cleaned chain output. Scores of exactly
+        # VALIDATOR_SCORE_THRESHOLD or above are logged only — they cover
+        # single-issue cases (e.g. one leaked field name) that are common
+        # enough in real reports that blocking on them without a
+        # corrective-retry mechanism would degrade far more reports than
+        # it protects. Below the threshold (two or more stacked issues)
+        # blocks the report: temperature=0 makes a same-prompt retry
+        # pointless, so this raises straight into the existing
+        # empty-fallback path instead of retrying.
         validation_results = validate_chain(
             anomaly_description,
             possible_cause,
@@ -646,6 +666,18 @@ def generate_report(
             logger.warning(
                 "Prompt chain validation flagged issues:\n%s",
                 format_validation_summary(validation_results),
+            )
+        failing_layers = [
+            result.layer
+            for result in validation_results
+            if result.score < VALIDATOR_SCORE_THRESHOLD
+        ]
+        if failing_layers:
+            raise RuntimeError(
+                f"Prompt chain validation blocked the report: "
+                f"layer(s) {failing_layers} scored below "
+                f"{VALIDATOR_SCORE_THRESHOLD}.\n"
+                f"{format_validation_summary(validation_results)}"
             )
 
         # Step 5: Assemble successful output
