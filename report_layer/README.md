@@ -58,7 +58,7 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | Failure Projection Context | GL-190, GL-192 | Inject estimated failure probability and cycles into prompts when available |
 | Prompt Rule Hardening | GL-213 | Enforce context-first grounding, strict JSON output, safe use of notes, and no invented failure projection values |
 | ADR 303 | GL-110 | Document RAG knowledge base design |
-| Report Generation Pipeline | GL-241–245 | `pipeline/report_generator.py::generate_report()` orchestrates the full three-layer chain against a live Ollama instance, with per-layer retry and a graceful empty-report fallback on failure (never raises) |
+| Report Generation Pipeline | GL-241–245 | `pipeline/report_generator.py::generate_report()` orchestrates the full three-layer chain against a live Ollama instance. Each generated layer is validated before the next begins; a below-threshold result receives one feedback-driven correction, then falls back safely if it still fails. Transient request/parse failures retain three technical retries (never raises). |
 | Dashboard Wiring | GL-365 | Dashboard's CSV-upload flow calls the real pipeline end-to-end (Data Layer → Model Layer subprocess → `generate_report()`); verified with a real, unmocked run producing a grounded report |
 | Timeout Surfacing Fix | GL-261 | Dashboard now detects `generate_report()`'s silent empty-report fallback and shows an "Analysis Timed Out" error card instead of rendering a blank report |
 

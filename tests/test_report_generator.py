@@ -193,7 +193,129 @@ class TestGenerateReportJsonParseFailure(unittest.TestCase):
 
 
 class TestGenerateReportValidationGate(unittest.TestCase):
-    """test_generate_report_validation_gate — low-quality output blocked."""
+    """Live validation corrects bad layers or falls back safely."""
+
+    @patch(
+        "report_layer.pipeline.report_generator.time.sleep"
+    )
+    @patch(
+        "report_layer.pipeline.report_generator.requests.post"
+    )
+    def test_low_quality_layer_is_corrected_before_next_layer(
+        self, mock_post, mock_sleep
+    ):
+        low_quality_layer1 = json.dumps(
+            {
+                "anomaly_description": (
+                    "coolant_temp is high and the cooling fan has failed."
+                )
+            }
+        )
+        corrected_layer1 = json.dumps(
+            {
+                "anomaly_description": (
+                    "The engine coolant reading is higher than its expected "
+                    "range during this driving period. This is evidence of "
+                    "unusual cooling-system behaviour, but it does not "
+                    "confirm that a specific component has failed. The High "
+                    "risk level means the pattern needs prompt attention."
+                )
+            }
+        )
+        mock_post.side_effect = [
+            _make_mock_response(low_quality_layer1),
+            _make_mock_response(corrected_layer1),
+            _make_mock_response(LAYER2_RESPONSE),
+            _make_mock_response(LAYER3_RESPONSE),
+        ]
+
+        result = generate_report(VALID_MODEL_OUTPUT)
+
+        self.assertIn(
+            "does not confirm",
+            result["anomaly_description"],
+        )
+        self.assertEqual(mock_post.call_count, 4)
+        correction_prompt = mock_post.call_args_list[1].kwargs["json"][
+            "prompt"
+        ]
+        self.assertIn("VALIDATOR FEEDBACK", correction_prompt)
+        self.assertIn("unexplained raw field name", correction_prompt)
+        self.assertNotIn(
+            "coolant_temp",
+            mock_post.call_args_list[2].kwargs["json"]["prompt"],
+        )
+
+    @patch(
+        "report_layer.pipeline.report_generator.time.sleep"
+    )
+    @patch(
+        "report_layer.pipeline.report_generator.requests.post"
+    )
+    def test_layer2_correction_is_used_by_layer3(
+        self, mock_post, mock_sleep
+    ):
+        unsafe_layer2 = json.dumps(
+            {"possible_cause": "The thermostat is broken."}
+        )
+        corrected_layer2 = json.dumps(
+            {
+                "possible_cause": (
+                    "This pattern could suggest restricted coolant flow or "
+                    "a thermostat that is not opening fully. These remain "
+                    "possible explanations rather than a confirmed fault."
+                )
+            }
+        )
+        mock_post.side_effect = [
+            _make_mock_response(LAYER1_RESPONSE),
+            _make_mock_response(unsafe_layer2),
+            _make_mock_response(corrected_layer2),
+            _make_mock_response(LAYER3_RESPONSE),
+        ]
+
+        result = generate_report(VALID_MODEL_OUTPUT)
+
+        self.assertIn("could suggest", result["possible_cause"])
+        layer3_prompt = mock_post.call_args_list[3].kwargs["json"]["prompt"]
+        self.assertIn("could suggest", layer3_prompt)
+        self.assertNotIn("The thermostat is broken", layer3_prompt)
+        self.assertEqual(mock_post.call_count, 4)
+
+    @patch(
+        "report_layer.pipeline.report_generator.time.sleep"
+    )
+    @patch(
+        "report_layer.pipeline.report_generator.requests.post"
+    )
+    def test_layer3_actions_are_corrected_before_delivery(
+        self, mock_post, mock_sleep
+    ):
+        unsafe_layer3 = json.dumps(
+            {"recommended_action": ["Check it", "Keep driving"]}
+        )
+        corrected_layer3 = json.dumps(
+            {
+                "recommended_action": [
+                    "Avoid heavy driving until the cooling system has "
+                    "received a professional inspection.",
+                    "Arrange a prompt cooling-system inspection within the "
+                    "next few days.",
+                ]
+            }
+        )
+        mock_post.side_effect = [
+            _make_mock_response(LAYER1_RESPONSE),
+            _make_mock_response(LAYER2_RESPONSE),
+            _make_mock_response(unsafe_layer3),
+            _make_mock_response(corrected_layer3),
+        ]
+
+        result = generate_report(VALID_MODEL_OUTPUT)
+
+        self.assertEqual(len(result["recommended_action"]), 2)
+        self.assertIn("Avoid heavy driving", result["recommended_action"][0])
+        self.assertEqual(mock_post.call_count, 4)
 
     @patch(
         "report_layer.pipeline.report_generator.time.sleep"
@@ -204,24 +326,19 @@ class TestGenerateReportValidationGate(unittest.TestCase):
     def test_low_quality_output_falls_back(
         self, mock_post, mock_sleep
     ):
-        # Well-formed JSON, but short/unhedged text that
-        # prompt_chain_validator scores below VALIDATOR_SCORE_THRESHOLD
-        # on layers 2 and 3 (missing hedging, too-short action items).
-        # generate_report() must not return this content — it should
-        # go to the same empty-fallback path as a JSON parse failure.
+        # A semantic correction is attempted once. If the corrected value
+        # still scores below the threshold, the report must fall back before
+        # any downstream layer is generated.
         low_quality_layer1 = json.dumps(
-            {"anomaly_description": "Engine coolant temperature is elevated."}
-        )
-        low_quality_layer2 = json.dumps(
-            {"possible_cause": "Possible thermostat or coolant system issue."}
-        )
-        low_quality_layer3 = json.dumps(
-            {"recommended_action": ["Visit a mechanic", "Monitor temperature"]}
+            {
+                "anomaly_description": (
+                    "coolant_temp is high and the cooling fan has failed."
+                )
+            }
         )
         mock_post.side_effect = [
             _make_mock_response(low_quality_layer1),
-            _make_mock_response(low_quality_layer2),
-            _make_mock_response(low_quality_layer3),
+            _make_mock_response(low_quality_layer1),
         ]
 
         result = generate_report(VALID_MODEL_OUTPUT)
@@ -231,6 +348,7 @@ class TestGenerateReportValidationGate(unittest.TestCase):
         self.assertEqual(result["anomaly_description"], "")
         self.assertEqual(result["possible_cause"], "")
         self.assertEqual(result["recommended_action"], [])
+        self.assertEqual(mock_post.call_count, 2)
 
     @patch(
         "report_layer.pipeline.report_generator.time.sleep"
@@ -270,6 +388,7 @@ class TestGenerateReportValidationGate(unittest.TestCase):
         self.assertTrue(len(result["anomaly_description"]) > 0)
         self.assertTrue(len(result["possible_cause"]) > 0)
         self.assertGreater(len(result["recommended_action"]), 0)
+        self.assertEqual(mock_post.call_count, 3)
 
     @patch(
         "report_layer.pipeline.report_generator.time.sleep"
