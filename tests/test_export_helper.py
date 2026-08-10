@@ -12,6 +12,8 @@ from dashboard.export_helper import (
     DEFAULT_EXPORT_SECTIONS,
     NOT_AVAILABLE,
     PDF_TITLE,
+    _get_pdf_styles,
+    _get_reportlab_tools,
     build_csv_file_name,
     build_diagnostic_pdf_bytes,
     build_export_data,
@@ -284,6 +286,19 @@ def test_build_diagnostic_pdf_bytes_accepts_section_filter():
 
     assert pdf_bytes.startswith(b"%PDF")
     assert len(pdf_bytes) > 1000
+
+
+def test_diagnostic_report_pdf_body_style_is_more_readable():
+    """GL-439: diagnostic report body text is larger with wider spacing."""
+    tools = _get_reportlab_tools()
+    styles = _get_pdf_styles(tools)
+
+    assert styles["ReportDiagnosticBody"].fontSize > (
+        styles["ReportBody"].fontSize
+    )
+    assert styles["ReportDiagnosticBody"].leading > (
+        styles["ReportBody"].leading
+    )
 
 
 def test_pdf_title_is_user_facing():
