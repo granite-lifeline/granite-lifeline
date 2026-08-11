@@ -1,10 +1,13 @@
 # Google Forms Results and Analysis Template
 
-**Version 2.0 — 2026-08-09**  
+**Version 3.0 — 2026-08-11**  
 **Build represented:** `granite-lifeline` `develop` @ `74e58d0`
 
-The Google Forms response export is the raw record. Keep one untouched copy,
-then analyse a working copy. Never add names or emails to either sheet.
+**Report-pair status:** no report pair is approved or captured in this version
+
+The two Google Forms response exports are the raw records. Keep one untouched
+copy of each, then combine copies into one working analysis sheet. Never add
+names or emails to either raw or working sheet.
 
 The owner-only Google Forms `Responses > Summary` charts may be used for a
 first-pass view of counts and distributions. Do not treat them as the final
@@ -18,9 +21,9 @@ only after applying the inclusion log and scoring rules below.
 Assign `P01`, `P02`, … only after exporting valid responses. These are row
 labels, not identifiers supplied by participants.
 
-| response_id | include | exclusion_reason | build_sha | notes |
+| response_id | include | exclusion_reason | form_version | build_sha | notes |
 | --- | --- | --- | --- | --- |
-| P01 | Y | | `74e58d0` | |
+| P01 | Y | | `rag_first` | `74e58d0` | |
 
 Allowed exclusion reasons are:
 
@@ -43,7 +46,14 @@ traceable.
 | --- | --- |
 | `response_id` | `P01`, `P02`, … |
 | `include` | `Y` or `N` |
+| `form_version` | `rag_first` or `baseline_first` |
 | `build_sha` | `74e58d0` for this capture set |
+| `report_a_condition` | `RAG` or `baseline`, decoded from `form_version` |
+| `report_b_condition` | `RAG` or `baseline`, decoded from `form_version` |
+| `report_source_commit` | Full Report-layer source commit from the capture log |
+| `report_fixture` | Named common model-input fixture from the capture log |
+| `report_rag_pdf_sha256` | SHA-256 recorded in `assets/README.md` |
+| `report_baseline_pdf_sha256` | SHA-256 recorded in `assets/README.md` |
 | `age_band` | Form response |
 | `licence_history` | Form response |
 | `mechanical_knowledge` | Form response |
@@ -59,14 +69,29 @@ traceable.
 | `cl6_export` | Integer 1–5 |
 | `u1_least_clear_step` | One of the five U1 options |
 | `u2_failure_interpretation` | One of the four U2 options |
+| `rcl1_report_a_ease` | Integer 1–5 |
+| `rrn1_report_a_reasonableness` | Integer 1–5 |
+| `rcl2_report_b_ease` | Integer 1–5 |
+| `rrn2_report_b_reasonableness` | Integer 1–5 |
+| `rp1_easier_report` | `Report A`, `Report B`, or equal option |
+| `rp2_more_reasonable_report` | `Report A`, `Report B`, or equal option |
+| `ro1_report_comment` | Optional text |
+| `rag_ease` | Integer 1–5, decoded from the matching Report A/B rating |
+| `baseline_ease` | Integer 1–5, decoded from the matching Report A/B rating |
+| `ease_difference_rag_minus_baseline` | Integer −4 through 4 |
+| `rag_reasonableness` | Integer 1–5, decoded from the matching Report A/B rating |
+| `baseline_reasonableness` | Integer 1–5, decoded from the matching Report A/B rating |
+| `reasonableness_difference_rag_minus_baseline` | Integer −4 through 4 |
+| `easier_condition` | `RAG`, `baseline`, or `equal`, decoded from RP1 |
+| `more_reasonable_condition` | `RAG`, `baseline`, or `equal`, decoded from RP2 |
 | `o1_comment` | Optional text |
 | `protocol_note` | Blank unless an administration issue applies |
 
-## 3. Scoring formulas
+## 3. Dashboard scoring formulas
 
-Assume the eight correctness flags occupy columns `J:Q` in the working sheet.
-Adjust the range once if the actual export places them elsewhere, then use the
-same range for every row.
+Place the eight correctness flags together in the working sheet. Set their
+range once after combining the two exports, then use the same range for every
+row. For example, if the flags occupy `J:Q`:
 
 ### Per-response score
 
@@ -113,13 +138,38 @@ For included rows, filter the relevant numeric column first, then use:
 
 Use these formulas for `comprehension_total` and each CL1–CL6 column.
 
-## 4. Per-response table
+## 4. Report-condition decoding and paired calculations
+
+Complete the administration fields from the capture log before calculating any
+report results. Do not infer a condition from the participant-facing Report A
+or Report B label.
+
+| `form_version` | `report_a_condition` | `report_b_condition` |
+| --- | --- | --- |
+| `rag_first` | `RAG` | `baseline` |
+| `baseline_first` | `baseline` | `RAG` |
+
+For each row, copy the Report A or Report B rating into its decoded condition
+column. For example, with Report A ease in `T2`, Report B ease in `V2`, and
+Report A condition in `D2`:
+
+```text
+rag_ease:      =IF($D2="RAG",T2,V2)
+baseline_ease: =IF($D2="baseline",T2,V2)
+difference:    =rag_ease-baseline_ease
+```
+
+Apply the same mapping to reasonableness. Decode RP1 and RP2 against the same
+condition mapping; retain `equal` when the participant selects an equal
+option. Do not score a report-comprehension total.
+
+## 5. Per-response dashboard table
 
 | response_id | q1 | q2 | q3 | q4 | q5 | q6 | q7 | q8 | total / 8 | CL1 | CL2 | CL3 | CL4 | CL5 | CL6 | U1 | U2 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | P01 | | | | | | | | | | | | | | | | | |
 
-## 5. Objective-comprehension summary
+## 6. Dashboard objective-comprehension summary
 
 | Item | Correct n / N | Correct % | Wilson 95% CI |
 | --- | ---: | ---: | --- |
@@ -139,7 +189,7 @@ Use these formulas for `comprehension_total` and each CL1–CL6 column.
 | IQR | |
 | Observed range | |
 
-## 6. Clarity summary
+## 7. Dashboard clarity summary
 
 | Screen group | Median | IQR | Clear/Very clear n / N |
 | --- | ---: | ---: | ---: |
@@ -153,7 +203,7 @@ Use these formulas for `comprehension_total` and each CL1–CL6 column.
 Treat clarity responses as ordinal. Do not calculate or report a combined
 clarity average or compare it with a published usability benchmark.
 
-## 7. Ambiguity probes
+## 8. Dashboard ambiguity probes
 
 ### U1 — Least-clear local setup step
 
@@ -177,13 +227,37 @@ clarity average or compare it with a published usability benchmark.
 Do not mark U2 responses correct or incorrect. Report the mechanical-failure
 and cannot-tell counts explicitly as evidence about the current label.
 
-## 8. Background description
+## 9. Report paired-comparison summary
 
-Report counts for each response category. With 10–14 participants, do not run
+Use only included responses. The total target is 12, with six responses from
+each Form version. Treat ordinal ratings as ordinal; report medians and ranges,
+not means or standard deviations.
+
+| Measure | RAG median | Baseline median | RAG − baseline median | Observed paired range |
+| --- | ---: | ---: | ---: | --- |
+| Ease of understanding | | | | |
+| Reasonableness | | | | |
+
+| Blind preference | RAG n / N | Baseline n / N | Equal n / N |
+| --- | ---: | ---: | ---: |
+| Easier to understand | | | |
+| More reasonable | | | |
+
+| Form version | Valid N | Ease RAG − baseline: median (range) | Reasonableness RAG − baseline: median (range) |
+| --- | ---: | --- | --- |
+| `rag_first` | | | |
+| `baseline_first` | | | |
+
+Do not apply a significance test, effect-size calculation, or formal
+between-order comparison. The order rows reveal possible carryover only.
+
+## 10. Background description
+
+Report counts for each response category. With 12 participants, do not run
 driver/non-driver comparisons, correlations, significance tests, or model
 fitting.
 
-## 9. Optional comments
+## 11. Optional comments
 
 Copy non-empty O1 comments into the table below after checking that they do
 not contain identifying details. If a comment unexpectedly contains a name or
@@ -194,10 +268,11 @@ response.
 | --- | --- | --- |
 | P__ | | |
 
+Apply the same privacy check and descriptive treatment to RO1 report comments.
 Summarise recurring points in plain language. Do not call this a formal
 thematic analysis and do not use isolated quotations to imply prevalence.
 
-## 10. Report-ready results checklist
+## 12. Report-ready results checklist
 
 - [ ] Valid N and every denominator are stated.
 - [ ] Per-item comprehension results use `n/N` and Wilson intervals.
@@ -208,3 +283,10 @@ thematic analysis and do not use isolated quotations to imply prevalence.
 - [ ] Screenshot viewing is never described as dashboard use.
 - [ ] The illustrative-data and failure-threshold limitations are explicit.
 - [ ] The build is identified as `74e58d0`.
+- [ ] The report source commit, fixture, PDF hashes, and condition mapping are
+      identified.
+- [ ] Report ratings are decoded from Form version before analysis.
+- [ ] Report results include paired differences, preference `n/N`, and the two
+      six-person order-group summaries.
+- [ ] Report findings are descriptive and do not claim retrieval improved
+      comprehension, mechanical accuracy, or predictive validity.

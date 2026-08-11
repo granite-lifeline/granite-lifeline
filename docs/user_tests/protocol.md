@@ -1,230 +1,244 @@
-# Granite Lifeline Dashboard Communication Study Protocol
+# Granite Lifeline Dashboard and Report Communication Study Protocol
 
-**Version 2.0 — 2026-08-09**  
-**Build represented:** `granite-lifeline` `develop` @ `74e58d0`  
+**Version 3.0 — 2026-08-11**  
+**Dashboard screenshot build:** `granite-lifeline` `develop` @ `74e58d0`  
+**Report-pair status:** no report pair is approved or captured in this version
+
 **Companion documents:** `questionnaires.md`, `screenshot_capture_plan.md`,
-`form_admin_checklist.md`, and `results_log_template.md`
+`form_admin_checklist.md`, `results_log_template.md`, and
+`pdf-refine.md`
 
-This protocol supersedes the interactive usability-study protocol version
-1.2. Participants do not operate the dashboard. They view a fixed sequence of
+This protocol supersedes version 2.0. Participants do not operate the
+dashboard or open a PDF. They view a fixed sequence of dashboard and report
 screenshots in an anonymous Google Form and answer questions about what the
 screens communicate.
 
 ## 1. Purpose and research questions
 
-The dashboard is intended to explain vehicle-component risk to people who are
-not automotive engineers. This study tests whether adults can understand the
-delivered interface from its visible wording and visual hierarchy.
+The dashboard and report are intended to explain vehicle-component risk to
+people who are not automotive engineers. This study tests whether adults can
+understand the delivered wording and visual hierarchy from prompted viewing.
 
 | RQ | Question | Evidence |
 | --- | --- | --- |
-| **RQ1** | Can viewers correctly identify the vehicle-health status, priority component, risk trend, recommended action, upload requirement, and export scope? | Eight scored multiple-choice items |
-| **RQ2** | Which dashboard areas appear clear or unclear to viewers? | Six five-point clarity ratings, two unscored ambiguity probes, and one optional comment |
+| **RQ1** | Can viewers correctly identify key dashboard messages? | Eight scored multiple-choice items |
+| **RQ2** | Which dashboard areas appear clear or unclear? | Six clarity ratings, two ambiguity probes, and one optional comment |
+| **RQ3** | For the same case and layout, do viewers rate a retrieved-grounding report and a no-retrieval report differently for ease of understanding and reasonableness? | Counterbalanced paired ratings and blind preferences |
 
 This is a **communication and comprehension study**, not an interaction-based
 usability test. It cannot establish whether participants can operate the
-dashboard, complete tasks, find controls independently, or tolerate the
-workload of using the application.
+dashboard, open or navigate a PDF, complete tasks, find controls independently,
+or tolerate the workload of using the application.
 
 ## 2. Method
 
 The study is a self-guided, screenshot-based online questionnaire. Every
-participant sees the same images in the same order and answers immediately
-below each image group. No participant installs software, runs a local
-pipeline, uploads a file, follows commands, or uses the hosted dashboard.
+participant sees the same dashboard images in the same order. No participant
+installs software, runs a local pipeline, uploads a file, follows commands,
+uses the hosted dashboard, opens a PDF, or changes report settings.
 
-The earlier protocol's task success, time-on-task, error count, assists, SEQ,
-SUS, and NASA-TLX measures are removed. Those measures require performed tasks
-or actual system use, which passive screenshot viewing does not provide.
+After the dashboard sections, each participant views two complete report
+stimulus sets. Each set contains every page of one locked PDF, represented as
+legible PNG screenshots in original page order. The reports must use the same
+model input, number of pages, headings, visual layout, and source evidence.
+They may differ only in report text generated with or without retrieved
+grounding.
 
-The form targets an **8–10 minute** completion time. It is not configured as a
-Google Forms quiz, and it never shows correctness feedback to participants.
-The answer key in `questionnaires.md` is for offline analysis only.
+Google Forms cannot randomly assign a report order. Build two otherwise
+identical Forms and recruit two separate groups:
+
+| Form version | Valid target | First report | Second report |
+| --- | ---: | --- | --- |
+| `rag_first` | 6 | Report A: retrieved grounding | Report B: no retrieval |
+| `baseline_first` | 6 | Report A: no retrieval | Report B: retrieved grounding |
+
+Participants see only `Report A` and `Report B`; they are not told which
+generation condition produced either report until after submission. The form
+version is an administration field, not a participant question.
+
+The study targets **12 valid completed responses** and a pilot-confirmed
+completion time of **no more than 15 minutes**. It is not a Google Forms quiz
+and never shows correctness feedback to participants. The answer key in
+`questionnaires.md` is for offline dashboard analysis only.
 
 ## 3. Participants
 
-- **Target:** 10–14 valid completed responses.
+- **Target:** 12 valid completed responses: 6 from each Form version.
 - **Inclusion:** adults aged 18 or over who can give informed consent.
 - **Audience:** mixed adults; a driving licence or vehicle ownership is not
   required.
-- **Exclusion:** anyone who worked on Granite Lifeline or previously saw the
-  dashboard. The pilot participant is also excluded from the final sample.
+- **Exclusion:** anyone who worked on Granite Lifeline, previously saw the
+  dashboard or either study report, or took part in either pilot. Form-test
+  responses are also excluded.
 - **Recruitment:** convenience sampling through a neutral invitation that
-  states the study concerns dashboard communication.
+  states the study concerns dashboard and report communication.
 
 Licence history, mechanical knowledge, software confidence, and prior OBD-II
-experience describe the sample only. The sample is too small for driver versus
-non-driver comparisons or inferential subgroup claims.
+experience describe the sample only. The sample supports no demographic or
+inferential subgroup claims.
 
-## 4. Build and stimulus control
+## 4. Stimulus control and report-pair acceptance
 
-All screenshots are captured from the sibling main repository's clean
-`develop` checkout at commit `74e58d0`. The current demo fixture is
+The seven dashboard images are captured from the sibling main repository's
+clean `develop` checkout at commit `74e58d0`. The current dashboard fixture is
 `dashboard/tests/ui_required_data.json`.
 
-The fixed evidence anchors are:
+| Dashboard anchor | Current value |
+| --- | --- |
+| Components shown | Five |
+| Highest priority | Cooling System |
+| Cooling risk | High, 86% |
+| Cooling trend | 45% → 52% → 61% → 70% → 86% |
+| Failure label | 72% within 15 trips |
+| Default export | All five components; PDF and CSV ZIP downloads |
 
-| Item | Current value | Evidence |
-| --- | --- | --- |
-| Components shown | Five | `dashboard/tests/ui_required_data.json` |
-| Highest priority | Cooling System | fixture ordering plus `dashboard/data_store.py` risk sorting |
-| Cooling risk | High, 86% | fixture `risk_level` and `risk_score` |
-| Cooling trend | 45% → 52% → 61% → 70% → 86% | fixture `risk_history` |
-| Failure label | 72% within 15 trips | fixture estimate and `dashboard/failure_prediction.py` |
-| Recommended response | Check coolant only when cool and arrange prompt cooling-system inspection | fixture `recommended_action` |
-| History upload rule | One file for a single analysis, or at least five chronological files for history; two to four are rejected | `dashboard/pages/overview.py` |
-| Default export | All five components; PDF and CSV ZIP downloads | `dashboard/pages/overview.py` |
+The six dashboard stimulus sections are demo entry, upload and local setup,
+overview, Cooling risk, Cooling explanation, and export. Screenshots are
+light-theme desktop captures, cropped for legibility rather than full-browser
+reproductions.
 
-The six stimulus sections are:
+Before report screenshots are captured or either revised Form is launched, the
+Report group must supply the following controlled handoff for both conditions:
 
-1. **Demo entry:** landing page and `Explore with demo data`.
-2. **Upload and local setup:** three-file validation message and the current
-   four-step `How to Run Locally` guide.
-3. **Overview:** data-source notice, urgent-attention banner, risk legend, and
-   all five component cards.
-4. **Cooling risk:** failure label, 86% gauge, and rising trend.
-5. **Cooling explanation:** key signals, diagnosis, cause, and actions.
-6. **Export:** untouched default export summary and ZIP buttons.
+1. The two final PDFs, each generated from the same named model-input fixture.
+2. The source branch and full commit, generation date, and generation
+   configuration for each PDF.
+3. The condition mapping: retrieved grounding or no retrieval.
+4. The source report-output JSONs and evidence that risk, estimate, key
+   signals, and recommended actions use the same underlying case.
+5. Confirmation that page count, page order, headings, visual layout, and
+   non-generated content are identical.
 
-Screenshots are light-theme desktop captures, cropped for legibility rather
-than full-browser reproductions. Captions are neutral and do not reveal an
-answer. Images must remain readable in Google Forms desktop and mobile
-previews.
+Record the handoff and SHA-256 hash of every report PDF and page PNG in
+`assets/README.md`. If the report case differs from the dashboard demo case,
+record that fact and report dashboard and report findings separately. Never
+claim that the dashboard and report conditions represent the same vehicle
+without verified fixture evidence.
 
 ## 5. Form flow
 
 | Stage | Content | Required |
 | --- | --- | --- |
-| 1. Information and consent | Purpose, anonymous data use, 18+ and consent gate | Yes |
-| 2. Background | Five coarse contextual questions | Yes, with `Prefer not to say` where appropriate |
-| 3. Six screenshot sections | Eight scored questions, six clarity ratings, and two ambiguity probes | Yes |
-| 4. Final comment | Anything confusing or hard to interpret | No |
-| 5. Debrief | Illustrative-data and failure-label explanation | Displayed after submission |
+| 1. Information and consent | Purpose, anonymous data use, 18+ gate | Yes |
+| 2. Background | Five coarse contextual questions | Yes |
+| 3. Dashboard screenshots | Q1–Q8, CL1–CL6, U1–U2 | Yes |
+| 4. Report A | Complete report pages, two ratings | Yes |
+| 5. Report B | Complete report pages, two ratings | Yes |
+| 6. Blind report comparison | Two preference questions and optional reason | Preferences yes; reason no |
+| 7. Final dashboard comment | Optional | No |
+| 8. Debrief | Dashboard limitations and report-condition disclosure | After submission |
 
-A participant who does not confirm eligibility and consent is branched to an
+A participant who does not confirm eligibility and consent is routed to an
 exit section and provides no study answers.
 
 ## 6. Measures and scoring
 
-### 6.1 Objective comprehension
+### 6.1 Dashboard objective comprehension
 
-The eight scored items are worth one point each, with no partial credit:
+The existing eight scored dashboard items remain worth one point each, with no
+partial credit. They cover demo entry, upload history, overall status,
+priority component, data-source notice, risk trend, recommended response, and
+default export scope. `comprehension_total` remains the sum of Q1–Q8 and
+ranges from **0 to 8**.
 
-1. Select `Explore with demo data` to view example results.
-2. Respond to the three-file error by uploading at least five chronological
-   CSV files.
-3. Recognise that the car needs attention because at least one component is
-   High risk.
-4. Identify `Cooling System — High — 86%` as the priority.
-5. Interpret the data-source notice as indicating illustrative demo values.
-6. Identify the Cooling risk trend as rising.
-7. Select the coolant-check and prompt-mechanic response.
-8. Recognise that the untouched PDF export is a ZIP covering all five
-   components.
+### 6.2 Dashboard clarity and diagnostic items
 
-The total comprehension score ranges from **0 to 8**.
+The six dashboard clarity items retain their fixed five-point ordinal scale.
+The two existing diagnostic items remain unscored. The failure-label item
+diagnoses wording rather than validating the estimator.
 
-### 6.2 Clarity
+### 6.3 Report paired ratings
 
-Each stimulus section receives one rating on this fixed ordinal scale:
+Immediately after each report, participants answer two required five-point
+items:
 
-1. Very unclear
-2. Unclear
-3. Neither clear nor unclear
-4. Clear
-5. Very clear
+1. how easy the report was to understand;
+2. how reasonable its explanation and recommended actions appeared.
 
-### 6.3 Diagnostic, unscored items
+After both reports, participants select which was easier to understand and
+which appeared more reasonable, with an equal option for each. The optional
+comparison comment may explain a preference but must not contain identifying
+information.
 
-The following items diagnose wording problems and do not contribute to the
-0–8 score:
-
-- what `72% probability of failure within the next 15 trips` appears to mean;
-- which of the four local-run steps remains least clear.
-
-The live interface contract defines the failure estimate as the probability
-that the projected risk crosses the High-risk threshold within a fixed
-horizon, not a calibrated probability of mechanical failure. Because the
-dashboard label does not explain this distinction, a mechanical-failure
-interpretation is a finding about the interface wording, not a participant
-error.
+These are perceived communication measures. No report-comprehension score is
+calculated because reading the first report may affect recall while reading the
+second report.
 
 ## 7. Analysis plan
 
 Analysis is descriptive throughout:
 
-1. Report correct `n/N` and a Wilson 95% confidence interval for each scored
-   item.
-2. Report the median, interquartile range, and observed range of the 0–8 total
-   score.
-3. Report the median and interquartile range for each clarity item. Also show
-   the count selecting `Clear` or `Very clear` so the small-sample denominator
-   remains visible.
-4. Report response counts for both unscored ambiguity probes.
-5. Summarise the optional comments descriptively. Do not claim a formal
-   thematic analysis from one short prompt.
-6. Describe background responses as counts only. Do not run significance
-   tests, compare demographic groups, or generalise percentages to the wider
-   population.
+1. Report dashboard item correctness as `n/N` with Wilson 95% confidence
+   intervals, and report the median, interquartile range, and observed range
+   of the unchanged 0–8 dashboard total.
+2. Report dashboard clarity per item with median, interquartile range, and
+   the `Clear`/`Very clear` count.
+3. Decode each report label using the Form version, then report the paired
+   RAG-minus-baseline difference for ease of understanding and reasonableness.
+4. Report median and observed range of each paired difference, plus counts of
+   participants favouring, disfavoring, or equally rating retrieved grounding.
+5. Report blind easier-to-understand and more-reasonable preferences as `n/N`.
+6. Display report findings separately for the two six-person order groups to
+   reveal, but not test, possible order effects.
+7. Summarise optional comments descriptively. Do not present a formal thematic
+   analysis, statistical significance test, effect-size estimate, correlation,
+   regression, or causal conclusion.
 
-The pilot response, non-consenting exits, obvious test submissions, and any
-response submitted after a documented form fault are excluded before `N` is
-fixed. Anonymous duplicate responses cannot be reliably detected; the
-recruitment message therefore asks each person to respond once.
+Exclude pilot, non-consenting, form-test, documented form-fault, and other
+protocol-deviation responses before fixing `N`. Do not exclude an answer
+because it is incorrect or critical of either report.
 
 ## 8. Ethics and data handling
 
-- Obtain supervisor sign-off on the experiment and the relevant Bristol
-  student permission form before recruitment.
-- Participants must be 18 or over and give informed consent before any study
-  questions appear.
-- Google Forms email collection and sign-in are disabled. Do not collect
-  names, email addresses, student numbers, social handles, or free-text
-  identifying details.
-- Store the form and exported responses in university-managed storage with
-  access limited to the project team and supervisor.
-- Because the form is anonymous at submission, a submitted response cannot be
-  identified and withdrawn later. State this before consent; participants may
-  exit before submitting.
-- The optional comment warns participants not to include names or identifying
-  information.
+- Obtain supervisor sign-off and the applicable Bristol student permission
+  before recruitment or a substantive Form amendment.
+- Forms must not collect names, email addresses, student numbers, social
+  handles, or free-text identifying details.
+- Store forms and raw exports in university-managed storage limited to the
+  project team and supervisor.
+- A submitted anonymous response cannot be identified and removed later; state
+  this before consent.
 - No participant is photographed, recorded, screen-shared, or observed.
-- The debrief states that every vehicle reading is illustrative and describes
-  no real vehicle.
+- The debrief explains that readings are illustrative and discloses the report
+  retrieval comparison only after all ratings are submitted.
 
 The participant-facing project contact is `pn25381@bristol.ac.uk`.
 
 ## 9. Limitations and reporting boundary
 
-- Screenshots reveal what is visible after navigation; they do not test
-  discoverability, control operation, scrolling, responsiveness, downloads,
-  file validation, or system performance.
-- The questionnaire measures comprehension under prompted viewing and is
-  likely easier than unaided use.
-- The small convenience sample supports descriptive findings only.
-- A single fixed demo vehicle cannot establish comprehension across other
-  risk combinations or missing-data states.
-- The local-run guide is shown to mixed adults even though command-line setup
-  is intended for technically confident users; report that result separately
-  from owner-facing dashboard comprehension.
-- The failure wording is known to overstate the live contract. Its response
-  distribution diagnoses this issue but does not validate the estimator.
+- Screenshot viewing does not test PDF controls, zooming, navigation,
+  downloads, dashboard interaction, responsiveness, or performance.
+- Prompted viewing is easier than unaided system use.
+- A 12-person convenience sample supports descriptive paired findings only.
+- Counterbalancing reduces, but does not remove, carryover and order effects.
+- The report comparison concerns the supplied single case and locked layout;
+  it does not establish superiority for other anomalies, vehicles, prompts, or
+  report designs.
+- A preference for retrieved grounding is not evidence of mechanical accuracy,
+  predictive validity, or safety.
 
-Permitted report wording includes `participants correctly interpreted` or
-`participants rated the screenshot as clear`. Do not write `participants
-successfully used`, `the dashboard was usable`, `tasks were completed`, or
-`workload was low` from this study.
+Permitted wording includes `participants rated the report as easier to
+understand` and `participants preferred the report on reasonableness`. Do not
+write `participants successfully used`, `the report was usable`, `retrieved
+grounding improved comprehension`, or `the reports were mechanically accurate`
+from this study.
 
 ## 10. Change control and launch gate
 
-Do not mix screenshots from different builds. Immediately before launch:
+Do not mix dashboard screenshots, report pages, or report conditions from
+different controlled sources. Immediately before launch:
 
-1. Confirm the main repo is still on `develop` and record its full SHA.
-2. If the SHA differs from `74e58d0`, diff every stimulus-relevant file and
-   either retain the pinned capture set or recapture and re-key the whole form.
-3. Run the dashboard regression command in `form_admin_checklist.md`.
-4. Preview every form section on desktop and mobile.
-5. Submit one non-consent path and one complete test response.
-6. Export the response sheet and verify all columns and the 0–8 score.
-7. Confirm `pn25381@bristol.ac.uk` appears in every participant-facing contact
-   field and obtain supervisor sign-off.
+1. Verify the dashboard source SHA and every existing dashboard image hash.
+2. Complete the report-pair acceptance checks in section 4 and preserve the
+   handoff materials.
+3. Clone the verified dashboard Form into `rag_first` and `baseline_first`;
+   modify only report-page order and the invisible administration mapping.
+4. Preview every section on desktop and mobile, including every report page.
+5. Submit non-consent and complete form-test paths for both Forms.
+6. Export both response sheets and verify dashboard scoring, report columns,
+   condition decoding, and no identifying data.
+7. Pilot each order version, confirm completion within 15 minutes, then repeat
+   the launch checks after any content, screenshot, option, or order change.
+8. Obtain supervisor approval for the revised study materials before turning
+   on responses.
+

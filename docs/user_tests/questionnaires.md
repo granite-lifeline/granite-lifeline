@@ -1,11 +1,12 @@
-# Google Forms Build Sheet — Granite Lifeline Dashboard Communication Study
+# Google Forms Build Sheet — Granite Lifeline Communication Study
 
-**Version 2.0 — 2026-08-09**  
+**Version 3.0 — 2026-08-11**  
 **Screenshot build:** `granite-lifeline` `develop` @ `74e58d0`
 
-This is the authoritative source for constructing the online questionnaire.
-Copy wording and option order exactly. Do not shorten labels or adapt the
-questions while building the form.
+This is the authoritative source for constructing two matched online
+questionnaires: `rag_first` and `baseline_first`. Copy wording and option
+order exactly. Do not shorten labels or adapt questions while building either
+Form.
 
 ## 1. Form settings
 
@@ -49,13 +50,14 @@ findings.
 
 **Description**
 
-> We are evaluating how clearly a vehicle-health dashboard communicates its
-> results. You will see six groups of screenshots and answer questions about
-> what they appear to say. You will not install or operate any software.
+> We are evaluating how clearly a vehicle-health dashboard and its example
+> reports communicate their results. You will see screenshots and answer
+> questions about what they appear to say. You will not install or operate
+> software, open a PDF, or use a real vehicle.
 >
-> The study takes about 8–10 minutes. We are reviewing the dashboard, not
-> testing you. Some wording may genuinely be unclear, and identifying that is
-> useful to the project.
+> The study takes no more than 15 minutes. We are reviewing the communication,
+> not testing you. Some wording may genuinely be unclear, and identifying that
+> is useful to the project.
 >
 > Project contact: pn25381@bristol.ac.uk
 
@@ -67,12 +69,12 @@ findings.
 
 > This study is part of the University of Bristol MSc project Granite
 > Lifeline. It investigates whether adults can understand information shown in
-> screenshots of a vehicle-health dashboard.
+> screenshots of a vehicle-health dashboard and example reports.
 >
 > Participation is voluntary. The form asks for broad age, driving,
 > mechanical-knowledge and software-confidence categories, followed by your
-> interpretation of dashboard screenshots. It does not ask for your name,
-> email address, student number, or any information about a real vehicle.
+> interpretation of dashboard and report screenshots. It does not ask for your
+> name, email address, student number, or information about a real vehicle.
 >
 > Responses are anonymous and will be stored in university-managed storage for
 > the project team and supervisor to analyse for teaching and research. You
@@ -154,7 +156,7 @@ not count an exit response in the study dataset.
 - **Prompt:** `Have you used a vehicle diagnostic app or OBD-II reader before?`
 - **Options:** `Yes`; `No`; `Not sure`; `Prefer not to say`
 
-## 5. Shared clarity scale
+## 5. Rating scales
 
 Create each clarity item as a required multiple-choice question. Do not use a
 grid because each item belongs directly below its own screenshot group.
@@ -166,6 +168,22 @@ grid because each item belongs directly below its own screenshot group.
 3. `3 — Neither clear nor unclear`
 4. `4 — Clear`
 5. `5 — Very clear`
+
+**Report ease-of-understanding options, fixed for RCL1–RCL2:**
+
+1. `1 — Very difficult to understand`
+2. `2 — Difficult to understand`
+3. `3 — Neither difficult nor easy to understand`
+4. `4 — Easy to understand`
+5. `5 — Very easy to understand`
+
+**Report reasonableness options, fixed for RRN1–RRN2:**
+
+1. `1 — Very unreasonable`
+2. `2 — Unreasonable`
+3. `3 — Neither unreasonable nor reasonable`
+4. `4 — Reasonable`
+5. `5 — Very reasonable`
 
 ## 6. Section 3 — Starting the dashboard
 
@@ -382,7 +400,111 @@ Insert image `assets/07-export-defaults.png`.
 - **Prompt:** `How clear is what will be included in the default export?`
 - **Options:** shared clarity scale
 
-## 12. Section 9 — Final comment
+## 12. Section 9 — Report A
+
+**Section title:** `Reading Report A`
+
+**Section description**
+
+> The following screenshots show every page of one example vehicle-health
+> report. Read them in the order shown, then answer the two questions below.
+
+Insert every PNG from the mapped source directory below in ascending
+page-number order:
+
+| Form version | `Report A` source pages |
+| --- | --- |
+| `rag_first` | `assets/reports/rag/` |
+| `baseline_first` | `assets/reports/baseline/` |
+
+For each inserted page, use the neutral caption
+`Report A — page <number> of <total>.` Do not mention retrieval, RAG,
+grounding, baseline, or a PDF filename in participant-facing text. Supply page
+alt text that describes its visible heading and sections without revealing a
+condition.
+
+### RCL1 — Report A ease of understanding
+
+- **Type:** Multiple choice
+- **Required:** Yes
+- **Prompt:** `How easy was Report A to understand?`
+- **Options:** report ease-of-understanding options
+
+### RRN1 — Report A reasonableness
+
+- **Type:** Multiple choice
+- **Required:** Yes
+- **Prompt:** `How reasonable did Report A's explanation and recommended actions appear?`
+- **Options:** report reasonableness options
+
+## 13. Section 10 — Report B
+
+**Section title:** `Reading Report B`
+
+**Section description**
+
+> The following screenshots show every page of a second example
+> vehicle-health report about the same case. Read them in the order shown,
+> then answer the two questions below.
+
+Insert every PNG from the mapped source directory below in ascending
+page-number order:
+
+| Form version | `Report B` source pages |
+| --- | --- |
+| `rag_first` | `assets/reports/baseline/` |
+| `baseline_first` | `assets/reports/rag/` |
+
+Use the neutral caption `Report B — page <number> of <total>.` Apply the same
+alt-text rule as Report A. The total must equal the Report A total.
+
+### RCL2 — Report B ease of understanding
+
+- **Type:** Multiple choice
+- **Required:** Yes
+- **Prompt:** `How easy was Report B to understand?`
+- **Options:** report ease-of-understanding options
+
+### RRN2 — Report B reasonableness
+
+- **Type:** Multiple choice
+- **Required:** Yes
+- **Prompt:** `How reasonable did Report B's explanation and recommended actions appear?`
+- **Options:** report reasonableness options
+
+## 14. Section 11 — Comparing the reports
+
+**Section title:** `Comparing the two reports`
+
+**Section description**
+
+> Thinking about the two reports you have just read, please compare how they
+> communicated the same vehicle-health case.
+
+### RP1 — Easier report
+
+- **Type:** Multiple choice
+- **Required:** Yes
+- **Prompt:** `Which report was easier to understand?`
+- **Options, in order:** `Report A`; `Report B`; `They were equally easy to understand`
+- **Scored:** No
+
+### RP2 — More-reasonable report
+
+- **Type:** Multiple choice
+- **Required:** Yes
+- **Prompt:** `Which report had the more reasonable explanation and recommended actions?`
+- **Options, in order:** `Report A`; `Report B`; `They appeared equally reasonable`
+- **Scored:** No
+
+### RO1 — Report-comparison comment
+
+- **Type:** Paragraph
+- **Required:** No
+- **Prompt:** `What, if anything, made one report easier to understand or more reasonable than the other?`
+- **Description:** `Please do not include your name or other identifying information.`
+
+## 15. Section 12 — Final dashboard comment
 
 **Section title:** `Final comment`
 
@@ -393,7 +515,7 @@ Insert image `assets/07-export-defaults.png`.
 - **Prompt:** `Was there anything in the dashboard screenshots that you found confusing or hard to interpret?`
 - **Description:** `Please do not include your name or other identifying information.`
 
-## 13. Confirmation message and debrief
+## 16. Confirmation message and debrief
 
 Set the form confirmation message to:
 
@@ -405,9 +527,14 @@ Set the form confirmation message to:
 > of crossing the dashboard's High-risk threshold within 15 trips. It is not a
 > calibrated 72% chance of a mechanical breakdown.
 >
+> The two reports described the same example case and were shown in different
+> orders. One was generated with retrieved, source-grounded knowledge and the
+> other without retrieval. This distinction was withheld until now so it did
+> not influence your ratings.
+>
 > If you have questions about the study, contact: pn25381@bristol.ac.uk
 
-## 14. Analyst answer key
+## 17. Analyst answer key and Form-version mapping
 
 | Item | Correct response | Correct flag |
 | --- | --- | --- |
@@ -422,3 +549,14 @@ Set the form confirmation message to:
 
 `comprehension_total` is the sum of `q1_correct` through `q8_correct`, with
 each flag encoded as `1` for correct and `0` for any other response.
+
+The report items are never scored for correctness. After exporting responses,
+use the Form version to decode labels for analysis:
+
+| Form version | Report A | Report B |
+| --- | --- | --- |
+| `rag_first` | RAG | no RAG |
+| `baseline_first` | no RAG | RAG |
+
+Do not add the condition mapping, report filenames, source commits, or report
+PDF hashes to either participant-facing Form.
