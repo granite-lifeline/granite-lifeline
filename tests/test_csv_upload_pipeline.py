@@ -501,8 +501,9 @@ def test_csv_upload_empty_report_recovers_running_state(monkeypatch):
     html = "".join(rendered)
     assert overview.st.session_state["csv_analysis_running"] is False
     assert "Analysing your CSV..." not in html
-    assert "Analysis Timed Out" in html
-    assert "diagnostic report could not be generated" in html
+    assert "Report Generation Unavailable" in html
+    assert "vehicle evidence was preserved" in html
+    assert "safe diagnostic report could not be generated" in html
 
 
 def test_stale_csv_loading_state_is_cleared(monkeypatch):
