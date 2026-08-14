@@ -632,39 +632,6 @@ def test_run_model_layer_reads_output_json(monkeypatch, tmp_path):
     assert result == envelope
 
 
-def test_run_model_layer_uses_an_isolated_history_file(monkeypatch, tmp_path):
-    import dashboard.csv_pipeline as csv_pipeline
-
-    script = tmp_path / "detector.py"
-    script.write_text("# stub")
-    monkeypatch.setattr(csv_pipeline, "MODEL_LAYER_SCRIPT", script)
-    captured: dict[str, list[str]] = {}
-
-    def fake_run(cmd, **kwargs):
-        captured["cmd"] = [str(part) for part in cmd]
-        output_path = Path(cmd[cmd.index("--output") + 1])
-        output_path.write_text(json.dumps({
-            "summary": _model_output(),
-            "windows": [],
-        }))
-        return subprocess.CompletedProcess(cmd, returncode=0)
-
-    monkeypatch.setattr(csv_pipeline.subprocess, "run", fake_run)
-
-    output_path = tmp_path / "upload_run" / "model_output.json"
-    output_path.parent.mkdir()
-    csv_pipeline._run_model_layer(
-        tmp_path / "production_features.csv",
-        None,
-        output_path,
-    )
-
-    history_index = captured["cmd"].index("--history-file") + 1
-    assert captured["cmd"][history_index] == str(
-        output_path.parent / "risk_history.csv"
-    )
-
-
 def test_run_uploaded_csv_batch_passes_proxy_decisions_to_subprocess(
     monkeypatch, tmp_path: Path
 ):

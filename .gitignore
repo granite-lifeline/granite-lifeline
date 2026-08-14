@@ -23,7 +23,6 @@ report_layer/rag/chroma_db/
 .uv-python/
 venv/
 .pytest_cache/
-test-results/
 .gitattributes
 .DS_Store
 .claude
