@@ -199,3 +199,28 @@ Reduced anxiety is desirable only when it is calibrated to the evidence; a
 reassuring Low-risk report and an appropriately urgent High-risk report can
 both be successful. Technician review is still required to judge whether the
 requested workshop checks are diagnostically appropriate.
+
+## Backward-compatible implementation and verification
+
+The redesign was implemented without changing the Dashboard contract. The
+Report Layer still returns `anomaly_description`, `possible_cause` and the
+`recommended_action` list. Layer 3 now requires exactly four ordered items:
+`Now`, `Service timing`, `Stop driving and seek help if`, and
+`Tell the mechanic`.
+
+Retrieved workshop actions are retained only as technician evidence. A
+deterministic policy supplies component-specific owner observations, service
+urgency and stopping conditions. Replacement-only instructions, code-clearing
+steps and vehicle-specific turbo procedures without matching vehicle context
+are removed before the prompt. Low/falling Low-risk cooling inputs also reject
+the retrieved overheating fault list. High-risk inputs no longer expose a
+probability of later crossing the threshold they already occupy.
+
+The final smoke test generated one production report for each of the five
+supported anomaly types. All five reports were released, contained all four
+action roles, and contained no detected technical instruction addressed to the
+owner. The raw reports are stored in `owner_decision_smoke_raw.json` and the
+summary in `owner_decision_smoke_results.md`. The full automated suite completed
+with 701 tests passed and 19 environment-dependent tests skipped. Because the
+three-field output schema was preserved, no Dashboard or viva-slide migration
+was required.

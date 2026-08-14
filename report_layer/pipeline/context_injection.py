@@ -113,6 +113,7 @@ PROXY_PROVENANCE_MARKERS = (
 )
 
 RAW_DTC_PATTERN = re.compile(r"\b(?:DTC\s*)?P\d{4}(?:-\d+)?\b", re.IGNORECASE)
+INTERNAL_RULE_PATTERN = re.compile(r"\b\d+-S\d+\b", re.IGNORECASE)
 
 
 def _sanitize_owner_facing_prompt_text(text: str) -> str:
@@ -132,6 +133,9 @@ def _sanitize_owner_facing_prompt_text(text: str) -> str:
         "rule-based evidence",
     )
     sanitized = RAW_DTC_PATTERN.sub("a diagnostic flag", sanitized)
+    sanitized = INTERNAL_RULE_PATTERN.sub(
+        "a rule-based diagnostic flag", sanitized
+    )
     sanitized = re.sub(
         r"\bDTCs?\b",
         "diagnostic codes",
@@ -150,6 +154,111 @@ def _sanitize_owner_facing_prompt_text(text: str) -> str:
 def _sanitize_prompt_text(text: str) -> str:
     """Sanitize a retrieved RAG string before prompt injection."""
     return _sanitize_owner_facing_prompt_text(text)
+
+
+def _owner_decision_policy(anomaly_type: str, risk_level: str) -> str:
+    """Return deterministic owner guidance for one component and risk."""
+    timing = {
+        "low": "routine monitoring; arrange service if the pattern persists",
+        "medium": "arrange professional inspection soon",
+        "high": "arrange prompt professional inspection",
+    }.get(risk_level, "routine monitoring")
+    component_policy = {
+        "cooling_degradation": (
+            "observe the temperature gauge and visible warning lights; a "
+            "coolant-level check is allowed only at the marked reservoir "
+            "when the engine is fully cool",
+            "a red temperature warning, steam, overheating, or sudden loss "
+            "of power appears",
+        ),
+        "air_intake_maf_anomaly": (
+            "observe warning lights, idle quality, acceleration response and "
+            "unexpected loss of power",
+            "the engine stalls, runs very roughly, or loses power in a way "
+            "that makes continued driving unsafe",
+        ),
+        "accelerator_pedal_sensor": (
+            "observe whether acceleration response feels normal; do not "
+            "inspect or manipulate sensor wiring",
+            "acceleration becomes delayed, inconsistent or uncontrolled, or "
+            "the vehicle enters reduced-power mode",
+        ),
+        "intake_air_temperature_sensor_fault": (
+            "observe warning lights, idle quality, acceleration response and "
+            "unexpected loss of power; do not inspect sensor wiring",
+            "the engine stalls, runs very roughly, overheats, or loses power "
+            "in a way that makes continued driving unsafe",
+        ),
+        "map_load_signal_plausibility_fault": (
+            "observe warning lights, idle quality, acceleration response and "
+            "unexpected loss of power; do not inspect sensor wiring or hoses",
+            "the engine stalls, runs very roughly, or loses power in a way "
+            "that makes continued driving unsafe",
+        ),
+    }
+    observation, stop_conditions = component_policy.get(
+        anomaly_type,
+        (
+            "observe warning lights and any change in vehicle behaviour",
+            "a red warning or unsafe change in drivability appears",
+        ),
+    )
+    return (
+        f"Owner observation: {observation}. Service timing: {timing}. "
+        f"Stop conditions: {stop_conditions}."
+    )
+
+
+def _govern_action_knowledge(
+    actions: str, anomaly_type: str, risk_level: str
+) -> str:
+    """Separate owner decisions from retrieved workshop procedures.
+
+    The source knowledge contains workshop-manual procedures. Keeping those
+    passages is useful because they tell the report what a technician could
+    verify, but presenting them directly to a non-technical owner can imply
+    self-repair. This compatibility layer keeps the existing string field
+    while assigning the retrieved material an explicit technician-only role.
+    """
+    sanitized = _sanitize_prompt_text(actions).strip()
+    owner_policy = _owner_decision_policy(anomaly_type, risk_level)
+    if not sanitized or sanitized.startswith("No specific action guidance"):
+        technician_evidence = (
+            "No component-specific workshop procedure was retrieved. Do not "
+            "invent one; ask for general professional diagnosis if needed."
+        )
+    else:
+        safe_lines = [
+            line.strip()
+            for line in sanitized.splitlines()
+            if line.strip()
+            and not re.search(
+                r"\b(?:replace|replacement|clear (?:the )?(?:fault|"
+                r"diagnostic)|relearn|in turbo engines)\b",
+                line,
+                flags=re.IGNORECASE,
+            )
+        ]
+        filtered = "\n".join(safe_lines)
+        if not filtered:
+            filtered = (
+                "No suitable verification procedure remains after action-"
+                "safety and relevance filtering."
+            )
+        technician_evidence = (
+            "The following retrieved material is technician-only evidence. "
+            "Never instruct the owner to perform it, buy tools, dismantle a "
+            "component, clear codes, or replace a part. Convert only relevant "
+            "material into a request the owner can give a qualified "
+            "mechanic:\n"
+            f"{filtered}"
+        )
+    return (
+        "Owner decision-support policy:\n"
+        f"{owner_policy}\n\n"
+        "Technician evidence:\n"
+        f"{technician_evidence}"
+    )
 
 
 def _format_probability(value: float) -> str:
@@ -304,15 +413,27 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
         context_lines.append("")
         context_lines.append("Failure Projection:")
         if failure_prob is not None:
-            context_lines.append(
-                f"- Failure probability: {_format_probability(failure_prob)}"
-            )
-            context_lines.append(
-                "- Probability meaning: model-estimated probability of "
-                "crossing the High-risk threshold within the configured "
-                "prediction horizon; not a calibrated probability of "
-                "mechanical failure."
-            )
+            if risk_level.lower() == "high":
+                context_lines.append(
+                    "- Threshold-crossing probability is not shown because "
+                    "the current classification is already High risk."
+                )
+                context_lines.append(
+                    "- Consistency caution: base owner guidance on current "
+                    "High risk and ask for professional verification; do not "
+                    "describe a later crossing of the same threshold."
+                )
+            else:
+                context_lines.append(
+                    f"- Failure probability: "
+                    f"{_format_probability(failure_prob)}"
+                )
+                context_lines.append(
+                    "- Probability meaning: model-estimated probability of "
+                    "crossing the High-risk threshold within the configured "
+                    "prediction horizon; not a calibrated probability of "
+                    "mechanical failure."
+                )
         if cycles_to_failure is not None:
             context_lines.append(
                 f"- Estimated cycles to failure: "
@@ -416,11 +537,18 @@ def build_context_with_rag(
 
     return {
         "context": _sanitize_owner_facing_prompt_text(context),
-        "fault_knowledge": _sanitize_prompt_text(
-            rag_knowledge["description_causes"]
+        "fault_knowledge": (
+            "For this lower-than-expected or falling Low-risk cooling "
+            "pattern, the retrieved overheating fault list is not relevant. "
+            "Limit possible explanations to a sensor reading issue, cooling "
+            "fan behaviour, or insufficient evidence for a specific cause."
+            if _needs_low_cooling_caution(ttm_output)
+            else _sanitize_prompt_text(rag_knowledge["description_causes"])
         ),
-        "actions_knowledge": _sanitize_prompt_text(
-            rag_knowledge["actions"]
+        "actions_knowledge": _govern_action_knowledge(
+            rag_knowledge["actions"],
+            ttm_output.anomaly_type,
+            risk_level_normalized,
         ),
         "certainty_guidance": certainty_guidance,
         "notes": ttm_output.notes if ttm_output.notes else [],

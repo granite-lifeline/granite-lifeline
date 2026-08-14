@@ -30,13 +30,23 @@ def _model_output(**overrides):
     return ModelLayerOutput(**data)
 
 
-def test_build_context_does_not_round_small_probability_to_zero():
+def test_build_context_suppresses_high_to_high_threshold_projection():
     context = build_context(_model_output())
+
+    assert "Failure probability: 0.31%" not in context
+    assert "current classification is already High risk" in context
+    assert "do not describe a later crossing" in context
+    assert "Estimated cycles to failure: unavailable" in context
+    assert "Failure probability: 0%" not in context
+
+
+def test_build_context_preserves_small_probability_below_high_risk():
+    context = build_context(
+        _model_output(risk_level="Medium", risk_score=0.56)
+    )
 
     assert "Failure probability: 0.31%" in context
     assert "not a calibrated probability of mechanical failure" in context
-    assert "Estimated cycles to failure: unavailable" in context
-    assert "Failure probability: 0%" not in context
 
 
 def test_build_context_adds_proxy_detection_provenance():
@@ -50,6 +60,7 @@ def test_build_context_adds_proxy_detection_provenance():
     assert "Detection Provenance:" in context
     assert "rule-based proxy evidence" in context
     assert "proxy_decisions.csv" not in context
+    assert "4-S3" not in context
     assert "not native TTM residual scoring" in context
 
 
@@ -83,7 +94,7 @@ def test_build_context_warns_against_overheating_for_low_cooling_pattern():
     assert "Avoid explaining thermostat mechanics" in context
 
 
-def test_build_context_with_rag_keeps_retrieved_text_as_strings(monkeypatch):
+def test_build_context_with_rag_governs_workshop_actions(monkeypatch):
     monkeypatch.setattr(
         context_injection,
         "retrieve_all",
@@ -96,4 +107,87 @@ def test_build_context_with_rag_keeps_retrieved_text_as_strings(monkeypatch):
     context = build_context_with_rag(_model_output())
 
     assert context["fault_knowledge"] == "Fault knowledge text."
-    assert context["actions_knowledge"] == "Action guidance text."
+    assert "Owner decision-support policy:" in context["actions_knowledge"]
+    assert "Technician evidence:" in context["actions_knowledge"]
+    assert "technician-only evidence" in context["actions_knowledge"]
+    assert "Action guidance text." in context["actions_knowledge"]
+
+
+def test_low_cooling_rag_filters_overheating_fault_list(monkeypatch):
+    monkeypatch.setattr(
+        context_injection,
+        "retrieve_all",
+        lambda anomaly_type, risk_level: {
+            "description_causes": "Thermostat stuck closed. Radiator blocked.",
+            "actions": "Inspect the cooling system.",
+        },
+    )
+    model = _model_output(
+        anomaly_type="cooling_degradation",
+        component="cooling_degradation",
+        risk_level="Low",
+        risk_score=0.18,
+        key_signals=[
+            KeySignal(
+                feature="coolant_temp",
+                value=89.0,
+                unit="°C",
+                reference_range=[90.0, 95.0],
+            )
+        ],
+    )
+
+    context = build_context_with_rag(model)
+
+    assert "retrieved overheating fault list is not relevant" in (
+        context["fault_knowledge"]
+    )
+    assert "Thermostat stuck closed" not in context["fault_knowledge"]
+
+
+def test_action_governance_removes_replacement_only_guidance(monkeypatch):
+    monkeypatch.setattr(
+        context_injection,
+        "retrieve_all",
+        lambda anomaly_type, risk_level: {
+            "description_causes": "Fault knowledge text.",
+            "actions": "Replace the mass airflow sensor\nReplace the ECM",
+        },
+    )
+
+    context = build_context_with_rag(_model_output())
+
+    assert "Replace the mass airflow sensor" not in (
+        context["actions_knowledge"]
+    )
+    assert "action-safety and relevance filtering" in (
+        context["actions_knowledge"]
+    )
+
+
+def test_action_governance_removes_vehicle_specific_turbo_procedure(
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        context_injection,
+        "retrieve_all",
+        lambda anomaly_type, risk_level: {
+            "description_causes": "Fault knowledge text.",
+            "actions": (
+                "In turbo engines, inspect the boost-pressure path and "
+                "turbocharger."
+            ),
+        },
+    )
+
+    context = build_context_with_rag(
+        _model_output(
+            anomaly_type="map_load_signal_plausibility_fault",
+            component="map_load_signal_plausibility_fault",
+        )
+    )
+
+    assert "turbo engines" not in context["actions_knowledge"]
+    assert "action-safety and relevance filtering" in (
+        context["actions_knowledge"]
+    )

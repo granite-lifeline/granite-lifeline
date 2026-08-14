@@ -76,6 +76,7 @@ DEFAULT_PROMPT_VALUES = {
 }
 
 RAW_DTC_PATTERN = re.compile(r"\b(?:DTC\s*)?P\d{4}(?:-\d+)?\b", re.IGNORECASE)
+INTERNAL_RULE_PATTERN = re.compile(r"\b\d+-S\d+\b", re.IGNORECASE)
 
 OWNER_FACING_COMPONENT_REPLACEMENTS = {
     "cooling_degradation": "cooling system pattern",
@@ -138,6 +139,9 @@ def _clean_owner_facing_text(text: str) -> str:
     cleaned = cleaned.replace("**", "")
     cleaned = cleaned.replace("*", "")
     cleaned = RAW_DTC_PATTERN.sub("a diagnostic flag", cleaned)
+    cleaned = INTERNAL_RULE_PATTERN.sub(
+        "a rule-based diagnostic flag", cleaned
+    )
     cleaned = re.sub(r"\bDTCs?\b", "diagnostic codes", cleaned)
     cleaned = re.sub(
         r"\s*\(e\.g\.,?\s*([^)]+)\)",

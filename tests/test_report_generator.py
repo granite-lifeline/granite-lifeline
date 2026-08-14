@@ -67,10 +67,14 @@ LAYER2_RESPONSE = json.dumps(
 LAYER3_RESPONSE = json.dumps(
     {
         "recommended_action": [
-            "Avoid heavy driving or towing until the cooling system "
-            "has been inspected by a professional.",
-            "Schedule a prompt inspection of the radiator and "
-            "thermostat within the next few days.",
+            "Now: Watch the temperature gauge and avoid unusual vehicle "
+            "load while arranging an inspection.",
+            "Service timing: Arrange a prompt professional inspection "
+            "within the next few days.",
+            "Stop driving and seek help if: A red temperature warning "
+            "appears, the engine overheats, or power drops.",
+            "Tell the mechanic: Ask them to inspect the radiator, "
+            "thermostat and coolant flow with suitable equipment.",
         ]
     }
 )
@@ -297,10 +301,14 @@ class TestGenerateReportValidationGate(unittest.TestCase):
         corrected_layer3 = json.dumps(
             {
                 "recommended_action": [
-                    "Avoid heavy driving until the cooling system has "
-                    "received a professional inspection.",
-                    "Arrange a prompt cooling-system inspection within the "
-                    "next few days.",
+                    "Now: Watch the temperature gauge and avoid unusual "
+                    "vehicle load while arranging an inspection.",
+                    "Service timing: Arrange a prompt cooling-system "
+                    "inspection within the next few days.",
+                    "Stop driving and seek help if: A red temperature "
+                    "warning appears, the engine overheats, or power drops.",
+                    "Tell the mechanic: Ask them to inspect the radiator, "
+                    "thermostat and coolant flow with suitable equipment.",
                 ]
             }
         )
@@ -313,8 +321,8 @@ class TestGenerateReportValidationGate(unittest.TestCase):
 
         result = generate_report(VALID_MODEL_OUTPUT)
 
-        self.assertEqual(len(result["recommended_action"]), 2)
-        self.assertIn("Avoid heavy driving", result["recommended_action"][0])
+        self.assertEqual(len(result["recommended_action"]), 4)
+        self.assertTrue(result["recommended_action"][0].startswith("Now:"))
         self.assertEqual(mock_post.call_count, 4)
 
     @patch(

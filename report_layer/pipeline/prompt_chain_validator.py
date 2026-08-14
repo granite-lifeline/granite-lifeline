@@ -122,20 +122,29 @@ def validate_layer1(output: str) -> ValidationResult:
         )
 
     # Check for unexplained raw field names
-    raw_fields = [
-        "coolant_temp", "maf", "map", "accel_pedal_d",
-        "accel_pedal_e", "tps"
-    ]
-    for field in raw_fields:
-        # Check if field appears without nearby explanation
-        if field in output.lower():
-            # Simple heuristic: check if there's a parenthetical nearby
-            pattern = rf'{field}\s*\([^)]+\)'
-            if not re.search(pattern, output.lower()):
-                warnings.append(
-                    f"Contains unexplained raw field name: {field}"
-                )
-                score -= 0.2
+    raw_field_explanations = {
+        "coolant_temp": (),
+        "maf": ("mass airflow", "mass air flow"),
+        "map": ("manifold pressure", "manifold absolute pressure"),
+        "accel_pedal_d": ("accelerator pedal",),
+        "accel_pedal_e": ("accelerator pedal",),
+        "tps": ("throttle position",),
+    }
+    lower_output = output.lower()
+    for field, explanations in raw_field_explanations.items():
+        # Word boundaries prevent short acronyms such as MAP from matching
+        # ordinary words such as "mapping". An acronym is owner-readable when
+        # its expanded component name appears in the same report section.
+        if not re.search(rf"\b{re.escape(field)}\b", lower_output):
+            continue
+        has_explanation = any(
+            explanation in lower_output for explanation in explanations
+        )
+        if not has_explanation:
+            warnings.append(
+                f"Contains unexplained raw field name: {field}"
+            )
+            score -= 0.2
 
     # Check for confirmed fault language (skipping negated wording such
     # as "not confirmed" or "no confirmed fault yet")
@@ -319,15 +328,57 @@ def validate_layer3(output: Any, risk_level: str) -> ValidationResult:
             score=score
         )
 
-    # Check list length
-    if len(actions) < 2:
+    # The Dashboard contract remains a list, while stable prefixes preserve
+    # the four distinct decisions the owner needs from the report.
+    if len(actions) < 4:
         warnings.append(
-            f"Too few actions: {len(actions)} (should be 2-4)"
+            f"Too few actions: {len(actions)} (should be exactly 4)"
         )
         score -= 0.2
     elif len(actions) > 4:
         warnings.append(
-            f"Too many actions: {len(actions)} (should be 2-4)"
+            f"Too many actions: {len(actions)} (should be exactly 4)"
+        )
+        score -= 0.2
+
+    required_prefixes = (
+        "now:",
+        "service timing:",
+        "stop driving and seek help if:",
+        "tell the mechanic:",
+    )
+    normalized_actions = [str(action).strip().lower() for action in actions]
+    for prefix in required_prefixes:
+        if not any(action.startswith(prefix) for action in normalized_actions):
+            warnings.append(f"Missing owner-decision action: '{prefix}'")
+            score -= 0.1
+
+    actions_text = " ".join(str(a) for a in actions).lower()
+    invented_interval = re.search(
+        r"\b(?:within|after|in|next)\s+(?:the\s+)?\d+\s+"
+        r"(?:days?|weeks?|months?|miles?|trips?)\b",
+        actions_text,
+    )
+    if invented_interval:
+        warnings.append(
+            "Actions contain an unsupported numeric service interval"
+        )
+        score -= 0.2
+
+    if re.search(r"\breplac(?:e|ing|ement)\b", actions_text):
+        warnings.append(
+            "Actions recommend replacement before professional verification"
+        )
+        score -= 0.2
+
+    owner_actions_text = " ".join(normalized_actions[:3])
+    if re.search(
+        r"\b(?:inspect|check|test|clean)\b[^.]{0,45}"
+        r"\b(?:sensor|wiring|connector|harness|hose)\b",
+        owner_actions_text,
+    ):
+        warnings.append(
+            "Owner actions assign a technical component check to the driver"
         )
         score -= 0.2
 
@@ -341,7 +392,6 @@ def validate_layer3(output: Any, risk_level: str) -> ValidationResult:
             score -= 0.2
 
     # Check urgency language for high risk
-    actions_text = " ".join(str(a) for a in actions).lower()
     risk_level_lower = risk_level.lower()
 
     if risk_level_lower == "high":
