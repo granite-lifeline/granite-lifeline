@@ -151,3 +151,51 @@ case, but did not solve irrelevant retrieval or contradictory upstream risk
 fields. The next design change should therefore combine risk-aware retrieval,
 separate `owner_action` and `technician_request` fields, and a validator rule
 that stops or clearly discloses inconsistent risk statements.
+
+## Proposed RAG redesign: decision support rather than self-repair
+
+The intended user outcome is not for an owner to repair the vehicle alone.
+The report should reduce avoidable uncertainty by explaining what the system
+observed, how strongly the evidence supports a concern, and how soon qualified
+inspection should be arranged. The owner needs a small set of safe decisions:
+continue normal observation, book routine service, arrange prompt inspection,
+or stop driving and seek assistance.
+
+The next RAG design should therefore use two separately governed knowledge
+collections:
+
+1. `diagnostic_evidence`: component purpose, signal interpretation, plausible
+   causes and what evidence a technician could use to distinguish them;
+2. `action_policy`: owner observations, driving restrictions, service urgency,
+   stop-driving conditions and technician requests.
+
+Every action passage should carry metadata including `actor` (`owner` or
+`technician`), `urgency`, `requires_tools`, `requires_disassembly`,
+`anomaly_type`, `risk_level` and `source`. Retrieval for the owner-facing
+section must exclude tool-dependent and dismantling procedures. Those passages
+may still be retrieved for a separate `what_to_tell_the_mechanic` field, but
+must be rewritten as a request rather than an instruction to the owner.
+
+The generated contract should explicitly separate:
+
+- `what_happened`;
+- `what_it_may_mean`;
+- `what_the_owner_should_do_now`;
+- `when_to_book_service`;
+- `when_to_stop_driving`;
+- `what_to_tell_the_mechanic`.
+
+Before generation, a consistency gate should compare current risk, threshold
+probability, confidence and abnormal signals. Contradictory combinations must
+not enter the ordinary report path. After retrieval, a relevance gate should
+reject passages that do not match the anomaly pattern and risk context rather
+than asking the LLM to ignore a long irrelevant list. If no suitable passage
+remains, the report should disclose that the available evidence is
+insufficient instead of filling the gap from general model knowledge.
+
+Evaluation of this redesign should measure whether owners correctly identify
+the current condition, uncertainty, service urgency and stop-driving trigger.
+Reduced anxiety is desirable only when it is calibrated to the evidence; a
+reassuring Low-risk report and an appropriately urgent High-risk report can
+both be successful. Technician review is still required to judge whether the
+requested workshop checks are diagnostically appropriate.
