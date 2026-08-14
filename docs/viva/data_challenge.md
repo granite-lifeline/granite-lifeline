@@ -2,20 +2,20 @@
 
 **Speaker:** Lei Pei, Qiuting Fu
 **Time:** ~1.5 minutes
-**Transition in:** "The first challenge was in the data."
-**Transition out:** "With clean, structured data, we could now detect anomalies — but that brought its own challenge."
+**Transition in:** "Layla and Qiuting will now explain how they processed that data."
+**Transition out:** "Next, Lucca and Ray will explain how these outputs were used for model."
 
 ---
 
-# Speech Script v1.0:
+# Speech Script v2.0:
 
 ##### Lei Pei: challenge and solution
 
-The data contains normal driving records, but not a single confirmed vehicle fault. That leaves us with no way to train or even evaluate a conventional fault classifier — and a simple global threshold does not work either, because the same sensor reading can be healthy in one situation and abnormal in another. So we built a context-aware labelling pipeline. We clean and align each trip, identify the vehicle's state — warm-up, steady driving, high load — and then apply each fault rule only where it is physically meaningful, require the abnormal pattern to persist before we act on it, and return “not evaluable” when the data isn't reliable enough. The result is traceable fault evidence the rest of the system can build on.
+Our starting point was the KIT Automotive OBD-II Dataset recommended by IBM. The reason we chose it is because it follows one car across many continuous trips offers enough consistent data to build a reliable normal baseline. But the problem is none of these trips actually contain a confirmed vehicle fault. That leaves us with no way to train or even evaluate a conventional fault classifier. A fixed global threshold is not a viable alternative either, because the same sensor reading can be healthy in one situation and abnormal in another. So we built a context-aware labelling pipeline. We begin by cleaning each trip and resampling it onto a uniform time base.  From there, we identify the vehicle's operating state — such as steady cruising or high load — and finally derive the features that describe every moment of the drive. Each rule then runs only where it is physically meaningful. We require an abnormal pattern to persist before treating it as evidence, and we return "not evaluable" whenever the data is insufficient. The result is traceable fault evidence the rest of the system can build on. Qiuting will now explain how we defined and validated these rules.
 
 ##### Qiuting Fu: basis and verification
 
-To implement this approach, we developed five proxy fault families containing 14 individual checks. These rules are grounded in standard OBD-II fault codes and published automotive guidance. However, these proxy rules still needed validation. We therefore used controlled fault injection, changing one relevant signal at three severity levels across three different journeys. On the usable healthy data, none of the checks produced a fault decision. At the strongest injected level, every check responded on all three trips. This shows that the rules are consistent and that the complete pipeline works as designed. However, simulated signals are not real mechanical failures. We therefore cannot claim real-world accuracy or recall.
+To implement this approach, we developed five proxy fault families containing 14 individual checks. These rules are grounded in standard OBD-II fault codes and published automotive guidance. However, these proxy rules still needed validation. We therefore used controlled fault injection, changing one relevant signal at three severity levels across three different journeys. On the usable healthy data, none of the checks produced a fault decision. At the strongest injected level, every check responded on all three trips. This shows that the rules are consistent and reachable end to end. However, simulated signals are not real mechanical failures. We therefore cannot claim real-world accuracy or recall. Next, Lucca and Ray will explain how these outputs were used for model.
 
 ## Why This Challenge Is Specific to This Project
 
@@ -238,3 +238,87 @@ The fault-injection campaign was designed to test whether the frozen proxy rules
 11. **Did you find any real faults in the source data?**
 
 > No. The source trips are treated as healthy driving data. The project demonstrates condition-aware proxy labelling, healthy-data specificity, and controlled synthetic detectability; it does not claim discovery of confirmed physical faults in those trips.
+
+---
+
+## Plain-words glossary
+
+Use the plain phrase first; add the technical word only if the marker asks. A `triggered` row is not automatically a diagnosed fault: always read `result_state` together with `decision_role` and `dtc_emitted`.
+
+### Pipeline and feature terms
+
+| Don't say | Say instead |
+|-----------|-------------|
+| ingest | "read the raw trip files into one controlled pipeline" |
+| resampling to 1 Hz | "putting every signal onto one reading-per-second timeline" |
+| interpolation | "filling only a short missing run from the readings on either side" |
+| `trip_id` | "the ID of one source drive" |
+| `segment_id` | "the ID of one unbroken stretch within a drive; a recording gap starts a new one" |
+| continuity boundary | "a point we do not calculate across, because the recording was interrupted" |
+| quality flag | "a note saying a value was missing, filled in, suspicious, or otherwise degraded" |
+| operating-condition label | "the driving and engine state in which that second occurred" |
+| thermal state | "whether the engine is off, warming up, or already warm" |
+| kinematic / child state | "whether the car is idling, steady, accelerating, slowing down, or under high load" |
+| feature engineering | "turning cleaned sensor readings into extra measurements that make physical checks possible" |
+| staged feature engineering | "building those measurements in a fixed order, with each stage checking the previous stage's output" |
+| contract-validated | "checked against an agreed list of columns, units, order, versions, keys, and input files before use" |
+| manifest | "a receipt recording what a stage read and produced, including versions and file fingerprints" |
+| checksum / SHA-256 | "a file fingerprint used to prove that an input has not silently changed" |
+| A-class context | "the cleaned sensor readings and operating-condition information carried through for the model" |
+| B-class feature | "one of the 24 derived measurements deliberately delivered for modelling and proxy rules" |
+| B1 sample-level feature | "a value that can be attached to one particular second" |
+| B1a deterministic / atomic feature | "a direct calculation from the current or immediately previous valid readings, with no learned parameters" |
+| B1b frozen-calibration transform | "a comparison with a relationship fitted once on the reference healthy data and then locked" |
+| B2 engine-start context | "information tied to an observed engine start, such as starting temperatures and time since start" |
+| B3 window-level feature | "a summary of a continuous recent period, such as the last 60, 120, or 180 seconds" |
+| calibrated feature | "a derived value whose expected relationship comes from the locked healthy reference" |
+| calibration registry | "the versioned rulebook containing the locked equations, thresholds, and valid operating ranges" |
+| frozen calibration | "parameters learned or selected once and reused unchanged on every uploaded trip" |
+| production assembly | "joining the approved context and 24 features into the final table handed downstream" |
+| `production_features.csv` | "the final one-row-per-second Data Layer handoff to the Model Layer" |
+| sample grain | "one row represents one second" |
+| episode grain | "one row represents one continuous qualifying period, such as an engine start or sustained exceedance" |
+| event grain | "one row represents one discrete occurrence, such as a pedal step" |
+| residual | "the gap between what was measured and what an independent physical relationship expected" |
+| persistence | "requiring the evidence to last, rather than reacting to one noisy second" |
+| right-censored | "the recording ended before the required observation time, so the outcome is unknown rather than a pass or failure" |
+
+### Proxy evidence and decision terms
+
+| Don't say | Say instead |
+|---|---|
+| proxy failure | "a transparent stand-in definition of fault-like behaviour, not a mechanically confirmed failure" |
+| `proxy_id` | "the broad component problem being checked, such as cooling or airflow" |
+| `sub_check_id` | "one specific test inside that broad problem, such as slow warm-up or sustained overheating" |
+| enable condition / guard | "the conditions that must be true before the test is allowed to judge" |
+| rule-state builder | "the stage that decides whether each rule has valid data and a genuine opportunity to run" |
+| event evidence | "evidence built around a discrete action, such as whether pressure responded to a pedal step" |
+| duration evidence | "evidence showing how long an abnormal condition continued" |
+| decision builder | "the final stage that combines evidence, assigns its role and state, routes attribution, and controls code emission" |
+| `pass` | "this particular check had a valid opportunity to run and its fault criterion was not met; it does not prove the whole vehicle is healthy" |
+| `triggered` | "this check's active condition was met; whether that becomes a fault decision depends on the evidence role" |
+| `not_evaluable` | "the check exists and ran, but this input lacked valid data, context, opportunity, or calibration coverage, so it refused to guess" |
+| `pending` | "an early warning pattern is present, but the separate confirmation condition has not been met" |
+| `verdict` | "a check authorised to make an executable diagnostic decision; only a permitted verdict can emit a DTC" |
+| `pending_precursor` | "early evidence worth retaining, but not enough to declare or emit a fault" |
+| `support` | "secondary evidence used to judge sensor trust or confidence; it can activate but never emits a code by itself" |
+| `arbitration_evidence` | "shared inconsistency evidence that proves two measurements disagree but needs other witnesses to decide which side to blame" |
+| `decision_role` | "what authority this evidence has: final decision, early warning, supporting witness, or attribution evidence" |
+| `result_state` | "what happened when that evidence role was evaluated: clear, active, unavailable, or awaiting confirmation" |
+| `decision_reason` | "the recorded plain explanation for why the row received that state" |
+| `direction` | "the shape of the evidence, such as too high, too low, stuck, or inconsistent" |
+| `decision_margin` | "the rule-specific amount of headroom beyond or short of its registered decision boundary" |
+| `dtc_candidate_label` | "the real OBD-II code associated with the evidence; naming it does not mean it was emitted" |
+| `dtc_emitted` | "the final yes/no record of whether routing authorised the diagnostic code" |
+| DTC | "a standard on-board diagnostic trouble code" |
+| attribution / routing | "using independent evidence to decide which component should receive shared symptoms" |
+| confidence tier | "how strongly the available data supports the result, kept separate from pass or trigger state" |
+| evaluable unit | "a trip, start, event, or episode that actually met a check's requirements and could be judged" |
+| non-executed / infeasible design | "a proposed check that was removed before runtime because the dataset could not support it; this is not `not_evaluable`" |
+| condition-stratified baseline | "the healthy reference for the same operating state, rather than one global normal range" |
+| threshold outside the healthy envelope | "a boundary placed beyond what the reference healthy trips showed in that condition" |
+| 3-of-4 event rule | "trigger only when at least three of the four latest valid events fail to respond" |
+| DTC arbitration | "do not blame MAF or MAP from their disagreement alone; use an independent witness or report the mismatch without guessing" |
+| synthetic fault injection | "deliberately changing one recorded signal to test whether the frozen end-to-end rule reaches the expected output" |
+| healthy-data specificity | "how well the rules avoid positive decisions on the available healthy recordings" |
+| synthetic detectability | "whether the rules catch the planted signal changes; it is not recall on real mechanical faults" |
