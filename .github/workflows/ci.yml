@@ -10,10 +10,18 @@ on:
       - develop
       - main
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   python-ci:
     name: Python CI
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Check out repository
@@ -56,7 +64,17 @@ jobs:
 
       - name: Run pytest
         run: |
-          uv run pytest -q -m "not model_download"
+          uv run pytest -q -m "not model_download" \
+            --junitxml=test-results/pytest.xml
+
+      - name: Upload pytest results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results
+          path: test-results/pytest.xml
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Run model-download tests (non-blocking)
         continue-on-error: true

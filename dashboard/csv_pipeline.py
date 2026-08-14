@@ -116,6 +116,11 @@ def _run_model_layer(
         str(production_features_path),
         "--batch",
         "--output", str(output_path),
+        # Each upload is an independent analysis run. Reusing the Model
+        # Layer's repository-wide default history would mix unrelated
+        # ``trip_0001`` identifiers and can make a later upload appear to
+        # move backwards in time.
+        "--history-file", str(output_path.parent / "risk_history.csv"),
     ]
     if proxy_decisions_path is not None:
         command.extend(["--proxy-decisions", str(proxy_decisions_path)])
@@ -123,9 +128,6 @@ def _run_model_layer(
     try:
         result = subprocess.run(
             command,
-            # The detector's --history-file default is relative to
-            # model_layer/ (its own docstring's "repository root");
-            # without this, it writes to the caller's cwd instead.
             cwd=str(_REPO_ROOT / "model_layer"),
             capture_output=True,
             text=True,
