@@ -9,7 +9,7 @@ Automated quality assessment of generated diagnostic reports.
 | Anomaly Type | Risk Level | Factual Grounding | Readability | Hedging | Actionability | Overall |
 |--------------|------------|-------------------|-------------|---------|---------------|----------|
 | typical_cooling_stress | High | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 |
-| atypical_cooling_stress | Medium | 1.00 | 1.00 | 0.60 | 1.00 | 0.90 |
+| atypical_cooling_stress | Medium | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 |
 | contradictory_cooling_stress | Low | 1.00 | 1.00 | 0.60 | 1.00 | 0.90 |
 
 ---
@@ -34,7 +34,7 @@ Automated quality assessment of generated diagnostic reports.
 
 ### atypical_cooling_stress (Medium risk)
 
-**Overall Score:** 0.90
+**Overall Score:** 1.00
 
 **Notes:**
 
@@ -42,9 +42,8 @@ Automated quality assessment of generated diagnostic reports.
 - anomaly_description references specific signal values from context
 - Readability: 1.00
 - Average sentence length is 14.7 words (acceptable)
-- Hedging: 0.60
+- Hedging: 1.00
 - Uses appropriate hedging: could suggest, might
-- Contains confirmed fault language: confirmed
 - Actionability: 1.00
 - 4 actions provided (appropriate)
 - Contains Medium risk urgency language: check, inspect
