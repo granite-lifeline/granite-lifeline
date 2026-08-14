@@ -92,3 +92,56 @@ comparison must be described as historical evaluator evidence, not as a
 ranking of the final baseline and RAG pipelines. No claim that RAG is
 better or worse should be made until the controlled final-pipeline
 comparison above has been run.
+
+## Final-pipeline run completed on 14 August 2026
+
+The controlled comparison was run on one saved real-pipeline fixture for
+each of the five supported anomaly types. This produced 20 reports (five
+fixtures by four conditions). All reports used `granite4.1:8b`, temperature
+zero, the final three prompt templates, identical certainty guidance and the
+same validator/correction path. All 20 reports were released without a
+fallback. The complete inputs, retrieved text, rendered prompts, reports,
+validator records and evaluator outputs are retained in
+`final_rag_ablation_raw.json`.
+
+The legacy four-dimension evaluator produced the following means:
+
+| Condition | Mean legacy score |
+|---|---:|
+| Controlled baseline | 0.950 |
+| Cause-only RAG | 0.915 |
+| Current full RAG | 0.915 |
+| Owner-safe RAG | 0.930 |
+
+These numbers do **not** establish that the baseline was better. Direct
+inspection found several lexical false positives. For example, the evaluator
+treated the explained terms “mass airflow (MAF) sensor” and “intake manifold
+pressure sensor (MAP sensor)” as unexplained raw fields. It also treated
+“before treating it as a confirmed fault” as a confirmed-fault claim and did
+not recognise “could indicate” as hedging. These rule-coverage effects account
+for much of the numerical ordering. The score is therefore reported as an
+output of the evaluated implementation, not as the final judgement of RAG
+quality.
+
+## Manual review against the separated measures
+
+| Measure | Finding |
+|---|---|
+| Input faithfulness | Values and risk fields were generally preserved in all conditions. However, both High-risk fixtures also carried a 0.31% probability of *crossing* the High-risk threshold. None of the four conditions explicitly resolved this upstream inconsistency. |
+| Retrieval relevance | MAF, accelerator-pedal, IAT and MAP fault knowledge was relevant to the named component. Cooling retrieval was over-broad: it mixed the low-temperature fixture with a long list dominated by overheating and workshop fault possibilities. |
+| Knowledge utilisation | Cause RAG added component function and source-backed candidate causes. Current full RAG used retrieved action material most clearly for cooling, MAF and accelerator-pedal cases, but appropriately ignored the IAT knowledge base's unsupported replacement-only actions. |
+| Audience suitability | Cause knowledge often improved explanation, although it also introduced acronyms. Current action RAG sometimes addressed workshop steps directly to the owner, including scan-tool use and connector or harness inspection. |
+| Action safety | No output instructed dismantling in this run. Nevertheless, the current condition blurred owner and technician roles in several reports. The owner-safe condition consistently redirected technical diagnosis to a qualified mechanic while retaining observation and stopping advice for the owner. |
+| Uncertainty handling | The reports generally avoided presenting a predicted mechanical cause as certain. The main unresolved issue was the contradiction between a current High risk and a low probability of later crossing the High-risk threshold. |
+| Release outcome | 20/20 reports reached release without fallback. This demonstrates pipeline completion for these fixtures, not diagnostic validity or deployment readiness. |
+
+The most defensible conclusion is therefore conditional rather than a single
+ranking. Retrieved **cause knowledge** improved traceability and component-
+specific explanation in several cases, but the current retrieval corpus was
+not uniformly relevant. Retrieved **action knowledge** could make advice more
+specific, but workshop procedures require an explicit audience transformation.
+The owner-safe condition corrected that role boundary, especially in the IAT
+case, but did not solve irrelevant retrieval or contradictory upstream risk
+fields. The next design change should therefore combine risk-aware retrieval,
+separate `owner_action` and `technician_request` fields, and a validator rule
+that stops or clearly discloses inconsistent risk statements.
