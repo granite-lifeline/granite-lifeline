@@ -19,7 +19,6 @@ Data Layer → Model Layer → Report Layer → Dashboard
 - **Health Overview**: At-a-glance view of all monitored components with risk-based prioritization
 - **Component Details**: Drill-down pages with metrics and interactive trend charts
 - **CSV Upload & Live Analysis**: Upload a real KIT OBD-II CSV and run it through the full Data Layer → Model Layer → Report Layer pipeline for a live diagnostic report (requires local Ollama + Python ML dependencies — see Setup in the project root README)
-- **What-If Analysis**: Interactive scenario page projecting how driving style / sensor offsets would shift each component's risk score
 - **Signal Tooltips**: Plain-language glossary tooltips for technical signal names, sourced from the Report Layer's `SIGNAL_DISPLAY_NAMES`
 - **Risk Score Trends**: Plotly-powered visualizations showing risk progression over time
 - **Theme Support**: Light/dark mode toggle with an IBM Carbon-inspired "Pro" design
@@ -46,11 +45,10 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | Failure Prediction UI Display | GL-278/GL-280 | Shows failure probability card and Data Quality Notes on the detail page |
 | Five-Type Component Display Mapping | GL-273/GL-384 | Maps all 5 current anomaly types to owner-friendly display names; legacy cooling_system_stress alias retained |
 | PDF / CSV Export | GL-343 to GL-348 | Overview-page export panel with component filters, PDF section filters, CSV column filters, ZIP downloads, local PDF template, and tests |
-| Module Split | GL-255 | `app.py` (2581 lines) split into `theme.py`, `ui_components.py`, `data_store.py`, and `pages/{overview,detail,what_if}.py` |
+| Module Split | GL-255 | `app.py` (2581 lines) split into `theme.py`, `ui_components.py`, `data_store.py`, and `pages/{overview,detail}.py` |
 | CSV Upload Pipeline | GL-256 to GL-262 | Upload validation (KIT column/row checks), user-friendly error cards, and end-to-end wiring to Data Layer + Model Layer + Report Layer |
 | CSV Analysis Loading State | GL-386 to GL-388, GL-412/413, GL-415 to GL-417 | Run Analysis enters an immediate `Analysing...` state, shows a percentage progress ring with simple user-facing staged text, recovers cleanly on failure/refresh, and is covered by regression and demo checklist tests |
 | Live Model Layer Integration | GL-365 | `csv_pipeline.py` invokes the Model Layer's `kit_residual_detector.py --batch` as a subprocess per INTERFACE.md §2.5's documented CLI/error contract; verified with a real, unmocked run producing a live report |
-| What-If Analysis Page | — | Scenario cards, driving-style sliders, per-component risk projection, uncertainty range |
 | Signal Tooltips | — | `glossary.py`; plain-language tooltips for technical signal names |
 | Demo Readiness Check | GL-384 | Final dashboard/report demo checklist, expected outputs, known limitations, and regression command set |
 
@@ -113,8 +111,7 @@ dashboard/
 ├── EXPORT_REPORT_PLAN.md   # GL-343 export entry and field checklist
 ├── pages/
 │   ├── overview.py         # Health overview + CSV upload entry point
-│   ├── detail.py           # Component detail page
-│   └── what_if.py          # What-if scenario analysis page
+│   └── detail.py           # Component detail page
 ├── assets/                 # Static assets
 ├── DATA_INTEGRATION.md     # Data contract and field documentation
 ├── tests/
@@ -366,7 +363,6 @@ than implementation details. The current demo path is documented in
 - Hosted/demo-data launch path
 - Overview page risk prioritization and component navigation
 - Detail page failure prediction, notes, trend, key signals, and report text
-- What-If scenario flow
 - PDF / CSV export flow
 - CSV analysis loading state with a percentage progress ring
 - Empty/error states for CSV upload and missing data
@@ -381,7 +377,6 @@ python -m pytest \
   tests/test_csv_upload_pipeline.py \
   tests/test_failure_prediction_ui_states.py \
   tests/test_dashboard_ui_consistency.py \
-  tests/test_dashboard_what_if.py \
   tests/test_demo_readiness.py
 ```
 
