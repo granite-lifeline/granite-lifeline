@@ -104,6 +104,12 @@ fallback. The complete inputs, retrieved text, rendered prompts, reports,
 validator records and evaluator outputs are retained in
 `final_rag_ablation_raw.json`.
 
+The auditable seven-dimension labels are retained separately in
+`final_rag_multidimensional_review.json`, with aggregate counts in
+`final_rag_multidimensional_summary.md`. The separation is deliberate:
+machine-checkable release facts are not mixed with manual judgements about
+relevance, audience and safety.
+
 The legacy four-dimension evaluator produced the following means:
 
 | Condition | Mean legacy score |
