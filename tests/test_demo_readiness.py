@@ -86,7 +86,6 @@ def test_demo_readiness_checklist_documents_run_route_and_limits():
         "streamlit run dashboard/app.py --server.port 8502",
         "tests/test_demo_readiness.py",
         "Explore with demo data",
-        "What-If",
         "PDF / CSV",
         "CSV upload",
         "percentage progress ring",

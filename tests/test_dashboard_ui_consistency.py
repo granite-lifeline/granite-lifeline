@@ -27,7 +27,6 @@ def test_streamlit_app_routes_import_cleanly():
     assert callable(app.show_overview_page)
     assert callable(app.show_detail_page)
     assert callable(app.show_local_run_page)
-    assert callable(app.show_what_if_page)
 
 
 def test_theme_defines_shared_dashboard_ui_classes():
@@ -108,16 +107,13 @@ def test_main_dashboard_pages_use_shared_consistency_helpers():
     overview_src = _read("dashboard/pages/overview.py")
     detail_src = _read("dashboard/pages/detail.py")
     local_run_src = _read("dashboard/pages/local_run.py")
-    what_if_src = _read("dashboard/pages/what_if.py")
 
     assert "page_title_html(" in overview_src
     assert "page_title_html(" in detail_src
     assert "page_title_html(" in local_run_src
-    assert "page_title_html(" in what_if_src
 
     assert "empty_state_html(" in overview_src
     assert "empty_state_html(" in detail_src
-    assert "empty_state_html(" in what_if_src
 
     assert "section_heading_html(" in overview_src
     assert "section_heading_html(" in detail_src
@@ -274,7 +270,7 @@ def test_local_run_copy_commands_are_grouped_by_step():
 
 
 def test_local_run_page_uses_consistent_dashboard_styling():
-    """GL-428: local-run guide follows Dashboard and What-If styling."""
+    """GL-428: local-run guide follows Dashboard styling."""
     overview_src = _read("dashboard/pages/overview.py")
     src = _read("dashboard/pages/local_run.py")
 
@@ -366,70 +362,6 @@ def test_upload_layout_no_longer_renders_inline_local_run_card():
     assert (
         '_show_how_to_run_locally(tokens, "dashboard_local_run")' not in src
     )
-
-
-def test_what_if_level_pill_centered_and_bar_left_filled():
-    src = _read("dashboard/pages/what_if.py")
-
-    assert ".wi-cell-change {" in src
-    assert "align-items: center;" in src
-    assert "justify-content: center;" in src
-    assert ".wi-cell-risk {" in src
-    assert ".wi-level-stack {" in src
-    assert '<div class="wi-level-stack">' in src
-    assert "min-width: 78px;" in src
-    assert "width: 78px;" in src
-    assert "display: flex;" in src
-    assert ".wi-cell-risk {{" in src
-    assert "align-items: center;" in src
-    assert ".wi-bar-track {{ width: 78px; }}" in src
-    assert "justify-content: flex-start;" in src
-    assert ".wi-col-hdr.right {" in src
-    assert "text-align: center;" in src
-
-
-def test_what_if_step_arrows_are_visible():
-    src = _read("dashboard/pages/what_if.py")
-
-    assert ".wi-step:not(:last-child)::after" in src
-    assert 'color: {T["text_secondary"]};' in src
-    assert "font-size: 16px;" in src
-    assert "font-weight: 700;" in src
-
-
-def test_what_if_layout_has_refined_sections_and_responsive_grid():
-    src = _read("dashboard/pages/what_if.py")
-
-    assert ".wi-section-row {" in src
-    assert ".wi-section-meta {" in src
-    assert '<div class="wi-section-meta">5 presets</div>' in src
-    assert "height: 132px;" in src
-    assert "min-height: 36px !important;" in src
-    assert "position: sticky;" in src
-    assert "top: 18px;" in src
-    assert "st.columns([1.05, 1.7], gap=\"large\")" in src
-    assert "minmax(140px, 1fr)" in src
-    assert "minmax(112px, 128px)" in src
-    assert ".wi-col-headers {{ display: none; }}" in src
-    assert ".wi-cell-change {{" in src
-    assert "align-items: flex-start;" in src
-
-
-def test_what_if_back_button_uses_light_blue_then_deep_blue_hover():
-    src = _read("dashboard/pages/what_if.py")
-
-    assert "← Back to Overview" in src
-    assert ".st-key-what_if_back_btn button {" in src
-    assert 'background: {T["accent_subtle"]} !important;' in src
-    assert 'border: 1.5px solid {T["accent"]} !important;' in src
-    assert 'color: {T["accent"]} !important;' in src
-    assert ".st-key-what_if_back_btn button * {" in src
-    assert ".st-key-what_if_back_btn button:hover" in src
-    assert ".st-key-what_if_back_btn button:hover *" in src
-    assert 'background: {T["accent_hover"]} !important;' in src
-    assert 'border-color: {T["accent_hover"]} !important;' in src
-    assert 'color: {T["accent_contrast"]} !important;' in src
-    assert ".st-key-what_if_back_btn button:active" in src
 
 
 def test_detail_back_button_uses_light_blue_then_deep_blue_hover():
