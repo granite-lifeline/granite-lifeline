@@ -34,6 +34,26 @@ def test_valid_output_passes():
     assert validate_output(valid_output()) == []
 
 
+def test_secondary_risk_passes_when_distinct_and_not_higher():
+    data = valid_output()
+    secondary = valid_output()
+    secondary["anomaly_type"] = "air_intake_maf_anomaly"
+    secondary["component"] = "air_intake_maf_anomaly"
+    secondary["risk_score"] = 0.2
+    data["secondary_risk"] = secondary
+    assert validate_output(data) == []
+
+
+def test_secondary_risk_must_be_distinct_and_ranked_second():
+    data = valid_output()
+    secondary = valid_output()
+    secondary["risk_score"] = 0.9
+    data["secondary_risk"] = secondary
+    errors = validate_output(data)
+    assert any("must differ" in error for error in errors)
+    assert any("must not exceed" in error for error in errors)
+
+
 def test_missing_required_field_fails():
     data = valid_output()
     del data["notes"]

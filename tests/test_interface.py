@@ -403,6 +403,69 @@ class TestModelLayerOutput:
         output = ModelLayerOutput(**data)
         assert output.risk_level is None
 
+    def test_model_layer_output_accepts_second_ranked_component(self):
+        primary = {
+            "timestamp": "2026-08-07T10:00:00Z",
+            "anomaly_type": "cooling_degradation",
+            "risk_score": 0.9271,
+            "risk_level": "High",
+            "component": "cooling_degradation",
+            "prediction_confidence": 0.91,
+            "key_signals": [],
+            "estimated_cycles_to_failure": None,
+            "estimated_failure_probability": None,
+            "notes": [],
+        }
+        secondary = {
+            **primary,
+            "anomaly_type": "air_intake_maf_anomaly",
+            "risk_score": 0.8479,
+            "risk_level": "Medium",
+            "component": "air_intake_maf_anomaly",
+        }
+        output = ModelLayerOutput(
+            **primary, secondary_risk=secondary
+        )
+
+        assert output.secondary_risk is not None
+        assert (
+            output.secondary_risk.component
+            == "air_intake_maf_anomaly"
+        )
+        assert output.secondary_risk.risk_score == 0.8479
+
+    @pytest.mark.parametrize(
+        ("secondary_component", "secondary_score"),
+        [
+            ("cooling_degradation", 0.8),
+            ("air_intake_maf_anomaly", 0.95),
+        ],
+    )
+    def test_model_layer_output_rejects_invalid_secondary_ranking(
+        self, secondary_component, secondary_score
+    ):
+        primary = {
+            "timestamp": "2026-08-07T10:00:00Z",
+            "anomaly_type": "cooling_degradation",
+            "risk_score": 0.9271,
+            "risk_level": "High",
+            "component": "cooling_degradation",
+            "prediction_confidence": 0.91,
+            "key_signals": [],
+            "estimated_cycles_to_failure": None,
+            "estimated_failure_probability": None,
+            "notes": [],
+        }
+        secondary = {
+            **primary,
+            "anomaly_type": secondary_component,
+            "risk_score": secondary_score,
+            "component": secondary_component,
+        }
+
+        with pytest.raises(ValidationError):
+            ModelLayerOutput(**primary, secondary_risk=secondary)
+
     def test_model_layer_output_missing_required_field(self):
         """Test ModelLayerOutput raises error when required field missing."""
         data = {

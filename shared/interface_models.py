@@ -1,21 +1,21 @@
 """Pydantic models for Granite Lifeline cross-layer data contracts.
 
-Based on INTERFACE.md v1.5 (updated 2026-08-01).
+Based on INTERFACE.md v1.6 (updated 2026-08-15).
 
 DataLayerOutput now follows the versioned production_features.csv contract:
 4 sample keys + 16 A-class context/raw fields + 24 B-class production features
 + 2 provenance fields (46 columns total; production feature count remains 24).
 Internal-only proxy label fields (INTERFACE.md 1.4) are kept optional.
 
-ModelLayerOutput supports the single-window shape. BatchModelLayerOutput
-supports the v1.5 `{summary, windows}` envelope emitted by Model Layer
-batch inference.
+ModelLayerOutput supports a primary risk plus an optional second-ranked
+component risk. BatchModelLayerOutput supports the v1.6
+`{summary, windows}` envelope emitted by Model Layer batch inference.
 """
 
 from typing import List, Optional, Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-# Anomaly type enum based on INTERFACE.md v1.5.
+# Anomaly type enum based on INTERFACE.md v1.6.
 AnomalyType = Literal[
     "cooling_degradation",
     "air_intake_maf_anomaly",
@@ -136,8 +136,8 @@ class DataLayerOutput(BaseModel):
     window_id: Optional[str] = None
 
 
-class ModelLayerOutput(BaseModel):
-    """Output from Model Layer, consumed by Report Layer."""
+class ComponentRiskOutput(BaseModel):
+    """One ranked component risk emitted by Model Layer."""
 
     timestamp: str
     anomaly_type: AnomalyType
@@ -169,9 +169,31 @@ class ModelLayerOutput(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def _component_mirrors_anomaly_type(self) -> "ModelLayerOutput":
+    def _component_mirrors_anomaly_type(self) -> "ComponentRiskOutput":
         if self.component != self.anomaly_type:
             raise ValueError("component must mirror anomaly_type")
+        return self
+
+
+class ModelLayerOutput(ComponentRiskOutput):
+    """Primary Model Layer risk plus an optional second-ranked risk."""
+
+    secondary_risk: Optional[ComponentRiskOutput] = None
+
+    @model_validator(mode="after")
+    def _secondary_risk_is_distinct_and_ranked(self) -> "ModelLayerOutput":
+        secondary = self.secondary_risk
+        if secondary is None:
+            return self
+        if secondary.anomaly_type == self.anomaly_type:
+            raise ValueError(
+                "secondary_risk must represent a different anomaly_type"
+            )
+        if secondary.risk_score > self.risk_score:
+            raise ValueError(
+                "secondary_risk.risk_score must not exceed primary "
+                "risk_score"
+            )
         return self
 
 

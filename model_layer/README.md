@@ -223,7 +223,10 @@ estimate carries that statement in the output `notes`.
 
 ## Output format
 
-Interface JSON required fields: `timestamp`, `anomaly_type`,
+Interface JSON keeps the highest-ranked component in the established
+top-level fields and emits the next-highest distinct component as a full
+single-risk object in `secondary_risk`. Required single-risk fields are
+`timestamp`, `anomaly_type`,
 `risk_score`, `risk_level`, `component`, `prediction_confidence`,
 `key_signals`, `estimated_cycles_to_failure`,
 `estimated_failure_probability`, `notes`. Full field definitions,
