@@ -1,7 +1,7 @@
 # INTERFACE.md — Granite Lifeline Field Definitions
-**Version:** v1.5  
-**Last updated:** 2026-08-01  
-**Status:** Confirmed — 5-type anomaly_type enum (`electronic_throttle_tracking_fault` and `idle_speed_control_or_surge_degradation` removed by the Data Layer; `intake_air_temperature_sensor_or_heat_soak_fault` renamed to `intake_air_temperature_sensor_fault`, 2026-07-19); 3 types have native Model Layer detection logic and 2 Data-Layer-scored types are forwarded from `proxy_decisions.csv` when the live upload path supplies `proxy_decisions_path`; Model Layer Story 3 hardening retained (`notes` field and `accelerator_pedal_sensor` detection); Model Layer input requirements retained as §1.5 (2026-07-11); Data Layer scripts 00–41 produce the confirmed 46-column `production_features.csv` contract (4 sample keys, 16 A-class context/raw fields, 24 B-class production features, and 2 provenance fields) under an explicit run directory; Data Layer scripts 50–70 produce the decision-level `proxy_decisions.csv` contract documented in §1.4, and `run_data_pipeline_for_upload` returns `proxy_decisions_path` for Dashboard live uploads; the Model Layer forwards those two proxy-backed types into its own output JSON, with the verdict → `risk_score`/`prediction_confidence` mapping defined in §2.4 (2026-08-01); Story 8 is complete, so `estimated_cycles_to_failure` and `estimated_failure_probability` now carry real projected values when enough rising risk history exists, while remaining nullable for insufficient or non-rising histories (2026-08-01)
+**Version:** v1.6
+**Last updated:** 2026-08-15
+**Status:** Confirmed — 5-type anomaly_type enum (`electronic_throttle_tracking_fault` and `idle_speed_control_or_surge_degradation` removed by the Data Layer; `intake_air_temperature_sensor_or_heat_soak_fault` renamed to `intake_air_temperature_sensor_fault`, 2026-07-19); 3 types have native Model Layer detection logic and 2 Data-Layer-scored types are forwarded from `proxy_decisions.csv` when the live upload path supplies `proxy_decisions_path`; Model Layer Story 3 hardening retained (`notes` field and `accelerator_pedal_sensor` detection); Model Layer input requirements retained as §1.5 (2026-07-11); Data Layer scripts 00–41 produce the confirmed 46-column `production_features.csv` contract (4 sample keys, 16 A-class context/raw fields, 24 B-class production features, and 2 provenance fields) under an explicit run directory; Data Layer scripts 50–70 produce the decision-level `proxy_decisions.csv` contract documented in §1.4, and `run_data_pipeline_for_upload` returns `proxy_decisions_path` for Dashboard live uploads; the Model Layer forwards those two proxy-backed types into its own output JSON, with the verdict → `risk_score`/`prediction_confidence` mapping defined in §2.4 (2026-08-01); Story 8 is complete, so `estimated_cycles_to_failure` and `estimated_failure_probability` now carry real projected values when enough rising risk history exists, while remaining nullable for insufficient or non-rising histories (2026-08-01); v1.6 adds the optional `secondary_risk` object so a second distinct high-scoring component is no longer discarded (2026-08-15)
 
 ---
 
@@ -10,7 +10,7 @@
 ```
 KIT OBD-II CSV
     → [Data Layer]  production_features.csv: 4 sample keys + 16 context/raw fields + 24 production features + 2 provenance fields
-    → [Model Layer / TTM]  anomaly_type, risk_score, risk_level, component, prediction_confidence, key_signals, estimated_cycles_to_failure, estimated_failure_probability, notes
+    → [Model Layer / TTM]  primary risk fields + optional secondary_risk, estimated_cycles_to_failure, estimated_failure_probability, notes
     → [Report Layer / Granite]  anomaly_description, possible_cause, recommended_action + pass-through fields
     → [Dashboard]
 ```
@@ -87,6 +87,7 @@ All fields in data-flow order. Pass-through fields originate in one layer and ar
 | 57 | estimated_cycles_to_failure | int \| null | Model Layer | Report Layer → Dashboard | Draft — projected number of chronological driving cycles until the trip-level mean risk reaches the Model Layer High-risk threshold; `null` when fewer than five trips exist, the trend is non-rising, or the projection exceeds 50 cycles. This is not a physical remaining-useful-life estimate. |
 | 58 | estimated_failure_probability | float (0–1) \| null | Model Layer | Report Layer → Dashboard | Draft — model-based probability that the linear trip-risk projection crosses the High-risk threshold within the next 10 driving cycles; `null` when fewer than five trips exist. It is not an empirically calibrated probability of mechanical failure. |
 | 59 | notes | array of strings | Model Layer | Report Layer → Dashboard | Confirmed — added Story 3 |
+| 59a | secondary_risk | object \| null | Model Layer | Report Layer → Dashboard | Confirmed — v1.6; complete second-ranked component-risk object |
 | 60 | risk_history | array of objects | Report Layer | Dashboard | TBD |
 | 61 | anomaly_description | string | Report Layer | Dashboard | Draft |
 | 62 | possible_cause | string | Report Layer | Dashboard | Draft |
@@ -251,8 +252,8 @@ Consumed by: **Report Layer** (and pass-through to Dashboard where noted)
 {
   "timestamp": "2026-06-16T10:00:00Z",
   "anomaly_type": "cooling_degradation",
-  "risk_score": 0.82,
-  "risk_level": "Medium",
+  "risk_score": 0.9271,
+  "risk_level": "High",
   "component": "cooling_degradation",
   "prediction_confidence": 0.84,
   "key_signals": [
@@ -260,9 +261,33 @@ Consumed by: **Report Layer** (and pass-through to Dashboard where noted)
   ],
   "estimated_cycles_to_failure": 4,
   "estimated_failure_probability": 1.0,
-  "notes": []
+  "notes": [],
+  "secondary_risk": {
+    "timestamp": "2026-06-16T10:00:00Z",
+    "anomaly_type": "air_intake_maf_anomaly",
+    "risk_score": 0.8479,
+    "risk_level": "Medium",
+    "component": "air_intake_maf_anomaly",
+    "prediction_confidence": 0.81,
+    "key_signals": [
+      {"feature": "maf", "value": 128, "unit": "g/s", "reference_range": [0, 123]}
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": []
+  }
 }
 ```
+
+> **v1.6 ranked-risk contract.** The established top-level fields remain the
+> highest-ranked component so existing consumers stay compatible.
+> `secondary_risk` is optional for backward compatibility, but new Model Layer
+> output includes it as a complete §2.1 component-risk object. It must identify
+> a different `anomaly_type`/`component`, and its `risk_score` must be less than
+> or equal to the top-level `risk_score`. Equal scores are allowed and use the
+> Model Layer's stable component ordering as the tie-break. A second component
+> is emitted regardless of its risk level; consumers decide how Low, Medium,
+> and High secondary risks are presented.
 
 > `estimated_cycles_to_failure` / `estimated_failure_probability` are emitted by
 > the Story 8 risk-history estimator when enough rising history is available.
@@ -286,6 +311,7 @@ Consumed by: **Report Layer** (and pass-through to Dashboard where noted)
 | estimated_cycles_to_failure | int \| null | Estimated number of drive cycles (trips) remaining before the detected anomaly is projected to reach the Model Layer High-risk threshold, extrapolated from risk score history/trend. Uses the Data Layer `trip_id`/cycle index (Section 1.1). `null` when history is insufficient, flat/falling, or beyond the projection horizon. This is not a physical remaining-useful-life estimate. | `4` | Confirmed — Story 8 |
 | estimated_failure_probability | float (0–1) \| null | Model-based probability that the risk-score projection crosses the High-risk threshold within the fixed horizon. Together with the field above, supports the Report Layer phrase "72% probability of failure within the next X cycles". `null` when history is insufficient. This is not empirically calibrated against labelled mechanical failures. | `1.0` | Confirmed — Story 8 |
 | notes | array of strings | Degradation and fallback messages from Model Layer input validation and disabled detections (e.g. repaired implausible sensor values, pedal channels unavailable). Always present; empty array when nothing is degraded. | `["repaired 3 implausible coolant_temp value(s) outside [-40.0, 150.0]"]` | Confirmed — added Story 3 |
+| secondary_risk | object \| null | Complete second-ranked component-risk object using the same §2.1 fields, but without another nested `secondary_risk`. Must represent a different component and must not have a higher `risk_score` than the top-level primary risk. Optional so pre-v1.6 payloads remain valid. | See JSON above | Confirmed — v1.6 |
 
 ### 2.3 anomaly_type Classification
 
@@ -353,7 +379,7 @@ The dashboard's final assembly runs the Model Layer over the full uploaded featu
 
 ```json
 {
-  "summary": { "...": "§2.1 interface JSON of the worst-risk window, unchanged" },
+  "summary": { "...": "§2.1 interface JSON of the worst-risk window, including secondary_risk when emitted" },
   "windows": [
     {
       "trip_id": "trip_0001",
@@ -365,7 +391,7 @@ The dashboard's final assembly runs the Model Layer over the full uploaded featu
 }
 ```
 
-- `summary` — the highest-`risk_score` window's output (ties broken by file order), schema identical to §2.1: a parser built for the single-window shape reads `summary` unchanged.
+- `summary` — the highest-`risk_score` window's output (ties broken by file order), schema identical to §2.1, including its window-local `secondary_risk` when emitted.
 - `windows` — every analysed window's §2.1 object plus three identity fields: `trip_id`, `segment_id`, and `window_id` (`<segment_id>__w<NNN>`, zero-based in file order — this is a Model Layer internal batch identifier, distinct from the Data Layer's proxy-evidence `window_id` (Master Field Table row 50, `<segment_id>__<proxy_name>__w<NNNNNN>`, §1.4).
 
 **Risk-score history (Model Layer internal).** Every inference call — single or batch — appends `{trip_id, window_id, timestamp, risk_score}` per analysed window to `ttm-related/outputs/risk_history.csv` (path overridable via `--history-file`); re-runs skip records whose `(trip_id, window_id)` already exist, so the file stays duplicate-free. This ordered history is the input to the implemented Story 8 trend estimator that emits `estimated_cycles_to_failure`/`estimated_failure_probability` when the projection rules are satisfied; it is distinct from the Report Layer's §3.2 `risk_history` display field. Structure validation (ordered timestamps per trip, non-empty, risk_score in [0, 1]) is provided by `risk_history.py` for all consumers.
@@ -397,6 +423,13 @@ Originate in Model Layer, forwarded unchanged by Report Layer.
 | estimated_cycles_to_failure | int \| null | `4` | Confirmed — Story 8 projection, nullable |
 | estimated_failure_probability | float (0–1) \| null | `1.0` | Confirmed — Story 8 projection, nullable |
 | notes | array of strings | `[]` | Confirmed — added Story 3 |
+| secondary_risk | object \| null | See Section 2.1 | Confirmed interface — Report/Dashboard adaptation required |
+
+> Report Layer v1.6 integration requirement: preserve `secondary_risk` from
+> the validated `ModelLayerOutput` instead of dropping it during report
+> assembly. How the second component's narrative and recommended actions are
+> represented is owned by Report Layer; Dashboard display remains a downstream
+> adaptation. Pre-v1.6 payloads without this optional field remain valid.
 
 ### 3.2 Report Layer maintained fields
 
@@ -435,3 +468,4 @@ Generated by the three-layer Granite prompt chain.
 | v1.3 | 2026-07-31 | Data Layer wired the proxy engine into the public pipeline, closing the gap §1.4 recorded on 2026-07-27. (1) `run_data_pipeline` gained an `include_proxy` switch and `run_data_pipeline_for_upload` enables it by default, so scripts 50–70 run in the same run directory after stage 41 and `proxy_decisions.csv` is produced by a live single-CSV upload; the summary adds `proxy_decisions_path` (absolute), `proxy_stage_ids`, and the four proxy manifests. Batch and CLI runs are unchanged and stop at stage 41 unless `--include-proxy` is passed. Verified on real data: `intake_air_temperature_sensor_fault` → P0111 and `map_load_signal_plausibility_fault` → P0106. This does not change either pending type's §2.3/§2.4 status. (2) Master Field Table gained rows 50a–50e for the decision-level fields the Model Layer reads when forwarding those two types. (3) Upload rejection semantics recorded in §1.4: new code `no_usable_segment` (raised after the run when no contiguous segment reaches 700 rows, and unlike the pre-run codes it keeps the run directory), and `too_few_rows` now also enforces a ≥ 700 s recording duration because the corpus is sampled at 6–12 Hz. Pipeline-stage failures now surface as `DataPipelineError` with the original error chained. |
 | v1.4 | 2026-08-01 | Model Layer (Story 7, GL-368) began forwarding the Data Layer's already-computed verdicts for the two anomaly types it does not score itself. (1) New §2.4 note defines the forwarding contract: the optional `--proxy-decisions` input, the trip-grain matching rule with its localisation limitation, the `result_state` → `risk_score` mapping (`dtc_emitted` → 0.9, triggered verdict → 0.6, triggered support/arbitration evidence → 0.5, otherwise 0.0), the `confidence` → `prediction_confidence` mapping (high/provisional/low → 0.9/0.6/0.35, with `confidence_capped_low` forcing 0.35), the `notes` provenance line, and the 5-S2 arbitration gate. No field is added or changed in §2.1/§2.5, and both types keep their §2.3 "Pending" status — this is relaying an already-computed verdict, not Model Layer scoring. (2) At v1.4 time the Dashboard still needed to pass the run summary's `proxy_decisions_path` through to the detector; the current Dashboard upload path now does this. (3) Corrected the 2026-07-27 §1.4 note, which misattributed P0116 and P0128 to the two pending types; both belong to `cooling_degradation` (1-S4 and 1-S1 respectively). |
 | v1.5 | 2026-08-01 | Model Layer (Story 8, GL-289) completed the failure estimator, so rows 57–58 stop being `null` placeholders and carry real values. (1) `estimated_cycles_to_failure` is now the projected number of chronological driving cycles until the trip-level mean risk reaches the Model Layer High-risk line (0.90 in `config/risk_level_calibration.v1.json`): detector-window risk scores are aggregated into per-trip means, a least-squares line `r_i = a + b·i` is fitted across chronological trips, and the crossing point is rounded up. It is emitted as `null` when fewer than five trips of history exist, when the trend is flat or falling, or when the projection exceeds 50 cycles — it is **not** a physical remaining-useful-life estimate. (2) `estimated_failure_probability` is the normal-error-model probability that the same linear projection crosses the High line within a fixed 10-cycle horizon; `null` for insufficient history, `0.0` for flat healthy history. It is **not** an empirically calibrated probability of mechanical failure — the KIT dataset supplies no labelled failure times, so nothing in it is fitted to observed failures. (3) Consumer impact: both fields remain typed `int \| null` and `float (0–1) \| null` with no shape change, but the Report Layer and Dashboard will now receive non-null values where earlier fixtures exercised nullable-only behaviour. (4) The committed contract sample `model_layer/ttm-related/outputs/kit_residual_sample.json` is refreshed accordingly (`4` cycles, `1.0` probability) and carries two `notes` entries stating it comes from a deliberately-rising synthetic history and is not a real-vehicle lifetime claim; method and limitations are written up in `model_layer/ttm-related/outputs/evaluation_note.md`. |
+| v1.6 | 2026-08-15 | Added the Model Layer `secondary_risk` contract to prevent a second affected component from being discarded. The existing top-level §2.1 fields remain the primary/highest risk; `secondary_risk` is an optional complete component-risk object for backward compatibility, must name a distinct component, and must have `risk_score <=` the primary score (stable Model Layer order breaks ties). The field is present in single-window results, batch `summary`, and each batch `windows[]` result. Report Layer must explicitly preserve and adapt this field before Dashboard can display both components; this interface change alone does not alter Report/Dashboard presentation. |
