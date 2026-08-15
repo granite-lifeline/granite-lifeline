@@ -11,7 +11,6 @@ Report Layer output:
 
 - Overview page shows all five current monitored components.
 - Detail page explains risk, evidence, failure prediction, and actions clearly.
-- What-If page can show scenario impact without layout problems.
 - PDF and CSV export are visible and downloadable.
 - Empty and error states look intentional, not like raw Streamlit failures.
 
@@ -26,7 +25,6 @@ python -m pytest \
   tests/test_csv_upload_pipeline.py \
   tests/test_failure_prediction_ui_states.py \
   tests/test_dashboard_ui_consistency.py \
-  tests/test_dashboard_what_if.py \
   tests/test_demo_readiness.py
 ```
 
@@ -53,12 +51,11 @@ Open `http://localhost:8502`, then check:
 | 3 | Overview | There are five monitored components | Cooling, Air Intake, Manifold Pressure, Intake Air Temperature, Accelerator Pedal |
 | 4 | Detail | Open `Cooling System` | Failure prediction, notes, trend, key signals, and report text are visible |
 | 5 | Detail | Hover key signal names | Plain-language tooltips appear |
-| 6 | What-If | Open What-If page and choose a scenario | Cards do not overlap; selected chip is readable; component breakdown updates |
-| 7 | Export | Return to overview and use PDF / CSV buttons | Single or ZIP downloads are generated without external services |
-| 8 | Empty state | Try running analysis without a CSV file | Polished empty state appears instead of a raw warning |
-| 9 | CSV upload | Upload a valid KIT CSV and click `Run Analysis` | Button changes to `Analysing...` and the loading card appears immediately |
-| 10 | CSV loading | Watch the loading card while the pipeline runs | A percentage progress ring is visible with staged user-facing text; no bottom Streamlit progress bar is shown |
-| 11 | Local run guide | Click `How to Run Locally`, review commands, then click `Back to Upload` | Full setup guide opens, copy command blocks are readable, and returning does not affect upload controls |
+| 6 | Export | Return to overview and use PDF / CSV buttons | Single or ZIP downloads are generated without external services |
+| 7 | Empty state | Try running analysis without a CSV file | Polished empty state appears instead of a raw warning |
+| 8 | CSV upload | Upload a valid KIT CSV and click `Run Analysis` | Button changes to `Analysing...` and the loading card appears immediately |
+| 9 | CSV loading | Watch the loading card while the pipeline runs | A percentage progress ring is visible with staged user-facing text; no bottom Streamlit progress bar is shown |
+| 10 | Local run guide | Click `How to Run Locally`, review commands, then click `Back to Upload` | Full setup guide opens, copy command blocks are readable, and returning does not affect upload controls |
 
 ## CSV Loading State Demo Checklist
 
@@ -115,7 +112,6 @@ By the end of the demo, the audience should have seen:
 - A prioritized vehicle health overview.
 - A component-level diagnostic explanation.
 - Evidence signals with readable names and normal ranges.
-- A simple what-if comparison.
 - A downloadable diagnostic report and key signal table.
 
 ## Readiness Status
@@ -124,7 +120,6 @@ By the end of the demo, the audience should have seen:
 |------|--------|
 | UI consistency refinements | Done |
 | IBM Carbon-inspired theme polish | Done |
-| What-If layout improvement | Done |
 | Export workflow simplification | Done |
 | Export panel polish | Done |
 | Empty/error state polish | Done |
