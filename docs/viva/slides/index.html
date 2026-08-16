@@ -1449,19 +1449,95 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 
 /* ====== LIVE DASHBOARD DEMO ====== */
 .demo-wrap { width: 100%; max-width: 1320px; margin-top: clamp(12px,2vh,20px); display: flex; flex-direction: column; align-items: center; }
+.demo-stage-label { width:100%; max-width:980px; margin-bottom:10px; padding:9px 14px; border-radius:999px; background:rgba(15,98,254,.08); color:var(--accent-blue); font-family:var(--font-mono); font-size:clamp(10px,.9vw,12px); font-weight:800; letter-spacing:.05em; text-align:center; text-transform:uppercase; }
 .demo-frame { position: relative; width: 100%; height: clamp(390px, 57vh, 500px); background: transparent; border: 0; border-radius: 18px; overflow: hidden; }
+.slide[data-slide="10"] .subtitle { margin-bottom:clamp(14px,2.2vh,24px); }
+.slide[data-slide="10"] .demo-wrap { margin-top:0; }
+.slide[data-slide="10"] .report-stage-label { margin-top:0; margin-bottom:clamp(12px,1.8vh,18px); }
 .demo-panel { position: absolute; inset: 0; box-sizing: border-box; display: flex; flex-direction: column; padding: 0 clamp(18px,2vw,30px); opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
 .slide.active .demo-panel.active { opacity: 1; pointer-events: auto; }
+.local-run-panel { justify-content:center; }
+.local-run-panel .support-showcase { width:100%; max-width:1160px; margin:0 auto; }
+.local-run-panel .support-card { min-height:0; padding:16px 18px; }
+.local-run-panel .support-card h3 { font-size:clamp(18px,1.45vw,23px); }
+.local-run-panel .local-steps,
+.local-run-panel .local-command-list { margin-top:14px; gap:8px; }
+.local-run-panel .local-step,
+.local-run-panel .local-command-item { padding:10px 11px; }
 .dash-shot-panel { gap: 10px; background: transparent; }
 .dash-shot-label { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,0.9fr); align-items: start; gap: 18px; width: 100%; box-sizing: border-box; color: var(--text); font-size: clamp(11.5px,0.95vw,13.5px); font-weight: 750; line-height: 1.22; white-space: normal; overflow: visible; }
 .dash-shot-label span { min-width: 0; color: var(--text-dim); font-size: clamp(10px,0.85vw,11.5px); font-weight: 500; line-height: 1.25; text-align: right; white-space: normal; overflow-wrap: anywhere; }
 .dash-shot-stage { position: relative; flex: 1; min-height: 0; display: flex; overflow: hidden; border-radius: 16px; }
+.upload-demo-stage { align-items:center; justify-content:center; background:transparent; }
+.upload-demo-card { width:min(100%,620px); min-height:360px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:25px; padding:34px 38px; border:1px solid var(--border); border-radius:18px; background:rgba(255,255,255,.86); box-shadow:0 18px 46px rgba(20,50,100,.08); text-align:center; }
+.upload-demo-title { display:flex; align-items:center; justify-content:center; gap:14px; font-size:clamp(22px,2vw,31px); font-weight:780; color:var(--text); }
+.upload-help-dot { width:34px; height:34px; display:grid; place-items:center; border:2px solid var(--outline-variant); border-radius:50%; color:var(--text-dim); font-family:var(--font-mono); font-size:18px; font-weight:800; }
+.upload-demo-pick { min-width:210px; padding:18px 34px; border:2px solid var(--outline-variant); border-radius:16px; background:#f7f7f8; color:var(--text); font-size:clamp(21px,1.8vw,29px); font-weight:760; }
+.upload-demo-meta { color:var(--text); font-size:clamp(17px,1.45vw,23px); font-weight:500; }
+.upload-run-button { width:100%; max-width:500px; min-height:66px; border:0; border-radius:14px; background:var(--accent-blue); color:#fff; font-size:clamp(19px,1.65vw,26px); font-weight:760; cursor:pointer; box-shadow:0 12px 28px rgba(15,98,254,.24); transition:transform .18s ease, box-shadow .18s ease; }
+.upload-run-button:hover { transform:translateY(-1px); box-shadow:0 16px 34px rgba(15,98,254,.30); }
+.upload-run-button:focus-visible { outline:4px solid rgba(15,98,254,.35); outline-offset:4px; }
+.overview-demo-stage { align-items:center; justify-content:center; background:transparent; }
+.overview-demo-grid { width:100%; max-width:1340px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:22px; align-items:stretch; }
+.overview-demo-card { min-height:310px; padding:28px 28px 20px; border:1px solid var(--border); border-radius:18px; background:rgba(255,255,255,.86); box-shadow:0 18px 46px rgba(20,50,100,.08); display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
+.overview-demo-card.cooling { border-top:5px solid var(--accent-red); }
+.overview-demo-card.air { border-top:5px solid var(--accent-orange); }
+.overview-demo-card.empty { border-top:5px solid #8d8d8d; }
+.overview-card-title { min-height:32px; display:flex; align-items:center; justify-content:center; gap:10px; color:var(--text); font-size:clamp(17px,1.35vw,22px); font-weight:780; text-align:center; }
+.overview-card-icon { width:24px; height:24px; display:inline-flex; color:var(--accent-red); line-height:1; }
+.overview-card-icon svg { width:100%; height:100%; fill:none; stroke:currentColor; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; }
+.overview-demo-card.air .overview-card-icon { color:var(--accent-orange); }
+.overview-demo-card.empty .overview-card-icon { color:#6f6f6f; }
+.risk-ring { width:132px; height:132px; margin:28px auto 24px; border-radius:50%; display:grid; place-items:center; background:conic-gradient(var(--ring-color,var(--accent-orange)) 0 var(--ring-value,50%), #e0e0e0 var(--ring-value,50%) 100%); position:relative; }
+.risk-ring::before { content:""; position:absolute; inset:15px; border-radius:50%; background:#fff; }
+.risk-ring.empty { background:#e0e0e0; }
+.risk-ring-content { position:relative; z-index:1; text-align:center; }
+.risk-ring-content strong { display:block; color:var(--text); font-size:clamp(28px,2.4vw,40px); line-height:1; }
+.risk-ring-content span { display:block; margin-top:8px; color:var(--text); font-family:var(--font-mono); font-size:11px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+.overview-detail-button { width:100%; margin-top:auto; min-height:48px; border:1.5px solid var(--border); border-radius:10px; background:rgba(255,255,255,.9); color:var(--text); font-size:clamp(14px,1.1vw,18px); font-weight:650; cursor:pointer; transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease; }
+.overview-detail-button:hover { transform:translateY(-1px); border-color:var(--accent-blue); box-shadow:0 10px 24px rgba(15,98,254,.13); }
+.overview-detail-button:focus-visible { outline:4px solid rgba(15,98,254,.32); outline-offset:3px; }
+.detail-demo-stage { align-items:center; justify-content:center; background:transparent; }
+.detail-dashboard-card { width:calc(100% - 56px); max-width:1240px; height:calc(100% - 72px); min-height:0; margin:auto; box-sizing:border-box; display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); gap:12px; padding:14px; border:1px solid var(--border); border-radius:18px; background:rgba(255,255,255,.86); box-shadow:0 18px 46px rgba(20,50,100,.08); overflow:hidden; }
+.detail-main-card,.detail-side-card { min-width:0; overflow:hidden; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,.9); box-shadow:0 10px 26px rgba(29,29,31,.045); }
+.detail-main-card { padding:14px; display:grid; grid-template-rows:auto 1fr auto; gap:8px; }
+.detail-side-card { padding:12px; }
+.detail-card-title { display:flex; align-items:center; gap:9px; color:var(--text); font-size:clamp(16px,1.22vw,20px); font-weight:780; }
+.detail-card-title.center { justify-content:center; }
+.detail-card-title span { color:var(--accent-blue); font-size:22px; }
+.detail-risk-wrap { display:grid; grid-template-columns:132px 1fr; gap:12px; align-items:center; }
+.detail-risk-ring { width:110px; height:110px; border-radius:50%; display:grid; place-items:center; background:conic-gradient(var(--accent-red) 0 92%, #e0e0e0 92% 100%); position:relative; }
+.detail-risk-ring::before { content:""; position:absolute; inset:14px; border-radius:50%; background:#fff; }
+.detail-risk-ring-content { position:relative; z-index:1; text-align:center; }
+.detail-risk-ring-content strong { display:block; color:var(--text); font-size:30px; line-height:1; }
+.detail-risk-ring-content span { display:block; margin-top:5px; color:var(--text); font:800 8.5px/1 var(--font-mono); letter-spacing:.05em; text-transform:uppercase; }
+.risk-delta { display:block; margin-top:4px; color:var(--accent-red); font-size:13px; font-weight:760; }
+.failure-box { padding:12px 14px; border-left:5px solid var(--accent-red); border-radius:12px; background:rgba(218,30,40,.06); }
+.failure-box b { display:block; margin-bottom:8px; color:var(--accent-red); font:800 11px/1 var(--font-mono); letter-spacing:.06em; text-transform:uppercase; }
+.failure-box strong { display:block; color:var(--accent-red); font-size:clamp(22px,1.75vw,30px); line-height:1; }
+.failure-box span { display:block; margin-top:7px; color:var(--text); font-size:clamp(10.5px,.82vw,12.5px); line-height:1.25; }
+.failure-box span em { color:var(--text); font-style:normal; font-weight:800; }
+.quality-mini { margin-top:8px; padding-top:7px; border-top:1px solid rgba(218,30,40,.18); color:var(--text-muted); font-size:clamp(8.8px,.72vw,10px); line-height:1.25; }
+.trend-card { padding:11px 14px 9px; border-radius:13px; background:rgba(15,98,254,.035); border:1px solid rgba(15,98,254,.16); }
+.trend-card svg { width:100%; height:88px; display:block; }
+.trend-labels { display:flex; justify-content:space-between; color:var(--text-dim); font:700 10px/1 var(--font-mono); }
+.risk-last-update { margin-top:6px; color:var(--text-dim); font-size:9.5px; text-align:center; }
+.detail-side-grid { min-width:0; display:grid; grid-template-rows:1fr .64fr; gap:12px; min-height:0; }
+.signal-table { display:grid; gap:7px; margin-top:10px; }
+.signal-row { min-width:0; display:grid; grid-template-columns:minmax(0,1.28fr) minmax(0,.64fr) minmax(0,.78fr) minmax(0,.48fr) minmax(0,.62fr); gap:7px; align-items:center; padding:7px 8px; border-radius:9px; background:rgba(245,245,247,.9); font-size:clamp(8.7px,.68vw,10.5px); }
+.signal-row span,.signal-row strong { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.signal-row.header { background:transparent; color:var(--text-dim); font:800 9px/1 var(--font-mono); text-transform:uppercase; letter-spacing:.05em; }
+.signal-status { justify-self:start; min-width:58px; padding:5px 7px; border-radius:999px; color:#fff; background:var(--accent-red); font:800 7.5px/1 var(--font-mono); text-align:center; text-transform:uppercase; }
+.signal-status.normal { background:#24a148; }
+.report-mini-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:10px; }
+.report-mini-card { min-height:56px; padding:10px 11px; border-radius:11px; background:rgba(15,98,254,.045); border:1px solid rgba(15,98,254,.14); display:flex; align-items:center; }
+.report-mini-card.action { border-top:3px solid var(--accent-blue); background:rgba(15,98,254,.07); }
+.report-mini-card b { display:block; color:var(--accent-blue); font:800 10px/1.2 var(--font-mono); letter-spacing:.05em; text-transform:uppercase; margin-bottom:0; }
+.report-mini-card p { margin:0; color:var(--text); font-size:clamp(9.5px,.76vw,11px); line-height:1.3; }
+.detail-card-title .confidence-pill { margin-left:auto; padding:6px 10px; border:1px solid rgba(255,131,43,.42); border-radius:999px; background:rgba(255,131,43,.1); color:var(--text); font-size:10px; font-weight:750; line-height:1; }
 .dash-real-shot { width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; }
 .dash-real-shot.dash-zoom-shot { width: 96%; height: 96%; margin: auto; object-fit: contain; }
 .dash-real-shot.dash-component-shot { object-position: center 52%; }
-.dash-run-hotspot { position: absolute; inset: 0; z-index: 2; border: 0; background: transparent; cursor: pointer; }
-.dash-details-hotspot { position: absolute; inset: 0; z-index: 2; border: 0; background: transparent; cursor: pointer; }
-.dash-run-hotspot:focus-visible, .dash-details-hotspot:focus-visible { outline: 4px solid rgba(15,98,254,0.45); outline-offset: 3px; }
 .dash-scroll-card { flex: 1; width: 100%; min-height: 0; overflow-y: auto; overflow-x: hidden; border-radius: 0; background: transparent; scroll-behavior: smooth; }
 .dash-scroll-card img { width: 100%; max-width: none; max-height: none; height: auto; display: block; }
 .dash-scroll-card::-webkit-scrollbar { width: 10px; }
@@ -1533,8 +1609,9 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .support-card p { margin:0; color:var(--text-dim); font-size:clamp(11.5px,.92vw,13.5px); line-height:1.42; }
 .support-card.dark p { color:rgba(255,255,255,.66); }
 .local-steps { display:grid; gap:10px; margin-top:19px; }
-.local-step { display:grid; grid-template-columns:31px 1fr; gap:11px; align-items:start; padding:12px 13px; border-radius:12px; background:rgba(15,98,254,.065); }
+.local-step { display:grid; grid-template-columns:31px 1fr; gap:11px; align-items:center; padding:12px 13px; border-radius:12px; background:rgba(15,98,254,.065); }
 .local-step b { width:28px; height:28px; display:grid; place-items:center; border-radius:50%; background:var(--accent-blue); color:#fff; font-family:var(--font-mono); font-size:11px; }
+.local-step div { min-height:28px; display:flex; align-items:center; }
 .local-step strong { display:block; font-size:clamp(12.5px,1vw,14.5px); line-height:1.15; }
 .local-step span { display:block; margin-top:4px; color:var(--text-dim); font-size:clamp(10.5px,.82vw,12px); line-height:1.32; }
 .local-command-list { display:grid; gap:10px; margin-top:19px; }
@@ -1571,19 +1648,19 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .evidence-column.open .evidence-row span { color:var(--text-dim); }
 .boundary-takeaway { margin-top:clamp(20px,3vh,32px); font-size:clamp(22px,2.2vw,32px); font-weight:750; text-wrap:balance; }
 
-.future-roadmap { width:100%; max-width:1400px; display:grid; grid-template-columns:1fr 38px 1.15fr 38px 1fr 38px 1fr; align-items:stretch; gap:9px; margin-top:clamp(28px,4.2vh,44px); }
-.future-step { position:relative; min-height:220px; display:flex; flex-direction:column; padding:24px 22px; border-radius:15px; background:rgba(255,255,255,.82); border:1.5px solid var(--border); text-align:left; box-shadow:0 14px 36px rgba(32,63,109,.065); }
-.future-step.current { background:#11161d; color:#fff; }
+.future-roadmap { width:100%; max-width:1360px; display:grid; grid-template-columns:1fr 32px 1fr 32px 1fr 32px 1fr; align-items:stretch; gap:8px; margin-top:clamp(28px,4.4vh,46px); }
+.future-step { position:relative; min-height:150px; display:flex; flex-direction:column; justify-content:center; padding:20px 18px; border-radius:14px; background:rgba(255,255,255,.78); border:1.5px solid rgba(15,98,254,.3); text-align:left; box-shadow:0 14px 34px rgba(32,63,109,.07); }
+.future-step.current { background:rgba(255,255,255,.78); color:var(--text); }
 .future-step.generalise { border-color:var(--accent-blue); background:rgba(15,98,254,.07); }
-.future-number { font-family:var(--font-mono); color:#78a9ff; font-size:12px; font-weight:800; letter-spacing:.1em; margin-bottom:18px; }
+.future-number { font-family:var(--font-mono); color:var(--accent-blue); font-size:11px; font-weight:700; letter-spacing:.08em; margin-bottom:10px; }
 .future-step:not(.current) .future-number { color:var(--accent-blue); }
-.future-step strong { font-size:clamp(18px,1.65vw,25px); line-height:1.1; text-wrap:balance; }
+.future-step strong { font-size:clamp(18px,1.55vw,24px); line-height:1.08; text-wrap:balance; }
 .future-step > span { margin-top:12px; font-size:clamp(12px,1vw,14px); line-height:1.42; color:rgba(255,255,255,.64); }
 .future-step:not(.current) > span { color:var(--text-dim); }
-.future-arrow { align-self:center; color:var(--accent-blue); font-size:29px; font-weight:700; }
-.future-pair { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:auto; padding-top:18px; }
+.future-arrow { align-self:center; color:var(--accent-blue); font-size:27px; font-weight:700; }
+.future-pair { width:100%; display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:22px; padding-top:0; }
 .future-pair span { min-height:54px; display:grid; place-items:center; padding:9px; border-left:3px solid var(--accent-blue); background:rgba(15,98,254,.07); color:var(--text); font-size:12px; font-weight:700; line-height:1.2; text-align:center; }
-.future-principle { width:min(100%,1120px); margin-top:clamp(24px,3.6vh,38px); font-size:clamp(22px,2.2vw,32px); line-height:1.18; font-weight:760; text-wrap:balance; }
+.future-principle { width:min(100%,1120px); margin-top:clamp(24px,3.6vh,38px); font-size:clamp(22px,2.2vw,32px); line-height:1.18; font-weight:760; text-align:center; text-wrap:balance; }
 .thank-you-line { margin-top:clamp(18px,2.6vh,28px); font-size:clamp(16px,1.5vw,21px); font-weight:700; color:var(--accent-blue); }
 .team-credits { margin-top:8px; font-family:var(--font-mono); font-size:clamp(10.5px,.85vw,12.5px); color:var(--text-dim); text-align:center; max-width:760px; }
 
@@ -2632,95 +2709,168 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
     </script>
   </div>
 
-  <!-- ===== 11 / LOCAL SETUP SUPPORT ===== -->
-  <div class="slide support-slide" data-slide="10">
-    <p class="slide-tag anim-1">Dashboard support</p>
-    <h2 class="anim-2">First, the user can <span class="highlight-blue">run the pipeline locally.</span></h2>
-    <p class="subtitle anim-2">The dashboard includes a guided setup path before the result is opened and reviewed.</p>
+  <!-- ===== 11 / DASHBOARD JOURNEY (interactive click-through) ===== -->
+  <div class="slide" data-slide="10">
+    <p class="slide-tag anim-1" data-edit-id="s10-tag">Dashboard</p>
+    <h2 class="anim-2" data-edit-id="s10-h2">From local setup to <span class="highlight-blue">owner action.</span></h2>
+    <p class="subtitle anim-2">Charlotte Yu &middot; Jintong He</p>
 
-    <div class="support-showcase single anim-3">
-      <section class="support-card">
-        <div class="support-kicker">How to Run Locally</div>
-        <h3>Four steps to reproduce the local pipeline.</h3>
-        <p>The left side keeps the setup flow readable before the dashboard result is opened.</p>
-        <div class="local-steps">
-          <div class="local-step"><b>1</b><div><strong>Prepare project</strong><span>Get the repo ready locally.</span></div></div>
-          <div class="local-step"><b>2</b><div><strong>Install tools</strong><span>Set up Python, model and RAG dependencies.</span></div></div>
-          <div class="local-step"><b>3</b><div><strong>Run pipeline</strong><span>Process the OBD-II CSV and produce the result.</span></div></div>
-          <div class="local-step"><b>4</b><div><strong>Open dashboard</strong><span>Launch the Streamlit interface and review the output.</span></div></div>
-        </div>
-      </section>
-      <section class="support-card dark">
-        <div class="support-kicker">Commands</div>
-        <h3>Each step has a matching command group.</h3>
-        <p>The exact commands stay visible for reproducibility, but grouped so the slide is still scannable.</p>
-        <div class="local-command-list">
-          <div class="local-command-item"><b>1</b><code>git clone https://github.com/granite-lifeline/granite-lifeline.git
+    <div class="demo-wrap anim-3">
+      <div class="report-stage-label">What can the user see</div>
+      <div class="demo-frame">
+
+        <div class="demo-panel local-run-panel active" id="demoPanel0">
+          <div class="support-showcase single">
+            <section class="support-card">
+              <div class="support-kicker">How to Run Locally</div>
+              <h3>Four steps to reproduce the local pipeline.</h3>
+              <div class="local-steps">
+                <div class="local-step"><b>1</b><div><strong>Prepare project</strong></div></div>
+                <div class="local-step"><b>2</b><div><strong>Install tools</strong></div></div>
+                <div class="local-step"><b>3</b><div><strong>Run pipeline</strong></div></div>
+                <div class="local-step"><b>4</b><div><strong>Open dashboard</strong></div></div>
+              </div>
+            </section>
+            <section class="support-card dark">
+              <div class="support-kicker">Commands</div>
+              <h3>Each step has a matching command group.</h3>
+              <div class="local-command-list">
+                <div class="local-command-item"><b>1</b><code>git clone https://github.com/granite-lifeline/granite-lifeline.git
 cd granite-lifeline</code></div>
-          <div class="local-command-item"><b>2</b><code>./setup.sh</code></div>
-          <div class="local-command-item"><b>3</b><code>ollama serve
+                <div class="local-command-item"><b>2</b><code>./setup.sh</code></div>
+                <div class="local-command-item"><b>3</b><code>ollama serve
 ollama pull granite4.1:8b
 uv run python -m report_layer.rag.knowledge_indexer
 uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
-          <div class="local-command-item"><b>4</b><code>uv run streamlit run dashboard/app.py</code></div>
-        </div>
-      </section>
-    </div>
-    <script type="application/json" class="slide-notes">
-    {"title":"Dashboard Support — Local Run First","script":"Before opening the dashboard result, the user can run the pipeline locally. On the left, the slide shows the four setup steps. On the right, each step has its corresponding command group: prepare the project, install the tools, start the local model and knowledge indexes, and then open the Streamlit dashboard to review the output.","notes":["How to Run Locally content is based on develop dashboard/pages/local_run.py","Keep commands grouped by step","Transition: after the local run, open the dashboard"]}
-    </script>
-  </div>
-
-  <!-- ===== 12 / LIVE DEMO (interactive click-through) ===== -->
-  <div class="slide" data-slide="11">
-    <p class="slide-tag anim-1" data-edit-id="s10-tag">Dashboard</p>
-    <h2 class="anim-2" data-edit-id="s10-h2">After the local run, <span class="highlight-blue">what does the owner see?</span></h2>
-    <p class="subtitle anim-2" style="font-size:clamp(13px,1.15vw,16px);">Open the dashboard. Review one warning, one explanation and one clear next step.</p>
-
-    <div class="demo-wrap anim-3">
-      <div class="demo-frame">
-
-        <div class="demo-panel dash-shot-panel active" id="demoPanel0">
-          <div class="dash-shot-label">Run analysis locally <span>Upload the OBD-II CSV</span></div>
-          <div class="dash-shot-stage">
-            <img class="dash-real-shot dash-zoom-shot" src="assets/dashboard-upload.png" alt="Dashboard upload page">
-            <button class="dash-run-hotspot" onclick="setDemoStep(1)" title="Run Analysis"></button>
+                <div class="local-command-item"><b>4</b><code>uv run streamlit run dashboard/app.py</code></div>
+              </div>
+            </section>
           </div>
         </div>
 
         <div class="demo-panel dash-shot-panel" id="demoPanel1">
-          <div class="dash-shot-label">Component overview <span>Risk scores across vehicle systems</span></div>
-          <div class="dash-shot-stage">
-            <img class="dash-real-shot dash-zoom-shot dash-component-shot" src="assets/dashboard-components.png" alt="Dashboard component overview">
-            <button class="dash-details-hotspot" onclick="setDemoStep(2)" title="View Cooling System details"></button>
+          <div class="dash-shot-stage upload-demo-stage">
+            <div class="upload-demo-card">
+              <div class="upload-demo-title">
+                <span>Upload OBD-II CSV File</span>
+                <span class="upload-help-dot">?</span>
+              </div>
+              <div class="upload-demo-pick">Upload</div>
+              <div class="upload-demo-meta">200MB per file &bull; CSV</div>
+              <button class="upload-run-button" type="button" onclick="event.stopPropagation(); setDemoStep(2)">Run Analysis</button>
+            </div>
           </div>
         </div>
 
         <div class="demo-panel dash-shot-panel" id="demoPanel2">
-          <div class="dash-shot-label">Diagnostic report <span>Scroll down for evidence, explanation and next actions</span></div>
-          <div class="dash-scroll-card">
-            <img src="assets/dashboard-detail-report-long.png" alt="Dashboard risk detail and generated report">
+          <div class="dash-shot-stage overview-demo-stage">
+            <div class="overview-demo-grid">
+              <article class="overview-demo-card cooling">
+                <div class="overview-card-title"><span class="overview-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3C8.6 7.6 6 10.7 6 14.1A6 6 0 0 0 18 14.1C18 10.7 15.4 7.6 12 3Z"/></svg></span><span>Cooling System</span></div>
+                <div class="risk-ring" style="--ring-color:var(--accent-red);--ring-value:92%;">
+                  <div class="risk-ring-content"><strong>92%</strong><span>Risk score</span></div>
+                </div>
+                <button class="overview-detail-button" type="button" onclick="event.stopPropagation(); setDemoStep(3)">View Details →</button>
+              </article>
+              <article class="overview-demo-card air">
+                <div class="overview-card-title"><span class="overview-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8h11a3 3 0 1 0-3-3"/><path d="M4 13h14a3 3 0 1 1-3 3"/><path d="M4 18h7"/></svg></span><span>Air Intake System</span></div>
+                <div class="risk-ring" style="--ring-color:var(--accent-orange);--ring-value:84%;">
+                  <div class="risk-ring-content"><strong>84%</strong><span>Risk score</span></div>
+                </div>
+                <button class="overview-detail-button" type="button" onclick="event.stopPropagation(); setDemoStep(3)">View Details →</button>
+              </article>
+              <article class="overview-demo-card empty">
+                <div class="overview-card-title"><span class="overview-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 14.7V5a2 2 0 0 0-4 0v9.7a4 4 0 1 0 4 0Z"/><path d="M12 9v7"/></svg></span><span>Intake Air Temperature</span></div>
+                <div class="risk-ring empty">
+                  <div class="risk-ring-content"><strong>N/A</strong><span>No data</span></div>
+                </div>
+                <button class="overview-detail-button" type="button" onclick="event.stopPropagation(); setDemoStep(3)">View Details →</button>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div class="demo-panel dash-shot-panel" id="demoPanel3">
+          <div class="dash-shot-stage detail-demo-stage">
+            <div class="detail-dashboard-card">
+              <section class="detail-main-card">
+                <div class="detail-card-title"><span>⚡</span> Cooling System</div>
+                <div class="detail-risk-wrap">
+                  <div class="detail-risk-ring">
+                    <div class="detail-risk-ring-content"><strong>92%</strong><span>Risk score</span><em class="risk-delta">▲30.5</em></div>
+                  </div>
+                  <div class="failure-box">
+                    <b>Failure Prediction</b>
+                    <strong>100%</strong>
+                    <span>probability of failure within the next <em>0 trips</em></span>
+                    <div class="quality-mini">Data Quality Notes: trip-level mean risk is already High; estimate is a model-based threshold projection, not a calibrated mechanical-failure probability.</div>
+                  </div>
+                </div>
+                <div class="trend-card">
+                  <div class="detail-card-title"><span>↗</span> Risk Score Trend</div>
+                  <svg viewBox="0 0 520 140" role="img" aria-label="Risk score trend">
+                    <defs>
+                      <linearGradient id="trendFill" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stop-color="#0f62fe" stop-opacity=".24"/>
+                        <stop offset="100%" stop-color="#0f62fe" stop-opacity="0"/>
+                      </linearGradient>
+                    </defs>
+                    <path d="M35 112 H500 M35 86 H500 M35 60 H500 M35 34 H500" stroke="#d8dee9" stroke-width="1"/>
+                    <path d="M35 24 C95 52 136 80 178 88 S250 121 305 112 S392 70 485 35 L485 122 L35 122 Z" fill="url(#trendFill)"/>
+                    <path d="M35 24 C95 52 136 80 178 88 S250 121 305 112 S392 70 485 35" fill="none" stroke="#0f62fe" stroke-width="5" stroke-linecap="round"/>
+                    <g fill="#0f62fe" stroke="#fff" stroke-width="4">
+                      <circle cx="35" cy="24" r="6"/><circle cx="178" cy="88" r="6"/><circle cx="305" cy="112" r="6"/><circle cx="405" cy="69" r="6"/><circle cx="485" cy="35" r="6"/>
+                    </g>
+                  </svg>
+                  <div class="trend-labels"><span>08-02</span><span>08-03</span><span>08-04</span><span>08-05</span><span>08-07</span></div>
+                  <div class="risk-last-update">Last updated: 2017-08-07 17:15</div>
+                </div>
+              </section>
+              <section class="detail-side-grid">
+                <div class="detail-side-card">
+                  <div class="detail-card-title"><span>↯</span> Key Signals</div>
+                  <div class="signal-table">
+                    <div class="signal-row header"><span>Signal</span><span>Reading</span><span>Normal Range</span><span>Unit</span><span>Status</span></div>
+                    <div class="signal-row"><span>Coolant Temperature</span><strong>84.0</strong><span>90–95</span><span>°C</span><i class="signal-status">Abnormal</i></div>
+                    <div class="signal-row"><span>Coolant Rise Rate</span><strong>5.9306</strong><span>0–2</span><span>°C/min</span><i class="signal-status">Abnormal</i></div>
+                    <div class="signal-row"><span>MAF Integral 180s</span><strong>3258.6916</strong><span>0–2500</span><span>g</span><i class="signal-status">Abnormal</i></div>
+                    <div class="signal-row"><span>Vehicle Speed</span><strong>104.0</strong><span>0–218</span><span>km/h</span><i class="signal-status normal">Normal</i></div>
+                    <div class="signal-row"><span>Manifold Pressure</span><strong>141.0</strong><span>36–237</span><span>kPa</span><i class="signal-status normal">Normal</i></div>
+                  </div>
+                </div>
+                <div class="detail-side-card">
+                  <div class="detail-card-title"><span>▣</span> Diagnostic Report <span class="confidence-pill">Confidence: 68%</span></div>
+                  <div class="report-mini-grid">
+                    <article class="report-mini-card"><b>What's happening</b></article>
+                    <article class="report-mini-card"><b>Why this matters</b></article>
+                    <article class="report-mini-card action"><b>What you should do</b></article>
+                  </div>
+                </div>
+              </section>
+            </div>
           </div>
         </div>
 
       </div>
 
-      <div class="demo-controls">
-        <div class="demo-dots">
-          <button class="demo-dot-btn active" id="demoDot0" onclick="setDemoStep(0)" title="CSV upload">1</button>
-          <button class="demo-dot-btn" id="demoDot1" onclick="setDemoStep(1)" title="Component overview">2</button>
-          <button class="demo-dot-btn" id="demoDot2" onclick="setDemoStep(2)" title="Diagnostic report">3</button>
+      <div class="ch-controls dashboard-demo-controls">
+        <button class="ch-nav-btn" id="demoBackBtn" onclick="demoPrev()">&larr; Back</button>
+        <div class="ch-dots">
+          <div class="ch-dot active" data-demo-dot="0" onclick="setDemoStep(0)" title="Local setup"></div>
+          <div class="ch-dot" data-demo-dot="1" onclick="setDemoStep(1)" title="CSV upload"></div>
+          <div class="ch-dot" data-demo-dot="2" onclick="setDemoStep(2)" title="Component overview"></div>
+          <div class="ch-dot" data-demo-dot="3" onclick="setDemoStep(3)" title="Diagnostic report"></div>
         </div>
-        <button class="demo-next-btn" onclick="nextDemoStep()">Nest &rarr;</button>
+        <button class="ch-nav-btn primary" id="demoNextBtn" onclick="nextDemoStep()">Next &rarr;</button>
       </div>
     </div>
     <script type="application/json" class="slide-notes">
-    {"title":"Dashboard Demo","script":"After the local pipeline has produced a result, the user opens the dashboard. First, they upload the OBD-II CSV. Once the analysis is complete, the overview summarises the vehicle systems by risk, so the owner can immediately see which area needs attention. The detail view keeps the evidence visible at the top, and scrolling down shows the plain-language explanation and next actions in the same page.","notes":["This slide comes after the local setup slide","Use Nest to move through upload, overview, then the scrollable detail/report card","Scroll inside the final card to reveal the owner report"]}
+    {"title":"Dashboard Journey","script":"The dashboard journey starts with the local setup support, because the full CSV analysis needs the local runtime and Granite model. The user then uploads the OBD-II CSV, runs the analysis, and sees a component overview sorted by risk. Finally, the detail view keeps the evidence visible and lets the owner scroll through the plain-language explanation and next actions.","notes":["Use Next to move through local setup, upload, overview, then the scrollable detail report","The local setup content is based on dashboard/pages/local_run.py","Scroll inside the final card to reveal the owner report"]}
     </script>
   </div>
 
-  <!-- ===== 13 / CONCLUSION — COMPLETE RESULT ===== -->
-  <div class="slide conclusion-slide" data-slide="12">
+  <!-- ===== 12 / CONCLUSION — COMPLETE RESULT ===== -->
+  <div class="slide conclusion-slide" data-slide="11">
     <div class="glow-blob glow-blue" style="bottom:-130px;right:-90px;"></div>
     <p class="slide-tag anim-1">Conclusion</p>
     <h2 class="anim-2">From OBD-II data to <span class="blue">guidance an owner can act on.</span></h2>
@@ -2729,43 +2879,37 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
       <div class="closing-flow-node stag-1">
         <div class="closing-flow-index">01 · INPUT</div>
         <strong>Raw OBD-II readings</strong>
-        <span>Recorded vehicle behaviour</span>
       </div>
       <div class="closing-flow-arrow">&rarr;</div>
       <div class="closing-flow-node stag-2">
         <div class="closing-flow-index">02 · DATA</div>
         <strong>Clean, contextualised data</strong>
-        <span>Comparable trips and fault evidence</span>
       </div>
       <div class="closing-flow-arrow">&rarr;</div>
       <div class="closing-flow-node stag-3">
         <div class="closing-flow-index">03 · MODEL</div>
         <strong>Early risk evidence</strong>
-        <span>Unexpected change and likely system</span>
       </div>
       <div class="closing-flow-arrow">&rarr;</div>
       <div class="closing-flow-node stag-4">
         <div class="closing-flow-index">04 · REPORT</div>
         <strong>Grounded explanation</strong>
-        <span>Meaning, uncertainty and safe action</span>
       </div>
       <div class="closing-flow-arrow">&rarr;</div>
       <div class="closing-flow-node stag-5">
         <div class="closing-flow-index">05 · OWNER</div>
         <strong>Visible action</strong>
-        <span>A warning the owner can understand</span>
       </div>
     </div>
 
     <div class="closing-result anim-4">We built and ran the complete pipeline on the available Seat Leon dataset.</div>
-    <div class="closing-scope anim-5">One vehicle dataset · one complete owner journey · clearly bounded evidence</div>
     <script type="application/json" class="slide-notes">
     {"title":"Conclusion — Complete Result","script":"We can now see the complete result. Raw OBD-II readings become clean, contextualised data. The model turns unexpected behaviour into early risk evidence. The report grounds that evidence in verified knowledge, and the dashboard makes it visible and actionable. We built and ran this complete pipeline on the Seat Leon dataset available to us.","notes":["Point across the completed flow from left to right","Emphasise that the full pipeline runs end to end","Keep the scope explicit: the demonstrated result is bounded to the available Seat Leon dataset"]}
     </script>
   </div>
 
-  <!-- ===== 14 / CONCLUSION — EVIDENCE BOUNDARY ===== -->
-  <div class="slide conclusion-slide" data-slide="13">
+  <!-- ===== 13 / CONCLUSION — EVIDENCE BOUNDARY ===== -->
+  <div class="slide conclusion-slide" data-slide="12">
     <div class="glow-blob glow-orange" style="top:-120px;right:-80px;"></div>
     <p class="slide-tag anim-1">Conclusion</p>
     <h2 class="anim-2">What have we demonstrated&mdash;and <span class="blue">what remains unproven?</span></h2>
@@ -2773,17 +2917,17 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
     <div class="evidence-boundary anim-3">
       <section class="evidence-column proven">
         <div class="evidence-label">DEMONSTRATED</div>
-        <div class="evidence-row"><div class="evidence-mark">&check;</div><div><strong>The complete pipeline runs</strong><span>Recorded OBD-II data reaches an owner-facing report and dashboard.</span></div></div>
-        <div class="evidence-row"><div class="evidence-mark">&check;</div><div><strong>Healthy history establishes context</strong><span>Normal driving behaviour provides a baseline for comparison.</span></div></div>
-        <div class="evidence-row"><div class="evidence-mark">&check;</div><div><strong>Unexpected change becomes guidance</strong><span>Risk evidence is paired with verified knowledge and cautious action.</span></div></div>
-        <div class="evidence-row"><div class="evidence-mark">&check;</div><div><strong>Uncertainty remains visible</strong><span>The system omits unsupported projections and avoids confirmed diagnoses.</span></div></div>
+        <div class="evidence-row"><div class="evidence-mark">&check;</div><div><strong>The complete pipeline runs</strong></div></div>
+        <div class="evidence-row"><div class="evidence-mark">&check;</div><div><strong>Healthy history establishes context</strong></div></div>
+        <div class="evidence-row"><div class="evidence-mark">&check;</div><div><strong>Unexpected change becomes guidance</strong></div></div>
+        <div class="evidence-row"><div class="evidence-mark">&check;</div><div><strong>Uncertainty remains visible</strong></div></div>
       </section>
       <section class="evidence-column open">
         <div class="evidence-label">NOT YET DEMONSTRATED</div>
-        <div class="evidence-row"><div class="evidence-mark">?</div><div><strong>Confirmed mechanical failures</strong><span>The dataset contains no broken-car examples with verified repair outcomes.</span></div></div>
-        <div class="evidence-row"><div class="evidence-mark">?</div><div><strong>How early a real fault appears</strong><span>Real failure time and lead time remain unavailable.</span></div></div>
-        <div class="evidence-row"><div class="evidence-mark">?</div><div><strong>Other vehicles and models</strong><span>Generalisation requires new data and recalibration.</span></div></div>
-        <div class="evidence-row"><div class="evidence-mark">?</div><div><strong>Impact on owner decisions</strong><span>Real-world usability and maintenance outcomes still need study.</span></div></div>
+        <div class="evidence-row"><div class="evidence-mark">?</div><div><strong>Confirmed mechanical failures</strong></div></div>
+        <div class="evidence-row"><div class="evidence-mark">?</div><div><strong>How early a real fault appears</strong></div></div>
+        <div class="evidence-row"><div class="evidence-mark">?</div><div><strong>Other vehicles and models</strong></div></div>
+        <div class="evidence-row"><div class="evidence-mark">?</div><div><strong>Impact on owner decisions</strong></div></div>
       </section>
     </div>
 
@@ -2793,8 +2937,8 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
     </script>
   </div>
 
-  <!-- ===== 15 / CONCLUSION — FUTURE WORK ===== -->
-  <div class="slide conclusion-slide" data-slide="14">
+  <!-- ===== 14 / CONCLUSION — FUTURE WORK ===== -->
+  <div class="slide conclusion-slide" data-slide="13">
     <div class="glow-blob glow-blue" style="bottom:-150px;left:-100px;"></div>
     <p class="slide-tag anim-1">Future work</p>
     <h2 class="anim-2">How do we move from <span class="blue">one vehicle dataset</span> to broader use?</h2>
@@ -2803,29 +2947,21 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
       <article class="future-step current">
         <div class="future-number">01 · DEEPEN</div>
         <strong>More data from this vehicle</strong>
-        <span>Extend its healthy history and add trips linked to verified maintenance outcomes.</span>
       </article>
       <div class="future-arrow">&rarr;</div>
       <article class="future-step">
         <div class="future-number">02 · EXPAND</div>
         <strong>Recognise and explain more changes</strong>
-        <span>Detection and explanation must grow together.</span>
-        <div class="future-pair">
-          <span>More anomaly types</span>
-          <span>More verified knowledge</span>
-        </div>
       </article>
       <div class="future-arrow">&rarr;</div>
       <article class="future-step">
         <div class="future-number">03 · VALIDATE</div>
         <strong>More vehicles of the same model</strong>
-        <span>Test whether the baseline and rules transfer across comparable Seat Leon vehicles.</span>
       </article>
       <div class="future-arrow">&rarr;</div>
       <article class="future-step generalise">
         <div class="future-number">04 · GENERALISE</div>
         <strong>Other vehicle models</strong>
-        <span>Recalibrate, evaluate and expand only after same-model validation.</span>
       </article>
     </div>
 
@@ -4306,6 +4442,8 @@ function goTo(index) {
   if (current === 1) resetStory();
   if (current === 4) resetC1();
   if (current === 6) resetModel();
+  if (current === 8) resetReport();
+  if (current === 10) resetDemo();
 }
 
 function next() { goTo(current + 1); }
@@ -4594,15 +4732,26 @@ function resetReport() {
    Independent of the deck's slide navigation.
    =========================================== */
 let demoStep = 0;
-const demoPanelCount = 3;
+const demoPanelCount = 4;
 function setDemoStep(n) {
-  demoStep = n;
+  demoStep = Math.max(0, Math.min(demoPanelCount - 1, n));
   for (let i = 0; i < demoPanelCount; i++) {
-    document.getElementById('demoPanel' + i).classList.toggle('active', i === n);
-    document.getElementById('demoDot' + i).classList.toggle('active', i === n);
+    document.getElementById('demoPanel' + i).classList.toggle('active', i === demoStep);
   }
+  document.querySelectorAll('[data-demo-dot]').forEach((d, i) => {
+    d.classList.toggle('on', i <= demoStep);
+    d.classList.toggle('active', i === demoStep);
+  });
+  const demoBackBtn = document.getElementById('demoBackBtn');
+  const demoNextBtn = document.getElementById('demoNextBtn');
+  if (demoBackBtn) demoBackBtn.disabled = demoStep === 0;
+  if (demoNextBtn) demoNextBtn.textContent = demoStep === demoPanelCount - 1 ? '↻ Restart' : 'Next →';
 }
 function nextDemoStep() { setDemoStep((demoStep + 1) % demoPanelCount); }
+function demoPrev() {
+  if (demoStep > 0) setDemoStep(demoStep - 1);
+}
+function resetDemo() { setDemoStep(0); }
 
 /* ===========================================
    BACKUP SLIDES (Q&A reference overlay)
