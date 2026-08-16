@@ -1197,7 +1197,8 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .threshold-chart svg { width:100%; height:245px; display:block; overflow:visible; }
 .threshold-key { display:grid; gap:10px; align-content:center; }
 .threshold-note { padding:17px 16px; border-left:3px solid var(--accent-red); background:rgba(218,30,40,.05); font-size:13.5px; line-height:1.45; }
-.threshold-note.good { border-left-color:var(--accent-blue); background:rgba(15,98,254,.05); }
+.threshold-note.mu { border-left-color:var(--accent-blue); background:rgba(15,98,254,.05); }
+.threshold-note.pmu { border-left-color:var(--accent-green); background:rgba(36,161,72,.05); }
 .threshold-note strong { display:block; margin-bottom:4px; font-size:15px; }
 .p0217-example-note { padding:14px 16px; border:1.5px solid rgba(15,98,254,.32); border-radius:11px; background:var(--bg-card); }
 .p0217-example-note .code { display:block; color:var(--accent-blue); font:700 18px/1 var(--font-mono); margin-bottom:7px; }
@@ -1922,8 +1923,8 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
         </div>
         <div class="data-fit">
           <div class="data-fit-title">Why this dataset?</div>
-          <div class="data-fit-row"><strong>Matches the owner use case</strong></div>
-          <div class="data-fit-row"><strong>Captures behaviour over time</strong></div>
+          <div class="data-fit-row"><strong>Single vehicle — comparable across trips</strong></div>
+          <div class="data-fit-row"><strong>Enough continuous driving history</strong></div>
           <div class="data-fit-row"><strong>Establishes a normal baseline</strong></div>
         </div>
       </div>
@@ -2200,8 +2201,8 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
       <div class="artifact-flow handoff">
         <div class="artifact-card handoff-input">
           <div class="artifact-label"><span>Challenge 1 input</span><span>Raw CSV</span></div>
-          <div class="artifact-file">2017-07-05_Seat_Leon_RT_S_Stau.csv</div>
-          <div class="artifact-code">coolant <b>31°C</b> · MAP <b>96 kPa</b> · RPM <b>0</b><br><br>Sparse readings<br>No operating context<br>No fault labels</div>
+          <div class="artifact-file">2018-02-28_Seat_Leon_S_RT_Normal.csv</div>
+          <div class="artifact-code">coolant <b>85°C</b> · MAP <b>96 kPa</b> · RPM <b>0</b><br><br>Sparse readings<br>No operating context<br>No fault labels</div>
         </div>
         <div class="artifact-transform"><span>→</span><strong>DATA<br>LAYER</strong></div>
         <div class="artifact-card light handoff-output">
@@ -2209,8 +2210,10 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
             <div class="handoff-identity"><span class="identity-now">Data output</span><span class="identity-next">Model input</span></div>
             <span>46 columns</span>
           </div>
-          <div class="artifact-file">production_features.csv</div>
-          <div class="artifact-code"><b>trip_0061 · segment 001 · row 2739</b><br>operating_state <b>engine_off</b><br>coolant_temp <b>85°C</b> · MAP <b>96 kPa</b><br>accel_pedal_mean <b>14.3%</b><br>schema <b>feature_schema.v1</b></div>
+          <div class="artifact-file">production_features.csv · 46 cols</div>
+          <div class="artifact-code"><b>trip_0061 · row 2739</b><br>operating_state <b>engine_off</b><br>coolant_temp <b>85°C</b> · schema <b>feature_schema.v1</b></div>
+          <div class="artifact-file" style="margin-top:8px;">proxy_decisions.csv · fault evidence</div>
+          <div class="artifact-code">proxy · sub_check · result · DTC · emitted</div>
         </div>
       </div>
       <div class="pipeline-question">Without faulty training examples, how could we know that drift meant risk?</div>
@@ -4067,13 +4070,13 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
     <div class="ch-stage-wrap" id="c1StageWrap">
       <div class="ch-stage" data-ch-stage="2">
         <div class="data-pipeline-overview">
-          <div class="data-pipeline-node"><span>01 · Clean + align</span><strong>Comparable seconds</strong><small>Resample · missing values · suspicious values</small></div>
+          <div class="data-pipeline-node"><strong>1. Data cleaning</strong><small>Resample · missing values · suspicious values</small></div>
           <div class="data-pipeline-arrow">→</div>
-          <div class="data-pipeline-node state-node"><span>02 · Add context</span><strong>Dual state machine</strong><div class="pipeline-state-row"><b>Thermal</b> off · warm-up · post-warm-up</div><div class="pipeline-state-row"><b>Driving</b> idle · steady · acceleration · deceleration · high load</div></div>
+          <div class="data-pipeline-node state-node"><strong>2. Operating Condition Analysis</strong><div class="pipeline-state-row"><b>Thermal</b> off · warm-up · post-warm-up</div><div class="pipeline-state-row"><b>Driving</b> idle · steady · acceleration · deceleration · high load</div></div>
           <div class="data-pipeline-arrow">→</div>
-          <div class="data-pipeline-node"><span>03 · Engineer features</span><strong>46-column contract</strong><small>Clean signals + context + reusable behaviour</small></div>
+          <div class="data-pipeline-node"><strong>3. Feature Engineering</strong><small>Clean signals + context + reusable behaviour</small></div>
           <div class="data-pipeline-arrow">→</div>
-          <div class="data-pipeline-node output-node"><span>04 · Apply proxies</span><strong>Traceable decisions</strong><small>proxy_decisions.csv</small></div>
+          <div class="data-pipeline-node output-node"><strong>4. Proxy failure diagnosis</strong><small>evidence + decision</small></div>
         </div>
         <div class="data-stage-question">We turn raw trips into evidence in four auditable stages.</div>
         <p class="ch-source">Source · scripts 00–70 · production_features.csv · proxy_decisions.csv</p>
@@ -4102,28 +4105,30 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
       <div class="ch-stage" data-ch-stage="1">
         <div class="threshold-visual">
           <div class="threshold-chart">
-            <div class="wc-title">One threshold cannot describe two healthy states</div>
+            <div class="wc-title">Example Threshold: coolant temperature</div>
             <svg viewBox="0 0 620 220" preserveAspectRatio="none" aria-label="Coolant trace showing why a global threshold falsely flags normal warm-up">
               <rect x="38" y="75" width="205" height="107" rx="7" fill="rgba(36,161,72,.09)"/>
-              <rect x="243" y="22" width="337" height="33" rx="7" fill="rgba(15,98,254,.08)"/>
+              <rect x="243" y="22" width="337" height="55" rx="7" fill="rgba(15,98,254,.08)"/>
               <line x1="38" y1="182" x2="588" y2="182" stroke="#b8b8bd"/>
               <line x1="38" y1="22" x2="38" y2="182" stroke="#b8b8bd"/>
               <line x1="38" y1="57" x2="588" y2="57" stroke="#da1e28" stroke-width="2" stroke-dasharray="7 6"/>
               <line x1="243" y1="22" x2="243" y2="182" stroke="#0f62fe" stroke-dasharray="4 4"/>
-              <polyline points="38,166 70,158 100,146 132,128 165,106 198,86 230,69 263,55 300,44 340,39 382,37 425,38 468,35 512,37 555,34 588,35" fill="none" stroke="#0f62fe" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="243" cy="60" r="6" fill="#24a148"/>
-              <text x="257" y="88" font-family="IBM Plex Mono" font-size="11" fill="#198038">80°C · meaning changes with context</text>
+              <polyline points="38,182 70,168 100,156 142,138 165,122 198,106 230,90 243,76 300,44 340,39 382,37 425,38 468,35 512,37 555,34 588,35" fill="none" stroke="#0f62fe" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="243" cy="76" r="6" fill="#24a148"/>
+              <text x="257" y="88" font-family="IBM Plex Mono" font-size="11" fill="#198038">75°C · Operation condition boundary</text>
               <text x="70" y="207" font-family="IBM Plex Mono" font-size="11" fill="#198038">WARM-UP · HEALTHY RANGE</text>
               <text x="344" y="207" font-family="IBM Plex Mono" font-size="11" fill="#0f62fe">POST-WARM-UP · HEALTHY RANGE</text>
-              <text x="390" y="51" font-family="IBM Plex Mono" font-size="10" fill="#a2191f">GLOBAL MEAN ≈81°C</text>
-              <text x="8" y="170" font-family="IBM Plex Mono" font-size="10" fill="#6e6e73">31°</text>
-              <text x="8" y="61" font-family="IBM Plex Mono" font-size="10" fill="#6e6e73">81°</text>
-              <text x="8" y="40" font-family="IBM Plex Mono" font-size="10" fill="#6e6e73">95°</text>
+              <text x="390" y="51" font-family="IBM Plex Mono" font-size="10" fill="#a2191f">GLOBAL MEAN ≈82°C</text>
+              <text x="8" y="185" font-family="IBM Plex Mono" font-size="10" fill="#6e6e73">0°</text>
+              <text x="8" y="82" font-family="IBM Plex Mono" font-size="10" fill="#6e6e73">75°</text>
+              <text x="8" y="61" font-family="IBM Plex Mono" font-size="10" fill="#6e6e73">82°</text>
+              <text x="8" y="30" font-family="IBM Plex Mono" font-size="10" fill="#6e6e73">95°</text>
             </svg>
           </div>
           <div class="threshold-key">
-            <div class="threshold-note"><strong>≈81°C · global mean</strong>One line ignores whether the engine is warming up or already stable.</div>
-            <div class="threshold-note good"><strong>Context first</strong>Warm-up mean ≈49°C. Post-warm-up mean ≈89.7°C.</div>
+            <div class="threshold-note"><strong>global mean ≈82°C</strong></div>
+            <div class="threshold-note mu"><strong>Warm-up mean ≈49°C</strong></div>
+            <div class="threshold-note pmu"><strong>Post-warm-up mean ≈89.7°C</strong></div>
           </div>
         </div>
         <div class="data-stage-question">The same reading means something different in a different state.</div>
@@ -4152,14 +4157,14 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
         <div class="success-pipeline">
           <div class="success-node">
             <div class="mini">Input</div>
-            <strong>Coolant evidence</strong>
-            <span>engine on · post-warm-up · valid signals</span>
+            <strong>Coolant signal + context</strong>
+            <span>coolant temp · operating state · quality flags</span>
           </div>
           <div class="success-arrow"></div>
           <div class="success-node">
             <div class="mini">Eligibility</div>
-            <strong>Enough usable data?</strong>
-            <span>continuous eligible window</span>
+            <strong>Can rule run here?</strong>
+            <span>right state · valid signals · evaluable window</span>
             <div class="node-exit">No → <b>not_evaluable</b></div>
           </div>
           <div class="success-arrow"></div>
