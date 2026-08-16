@@ -23,6 +23,16 @@ Rules:
   signal direction and risk context.
 - Use retrieved fault knowledge as supporting background, but ignore passages
   that conflict with the Input context or Interpretation Caution.
+- When retrieved fault knowledge contains relevant diagnostic background, make
+  its grounding visible in one owner-facing sentence. Use wording like:
+  "The diagnostic knowledge base narrows this to ..." or
+  "The knowledge-guided boundary is ...".
+- That grounding sentence must explain what the retrieved knowledge rules in
+  and what it rules out. For example, if the current evidence is mixed, say
+  that it supports cautious checks rather than confirming a specific failure.
+- If retrieved fault knowledge says no knowledge was available or no specific
+  knowledge was found, do not mention the knowledge base; rely only on the
+  Input context.
 - Connect each retained cause to the observed pattern. Do not copy a long list
   of generic workshop faults.
 - If displayed key signals are mostly NORMAL or evidence is rule-based proxy
@@ -37,6 +47,8 @@ Rules:
   in the Input context.
 - Model Layer Notes are provenance or data-quality information, not mechanical
   causes.
+- Do not invent a cause only to make the explanation sound complete. Prefer a
+  clear diagnostic boundary over a confident but unsupported cause.
 - Do not show internal filenames, raw diagnostic codes or unexplained raw
   fields. Explain a necessary acronym in the same sentence.
 - Use one concise paragraph in calm, plain language.

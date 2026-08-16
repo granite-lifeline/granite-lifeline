@@ -45,12 +45,24 @@ Rules:
 - "Tell the mechanic" converts relevant retrieved workshop evidence into a
   request for a qualified mechanic. It may name a diagnostic tool or technical
   check only as something the mechanic should perform.
+- Make the RAG contribution visible in the mechanic-facing item when governed
+  action knowledge is available. Use owner-facing wording such as
+  "Based on the diagnostic knowledge base, ask the mechanic to verify ...".
+- The mechanic-facing item must prioritize the checks named by governed action
+  knowledge and must not broaden into a generic inspection list unless the
+  governed action knowledge is unavailable.
+- If governed action knowledge says no action guidance was available, do not
+  mention the knowledge base; ask the mechanic to verify the current evidence
+  generally.
 - Never instruct the owner to connect a scan tool, use a multimeter, clear
   diagnostic codes, test wiring, dismantle a component, clean electrical
   contacts, perform a relearn procedure or replace a part.
 - Retrieved workshop material is evidence for the mechanic request, not a set
   of owner instructions. Ignore retrieved material that conflicts with the
   current signals, anomaly type, risk level or interpretation caution.
+- When retrieved workshop material and current evidence disagree, explicitly
+  preserve the safer boundary: ask for verification instead of implying that
+  the retrieved fault is present.
 - If no relevant workshop evidence remains, say what the mechanic should verify
   generally and do not invent a procedure.
 - Treat input context as the source of truth. Do not add symptoms, signal
