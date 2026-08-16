@@ -10,7 +10,8 @@ from dashboard.data_loader import (
     load_report_data,
     convert_to_component_dict,
     load_static_dashboard_data,
-    load_dashboard_data
+    load_dashboard_data,
+    load_model_output_for_dashboard,
 )
 
 
@@ -41,6 +42,102 @@ def test_load_static_dashboard_data():
     assert set(data["_data_source"].values()) == {"mock"}
     assert "intake_air_temperature_sensor_fault" in component_data
     assert "map_load_signal_plausibility_fault" in component_data
+
+
+def test_batch_model_output_keeps_each_affected_component(monkeypatch):
+    """Dashboard input keeps every Medium/High component from batch output."""
+    calls = []
+
+    def make_model_piece(component, score, level, timestamp):
+        return {
+            "timestamp": timestamp,
+            "anomaly_type": component,
+            "risk_score": score,
+            "risk_level": level,
+            "component": component,
+            "prediction_confidence": 0.8,
+            "key_signals": [
+                {
+                    "feature": "coolant_temp",
+                    "value": 100.0,
+                    "unit": "°C",
+                    "reference_range": [90.0, 95.0],
+                },
+            ],
+            "estimated_cycles_to_failure": None,
+            "estimated_failure_probability": None,
+            "notes": [],
+        }
+
+    def fake_generate_report(model_output, risk_history=None):
+        calls.append((model_output["component"], risk_history))
+        return {
+            **model_output,
+            "risk_history": risk_history,
+            "anomaly_description": "some issue",
+            "possible_cause": "some cause",
+            "recommended_action": ["check soon"],
+        }
+
+    import report_layer.pipeline.report_generator as report_generator
+
+    monkeypatch.setattr(
+        report_generator,
+        "generate_report",
+        fake_generate_report,
+    )
+
+    cooling = make_model_piece(
+        "cooling_degradation", 0.91, "High", "2026-01-01T10:00:00Z"
+    )
+    air_secondary = make_model_piece(
+        "air_intake_maf_anomaly", 0.71, "Medium", "2026-01-01T10:00:00Z"
+    )
+    air_primary = make_model_piece(
+        "air_intake_maf_anomaly", 0.86, "Medium", "2026-01-01T10:10:00Z"
+    )
+    pedal_low = make_model_piece(
+        "accelerator_pedal_sensor", 0.2, "Low", "2026-01-01T10:10:00Z"
+    )
+    cooling["secondary_risk"] = air_secondary
+    air_primary["secondary_risk"] = pedal_low
+
+    data = load_model_output_for_dashboard(
+        {
+            "summary": cooling,
+            "windows": [
+                {
+                    "trip_id": "trip_0001",
+                    "segment_id": "trip_0001_seg_001",
+                    "window_id": "trip_0001_seg_001__w000",
+                    **cooling,
+                },
+                {
+                    "trip_id": "trip_0001",
+                    "segment_id": "trip_0001_seg_001",
+                    "window_id": "trip_0001_seg_001__w001",
+                    **air_primary,
+                },
+            ],
+        },
+        source="uploaded",
+    )
+
+    assert set(k for k in data if k != "_data_source") == {
+        "cooling_degradation",
+        "air_intake_maf_anomaly",
+    }
+    assert data["air_intake_maf_anomaly"]["risk_score"] == 0.86
+    assert data["_data_source"] == {
+        "cooling_degradation": "uploaded",
+        "air_intake_maf_anomaly": "uploaded",
+    }
+    assert [component for component, _ in calls] == [
+        "cooling_degradation",
+        "air_intake_maf_anomaly",
+    ]
+    air_history = data["air_intake_maf_anomaly"]["risk_history"]
+    assert [entry["risk_score"] for entry in air_history] == [0.71, 0.86]
 
 
 def test_load_report_data_file_not_found():
