@@ -153,12 +153,12 @@
       }
     ],
     "anomaly_description": "The cooling system shows high risk due to a coolant temperature that is lower than expected while rising unusually quickly. This pattern suggests potential issues with the cooling system and requires prompt professional verification.",
-    "possible_cause": "The cooling system may indicate issues such as a malfunctioning thermostat that fails to open at the proper temperature, leading to lower coolant temperatures and rapid rises. Alternatively, reduced coolant flow due to a partially blocked radiator or a failing water pump could cause similar readings. These scenarios suggest potential overheating risks and warrant professional inspection.",
+    "possible_cause": "The cooling system may indicate a problem where the coolant temperature is unexpectedly low while rising rapidly. This pattern could suggest issues such as insufficient coolant flow, a malfunctioning thermostat that isn’t opening properly, or an obstruction in the cooling passages. However, without specific fault knowledge tied to this exact signal combination, these are only possible explanations and require professional verification.",
     "recommended_action": [
       "Now: Monitor your vehicle's temperature gauge while driving; note any unusual readings.",
       "Service timing: Prompt professional inspection due to high risk of cooling system degradation.",
       "Stop driving and seek help if: You observe the engine overheating, a coolant leak, or the temperature gauge moving into the red zone.",
-      "Tell the mechanic: Verify the thermostat operation, check for radiator blockage, and assess water pump functionality to diagnose the cooling system issue."
+      "Tell the mechanic: Verify the abnormal coolant temperature rise rate and inspect for issues such as insufficient coolant flow, a malfunctioning thermostat, or obstructions in the cooling passages."
     ]
   },
   {
@@ -314,12 +314,12 @@
       }
     ],
     "anomaly_description": "The mass airflow (MAF) sensor indicates a medium risk issue. One internal consistency signal is higher than expected, suggesting monitoring and possible professional inspection soon.",
-    "possible_cause": "The medium-risk MAF sensor issue may indicate an internal consistency problem with the airflow consistency reading signal. This could suggest a calibration drift or minor electronic glitch in the mass airflow measurement, but without specific fault knowledge, the exact cause remains uncertain and would benefit from professional inspection.",
+    "possible_cause": "The medium-risk MAF (Mass Airflow) sensor anomaly is indicated by an abnormal airflow consistency reading signal, suggesting a possible internal calibration drift or sensor aging. While the overall mass airflow and manifold air pressure readings are within normal ranges, the residual discrepancy points to a subtle inconsistency in how the engine control module interprets the airflow data versus its speed-density estimation. This could mean the sensor is still functional but providing slightly skewed readings, which may not yet cause drivability issues but warrants monitoring. Without specific fault knowledge for this exact pattern, the situation remains uncertain and would benefit from a professional inspection to confirm whether the sensor needs recalibration or replacement.",
     "recommended_action": [
-      "Now: Monitor your vehicle's performance during normal drives, paying attention to any unusual noises or changes in acceleration.",
-      "Service timing: Inspection soon - schedule a professional inspection soon to evaluate the mass airflow sensor.",
-      "Stop driving and seek help if: You notice a sudden loss of power, rough idling, or an illuminated warning light related to engine performance.",
-      "Tell the mechanic: Verify the internal consistency signal for the mass airflow (MAF) sensor, focusing on the airflow consistency reading reading, and assess whether recalibration or further diagnostic testing is needed."
+      "Now: Monitor your vehicle's performance during normal drives, paying attention to any unusual changes in acceleration or engine behavior.",
+      "Service timing: Inspection soon – schedule a professional inspection soon to evaluate the mass airflow sensor.",
+      "Stop driving and seek help if: You notice a sudden loss of power, rough idling, stalling, or any warning lights illuminate on your dashboard while driving.",
+      "Tell the mechanic: Verify the internal consistency signal for the mass airflow (MAF) sensor, specifically checking the airflow consistency reading reading, to determine if recalibration or replacement is needed."
     ]
   }
 ]

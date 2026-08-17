@@ -302,10 +302,18 @@ def validate_layer2(output: str, layer1_output: str) -> ValidationResult:
         )
         score -= 0.2
 
+    # Raised from 70: layer2_cause.txt now asks for reasoning tied to
+    # specific signal values (not just a component name) and for naming
+    # more than one cause when the evidence supports it, which
+    # legitimately needs more room than a single terse sentence. The old
+    # 70-word cap combined with this check's -0.4 penalty meant a single
+    # violation alone dropped the score below VALIDATOR_SCORE_THRESHOLD
+    # every time, triggering a correction that pushed length back down —
+    # actively fighting the richer explanation the prompt now asks for.
     word_count = len(output.split())
-    if word_count > 70:
+    if word_count > 130:
         warnings.append(
-            f"Output is too long: {word_count} words (maximum 70)"
+            f"Output is too long: {word_count} words (maximum 130)"
         )
         score -= 0.4
 

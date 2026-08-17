@@ -34,6 +34,11 @@ Rules:
   cause. State plainly that the data pattern cannot identify a specific cause.
 - Connect each retained cause to the observed pattern. Do not copy a long list
   of generic workshop faults.
+- For each retained cause, briefly explain why the specific signal values or
+  their direction — not just the component name — make that cause plausible;
+  this reasoning should not be producible from the component name alone. If
+  more than one retrieved cause is similarly well-supported by the pattern,
+  name more than one rather than arbitrarily narrowing to a single cause.
 - If displayed key signals are mostly NORMAL or evidence is rule-based proxy
   evidence, explain that the cause remains uncertain and needs professional
   verification.
@@ -50,7 +55,10 @@ Rules:
   clear diagnostic boundary over a confident but unsupported cause.
 - Do not show internal filenames, raw diagnostic codes or unexplained raw
   fields. Explain a necessary acronym in the same sentence.
-- Use one concise paragraph of no more than 70 words in calm, plain language.
+- Use plain, calm language and avoid unnecessary repetition. Prioritize a
+  complete, easy-to-understand explanation over strict brevity — typically
+  2 to 4 sentences, or more if you are naming more than one well-supported
+  cause. Do not pad with filler just to reach a length.
 
 Output format rules:
 - Return exactly one valid JSON object.

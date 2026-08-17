@@ -269,7 +269,7 @@ class TestValidateLayer2:
         assert not any("hedging" in w.lower() for w in result.warnings)
 
     def test_overlong_cause_is_flagged(self):
-        text = "This may indicate " + " ".join(["detail"] * 70)
+        text = "This may indicate " + " ".join(["detail"] * 130)
         result = validate_layer2(text, GOOD_LAYER1)
         assert any("too long" in w for w in result.warnings)
 

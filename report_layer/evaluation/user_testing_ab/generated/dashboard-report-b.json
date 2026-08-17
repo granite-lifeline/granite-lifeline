@@ -153,12 +153,12 @@
       }
     ],
     "anomaly_description": "The cooling system shows high risk due to a coolant temperature that is lower than expected while rising unusually quickly. This pattern suggests potential issues with the cooling system and requires prompt professional verification.",
-    "possible_cause": "The coolant temperature being lower than expected while rising quickly may indicate a thermostat stuck closed, preventing proper coolant flow, or a malfunctioning water pump that isn't circulating coolant efficiently. Both issues could cause the observed pattern and require professional inspection.",
+    "possible_cause": "The coolant temperature being lower than expected while rising unusually quickly may indicate that the thermostat is stuck closed, preventing proper coolant flow and causing the engine to overheat despite a low reading. Another possibility is insufficient coolant level or contamination, which can impede heat exchange and lead to rapid temperature increases. Both scenarios align with the observed abnormal temperature rise rate and warrant professional inspection.",
     "recommended_action": [
-      "Now: Monitor the temperature gauge while driving; note any increase in coolant temperature.",
-      "Service timing: Prompt professional inspection due to High risk.",
-      "Stop driving and seek help if: You observe a red temperature warning light, steam coming from under the hood, or the engine suddenly loses power.",
-      "Tell the mechanic: Check the thermostat for being stuck closed and verify water pump operation by measuring temperatures in front of and behind the thermostat; also inspect coolant flow through the pump wheel."
+      "Now: Monitor the temperature gauge while driving; note any increase in coolant temperature or warning lights.",
+      "Service timing: Prompt professional inspection due to High risk of cooling system degradation.",
+      "Stop driving and seek help if: You observe a red temperature warning light, steam coming from under the hood, sudden loss of power, or the engine feels unusually hot to touch.",
+      "Tell the mechanic: Check the thermostat operation by measuring coolant temperatures before and after it; verify pump wheel tightness on the drive shaft."
     ]
   },
   {
@@ -314,12 +314,12 @@
       }
     ],
     "anomaly_description": "The mass airflow (MAF) sensor indicates a medium risk issue. One internal consistency signal is higher than expected, suggesting monitoring and possible professional inspection soon.",
-    "possible_cause": "The MAF sensor issue may suggest contamination (oil, dirt, pollen), wiring problems, aging, or moisture causing inaccurate airflow readings, potentially affecting engine performance.",
+    "possible_cause": "The abnormal airflow consistency reading suggests the mass airflow (MAF) sensor may have an internal calibration drift, possibly due to contamination from oil, dirt, or pollen—commonly caused by re-oiled aftermarket air filters—or minor wiring issues at its connector. These factors can distort the real-time air measurement, leading to inconsistent readings across engine RPM ranges and triggering the observed medium-risk anomaly.",
     "recommended_action": [
-      "Now: Pay attention to any unusual engine noises, hesitation during acceleration, or a decrease in fuel efficiency while driving.",
-      "Service timing: Schedule an inspection with a professional mechanic soon to evaluate the air intake MAF sensor and related components.",
-      "Stop driving and seek help if: You notice the vehicle stalling, running roughly, losing power unexpectedly, or displaying any warning lights on the dashboard that indicate engine trouble.",
-      "Tell the mechanic: Check the wiring and connectors for the mass airflow (MAF) sensor for damage or corrosion, and verify the air filter has not contaminated the sensor. Ensure the MAF sensor readings are accurate across the engine's RPM range."
+      "Now: Pay attention to any unusual engine idle behavior, hesitation during acceleration, or a noticeable drop in power while driving.",
+      "Service timing: Schedule an inspection soon with a qualified mechanic to evaluate the mass airflow (MAF) sensor and related components.",
+      "Stop driving and seek help if: You observe the check engine light illuminate, experience sudden loss of power, or notice rough running that makes continued driving unsafe.",
+      "Tell the mechanic: Check the air filter for contamination and inspect the wiring/connectors to the MAF sensor for damage or corrosion; verify the sensor's calibration accuracy across RPM ranges."
     ]
   }
 ]
