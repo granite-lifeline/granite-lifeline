@@ -12,6 +12,7 @@ from dashboard.export_helper import (
     DEFAULT_EXPORT_SECTIONS,
     NOT_AVAILABLE,
     PDF_TITLE,
+    _add_risk_trend_panel,
     _get_pdf_styles,
     _get_reportlab_tools,
     build_csv_file_name,
@@ -269,7 +270,7 @@ def test_build_diagnostic_pdf_bytes_contains_key_report_text():
 
     assert PDF_TITLE in text
     assert "Cooling System" in text
-    assert "86%" in text
+    assert "88%" in text
     assert "High" in text
     assert "Coolant Temperature" in text
     assert "Coolant temperature is high." in text
@@ -281,6 +282,32 @@ def test_build_diagnostic_pdf_bytes_accepts_section_filter():
         _sample_component(),
         selected_sections=["summary", "key_signals"],
     )
+
+    assert pdf_bytes.startswith(b"%PDF")
+    assert len(pdf_bytes) > 1000
+
+
+def test_risk_trend_panel_falls_back_with_insufficient_history():
+    """Fewer than 2 risk_history points can't draw a trend line."""
+    tools = _get_reportlab_tools()
+    styles = _get_pdf_styles(tools)
+
+    one_point = [{"timestamp": "2026-06-16T12:00:00Z", "risk_score": 0.5}]
+    for rows in ([], one_point):
+        panel = _add_risk_trend_panel(tools, styles, rows)
+        assert len(panel) >= 1
+
+
+def test_build_diagnostic_pdf_bytes_renders_risk_trend_chart():
+    """PDF export builds successfully with a real multi-point history."""
+    component = _sample_component()
+    component["risk_history"] = [
+        {"timestamp": "2026-06-16T08:00:00Z", "risk_score": 0.2},
+        {"timestamp": "2026-06-16T09:00:00Z", "risk_score": 0.45},
+        {"timestamp": "2026-06-16T10:00:00Z", "risk_score": 0.86},
+    ]
+
+    pdf_bytes = build_diagnostic_pdf_bytes(component)
 
     assert pdf_bytes.startswith(b"%PDF")
     assert len(pdf_bytes) > 1000
@@ -305,12 +332,14 @@ def test_pdf_title_is_user_facing():
 
 
 def test_build_export_data_default_sections():
-    """Test default helper output has summary, prediction, signals, report."""
+    """Test default helper output has summary, prediction, trend, signals,
+    report."""
     export_data = build_export_data(_sample_component())
 
     assert export_data["sections"] == [
         "summary",
         "failure_prediction",
+        "risk_history",
         "key_signals",
         "diagnostic_report",
     ]
@@ -318,6 +347,7 @@ def test_build_export_data_default_sections():
     assert export_data["summary"]["risk_level"] == "High"
     assert export_data["summary"]["confidence"] == "88%"
     assert "risk_score" not in export_data["summary"]
+    assert export_data["risk_history"] == []
     assert len(export_data["key_signals"]) == 2
     assert (
         export_data["diagnostic_report"]["anomaly_description"]
