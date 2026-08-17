@@ -1,29 +1,29 @@
 # Google Forms Results and Analysis Template
 
-**Version 3.0 — 2026-08-11**  
-**Build represented:** `granite-lifeline` `develop` @ `74e58d0`
+**Version 4.0 — 2026-08-18**
+**Stimulus sources:** entry-flow screens from build `74e58d0`; dashboard-state
+screens and both reports from the Report-layer handoff. Both are recorded in
+`protocol.md` §4, which also carries the image manifest.
 
-**Report-pair status:** no report pair is approved or captured in this version
-
-The two Google Forms response exports are the raw records. Keep one untouched
-copy of each, then combine copies into one working analysis sheet. Never add
-names or emails to either raw or working sheet.
+The Google Forms response export is the raw record. Keep one untouched copy,
+then create a separate working analysis sheet. Never add names or emails to
+either sheet.
 
 The owner-only Google Forms `Responses > Summary` charts may be used for a
 first-pass view of counts and distributions. Do not treat them as the final
 analysis: they include pilot, form-test, non-consent, and other excluded rows,
-and raw Q1--Q8 answer charts do not calculate correctness or the composite
-score. Create reported tables and charts from the linked Google Sheet or CSV
-only after applying the inclusion log and scoring rules below.
+and raw answer charts do not calculate correctness or either composite score.
+Create reported tables and charts from the linked Google Sheet or CSV only after
+applying the inclusion log and scoring rules below.
 
 ## 1. Inclusion log
 
 Assign `P01`, `P02`, … only after exporting valid responses. These are row
 labels, not identifiers supplied by participants.
 
-| response_id | include | exclusion_reason | form_version | build_sha | notes |
-| --- | --- | --- | --- | --- |
-| P01 | Y | | `rag_first` | `74e58d0` | |
+| response_id | include | exclusion_reason | notes |
+| --- | --- | --- | --- |
+| P01 | Y | | |
 
 Allowed exclusion reasons are:
 
@@ -34,7 +34,7 @@ Allowed exclusion reasons are:
 - `other_protocol_deviation` with an explanation in `notes`
 
 Do not exclude a response because its answers are incorrect, unclear, or
-critical of the dashboard.
+critical of the dashboard or a report.
 
 ## 2. Working response schema
 
@@ -46,68 +46,54 @@ traceable.
 | --- | --- |
 | `response_id` | `P01`, `P02`, … |
 | `include` | `Y` or `N` |
-| `form_version` | `rag_first` or `baseline_first` |
-| `build_sha` | `74e58d0` for this capture set |
-| `report_a_condition` | `RAG` or `baseline`, decoded from `form_version` |
-| `report_b_condition` | `RAG` or `baseline`, decoded from `form_version` |
-| `report_source_commit` | Full Report-layer source commit from the capture log |
-| `report_fixture` | Named common model-input fixture from the capture log |
-| `report_rag_pdf_sha256` | SHA-256 recorded in `assets/README.md` |
-| `report_baseline_pdf_sha256` | SHA-256 recorded in `assets/README.md` |
 | `age_band` | Form response |
-| `licence_history` | Form response |
 | `mechanical_knowledge` | Form response |
 | `software_confidence` | Integer 1–5 |
 | `obd_experience` | Form response |
-| `q1_correct` … `q8_correct` | Integer `1` or `0` |
-| `comprehension_total` | Integer 0–8 |
-| `cl1_demo_entry` | Integer 1–5 |
-| `cl2_upload_setup` | Integer 1–5 |
-| `cl3_overview` | Integer 1–5 |
-| `cl4_risk_detail` | Integer 1–5 |
-| `cl5_explanation` | Integer 1–5 |
-| `cl6_export` | Integer 1–5 |
-| `u1_least_clear_step` | One of the five U1 options |
-| `u2_failure_interpretation` | One of the four U2 options |
-| `rcl1_report_a_ease` | Integer 1–5 |
-| `rrn1_report_a_reasonableness` | Integer 1–5 |
-| `rcl2_report_b_ease` | Integer 1–5 |
-| `rrn2_report_b_reasonableness` | Integer 1–5 |
-| `rp1_easier_report` | `Report A`, `Report B`, or equal option |
-| `rp2_more_reasonable_report` | `Report A`, `Report B`, or equal option |
-| `ro1_report_comment` | Optional text |
-| `rag_ease` | Integer 1–5, decoded from the matching Report A/B rating |
-| `baseline_ease` | Integer 1–5, decoded from the matching Report A/B rating |
-| `ease_difference_rag_minus_baseline` | Integer −4 through 4 |
-| `rag_reasonableness` | Integer 1–5, decoded from the matching Report A/B rating |
-| `baseline_reasonableness` | Integer 1–5, decoded from the matching Report A/B rating |
-| `reasonableness_difference_rag_minus_baseline` | Integer −4 through 4 |
-| `easier_condition` | `RAG`, `baseline`, or `equal`, decoded from RP1 |
-| `more_reasonable_condition` | `RAG`, `baseline`, or `equal`, decoded from RP2 |
+| `q1_correct` … `q10_correct` | Integer `1` or `0` |
+| `comprehension_total` | Integer 0–10 |
+| `cl1_overview` | Integer 1–5 |
+| `cl2_cooling` | Integer 1–5 |
+| `cl3_air_intake` | Integer 1–5 |
+| `cl4_export` | Integer 1–5 |
+| `u1_risk_index` | One of the four U1 options |
+| `u2_trip_estimate` | One of the four U2 options |
+| `rc1_correct` … `rc4_correct` | Integer `1` or `0` |
+| `report_comprehension_total` | Integer 0–4 |
+| `rcl1_cooling_ease` | Integer 1–5 |
+| `rrn1_cooling_reasonableness` | Integer 1–5 |
+| `rcl2_air_intake_ease` | Integer 1–5 |
+| `rrn2_air_intake_reasonableness` | Integer 1–5 |
 | `o1_comment` | Optional text |
 | `protocol_note` | Blank unless an administration issue applies |
 
-## 3. Dashboard scoring formulas
+## 3. Scoring formulas
 
-Place the eight correctness flags together in the working sheet. Set their
-range once after combining the two exports, then use the same range for every
-row. For example, if the flags occupy `J:Q`:
+Place the ten dashboard correctness flags together, and the four report flags
+together. Anchor both ranges once against the actual export — do not copy column
+letters from this document, because they shift whenever a question is added or
+removed.
 
-### Per-response score
+### Per-response scores
+
+With the dashboard flags in the first range and the report flags in the second:
 
 ```text
-=SUM(J2:Q2)
+comprehension_total:        =SUM(<ten dashboard flag cells>)
+report_comprehension_total: =SUM(<four report flag cells>)
 ```
 
-The result must be an integer from 0 through 8. Never score U1, U2, clarity,
-background, or open-comment responses.
+The first must be an integer from 0 through 10 and the second from 0 through 4.
+Never score U1, U2, clarity, rating, background, or open-comment responses.
+Never add the two totals together: they measure different media, and Q1–Q2 come
+from a different build than Q3–Q10.
 
 ### Per-item correct count and proportion
 
-For a correctness column such as `J`, using only included rows:
+For a correctness column such as `H`, using only included rows:
 
 ```text
-Correct n: =COUNTIFS($B$2:$B,"Y",J$2:J,1)
+Correct n: =COUNTIFS($B$2:$B,"Y",H$2:H,1)
 Valid N:   =COUNTIF($B$2:$B,"Y")
 Proportion:=correct_n/valid_N
 ```
@@ -136,157 +122,165 @@ For included rows, filter the relevant numeric column first, then use:
 =QUARTILE(FILTER(score_range,$B$2:$B="Y"),3)
 ```
 
-Use these formulas for `comprehension_total` and each CL1–CL6 column.
+Use these formulas for both composite totals, each CL1–CL4 column, and each
+RCL/RRN column.
 
-## 4. Report-condition decoding and paired calculations
+## 4. Per-response table
 
-Complete the administration fields from the capture log before calculating any
-report results. Do not infer a condition from the participant-facing Report A
-or Report B label.
+| response_id | q1 | q2 | q3 | q4 | q5 | q6 | q7 | q8 | q9 | q10 | total / 10 | CL1 | CL2 | CL3 | CL4 | U1 | U2 | rc1 | rc2 | rc3 | rc4 | report total / 4 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | ---: | ---: | ---: | ---: | ---: |
+| P01 | | | | | | | | | | | | | | | | | | | | | | |
 
-| `form_version` | `report_a_condition` | `report_b_condition` |
-| --- | --- | --- |
-| `rag_first` | `RAG` | `baseline` |
-| `baseline_first` | `baseline` | `RAG` |
+## 5. Dashboard objective-comprehension summary
 
-For each row, copy the Report A or Report B rating into its decoded condition
-column. For example, with Report A ease in `T2`, Report B ease in `V2`, and
-Report A condition in `D2`:
+Q1 and Q2 read the entry-flow captures from build `74e58d0`; Q3–Q10 read the
+current dashboard state. Keep the source column so no reader pools them.
 
-```text
-rag_ease:      =IF($D2="RAG",T2,V2)
-baseline_ease: =IF($D2="baseline",T2,V2)
-difference:    =rag_ease-baseline_ease
-```
-
-Apply the same mapping to reasonableness. Decode RP1 and RP2 against the same
-condition mapping; retain `equal` when the participant selects an equal
-option. Do not score a report-comprehension total.
-
-## 5. Per-response dashboard table
-
-| response_id | q1 | q2 | q3 | q4 | q5 | q6 | q7 | q8 | total / 8 | CL1 | CL2 | CL3 | CL4 | CL5 | CL6 | U1 | U2 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| P01 | | | | | | | | | | | | | | | | | |
-
-## 6. Dashboard objective-comprehension summary
-
-| Item | Correct n / N | Correct % | Wilson 95% CI |
-| --- | ---: | ---: | --- |
-| Q1 Demo entry | | | |
-| Q2 History upload | | | |
-| Q3 Overall condition | | | |
-| Q4 Priority component | | | |
-| Q5 Data-source notice | | | |
-| Q6 Trend direction | | | |
-| Q7 Recommended response | | | |
-| Q8 Default export scope | | | |
+| Item | Source | Correct n / N | Correct % | Wilson 95% CI |
+| --- | --- | ---: | ---: | --- |
+| Q1 Demo entry | entry flow | | | |
+| Q2 Trip-history upload requirement | entry flow | | | |
+| Q3 Overall condition | dashboard | | | |
+| Q4 Priority component | dashboard | | | |
+| Q5 Cooling failure prediction | dashboard | | | |
+| Q6 Cooling abnormal signals | dashboard | | | |
+| Q7 Cooling stop-driving trigger | dashboard | | | |
+| Q8 Air Intake failure prediction | dashboard | | | |
+| Q9 Air Intake abnormal signal | dashboard | | | |
+| Q10 Default export scope | dashboard | | | |
 
 | Composite measure | Value |
 | --- | --- |
 | Valid N | |
-| Median score / 8 | |
+| Median score / 10 | |
 | IQR | |
 | Observed range | |
 
-## 7. Dashboard clarity summary
+## 6. Dashboard clarity summary
 
-| Screen group | Median | IQR | Clear/Very clear n / N |
+| Screen | Median | IQR | Clear/Very clear n / N |
 | --- | ---: | ---: | ---: |
-| CL1 Demo entry | | | |
-| CL2 Upload and local setup | | | |
-| CL3 Vehicle overview | | | |
-| CL4 Risk detail | | | |
-| CL5 Explanation and action | | | |
-| CL6 Export | | | |
+| CL1 Vehicle overview | | | |
+| CL2 Cooling System page | | | |
+| CL3 Air Intake System page | | | |
+| CL4 Export | | | |
+
+Each item rates the single screen shown directly above it. CL2 and CL3 share
+wording because the two component pages share a layout; report them separately
+and never average them.
+
+No clarity item covers the entry-flow screens, so state plainly that this study
+produced no clarity evidence for the starting page, the upload message, or the
+setup guide. Do not substitute Q1 or Q2 correctness for it.
 
 Treat clarity responses as ordinal. Do not calculate or report a combined
 clarity average or compare it with a published usability benchmark.
 
-## 8. Dashboard ambiguity probes
+## 7. Dashboard ambiguity probes
 
-### U1 — Least-clear local setup step
-
-| Response | n / N |
-| --- | ---: |
-| Prepare project | |
-| Install tools | |
-| Start Granite | |
-| Open dashboard | |
-| None — all four steps are clear | |
-
-### U2 — Failure-label interpretation
+### U1 — What the 0 to 1 risk index means
 
 | Response | n / N |
 | --- | ---: |
-| Mechanical failure within 15 trips | |
-| Projected risk crossing the High threshold | |
-| Model confidence interpretation | |
-| Cannot tell what “failure” means | |
+| Probability of a mechanical breakdown | |
+| An internal index supporting Low/Medium/High | |
+| Proportion of trips completed | |
+| Cannot tell | |
 
-Do not mark U2 responses correct or incorrect. Report the mechanical-failure
-and cannot-tell counts explicitly as evidence about the current label.
+### U2 — What "High risk expected around trip 20" means
 
-## 9. Report paired-comparison summary
+| Response | n / N |
+| --- | ---: |
+| Mechanical failure on about the twentieth trip | |
+| Risk score crossing the High threshold at about trip 20 | |
+| Twenty trips recorded so far | |
+| Cannot tell | |
 
-Use only included responses. The total target is 12, with six responses from
-each Form version. Treat ordinal ratings as ordinal; report medians and ranges,
-not means or standard deviations.
+Do not mark U1 or U2 responses correct or incorrect. For both, report
+the mechanical-failure and cannot-tell counts explicitly as evidence about the
+current wording.
 
-| Measure | RAG median | Baseline median | RAG − baseline median | Observed paired range |
-| --- | ---: | ---: | ---: | --- |
-| Ease of understanding | | | | |
-| Reasonableness | | | | |
+## 8. Report results
 
-| Blind preference | RAG n / N | Baseline n / N | Equal n / N |
-| --- | ---: | ---: | ---: |
-| Easier to understand | | | |
-| More reasonable | | | |
+Use only included responses.
 
-| Form version | Valid N | Ease RAG − baseline: median (range) | Reasonableness RAG − baseline: median (range) |
-| --- | ---: | --- | --- |
-| `rag_first` | | | |
-| `baseline_first` | | | |
+| Item | Correct n / N | Correct % | Wilson 95% CI |
+| --- | ---: | ---: | --- |
+| RC1 Locating the evidence | | | |
+| RC2 Model confidence | | | |
+| RC3 Immediate advice | | | |
+| RC4 Information for the mechanic | | | |
 
-Do not apply a significance test, effect-size calculation, or formal
-between-order comparison. The order rows reveal possible carryover only.
+| Composite measure | Value |
+| --- | --- |
+| Valid N | |
+| Median score / 4 | |
+| IQR | |
+| Observed range | |
 
-## 10. Background description
+Treat the ordinal ratings as ordinal; report medians and ranges, not means or
+standard deviations. Report each report separately.
 
-Report counts for each response category. With 12 participants, do not run
-driver/non-driver comparisons, correlations, significance tests, or model
-fitting.
+| Report | Ease: median (IQR, range) | Reasonableness: median (IQR, range) |
+| --- | --- | --- |
+| Cooling System | | |
+| Air Intake System | | |
 
-## 11. Optional comments
+**Do not compare the two reports against each other.** They describe different
+components at different risk levels with different prediction wording, so a
+difference in ratings between them is uninterpretable. Do not compute a
+difference column, a preference count, or a pooled report rating.
 
-Copy non-empty O1 comments into the table below after checking that they do
-not contain identifying details. If a comment unexpectedly contains a name or
+Every participant reads the dashboard sections before either report, and both
+media describe the same vehicle case. State that carryover alongside the report
+results, per `protocol.md` §9.
+
+## 9. Background description
+
+Report counts for each response category across the four background items,
+B1–B4. With 12 participants, do not run subgroup comparisons, correlations,
+significance tests, or model fitting.
+
+Every valid respondent holds or has held a driving licence, so licence status is
+a constant, not a variable. State it once when describing the sample and never
+treat it as a comparison group.
+
+## 10. Optional comments
+
+Copy non-empty comments into the table below after checking that they do not
+contain identifying details. If a comment unexpectedly contains a name or
 contact detail, redact it in the analysis copy and restrict access to the raw
 response.
 
-| response_id | comment | concise descriptive category |
-| --- | --- | --- |
-| P__ | | |
+| response_id | item | comment | concise descriptive category |
+| --- | --- | --- | --- |
+| P__ | `O1` | | |
 
-Apply the same privacy check and descriptive treatment to RO1 report comments.
-Summarise recurring points in plain language. Do not call this a formal
-thematic analysis and do not use isolated quotations to imply prevalence.
+Summarise recurring points in plain language. Do not call this a formal thematic
+analysis and do not use isolated quotations to imply prevalence.
 
-## 12. Report-ready results checklist
+## 11. Report-ready results checklist
 
 - [ ] Valid N and every denominator are stated.
-- [ ] Per-item comprehension results use `n/N` and Wilson intervals.
-- [ ] The 0–8 total is reported with median, IQR, and range.
+- [ ] Per-item results use `n/N` and Wilson intervals.
+- [ ] The 0–10 dashboard total and the 0–4 report total are each reported with
+      median, IQR, and range, and are never added together.
+- [ ] Q1–Q2 are identified as entry-flow items from build `74e58d0` wherever
+      dashboard results appear, and are never pooled with Q3–Q10.
+- [ ] No entry-flow result is described as installation or setup success.
 - [ ] Clarity is reported per screen using medians and IQRs.
 - [ ] U1 and U2 are unscored response distributions.
+- [ ] The two reports are reported separately and never compared.
+- [ ] Dashboard-to-report carryover is stated wherever report results appear.
 - [ ] Background variables describe the sample only.
-- [ ] Screenshot viewing is never described as dashboard use.
-- [ ] The illustrative-data and failure-threshold limitations are explicit.
-- [ ] The build is identified as `74e58d0`.
-- [ ] The report source commit, fixture, PDF hashes, and condition mapping are
-      identified.
-- [ ] Report ratings are decoded from Form version before analysis.
-- [ ] Report results include paired differences, preference `n/N`, and the two
-      six-person order-group summaries.
-- [ ] Report findings are descriptive and do not claim retrieval improved
-      comprehension, mechanical accuracy, or predictive validity.
+- [ ] The licence-holder-only sample is stated, and no result is split by
+      licence status.
+- [ ] Viewing images is never described as dashboard use or as opening a PDF.
+- [ ] The illustrative-data, risk-index, and risk-pattern-estimate limitations
+      are explicit.
+- [ ] The stimulus source is identified as the Report-layer handoff, with the
+      image hashes recorded in `protocol.md` §4.
+- [ ] No result depends on the Air Intake model confidence, which disagrees
+      between the dashboard and the report.
+- [ ] Findings are descriptive and claim no mechanical accuracy or predictive
+      validity.
