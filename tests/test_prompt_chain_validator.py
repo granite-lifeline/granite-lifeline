@@ -180,6 +180,11 @@ class TestValidateLayer1:
         result = validate_layer1("Coolant is warm.")
         assert any("too short" in w for w in result.warnings)
 
+    def test_long_output_is_flagged(self):
+        text = " ".join(["clear"] * 61)
+        result = validate_layer1(text)
+        assert any("too long" in w for w in result.warnings)
+
 
 class TestValidateLayer2:
     def test_negated_confirmed_language_is_not_flagged(self):

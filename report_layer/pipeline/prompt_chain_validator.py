@@ -86,7 +86,7 @@ def validate_layer1(output: str) -> ValidationResult:
     - Output is not empty or error string
     - No unexplained raw field names
     - No confirmed fault language
-    - Minimum length of 30 words
+    - Length between 20 and 60 words
 
     Args:
         output: Layer 1 output string
@@ -158,11 +158,18 @@ def validate_layer1(output: str) -> ValidationResult:
         )
         score -= 0.2
 
-    # Check minimum length
+    # The Dashboard already presents detailed measurements in a separate
+    # Key Signals table. Layer 1 should therefore be a short interpretation,
+    # not a prose copy of every value.
     word_count = len(output.split())
-    if word_count < 30:
+    if word_count < 20:
         warnings.append(
-            f"Output is too short: {word_count} words (minimum 30)"
+            f"Output is too short: {word_count} words (minimum 20)"
+        )
+        score -= 0.2
+    elif word_count > 60:
+        warnings.append(
+            f"Output is too long: {word_count} words (maximum 60)"
         )
         score -= 0.2
 
