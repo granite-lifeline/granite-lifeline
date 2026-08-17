@@ -305,16 +305,19 @@ def test_pdf_title_is_user_facing():
 
 
 def test_build_export_data_default_sections():
-    """Test default helper output has summary, signals, and report."""
+    """Test default helper output has summary, prediction, signals, report."""
     export_data = build_export_data(_sample_component())
 
     assert export_data["sections"] == [
         "summary",
+        "failure_prediction",
         "key_signals",
         "diagnostic_report",
     ]
     assert export_data["summary"]["component_name"] == "Cooling System"
-    assert export_data["summary"]["risk_score"] == "86%"
+    assert export_data["summary"]["risk_level"] == "High"
+    assert export_data["summary"]["confidence"] == "88%"
+    assert "risk_score" not in export_data["summary"]
     assert len(export_data["key_signals"]) == 2
     assert (
         export_data["diagnostic_report"]["anomaly_description"]
@@ -331,6 +334,6 @@ def test_build_export_data_filters_optional_sections():
 
     assert export_data["sections"] == ["failure_prediction"]
     assert export_data["failure_prediction"]["has_value"] is True
-    assert "72%" not in export_data["failure_prediction"]["text"]
+    assert "72%" in export_data["failure_prediction"]["text"]
     assert "data_quality_notes" not in export_data
     assert "summary" not in export_data
