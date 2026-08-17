@@ -8,7 +8,7 @@ from dashboard.failure_prediction import (
 
 
 def test_failure_prediction_text_with_value():
-    """Test card text when prediction fields have values."""
+    """Test card text shows both estimates, each with its own horizon."""
     component_data = {
         "estimated_failure_probability": 0.72,
         "estimated_cycles_to_failure": 15,
@@ -16,8 +16,12 @@ def test_failure_prediction_text_with_value():
 
     text, has_value = format_failure_prediction_text(component_data)
 
-    assert "High risk in about 15 trips" in text
-    assert "72%" not in text
+    assert (
+        "72% chance of crossing into High risk within the next 10 trips"
+        in text
+    )
+    assert "projected around trip 15" in text
+    assert "probability of failure" not in text
     assert has_value is True
 
 
@@ -34,8 +38,8 @@ def test_failure_prediction_text_with_null_value():
     assert has_value is False
 
 
-def test_failure_prediction_text_with_one_missing_value():
-    """Test placeholder when only one prediction field is missing."""
+def test_failure_prediction_text_with_only_probability():
+    """Probability alone still renders — the two fields are independent."""
     component_data = {
         "estimated_failure_probability": 0.72,
         "estimated_cycles_to_failure": None,
@@ -43,8 +47,12 @@ def test_failure_prediction_text_with_one_missing_value():
 
     text, has_value = format_failure_prediction_text(component_data)
 
-    assert text == PENDING_FAILURE_PREDICTION_TEXT
-    assert has_value is False
+    assert (
+        "72% chance of crossing into High risk within the next 10 trips"
+        in text
+    )
+    assert "projected around trip" not in text
+    assert has_value is True
 
 
 def test_failure_prediction_text_with_missing_fields():
@@ -55,8 +63,8 @@ def test_failure_prediction_text_with_missing_fields():
     assert has_value is False
 
 
-def test_failure_prediction_text_ignores_hidden_probability():
-    """A missing hidden probability does not suppress a cycles estimate."""
+def test_failure_prediction_text_with_only_cycles():
+    """A blank probability does not suppress the cycles estimate."""
     component_data = {
         "estimated_failure_probability": "",
         "estimated_cycles_to_failure": 15,
@@ -64,12 +72,16 @@ def test_failure_prediction_text_ignores_hidden_probability():
 
     text, has_value = format_failure_prediction_text(component_data)
 
-    assert "High risk in about 15 trips" in text
+    assert (
+        "If the current trend continues, High risk is projected in "
+        "about 15 trips" in text
+    )
+    assert "chance of crossing" not in text
     assert has_value is True
 
 
 def test_failure_prediction_text_zero_probability_is_value():
-    """Test that 0% is still treated as a real estimate."""
+    """Test that 0% is still treated as a real estimate, not missing."""
     component_data = {
         "estimated_failure_probability": 0.0,
         "estimated_cycles_to_failure": 15,
@@ -77,8 +89,11 @@ def test_failure_prediction_text_zero_probability_is_value():
 
     text, has_value = format_failure_prediction_text(component_data)
 
-    assert "High risk in about 15 trips" in text
-    assert "0%" not in text
+    assert (
+        "0% chance of crossing into High risk within the next 10 trips"
+        in text
+    )
+    assert "projected around trip 15" in text
     assert has_value is True
 
 
