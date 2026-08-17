@@ -77,8 +77,41 @@ class TestAnalyzeWindow:
         result = analyze_window(window, 512, 96, None, [])
         assert 0.0 <= result["risk_score"] <= 1.0
         assert result["risk_level"] in {"Low", "Medium", "High"}
+        assert (
+            result["secondary_risk"]["risk_score"]
+            <= result["risk_score"]
+        )
+        assert (
+            result["secondary_risk"]["component"]
+            != result["component"]
+        )
+        assert validate_output(result) == []
         assert result["estimated_cycles_to_failure"] is None
         assert result["estimated_failure_probability"] is None
+
+    def test_emits_both_components_when_two_risks_are_high(
+        self, monkeypatch
+    ):
+        monkeypatch.setattr(
+            detector, "run_ttm_forecast", fake_forecast
+        )
+        window = make_group1_frame(rows=608)
+        future_rows = window.index >= 512
+        window.loc[future_rows, "coolant_temp"] = 110.0
+        window.loc[
+            future_rows, "speed_density_maf_residual"
+        ] = 35.0
+
+        result = analyze_window(window, 512, 96, None, [])
+
+        assert result["anomaly_type"] == "cooling_degradation"
+        assert result["risk_level"] == "High"
+        assert (
+            result["secondary_risk"]["anomaly_type"]
+            == "air_intake_maf_anomaly"
+        )
+        assert result["secondary_risk"]["risk_level"] == "High"
+        assert validate_output(result) == []
 
 
 class TestRunBatch:
@@ -120,8 +153,10 @@ class TestRunBatch:
             envelope["summary"]["risk_score"]
             == worst["risk_score"]
         )
-        # summary keeps today's single-window schema exactly
+        # summary keeps the primary single-window schema and adds the
+        # second-ranked component without changing primary fields.
         assert "window_id" not in envelope["summary"]
+        assert "secondary_risk" in envelope["summary"]
         for entry in envelope["windows"]:
             assert {"trip_id", "segment_id", "window_id"} <= set(
                 entry

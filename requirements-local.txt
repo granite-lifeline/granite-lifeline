@@ -12,7 +12,7 @@ chromadb>=0.4.0
 langchain>=0.1.0
 langchain-community>=0.0.20
 
-# Local data pipeline / optional What-If surrogate artifacts
+# Local data pipeline
 joblib==1.5.3
 scikit-learn==1.7.2
 scipy==1.17.1

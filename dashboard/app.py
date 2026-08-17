@@ -22,7 +22,6 @@ from theme import apply_theme  # noqa: E402
 from pages.overview import show_overview_page  # noqa: E402
 from pages.detail import show_detail_page  # noqa: E402
 from pages.local_run import show_local_run_page  # noqa: E402
-from pages.what_if import show_what_if_page  # noqa: E402
 
 
 def main() -> None:
@@ -44,8 +43,6 @@ def main() -> None:
         show_detail_page()
     elif st.session_state["page"] == "local_run":
         show_local_run_page()
-    elif st.session_state["page"] == "what_if":
-        show_what_if_page()
     else:
         show_overview_page()
 
