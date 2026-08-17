@@ -24,31 +24,34 @@ from dashboard.data_loader import (
 )
 from report_layer.pipeline import report_generator
 from report_layer.pipeline.context_injection import build_context_with_rag
+from report_layer.rag.rag_retriever import (
+    FALLBACK_ACTIONS,
+    FALLBACK_DESCRIPTION,
+)
 from shared.interface_models import ModelLayerOutput
 
 
-NO_FAULT_KNOWLEDGE = (
-    "No retrieved fault knowledge was supplied in this controlled condition. "
-    "Do not use general model knowledge to name a mechanical cause. Explain "
-    "that the observed data pattern alone cannot identify a specific cause "
-    "and requires professional verification."
-)
-NO_ACTION_KNOWLEDGE = (
-    "No retrieved action guidance was supplied in this controlled condition. "
-    "Do not invent a component test or repair procedure. Give risk-appropriate "
-    "owner observations and ask the mechanic to investigate the reported "
-    "signal pattern generally."
-)
-
-
 def _condition_contexts(model: ModelLayerOutput) -> dict[str, dict[str, Any]]:
+    """Build the two conditions from one shared context.
+
+    The only variable that changes between conditions is whether the
+    prompt receives real retrieved knowledge. Condition A's
+    fault_knowledge/actions_knowledge are FALLBACK_DESCRIPTION and
+    FALLBACK_ACTIONS from report_layer/rag/rag_retriever.py — the exact
+    strings the production pipeline itself injects when ChromaDB
+    retrieval genuinely finds nothing, not custom-authored guardrail
+    text. The prompt templates, rules, and every other input are
+    byte-identical between A and B; this keeps the comparison a
+    single-variable ablation (presence vs. absence of retrieved
+    knowledge) rather than also varying prompt constraints.
+    """
     rag = build_context_with_rag(model)
     baseline = {
         "context": rag["context"],
         "certainty_guidance": rag["certainty_guidance"],
         "notes": rag["notes"],
-        "fault_knowledge": NO_FAULT_KNOWLEDGE,
-        "actions_knowledge": NO_ACTION_KNOWLEDGE,
+        "fault_knowledge": FALLBACK_DESCRIPTION,
+        "actions_knowledge": FALLBACK_ACTIONS,
     }
     return {"A": baseline, "B": rag}
 
