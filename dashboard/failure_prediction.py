@@ -25,11 +25,9 @@ def format_failure_prediction_text(component_data: dict) -> tuple[str, bool]:
     probability_pct = int(round(probability * 100))
     trip_word = "trip" if cycles == 1 else "trips"
     return (
-        f"The current risk trend is projected to reach the High-risk "
-        f"threshold in about {cycles} {trip_word}. The model estimates a "
-        f"{probability_pct}% chance of crossing that threshold within the "
-        f"next {PROBABILITY_HORIZON_TRIPS} trips. This is not a probability "
-        "of mechanical failure.",
+        f"Current trend: High risk in about {cycles} {trip_word}; "
+        f"{probability_pct}% estimated chance of reaching High within the "
+        f"next {PROBABILITY_HORIZON_TRIPS} trips.",
         True,
     )
 

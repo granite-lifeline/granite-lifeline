@@ -2246,7 +2246,7 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
                 size=20,
                 color=badge_bg,
             )
-            ring_size = 124
+            ring_size = 112
             ring_svg = progress_ring(
                 risk_pct if has_score else 0,
                 color=badge_bg,
@@ -2281,7 +2281,7 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
                 '<div style="position:absolute;inset:0;display:flex;'
                 'flex-direction:column;align-items:center;'
                 'justify-content:center;">'
-                f'<span style="font-family:{FONT_MONO};font-size:30px;'
+                f'<span style="font-family:{FONT_MONO};font-size:21px;'
                 f'font-weight:700;color:{tokens["text"]};line-height:1;">'
                 f'{score_text}</span>'
                 f'<span style="font-size:11px;'

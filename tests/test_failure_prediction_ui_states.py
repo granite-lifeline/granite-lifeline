@@ -58,8 +58,8 @@ def test_failure_prediction_has_value_and_null_states():
         mock["air_intake_maf_anomaly"]
     )
 
-    assert "reach the High-risk threshold in about 15 trips" in cooling_text
-    assert "72% chance of crossing" in cooling_text
+    assert "High risk in about 15 trips" in cooling_text
+    assert "72% estimated chance of reaching High" in cooling_text
     assert cooling_has_value is True
     assert intake_text == PENDING_FAILURE_PREDICTION_TEXT
     assert intake_has_value is False
@@ -134,12 +134,9 @@ def test_owner_limitation_replaces_internal_data_notes():
     src = _detail_text()
 
     assert "Data Quality Notes</div>" not in src
-    assert "Important limitation</div>" in src
-    assert "cannot confirm that a mechanical fault is present" in src
-    assert 'info", size=18, color=tokens["accent"]' in src
+    assert "This is a risk-pattern estimate, not a confirmed mechanical fault." in src
+    assert "Important limitation</div>" not in src
     assert 'background:{tokens["glass_surface"]}' in src
-    assert 'border:1px solid {tokens["glass_border"]}' in src
-    assert 'border-bottom:2px solid {tokens["border"]}' in src
 
 
 def test_overview_page_has_pdf_and_csv_export_controls():

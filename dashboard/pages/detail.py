@@ -55,26 +55,6 @@ def _render_failure_prediction(
         hex_to_rgba(tokens["accent"], 0.35)
         if has_value else tokens["glass_border"]
     )
-    info_icon = lucide_icon("info", size=18, color=tokens["accent"])
-
-    limitation_panel = (
-        f'<div style="flex:1;min-width:260px;'
-        f'background:{tokens["glass_surface"]};'
-        f'border:1px solid {tokens["glass_border"]};'
-        'border-radius:16px;padding:14px 16px 13px 16px;'
-        f'box-shadow:0 8px 24px {tokens["shadow"]},'
-        'inset 0 1px 0 rgba(255,255,255,0.10);">'
-        '<div style="display:flex;align-items:center;gap:8px;'
-        f'color:{tokens["text"]};font-size:14px;font-weight:700;'
-        f'padding-bottom:8px;border-bottom:2px solid {tokens["border"]};">'
-        f'{info_icon}Important limitation</div>'
-        f'<div style="color:{tokens["text"]};font-size:13px;'
-        'line-height:1.5;margin-top:10px;">'
-        'This analysis detects risk patterns in the uploaded driving data. '
-        'It cannot confirm that a mechanical fault is present. A qualified '
-        'mechanic should verify the vehicle before any repair decision.'
-        '</div></div>'
-    )
 
     if has_value:
         prediction_html = (
@@ -113,8 +93,12 @@ def _render_failure_prediction(
         '<div style="flex:1.25;min-width:260px;display:flex;'
         'align-items:center;justify-content:center;">'
         f'<div style="min-width:0;width:100%;">{prediction_html}</div>'
+        f'<div style="color:{tokens["text_secondary"]};font-size:12px;'
+        'line-height:1.45;margin-top:10px;text-align:center;">'
+        'This is a risk-pattern estimate, not a confirmed mechanical fault.'
         '</div>'
-        f'{limitation_panel}</div></div>'
+        '</div>'
+        '</div></div>'
     )
     st.markdown(card_html, unsafe_allow_html=True)
 
