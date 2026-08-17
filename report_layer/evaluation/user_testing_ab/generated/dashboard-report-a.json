@@ -152,13 +152,13 @@
         "risk_score": 0.0932
       }
     ],
-    "anomaly_description": "The cooling system shows high risk due to unusually low coolant temperature and an abnormally rapid rise rate, suggesting potential thermal stress in the cooling system and requiring professional verification.",
-    "possible_cause": "The cooling system may indicate thermal stress due to an abnormal coolant temperature rise rate. Possible explanations include a sensor reading issue, reduced cooling fan performance, or insufficient evidence for a specific mechanical fault. Professional verification is recommended.",
+    "anomaly_description": "The cooling system shows high risk due to a coolant temperature that is lower than expected while rising unusually quickly. This pattern suggests potential issues with the cooling system and requires prompt professional verification.",
+    "possible_cause": "The cooling system may indicate issues such as a malfunctioning thermostat that fails to open at the proper temperature, leading to lower coolant temperatures and rapid rises. Alternatively, reduced coolant flow due to a partially blocked radiator or a failing water pump could cause similar readings. These scenarios suggest potential overheating risks and warrant professional inspection.",
     "recommended_action": [
       "Now: Monitor your vehicle's temperature gauge while driving; note any unusual readings.",
       "Service timing: Prompt professional inspection due to high risk of cooling system degradation.",
-      "Stop driving and seek help if: You observe the engine overheating, a red warning light illuminates, or you experience a loss of power while driving.",
-      "Tell the mechanic: Verify the coolant temperature sensor accuracy and assess the cooling fan performance for potential thermal stress in the cooling system."
+      "Stop driving and seek help if: You observe the engine overheating, a coolant leak, or the temperature gauge moving into the red zone.",
+      "Tell the mechanic: Verify the thermostat operation, check for radiator blockage, and assess water pump functionality to diagnose the cooling system issue."
     ]
   },
   {

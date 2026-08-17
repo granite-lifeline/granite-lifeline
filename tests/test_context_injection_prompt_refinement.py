@@ -94,6 +94,86 @@ def test_build_context_warns_against_overheating_for_low_cooling_pattern():
     assert "Avoid explaining thermostat mechanics" in context
 
 
+def test_build_context_warns_low_rising_cooling_pattern_differently():
+    """Low temp + abnormally fast rise is real correlated evidence, not
+    the same ambiguous/weak pattern as low + falling temp — it must get
+    the grounded-explanation caution, not the "avoid explaining
+    mechanics" suppression, and must state the real risk level."""
+    context = build_context(
+        _model_output(
+            anomaly_type="cooling_degradation",
+            component="cooling_degradation",
+            risk_score=1.0,
+            risk_level="High",
+            key_signals=[
+                KeySignal(
+                    feature="coolant_temp",
+                    value=84.0,
+                    unit="°C",
+                    reference_range=[90.0, 95.0],
+                ),
+                KeySignal(
+                    feature="ect_rate_180s",
+                    value=5.5,
+                    unit="°C/min",
+                    reference_range=[0.0, 2.0],
+                ),
+            ],
+        )
+    )
+
+    assert "Interpretation Caution:" in context
+    assert "correlated evidence" in context
+    assert "Connect the explanation directly to both values" in context
+    assert "high-risk pattern" in context
+    assert "low-risk pattern" not in context
+    assert "Avoid explaining thermostat mechanics" not in context
+
+
+def test_low_rising_cooling_pattern_does_not_suppress_real_retrieval(
+    monkeypatch,
+):
+    """Unlike the ambiguous low+falling case, low+rising must let real
+    retrieved knowledge through instead of the synthetic override."""
+    monkeypatch.setattr(
+        context_injection,
+        "retrieve_all",
+        lambda anomaly_type, risk_level: {
+            "description_causes": "Thermostat stuck closed. Radiator blocked.",
+            "actions": "Inspect the cooling system.",
+        },
+    )
+    model = _model_output(
+        anomaly_type="cooling_degradation",
+        component="cooling_degradation",
+        risk_level="High",
+        risk_score=1.0,
+        key_signals=[
+            KeySignal(
+                feature="coolant_temp",
+                value=84.0,
+                unit="°C",
+                reference_range=[90.0, 95.0],
+            ),
+            KeySignal(
+                feature="ect_rate_180s",
+                value=5.5,
+                unit="°C/min",
+                reference_range=[0.0, 2.0],
+            ),
+        ],
+    )
+
+    context = build_context_with_rag(model)
+
+    assert context["fault_knowledge"] == (
+        "Thermostat stuck closed. Radiator blocked."
+    )
+    assert "mainly describes overheating faults" not in (
+        context["fault_knowledge"]
+    )
+
+
 def test_build_context_with_rag_governs_workshop_actions(monkeypatch):
     monkeypatch.setattr(
         context_injection,

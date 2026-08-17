@@ -152,13 +152,13 @@
         "risk_score": 0.0932
       }
     ],
-    "anomaly_description": "The cooling system shows high risk due to unusually low coolant temperature and an abnormally rapid rise rate, suggesting potential thermal stress in the cooling system and requiring professional verification.",
-    "possible_cause": "The low coolant temperature and rapid rise rate may indicate a sensor reading issue or unusual cooling behavior, but the exact cause cannot be determined without professional verification.",
+    "anomaly_description": "The cooling system shows high risk due to a coolant temperature that is lower than expected while rising unusually quickly. This pattern suggests potential issues with the cooling system and requires prompt professional verification.",
+    "possible_cause": "The coolant temperature being lower than expected while rising quickly may indicate a thermostat stuck closed, preventing proper coolant flow, or a malfunctioning water pump that isn't circulating coolant efficiently. Both issues could cause the observed pattern and require professional inspection.",
     "recommended_action": [
-      "Now: Monitor your vehicle's temperature gauge while driving. If you notice any unusual readings or warning lights, note them for the mechanic.",
-      "Service timing: Prompt professional inspection due to High risk in the cooling system.",
-      "Stop driving and seek help if: You observe a red temperature warning light, see steam coming from under the hood, experience sudden loss of power, or feel that the vehicle is running roughly or unsafely.",
-      "Tell the mechanic: Verify the coolant-temperature sensor reading and reproduce the rapid rise rate pattern to determine if there is an issue with the cooling system components."
+      "Now: Monitor the temperature gauge while driving; note any increase in coolant temperature.",
+      "Service timing: Prompt professional inspection due to High risk.",
+      "Stop driving and seek help if: You observe a red temperature warning light, steam coming from under the hood, or the engine suddenly loses power.",
+      "Tell the mechanic: Check the thermostat for being stuck closed and verify water pump operation by measuring temperatures in front of and behind the thermostat; also inspect coolant flow through the pump wheel."
     ]
   },
   {

@@ -7,7 +7,7 @@ passed to the LLM.
 """
 
 import re
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from report_layer.rag.rag_retriever import retrieve_all
 from shared.interface_models import ModelLayerOutput
@@ -271,21 +271,47 @@ def _format_probability(value: float) -> str:
     return f"{percent:.1f}%"
 
 
-def _needs_low_cooling_caution(ttm_output: ModelLayerOutput) -> bool:
-    """Return true for cooling cases with low/falling temperature evidence."""
+def _cooling_direction_pattern(
+    ttm_output: ModelLayerOutput,
+) -> Optional[str]:
+    """Classify a low coolant-temperature reading for cooling_degradation.
+
+    A low coolant_temp reading was previously treated as one uniform
+    "ambiguous, say little" case regardless of the rise-rate signal. That
+    conflated two different situations:
+
+    - "ambiguous": temperature is low and the rise rate is not abnormally
+      high (falling or within its normal range). This is genuinely weak,
+      non-correlated evidence that does not match the overheating-focused
+      knowledge base — keep interpretation short and cautious.
+    - "low_rising": temperature is low AND the rise rate is abnormally
+      high. These are two correlated abnormal signals, not one weak
+      reading — real evidence that deserves a clear, grounded
+      explanation connected to both values, not the same blanket
+      suppression as the ambiguous case.
+
+    Returns None when the component isn't cooling_degradation or the
+    temperature reading isn't low.
+    """
     if ttm_output.component != "cooling_degradation":
-        return False
-    has_lower_than_expected_temp = False
-    has_falling_temp_rate = False
+        return None
+    coolant_temp = None
+    rate = None
     for signal in ttm_output.key_signals:
-        if (
-            signal.feature == "coolant_temp"
-            and signal.value < signal.reference_range[0]
-        ):
-            has_lower_than_expected_temp = True
-        if signal.feature == "ect_rate_180s" and signal.value < 0:
-            has_falling_temp_rate = True
-    return has_lower_than_expected_temp or has_falling_temp_rate
+        if signal.feature == "coolant_temp":
+            coolant_temp = signal
+        elif signal.feature == "ect_rate_180s":
+            rate = signal
+    is_low = (
+        coolant_temp is not None
+        and coolant_temp.value < coolant_temp.reference_range[0]
+    )
+    if not is_low:
+        return None
+    is_rising_fast = (
+        rate is not None and rate.value > rate.reference_range[1]
+    )
+    return "low_rising" if is_rising_fast else "ambiguous"
 
 
 def build_context(ttm_output: ModelLayerOutput) -> str:
@@ -394,7 +420,8 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
                 f"{feature_name}"
             )
 
-    if _needs_low_cooling_caution(ttm_output):
+    cooling_pattern = _cooling_direction_pattern(ttm_output)
+    if cooling_pattern == "ambiguous":
         context_lines.append("")
         context_lines.append("Interpretation Caution:")
         context_lines.append(
@@ -403,7 +430,21 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
             "Limit interpretation to cautious possibilities such as "
             "sensor reading issue, cooling fan behavior, or insufficient "
             "evidence for a specific cause. Avoid explaining thermostat "
-            "mechanics for this low-risk pattern."
+            f"mechanics for this {risk_level.lower()}-risk pattern."
+        )
+    elif cooling_pattern == "low_rising":
+        context_lines.append("")
+        context_lines.append("Interpretation Caution:")
+        context_lines.append(
+            "- Coolant temperature is below its reference range while "
+            "the temperature rise rate is abnormally high — these two "
+            "signals together are real, correlated evidence, not a "
+            "weak or ambiguous reading. Connect the explanation "
+            "directly to both values. If more than one plausible "
+            "explanation applies, state each as its own short, clear "
+            "point rather than one vague catch-all sentence. Do not "
+            f"confirm a single mechanical diagnosis for this "
+            f"{risk_level.lower()}-risk pattern."
         )
 
     # Add Failure Projection section if prediction fields are present
@@ -535,8 +576,8 @@ def build_context_with_rag(
             "'requires further monitoring'"
         )
 
-    cooling_direction_caution = _needs_low_cooling_caution(ttm_output)
-    if cooling_direction_caution:
+    cooling_direction_pattern = _cooling_direction_pattern(ttm_output)
+    if cooling_direction_pattern == "ambiguous":
         fault_knowledge = (
             "The retrieved material mainly describes overheating faults and "
             "does not match this lower-than-expected coolant-temperature "
@@ -545,9 +586,12 @@ def build_context_with_rag(
             "unusual cooling behaviour, or an unresolved cause that needs "
             "professional verification."
         )
+        owner_policy = _owner_decision_policy(
+            ttm_output.anomaly_type, risk_level_normalized
+        )
         actions_knowledge = (
             "Owner decision-support policy:\n"
-            f"{_owner_decision_policy(ttm_output.anomaly_type, risk_level_normalized)}\n\n"
+            f"{owner_policy}\n\n"
             "Technician evidence:\nThe retrieved overheating procedures do "
             "not match the direction of the current signal. Ask a qualified "
             "mechanic to verify the coolant-temperature reading and reproduce "
