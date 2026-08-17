@@ -58,7 +58,7 @@ def format_failure_prediction_text(component_data: dict) -> tuple[str, bool]:
         trip_word = "trip" if cycles == 1 else "trips"
         if has_probability:
             sentences.append(
-                f"If the current trend continues, that crossing is "
+                f"If the current trend continues, High risk is "
                 f"projected around trip {cycles}."
             )
         else:
