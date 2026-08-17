@@ -335,32 +335,32 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .artifact-flow { margin-top:18px; display:grid; grid-template-columns:1fr 64px 1fr; gap:14px; align-items:stretch; }
 .artifact-flow.is-single { display:block; width:min(650px,100%); margin:26px auto 0; }
 .artifact-flow.is-single .artifact-card { min-height:210px; }
-.artifact-card { background:#101318; color:#fff; border-radius:15px; padding:17px 19px; overflow:hidden; min-height:190px; box-shadow:0 18px 42px rgba(29,29,31,.12); }
+.artifact-card { background:#101318; color:#fff; border-radius:16px; padding:26px 28px; overflow:hidden; min-height:235px; box-shadow:0 18px 42px rgba(29,29,31,.12); }
 .artifact-card.light { background:#fff; color:var(--text); border:1px solid var(--border); }
-.artifact-label { display:flex; justify-content:space-between; gap:10px; font:600 9px/1.2 var(--font-mono); letter-spacing:.1em; text-transform:uppercase; color:#78a9ff; margin-bottom:13px; }
+.artifact-label { display:flex; justify-content:space-between; gap:10px; font:600 11.5px/1.25 var(--font-mono); letter-spacing:.1em; text-transform:uppercase; color:#78a9ff; margin-bottom:16px; }
 .artifact-card.light .artifact-label { color:var(--accent-blue); }
-.artifact-file { font:600 13px/1.3 var(--font-mono); margin-bottom:12px; overflow-wrap:anywhere; }
-.artifact-code { font:11px/1.55 var(--font-mono); color:rgba(255,255,255,.72); white-space:normal; }
+.artifact-file { font:600 17px/1.3 var(--font-mono); margin-bottom:14px; overflow-wrap:anywhere; }
+.artifact-code { font:15px/1.6 var(--font-mono); color:rgba(255,255,255,.72); white-space:normal; }
 .artifact-card.light .artifact-code { color:var(--text-muted); }
 .artifact-code b { color:#fff; font-weight:600; }
 .artifact-card.light .artifact-code b { color:var(--text); }
 .artifact-transform { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; color:var(--accent-blue); }
-.artifact-transform strong { font:600 9px/1.25 var(--font-mono); text-align:center; color:var(--text-dim); }
-.pipeline-question { margin-top:15px; font-size:clamp(18px,1.8vw,25px); font-weight:600; text-align:center; }
-.truth-label { margin-top:10px; font:10px/1.4 var(--font-mono); color:var(--text-dim); text-align:right; }
+.artifact-transform strong { font:600 10.5px/1.25 var(--font-mono); text-align:center; color:var(--text-dim); }
+.pipeline-question { margin-top:30px; font-size:clamp(21px,2.1vw,29px); font-weight:600; text-align:center; }
+.truth-label { margin-top:18px; font:13px/1.5 var(--font-mono); color:var(--text-dim); text-align:right; }
 .data-entry-grid { margin-top:25px; display:grid; grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr); gap:20px; align-items:stretch; }
-.data-source-card { min-height:220px; padding:22px 24px; border-radius:15px; background:#101318; color:#fff; box-shadow:0 18px 42px rgba(29,29,31,.12); }
-.data-source-name { font-size:clamp(22px,2.05vw,28px); font-weight:650; letter-spacing:-.025em; }
+.data-source-card { min-height:250px; padding:28px 30px; border-radius:16px; background:#101318; color:#fff; box-shadow:0 18px 42px rgba(29,29,31,.12); }
+.data-source-name { font-size:clamp(25px,2.3vw,31px); font-weight:650; letter-spacing:-.025em; }
 .data-source-facts { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
-.data-source-facts span { padding:7px 10px; border:1px solid rgba(166,200,255,.2); border-radius:6px; color:#a6c8ff; background:rgba(120,169,255,.07); font:10px/1 var(--font-mono); }
-.data-signal-line { margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,.11); color:rgba(255,255,255,.72); font:10.5px/1.55 var(--font-mono); }
+.data-source-facts span { padding:7px 10px; border:1px solid rgba(166,200,255,.2); border-radius:6px; color:#a6c8ff; background:rgba(120,169,255,.07); font:12px/1 var(--font-mono); }
+.data-signal-line { margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,.11); color:rgba(255,255,255,.72); font:13px/1.6 var(--font-mono); }
 .data-detail-row { display:grid; grid-template-columns:auto 1fr; gap:9px; align-items:start; }
 .data-detail-row + .data-detail-row { margin-top:5px; }
 .data-detail-row b { color:#a6c8ff; font-weight:600; white-space:nowrap; }
-.data-fit { padding:21px 23px; border:1px solid var(--border); border-radius:15px; background:rgba(255,255,255,.68); display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-rows:auto 1fr; gap:14px; align-content:stretch; }
+.data-fit { padding:26px 28px; border:1px solid var(--border); border-radius:16px; background:rgba(255,255,255,.68); display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-rows:auto 1fr; gap:14px; align-content:stretch; }
 .data-fit-title { grid-column:1/-1; color:var(--accent-blue); font:600 10px/1 var(--font-mono); letter-spacing:.12em; text-transform:uppercase; margin-bottom:6px; }
-.data-fit-row { min-height:100px; padding:18px 14px; border-top:2px solid rgba(15,98,254,.42); background:rgba(15,98,254,.045); display:flex; align-items:center; justify-content:center; text-align:center; }
-.data-fit-row strong { display:block; font-size:clamp(15px,1.35vw,18px); line-height:1.2; text-wrap:balance; }
+.data-fit-row { min-height:115px; padding:18px 14px; border-top:2px solid rgba(15,98,254,.42); background:rgba(15,98,254,.045); display:flex; align-items:center; justify-content:center; text-align:center; }
+.data-fit-row strong { display:block; font-size:clamp(17px,1.5vw,20px); line-height:1.2; text-wrap:balance; }
 .data-entry-bridge { margin-top:14px; padding:11px 15px; border-left:3px solid var(--accent-blue); background:rgba(15,98,254,.055); font-size:clamp(15px,1.4vw,19px); font-weight:600; line-height:1.3; }
 .data-entry-bridge span { color:var(--accent-blue); }
 .report-mini h3 { font-size:20px; margin-bottom:8px; }
@@ -396,7 +396,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .slide.active .artifact-flow.handoff .handoff-input { animation:fadeInUp .42s cubic-bezier(.22,1,.36,1) .35s both; }
 .slide.active .artifact-flow.handoff .artifact-transform { animation:fadeInUp .38s cubic-bezier(.22,1,.36,1) 1.05s both; }
 .slide.active .artifact-flow.handoff .handoff-output { animation:fadeInUp .5s cubic-bezier(.22,1,.36,1) 1.65s both; }
-.handoff-identity { position:relative; min-width:108px; text-align:left; }
+.handoff-identity { position:relative; min-width:150px; text-align:left; }
 .handoff-identity span { display:block; }
 .handoff-identity .identity-next { position:absolute; inset:0; opacity:0; }
 @keyframes identityHandoff {
