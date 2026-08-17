@@ -6,9 +6,6 @@ PENDING_FAILURE_PREDICTION_TEXT = (
     "trip history."
 )
 
-PROBABILITY_HORIZON_TRIPS = 10
-
-
 def is_missing_value(value) -> bool:
     """Check if a value should use the pending placeholder."""
     return value is None or value == ""
@@ -16,18 +13,14 @@ def is_missing_value(value) -> bool:
 
 def format_failure_prediction_text(component_data: dict) -> tuple[str, bool]:
     """Return failure prediction text and whether it is real data."""
-    probability = component_data.get("estimated_failure_probability")
     cycles = component_data.get("estimated_cycles_to_failure")
 
-    if is_missing_value(probability) or is_missing_value(cycles):
+    if is_missing_value(cycles):
         return PENDING_FAILURE_PREDICTION_TEXT, False
 
-    probability_pct = int(round(probability * 100))
     trip_word = "trip" if cycles == 1 else "trips"
     return (
-        f"Current trend: High risk in about {cycles} {trip_word}; "
-        f"{probability_pct}% estimated chance of reaching High within the "
-        f"next {PROBABILITY_HORIZON_TRIPS} trips.",
+        f"Current trend: High risk in about {cycles} {trip_word}.",
         True,
     )
 

@@ -59,7 +59,7 @@ def test_failure_prediction_has_value_and_null_states():
     )
 
     assert "High risk in about 15 trips" in cooling_text
-    assert "72% estimated chance of reaching High" in cooling_text
+    assert "72%" not in cooling_text
     assert cooling_has_value is True
     assert intake_text == PENDING_FAILURE_PREDICTION_TEXT
     assert intake_has_value is False

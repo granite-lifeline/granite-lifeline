@@ -17,7 +17,7 @@ def test_failure_prediction_text_with_value():
     text, has_value = format_failure_prediction_text(component_data)
 
     assert "High risk in about 15 trips" in text
-    assert "72% estimated chance of reaching High within the next 10 trips" in text
+    assert "72%" not in text
     assert has_value is True
 
 
@@ -55,8 +55,8 @@ def test_failure_prediction_text_with_missing_fields():
     assert has_value is False
 
 
-def test_failure_prediction_text_with_empty_string():
-    """Test placeholder when a prediction field is an empty string."""
+def test_failure_prediction_text_ignores_hidden_probability():
+    """A missing hidden probability does not suppress a cycles estimate."""
     component_data = {
         "estimated_failure_probability": "",
         "estimated_cycles_to_failure": 15,
@@ -64,8 +64,8 @@ def test_failure_prediction_text_with_empty_string():
 
     text, has_value = format_failure_prediction_text(component_data)
 
-    assert text == PENDING_FAILURE_PREDICTION_TEXT
-    assert has_value is False
+    assert "High risk in about 15 trips" in text
+    assert has_value is True
 
 
 def test_failure_prediction_text_zero_probability_is_value():
@@ -78,7 +78,7 @@ def test_failure_prediction_text_zero_probability_is_value():
     text, has_value = format_failure_prediction_text(component_data)
 
     assert "High risk in about 15 trips" in text
-    assert "0% estimated chance of reaching High within the next 10 trips" in text
+    assert "0%" not in text
     assert has_value is True
 
 

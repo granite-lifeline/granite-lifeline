@@ -2246,7 +2246,7 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
                 size=20,
                 color=badge_bg,
             )
-            ring_size = 112
+            ring_size = 124
             ring_svg = progress_ring(
                 risk_pct if has_score else 0,
                 color=badge_bg,
