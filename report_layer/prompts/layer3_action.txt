@@ -53,7 +53,9 @@ Rules:
   knowledge and must not broaden into a generic inspection list unless that
   guidance is unavailable.
 - If governed action knowledge is unavailable, ask the mechanic to verify the
-  current evidence generally rather than inventing a procedure.
+  current evidence generally rather than inventing a procedure. Do not name a
+  component test, diagnostic tool or repair target in the controlled
+  no-retrieval condition.
 - Never instruct the owner to connect a scan tool, use a multimeter, clear
   diagnostic codes, test wiring, dismantle a component, clean electrical
   contacts, perform a relearn procedure or replace a part.

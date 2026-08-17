@@ -60,6 +60,9 @@ def _build_data_views() -> tuple[dict, dict]:
         return {}, {}
     ds = dict(raw.get("_data_source", {}))
     data = {k: v for k, v in raw.items() if k != "_data_source"}
+    source_override = os.getenv("DASHBOARD_STATIC_DATA_SOURCE", "").strip()
+    if source_override:
+        ds = {key: source_override for key in data}
     return data, ds
 
 

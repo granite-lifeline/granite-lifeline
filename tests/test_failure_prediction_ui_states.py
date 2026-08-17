@@ -58,11 +58,8 @@ def test_failure_prediction_has_value_and_null_states():
         mock["air_intake_maf_anomaly"]
     )
 
-    expected_text = (
-        "72% probability of failure within the next 15 trips"
-    )
-
-    assert cooling_text == expected_text
+    assert "reach the High-risk threshold in about 15 trips" in cooling_text
+    assert "72% chance of crossing" in cooling_text
     assert cooling_has_value is True
     assert intake_text == PENDING_FAILURE_PREDICTION_TEXT
     assert intake_has_value is False
@@ -95,7 +92,7 @@ def test_failure_prediction_icon_differs_from_trend_icon():
     src = _detail_text()
 
     assert 'show_icon_heading(' in src
-    assert '"Risk Score Trend"' in src
+    assert '"Risk Trend"' in src
     assert re.search(r'lucide_icon\(\s*"trending-up",\s*size=24', src)
     assert re.search(r'lucide_icon\(\s*"alert-triangle",\s*size=24', src)
 
@@ -107,21 +104,19 @@ def test_failure_prediction_uses_top_summary_banner_layout():
     incomplete_index = src.index("Incomplete Data")
     heading_index = src.index('"Failure Prediction", failure_icon')
     card_call_index = src.index("_render_failure_prediction")
-    risk_index = src.index('"Risk Score"')
+    risk_index = src.index('"Risk Level"')
 
     assert "section_heading_html(" in src
     assert incomplete_index < heading_index
     assert card_call_index < risk_index
 
 
-def test_failure_prediction_value_state_emphasizes_key_values():
-    """Test value state highlights probability and trip count evenly."""
+def test_failure_prediction_value_state_explains_threshold_projection():
+    """Test value state renders the qualified projection text."""
     src = _detail_text()
 
-    assert "{pct}%" in src
-    assert "{cnt} trips" in src
-    assert src.count("font-size:16px") >= 2
-    assert "justify-content:center;gap:8px;flex-wrap:wrap" in src
+    assert "_html.escape(prediction_text)" in src
+    assert "probability of failure within the next" not in src
 
 
 def test_failure_prediction_pending_matches_info_notice_style():

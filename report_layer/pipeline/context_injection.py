@@ -535,21 +535,39 @@ def build_context_with_rag(
             "'requires further monitoring'"
         )
 
-    return {
-        "context": _sanitize_owner_facing_prompt_text(context),
-        "fault_knowledge": (
-            "For this lower-than-expected or falling Low-risk cooling "
-            "pattern, the retrieved overheating fault list is not relevant. "
-            "Limit possible explanations to a sensor reading issue, cooling "
-            "fan behaviour, or insufficient evidence for a specific cause."
-            if _needs_low_cooling_caution(ttm_output)
-            else _sanitize_prompt_text(rag_knowledge["description_causes"])
-        ),
-        "actions_knowledge": _govern_action_knowledge(
+    cooling_direction_caution = _needs_low_cooling_caution(ttm_output)
+    if cooling_direction_caution:
+        fault_knowledge = (
+            "The retrieved material mainly describes overheating faults and "
+            "does not match this lower-than-expected coolant-temperature "
+            "pattern. Do not reuse that fault list. The current evidence can "
+            "support only a possible temperature-sensor reading issue, "
+            "unusual cooling behaviour, or an unresolved cause that needs "
+            "professional verification."
+        )
+        actions_knowledge = (
+            "Owner decision-support policy:\n"
+            f"{_owner_decision_policy(ttm_output.anomaly_type, risk_level_normalized)}\n\n"
+            "Technician evidence:\nThe retrieved overheating procedures do "
+            "not match the direction of the current signal. Ask a qualified "
+            "mechanic to verify the coolant-temperature reading and reproduce "
+            "the temperature-rise pattern before deciding which cooling "
+            "component, if any, requires work."
+        )
+    else:
+        fault_knowledge = _sanitize_prompt_text(
+            rag_knowledge["description_causes"]
+        )
+        actions_knowledge = _govern_action_knowledge(
             rag_knowledge["actions"],
             ttm_output.anomaly_type,
             risk_level_normalized,
-        ),
+        )
+
+    return {
+        "context": _sanitize_owner_facing_prompt_text(context),
+        "fault_knowledge": fault_knowledge,
+        "actions_knowledge": actions_knowledge,
         "certainty_guidance": certainty_guidance,
         "notes": ttm_output.notes if ttm_output.notes else [],
     }

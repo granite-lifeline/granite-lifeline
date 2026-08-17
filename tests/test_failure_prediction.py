@@ -16,7 +16,9 @@ def test_failure_prediction_text_with_value():
 
     text, has_value = format_failure_prediction_text(component_data)
 
-    assert text == "72% probability of failure within the next 15 trips"
+    assert "reach the High-risk threshold in about 15 trips" in text
+    assert "72% chance of crossing that threshold within the next 10 trips" in text
+    assert "not a probability of mechanical failure" in text
     assert has_value is True
 
 
@@ -76,7 +78,8 @@ def test_failure_prediction_text_zero_probability_is_value():
 
     text, has_value = format_failure_prediction_text(component_data)
 
-    assert text == "0% probability of failure within the next 15 trips"
+    assert "reach the High-risk threshold in about 15 trips" in text
+    assert "0% chance of crossing that threshold within the next 10 trips" in text
     assert has_value is True
 
 

@@ -201,6 +201,14 @@ def validate_layer1(output: str) -> ValidationResult:
         )
         score -= 0.4
 
+    if re.search(
+        r"\bwithin (?:the )?(?:next )?(?:few|several|couple of) "
+        r"(?:drive cycles|trips|days|weeks|months)\b",
+        output.lower(),
+    ):
+        warnings.append("Introduces an unsupported service interval")
+        score -= 0.4
+
     # Ensure score is within bounds
     score = max(0.0, min(1.0, score))
 
@@ -397,7 +405,8 @@ def validate_layer3(output: Any, risk_level: str) -> ValidationResult:
 
     actions_text = " ".join(str(a) for a in actions).lower()
     invented_interval = re.search(
-        r"\b(?:within|after|in|next)\s+(?:the\s+)?\d+\s+"
+        r"\b(?:within|after|in|next)\s+(?:the\s+)?(?:\d+|few|several|"
+        r"couple of)\s+"
         r"(?:days?|weeks?|months?|miles?|trips?)\b",
         actions_text,
     )
@@ -405,7 +414,7 @@ def validate_layer3(output: Any, risk_level: str) -> ValidationResult:
         warnings.append(
             "Actions contain an unsupported numeric service interval"
         )
-        score -= 0.2
+        score -= 0.4
 
     if re.search(r"\breplac(?:e|ing|ement)\b", actions_text):
         warnings.append(

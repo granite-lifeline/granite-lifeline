@@ -2,8 +2,11 @@
 
 
 PENDING_FAILURE_PREDICTION_TEXT = (
-    "Failure probability estimate pending — awaiting more drive cycles"
+    "A High-risk threshold projection is not available from the current "
+    "trip history."
 )
+
+PROBABILITY_HORIZON_TRIPS = 10
 
 
 def is_missing_value(value) -> bool:
@@ -22,8 +25,11 @@ def format_failure_prediction_text(component_data: dict) -> tuple[str, bool]:
     probability_pct = int(round(probability * 100))
     trip_word = "trip" if cycles == 1 else "trips"
     return (
-        f"{probability_pct}% probability of failure within the next "
-        f"{cycles} {trip_word}",
+        f"The current risk trend is projected to reach the High-risk "
+        f"threshold in about {cycles} {trip_word}. The model estimates a "
+        f"{probability_pct}% chance of crossing that threshold within the "
+        f"next {PROBABILITY_HORIZON_TRIPS} trips. This is not a probability "
+        "of mechanical failure.",
         True,
     )
 

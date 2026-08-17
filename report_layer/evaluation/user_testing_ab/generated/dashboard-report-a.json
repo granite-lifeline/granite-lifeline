@@ -43,11 +43,12 @@
         ]
       }
     ],
-    "estimated_cycles_to_failure": 28,
-    "estimated_failure_probability": 0.151,
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": 0.001,
     "notes": [
       "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
-      "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips."
+      "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips.",
+      "No positive trip-level risk trend was observed; no threshold crossing cycle is projected."
     ],
     "risk_history": [
       {
@@ -151,13 +152,13 @@
         "risk_score": 0.0932
       }
     ],
-    "anomaly_description": "The cooling system shows high risk because the coolant temperature is lower than expected and rising unusually quickly, indicating possible thermal stress that requires professional verification soon.",
-    "possible_cause": "The lower-than-expected coolant temperature combined with its rapid rise could indicate issues such as an inoperative cooling fan, a partially obstructed radiator, or a malfunctioning thermostat that isn't maintaining proper engine temperature. These conditions might lead to insufficient heat dissipation despite normal driving speeds, suggesting the need for professional evaluation.",
+    "anomaly_description": "The cooling system shows high risk due to unusually low coolant temperature and an abnormally rapid rise rate, suggesting potential thermal stress in the cooling system and requiring professional verification.",
+    "possible_cause": "The supplied driving data shows an unusual pattern, but it cannot identify a specific mechanical cause. A qualified mechanic would need to compare the readings with the vehicle's actual condition before deciding what, if anything, requires work.",
     "recommended_action": [
       "Now: Monitor your vehicle's temperature gauge while driving; note any unusual readings.",
       "Service timing: Prompt professional inspection due to high risk of cooling system degradation.",
-      "Stop driving and seek help if: You observe the engine overheating warning light or a sudden drop in coolant temperature accompanied by loss of power.",
-      "Tell the mechanic: Verify the operation of the cooling fan, inspect the radiator for blockages, and check the thermostat function to diagnose the high-risk cooling system issue."
+      "Stop driving and seek help if: You observe the engine overheating, a warning light illuminates, or you experience a loss of power.",
+      "Tell the mechanic: Investigate the reported signal pattern and verify whether it reflects a real vehicle problem before recommending any work."
     ]
   },
   {
@@ -204,8 +205,8 @@
         ]
       }
     ],
-    "estimated_cycles_to_failure": 28,
-    "estimated_failure_probability": 0.151,
+    "estimated_cycles_to_failure": 20,
+    "estimated_failure_probability": 0.0468,
     "notes": [
       "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
       "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips."
@@ -312,13 +313,13 @@
         "risk_score": 0.0772
       }
     ],
-    "anomaly_description": "The mass airflow (MAF) sensor in the air intake system shows medium risk due to an abnormal internal comparison signal. This suggests possible sensor drift and should be checked soon by a professional.",
-    "possible_cause": "The abnormal Speed-Density MAF Residual suggests the mass airflow sensor (MAF) may have drifted or is experiencing electrical interference, potentially due to a dirty sensor surface or wiring issues. This could lead to inaccurate air flow readings, affecting engine performance and fuel efficiency.",
+    "anomaly_description": "The mass airflow (MAF) sensor indicates a medium risk issue. One internal consistency signal is higher than expected, suggesting monitoring and possible professional inspection soon.",
+    "possible_cause": "The supplied driving data shows an unusual pattern, but it cannot identify a specific mechanical cause. A qualified mechanic would need to compare the readings with the vehicle's actual condition before deciding what, if anything, requires work.",
     "recommended_action": [
-      "Now: Pay attention to any changes in how your vehicle accelerates or its fuel efficiency while driving.",
-      "Service timing: Arrange for a professional inspection soon to evaluate the mass airflow sensor and associated wiring.",
-      "Stop driving and seek help if: You notice a sudden drop in power, rough idling, or the Check Engine light comes on strongly while you're driving.",
-      "Tell the mechanic: Examine the abnormal Speed-Density MAF Residual signal and determine whether the mass airflow sensor needs cleaning or further assessment."
+      "Now: Monitor your vehicle's performance during normal driving. Pay attention to any unusual noises, changes in acceleration, or warning lights on the dashboard.",
+      "Service timing: Inspection soon - schedule a professional inspection at your next service appointment or soon to evaluate the air intake MAF sensor condition.",
+      "Stop driving and seek help if: You notice a sudden loss of power, rough idling, stalling, or any warning light (especially engine-related) illuminates while driving.",
+      "Tell the mechanic: Investigate the reported signal pattern and verify whether it reflects a real vehicle problem before recommending any work."
     ]
   }
 ]

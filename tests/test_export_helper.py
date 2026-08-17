@@ -331,6 +331,9 @@ def test_build_export_data_filters_optional_sections():
 
     assert export_data["sections"] == ["failure_prediction"]
     assert export_data["failure_prediction"]["has_value"] is True
-    assert "72% probability" in export_data["failure_prediction"]["text"]
+    assert "72% chance of crossing" in export_data["failure_prediction"]["text"]
+    assert "not a probability of mechanical failure" in (
+        export_data["failure_prediction"]["text"]
+    )
     assert "data_quality_notes" not in export_data
     assert "summary" not in export_data

@@ -35,7 +35,7 @@ GOOD_LAYER3 = [
     "Now: Watch the temperature gauge and avoid placing unusual load on "
     "the vehicle while arranging an inspection.",
     "Service timing: Arrange a prompt professional cooling-system "
-    "inspection within the next few days.",
+    "inspection.",
     "Stop driving and seek help if: A red temperature warning appears, "
     "the engine overheats, or the vehicle loses power.",
     "Tell the mechanic: Ask them to inspect the radiator, thermostat and "

@@ -28,7 +28,10 @@ Rules:
   the owner-facing text. The benefit should be visible in what the explanation
   says, not in a statement about where it came from.
 - If no specific fault knowledge was retrieved, rely only on the Input context
-  and do not fill the gap with unsupported general model knowledge.
+  and do not fill the gap with unsupported general model knowledge. In the
+  controlled no-retrieval condition, do not name a thermostat, radiator, fan,
+  hose, wiring fault, contamination, calibration fault or other mechanical
+  cause. State plainly that the data pattern cannot identify a specific cause.
 - Connect each retained cause to the observed pattern. Do not copy a long list
   of generic workshop faults.
 - If displayed key signals are mostly NORMAL or evidence is rule-based proxy

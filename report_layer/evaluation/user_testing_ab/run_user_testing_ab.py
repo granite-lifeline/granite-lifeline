@@ -28,10 +28,16 @@ from shared.interface_models import ModelLayerOutput
 
 
 NO_FAULT_KNOWLEDGE = (
-    "No retrieved fault knowledge was supplied in this controlled condition."
+    "No retrieved fault knowledge was supplied in this controlled condition. "
+    "Do not use general model knowledge to name a mechanical cause. Explain "
+    "that the observed data pattern alone cannot identify a specific cause "
+    "and requires professional verification."
 )
 NO_ACTION_KNOWLEDGE = (
-    "No retrieved action guidance was supplied in this controlled condition."
+    "No retrieved action guidance was supplied in this controlled condition. "
+    "Do not invent a component test or repair procedure. Give risk-appropriate "
+    "owner observations and ask the mechanic to investigate the reported "
+    "signal pattern generally."
 )
 
 

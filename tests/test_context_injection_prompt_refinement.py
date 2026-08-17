@@ -139,7 +139,7 @@ def test_low_cooling_rag_filters_overheating_fault_list(monkeypatch):
 
     context = build_context_with_rag(model)
 
-    assert "retrieved overheating fault list is not relevant" in (
+    assert "mainly describes overheating faults" in (
         context["fault_knowledge"]
     )
     assert "Thermostat stuck closed" not in context["fault_knowledge"]

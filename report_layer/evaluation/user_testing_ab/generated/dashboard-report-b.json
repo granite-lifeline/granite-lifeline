@@ -43,11 +43,12 @@
         ]
       }
     ],
-    "estimated_cycles_to_failure": 28,
-    "estimated_failure_probability": 0.151,
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": 0.001,
     "notes": [
       "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
-      "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips."
+      "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips.",
+      "No positive trip-level risk trend was observed; no threshold crossing cycle is projected."
     ],
     "risk_history": [
       {
@@ -151,13 +152,13 @@
         "risk_score": 0.0932
       }
     ],
-    "anomaly_description": "The cooling system shows high risk because the coolant temperature is lower than expected and rising unusually quickly, indicating possible thermal stress that requires professional verification soon.",
-    "possible_cause": "The high-risk cooling degradation may indicate a sensor reading issue, malfunctioning cooling fan, or insufficient evidence to pinpoint the cause. Since coolant temperature is lower than expected yet rising quickly, it could suggest an inaccurate temperature sensor or inadequate fan operation under load, requiring professional verification.",
+    "anomaly_description": "The cooling system shows high risk due to unusually low coolant temperature and an abnormally rapid rise rate, suggesting potential thermal stress in the cooling system and requiring professional verification.",
+    "possible_cause": "The low coolant temperature and rapid rise rate may indicate a sensor reading issue or unusual cooling behavior, but the exact cause cannot be determined without professional verification.",
     "recommended_action": [
-      "Now: Monitor the temperature gauge while driving; note any unusual readings or warning lights.",
-      "Service timing: Prompt professional inspection due to High risk of cooling degradation.",
-      "Stop driving and seek help if: You observe a red temperature warning light, steam from under the hood, sudden loss of power, or the vehicle feels unusually rough while running.",
-      "Tell the mechanic: Check the thermostat operation by measuring coolant temperatures in front of and behind it; also verify that the pump wheel is securely attached to the drive shaft."
+      "Now: Monitor your vehicle's temperature gauge while driving. If you notice any unusual readings or warning lights, note them for the mechanic.",
+      "Service timing: Prompt professional inspection due to High risk in the cooling system.",
+      "Stop driving and seek help if: You observe a red temperature warning light, see steam coming from under the hood, experience sudden loss of power, or feel that the vehicle is running roughly or unsafely.",
+      "Tell the mechanic: Verify the coolant-temperature sensor reading and reproduce the rapid rise rate pattern to determine if there is an issue with the cooling system components."
     ]
   },
   {
@@ -204,8 +205,8 @@
         ]
       }
     ],
-    "estimated_cycles_to_failure": 28,
-    "estimated_failure_probability": 0.151,
+    "estimated_cycles_to_failure": 20,
+    "estimated_failure_probability": 0.0468,
     "notes": [
       "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
       "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips."
@@ -312,13 +313,13 @@
         "risk_score": 0.0772
       }
     ],
-    "anomaly_description": "The mass airflow (MAF) sensor in the air intake system shows medium risk due to an abnormal internal comparison signal. This suggests possible sensor drift and should be checked soon by a professional.",
-    "possible_cause": "The abnormal Speed-Density MAF Residual may indicate sensor drift caused by contamination such as oil, dirt or pollen from an aftermarket air filter or wiring issues at its connector, or moisture ingress affecting readings and potentially leading to drivability problems.",
+    "anomaly_description": "The mass airflow (MAF) sensor indicates a medium risk issue. One internal consistency signal is higher than expected, suggesting monitoring and possible professional inspection soon.",
+    "possible_cause": "The MAF sensor issue may suggest contamination (oil, dirt, pollen), wiring problems, aging, or moisture causing inaccurate airflow readings, potentially affecting engine performance.",
     "recommended_action": [
-      "Now: Pay attention to any unusual engine idle behavior, hesitation during acceleration, or a noticeable drop in power while driving.",
-      "Service timing: Arrange for a professional inspection of the air intake system soon, as the medium risk suggests potential sensor drift that should be evaluated promptly.",
-      "Stop driving and seek help if: You observe the vehicle stalling, running very roughly, losing power unexpectedly, or experiencing any unsafe pedal response that makes continued driving hazardous.",
-      "Tell the mechanic: Verify the condition of the air filter (consider replacing it before inspection) and inspect the wiring/connectors for the mass airflow sensor for signs of damage, corrosion, or moisture ingress."
+      "Now: Pay attention to any unusual engine noises, hesitation during acceleration, or a decrease in fuel efficiency while driving.",
+      "Service timing: Schedule an inspection with a professional mechanic soon to evaluate the air intake MAF sensor and related components.",
+      "Stop driving and seek help if: You notice the vehicle stalling, running roughly, losing power unexpectedly, or displaying any warning lights on the dashboard that indicate engine trouble.",
+      "Tell the mechanic: Check the wiring and connectors for the mass airflow (MAF) sensor for damage or corrosion, and verify the air filter has not contaminated the sensor. Ensure the MAF sensor readings are accurate across the engine's RPM range."
     ]
   }
 ]

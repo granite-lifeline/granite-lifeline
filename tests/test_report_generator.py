@@ -94,8 +94,7 @@ LAYER3_RESPONSE = json.dumps(
         "recommended_action": [
             "Now: Watch the temperature gauge and avoid unusual vehicle "
             "load while arranging an inspection.",
-            "Service timing: Arrange a prompt professional inspection "
-            "within the next few days.",
+            "Service timing: Arrange a prompt professional inspection.",
             "Stop driving and seek help if: A red temperature warning "
             "appears, the engine overheats, or power drops.",
             "Tell the mechanic: Ask them to inspect the radiator, "
@@ -329,7 +328,7 @@ class TestGenerateReportValidationGate(unittest.TestCase):
                     "Now: Watch the temperature gauge and avoid unusual "
                     "vehicle load while arranging an inspection.",
                     "Service timing: Arrange a prompt cooling-system "
-                    "inspection within the next few days.",
+                    "inspection.",
                     "Stop driving and seek help if: A red temperature "
                     "warning appears, the engine overheats, or power drops.",
                     "Tell the mechanic: Ask them to inspect the radiator, "
