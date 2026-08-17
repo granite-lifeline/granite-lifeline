@@ -604,7 +604,7 @@ def _validate_layer_value(
     risk_level: str,
 ) -> ValidationResult:
     """Run the relevant live quality checks for one generated layer."""
-    if layer_num in {1, 2}:
+    if layer_num == 1:
         return validate_layer1(str(value))
     if layer_num == 2:
         return validate_layer2(str(value), layer1_output)

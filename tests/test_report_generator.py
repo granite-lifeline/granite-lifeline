@@ -13,6 +13,7 @@ import requests
 
 from report_layer.pipeline.report_generator import (
     _apply_signal_direction_check,
+    _validate_layer_value,
     call_ollama,
     generate_report,
 )
@@ -62,6 +63,39 @@ def test_signal_direction_check_blocks_reversed_coolant_comparison():
 
     assert result.score < 0.8
     assert any("below, not above" in item for item in result.warnings)
+
+
+def test_validate_layer_value_dispatches_to_the_matching_layer():
+    """Regression test: _validate_layer_value's dispatch previously had
+    `if layer_num in {1, 2}: return validate_layer1(...)` catching layer
+    2 before the `if layer_num == 2` branch could ever run — so
+    possible_cause was silently checked against anomaly_description's
+    rules (no hedging requirement, and the wrong 20-60 word range
+    instead of layer 2's real range) for as long as that code existed.
+
+    This text is valid for layer 2 (has hedging, 61 words — inside
+    layer 2's 130-word cap but over layer 1's 60-word cap) and invalid
+    for layer 1 (no hedging is fine for layer 1, but 61 words trips
+    layer 1's real cap). If dispatch is broken again, this comes back
+    as a length warning that shouldn't exist at layer 2.
+    """
+    text = (
+        "This may indicate a partially blocked radiator, a thermostat "
+        "that is not fully opening, or a failing water pump — each "
+        "could reduce how effectively the engine sheds heat given the "
+        "current signal pattern. Because the coolant temperature is "
+        "below its reference range while rising abnormally quickly, "
+        "these remain possibilities rather than a confirmed cause "
+        "until a mechanic verifies which component is responsible for "
+        "the drop in cooling performance observed here today."
+    )
+    assert 60 < len(text.split()) <= 130
+
+    result = _validate_layer_value(2, text, "", "High")
+
+    assert not any("too long" in w for w in result.warnings)
+    assert not any("too short" in w for w in result.warnings)
+
 
 # Realistic enough to pass prompt_chain_validator.validate_chain() at
 # VALIDATOR_SCORE_THRESHOLD — word-count minimums, hedging language,
