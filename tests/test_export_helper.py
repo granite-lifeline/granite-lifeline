@@ -362,8 +362,14 @@ def test_build_export_data_filters_optional_sections():
         selected_sections=["failure_prediction", "data_quality_notes"],
     )
 
+    # _sample_component() is risk_level "High" with a non-null
+    # estimated_failure_probability — "chance of crossing into High
+    # risk" would be self-contradictory here, so it correctly does not
+    # appear; see test_failure_prediction.py for the dedicated test.
     assert export_data["sections"] == ["failure_prediction"]
     assert export_data["failure_prediction"]["has_value"] is True
-    assert "72%" in export_data["failure_prediction"]["text"]
+    assert "already reached the High-risk threshold" in (
+        export_data["failure_prediction"]["text"]
+    )
     assert "data_quality_notes" not in export_data
     assert "summary" not in export_data

@@ -20,8 +20,28 @@ def test_failure_prediction_text_with_value():
         "72% chance of crossing into High risk within the next 10 trips"
         in text
     )
-    assert "projected around trip 15" in text
+    assert "expected around trip 15" in text
     assert "probability of failure" not in text
+    assert has_value is True
+
+
+def test_failure_prediction_text_suppresses_crossing_language_at_high_risk():
+    """"Chance of crossing into High risk" is contradictory once
+    risk_level is already High — Model Layer output can still carry a
+    small non-null residual probability at High risk (real data has
+    scored a High-risk case at 0.001), so this can't be assumed away by
+    the fields being null; risk_level must be checked explicitly."""
+    component_data = {
+        "risk_level": "High",
+        "estimated_failure_probability": 0.001,
+        "estimated_cycles_to_failure": None,
+    }
+
+    text, has_value = format_failure_prediction_text(component_data)
+
+    assert "chance of crossing" not in text
+    assert "expected around trip" not in text
+    assert "already reached the High-risk threshold" in text
     assert has_value is True
 
 
@@ -51,7 +71,7 @@ def test_failure_prediction_text_with_only_probability():
         "72% chance of crossing into High risk within the next 10 trips"
         in text
     )
-    assert "projected around trip" not in text
+    assert "expected around trip" not in text
     assert has_value is True
 
 
@@ -73,7 +93,7 @@ def test_failure_prediction_text_with_only_cycles():
     text, has_value = format_failure_prediction_text(component_data)
 
     assert (
-        "If the current trend continues, High risk is projected in "
+        "If the current trend continues, High risk is expected in "
         "about 15 trips" in text
     )
     assert "chance of crossing" not in text
@@ -93,7 +113,7 @@ def test_failure_prediction_text_zero_probability_is_value():
         "0% chance of crossing into High risk within the next 10 trips"
         in text
     )
-    assert "projected around trip 15" in text
+    assert "expected around trip 15" in text
     assert has_value is True
 
 

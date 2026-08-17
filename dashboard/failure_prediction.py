@@ -6,6 +6,11 @@ PENDING_FAILURE_PREDICTION_TEXT = (
     "trip history."
 )
 
+ALREADY_HIGH_RISK_TEXT = (
+    "This component has already reached the High-risk threshold based "
+    "on the current pattern. Arrange a professional inspection soon."
+)
+
 # estimated_failure_probability is the model's probability of crossing the
 # High-risk threshold within this fixed horizon. It is computed
 # independently from estimated_cycles_to_failure (a separate linear trend
@@ -38,7 +43,22 @@ def format_failure_prediction_text(component_data: dict) -> tuple[str, bool]:
     independent estimates (confirmed with Model Layer) and are shown as
     two separate statements, each naming its own horizon, so neither
     reads as if it were derived from the other.
+
+    "Chance of crossing into High risk" and "High risk expected around
+    trip N" are both statements about *reaching* High risk — neither
+    makes sense once risk_level is already High. Model Layer output can
+    still carry a small non-null residual probability even at High risk
+    (real data has scored e.g. a High-risk case at 0.001), so this must
+    be checked explicitly rather than assumed away by the fields being
+    null. Mirrors context_injection.py's build_context(), which already
+    suppresses the same threshold-crossing language in the LLM prompt
+    for this exact reason ("Threshold-crossing probability is not shown
+    because the current classification is already High risk").
     """
+    risk_level = str(component_data.get("risk_level") or "").lower()
+    if risk_level == "high":
+        return ALREADY_HIGH_RISK_TEXT, True
+
     cycles = component_data.get("estimated_cycles_to_failure")
     probability = component_data.get("estimated_failure_probability")
     has_cycles = not is_missing_value(cycles)
@@ -59,12 +79,12 @@ def format_failure_prediction_text(component_data: dict) -> tuple[str, bool]:
         if has_probability:
             sentences.append(
                 f"If the current trend continues, High risk is "
-                f"projected around trip {cycles}."
+                f"expected around trip {cycles}."
             )
         else:
             sentences.append(
                 f"If the current trend continues, High risk is "
-                f"projected in about {cycles} {trip_word}."
+                f"expected in about {cycles} {trip_word}."
             )
 
     return " ".join(sentences), True
