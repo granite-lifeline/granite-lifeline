@@ -184,6 +184,13 @@ def _clean_model_aware_text(
             cleaned,
             flags=re.IGNORECASE,
         )
+    if model_output.risk_level == "Medium":
+        cleaned = re.sub(
+            r"\b(?:warrants?|requires?) prompt professional inspection\b",
+            "should be checked soon by a professional",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
     return cleaned
 
 
@@ -562,7 +569,7 @@ def _clean_layer_value(
     model_output: ModelLayerOutput,
 ) -> Any:
     """Apply the production owner-facing cleanup for one layer."""
-    if layer_num == 1:
+    if layer_num in {1, 2}:
         return _clean_model_aware_text(str(value), model_output)
     if layer_num == 2:
         cleaned = _clean_model_aware_text(str(value), model_output)
@@ -577,11 +584,54 @@ def _validate_layer_value(
     risk_level: str,
 ) -> ValidationResult:
     """Run the relevant live quality checks for one generated layer."""
-    if layer_num == 1:
+    if layer_num in {1, 2}:
         return validate_layer1(str(value))
     if layer_num == 2:
         return validate_layer2(str(value), layer1_output)
     return validate_layer3(value, risk_level)
+
+
+def _apply_signal_direction_check(
+    validation: ValidationResult,
+    text: str,
+    model_output: ModelLayerOutput,
+) -> ValidationResult:
+    """Block a plain-language comparison that reverses supplied evidence."""
+    lower = text.lower()
+    if model_output.risk_level == "Medium" and re.search(
+        r"\b(?:prompt|urgent|immediate)\b", lower
+    ):
+        validation.warnings.append(
+            "Overstates Medium risk urgency; say it should be checked soon, "
+            "not promptly or urgently"
+        )
+        validation.score = max(0.0, validation.score - 0.4)
+        validation.passed = False
+    for signal in model_output.key_signals:
+        if signal.feature != "coolant_temp":
+            continue
+        low, high = signal.reference_range
+        if signal.value < low and re.search(
+            r"(?:coolant temperature.{0,45}(?:higher|above|elevated)|"
+            r"(?:high|elevated) coolant temperature)",
+            lower,
+        ):
+            validation.warnings.append(
+                "Reverses the supplied evidence: coolant temperature is "
+                "below, not above, its reference range"
+            )
+            validation.score = max(0.0, validation.score - 0.4)
+            validation.passed = False
+        elif signal.value > high and re.search(
+            r"coolant temperature.{0,45}(?:lower|below)", lower
+        ):
+            validation.warnings.append(
+                "Reverses the supplied evidence: coolant temperature is "
+                "above, not below, its reference range"
+            )
+            validation.score = max(0.0, validation.score - 0.4)
+            validation.passed = False
+    return validation
 
 
 def _correct_and_validate_layer(
@@ -600,6 +650,10 @@ def _correct_and_validate_layer(
         layer1_output,
         model_output.risk_level or "Low",
     )
+    if layer_num in {1, 2}:
+        validation = _apply_signal_direction_check(
+            validation, str(cleaned), model_output
+        )
     if validation.score >= VALIDATOR_SCORE_THRESHOLD:
         return cleaned
 
@@ -636,6 +690,10 @@ def _correct_and_validate_layer(
             layer1_output,
             model_output.risk_level or "Low",
         )
+        if layer_num in {1, 2}:
+            validation = _apply_signal_direction_check(
+                validation, str(corrected), model_output
+            )
         if validation.score >= VALIDATOR_SCORE_THRESHOLD:
             logger.info(
                 "Layer %d passed after targeted correction (score %.2f)",

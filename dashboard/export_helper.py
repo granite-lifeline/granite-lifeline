@@ -13,14 +13,12 @@ try:
     from dashboard.anomaly_display import COMPONENT_DISPLAY_NAMES
     from dashboard.failure_prediction import (
         format_failure_prediction_text,
-        get_data_quality_notes,
         is_missing_value,
     )
 except ImportError:  # Streamlit runs pages from inside dashboard/
     from anomaly_display import COMPONENT_DISPLAY_NAMES
     from failure_prediction import (
         format_failure_prediction_text,
-        get_data_quality_notes,
         is_missing_value,
     )
 
@@ -30,7 +28,6 @@ NOT_AVAILABLE = "Not available"
 EXPORT_SECTION_LABELS = {
     "summary": "Summary",
     "failure_prediction": "Failure Prediction",
-    "data_quality_notes": "Data Quality Notes",
     "key_signals": "Key Signals",
     "diagnostic_report": "Diagnostic Report",
 }
@@ -814,16 +811,6 @@ def build_diagnostic_pdf_bytes(
             export_data["failure_prediction"]["text"],
         )
 
-    if "data_quality_notes" in export_data:
-        _add_pdf_section(elements, tools, styles, "Data Quality Notes")
-        _add_list_panel(
-            elements,
-            tools,
-            styles,
-            "Notes",
-            export_data["data_quality_notes"],
-        )
-
     if "key_signals" in export_data:
         _add_pdf_section(elements, tools, styles, "Key Signals")
         _add_signal_pdf_table(
@@ -905,11 +892,6 @@ def build_export_data(
 
     if "diagnostic_report" in sections:
         export_data["diagnostic_report"] = build_diagnostic_report(
-            component_data
-        )
-
-    if "data_quality_notes" in sections:
-        export_data["data_quality_notes"] = get_data_quality_notes(
             component_data
         )
 

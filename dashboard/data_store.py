@@ -252,7 +252,7 @@ def make_overview_placeholder(component_key: str) -> dict:
 
 
 def get_overview_components() -> list[tuple[str, dict, bool]]:
-    """Return sorted (key, data, is_placeholder) tuples for the overview."""
+    """Return only Medium/High-risk components for the overview."""
     mock_data = get_mock_data()
     real_components: dict[str, dict] = {}
 
@@ -265,12 +265,11 @@ def get_overview_components() -> list[tuple[str, dict, bool]]:
         entry["component"] = canonical_key
         real_components[canonical_key] = entry
 
-    result: list[tuple[str, dict, bool]] = []
-    for key in GROUND_KNOWLEDGE_ANOMALY_TYPES:
-        if key in real_components:
-            result.append((key, real_components[key], False))
-        else:
-            result.append((key, make_overview_placeholder(key), True))
+    result: list[tuple[str, dict, bool]] = [
+        (key, entry, False)
+        for key, entry in real_components.items()
+        if entry.get("risk_level") in {"Medium", "High"}
+    ]
 
     return sorted(
         result,

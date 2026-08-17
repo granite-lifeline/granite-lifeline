@@ -797,7 +797,7 @@ def _handle_uploaded_csv_history_submit(uploaded_files, tokens: dict) -> None:
         components = {
             k: v for k, v in dashboard_data.items() if k != "_data_source"
         }
-        if not components or all(
+        if components and all(
             not c.get("anomaly_description") for c in components.values()
         ):
             _clear_csv_analysis_loading(loading_slot)
@@ -895,7 +895,7 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
         # retries or a semantic correction that still fails validation returns
         # an empty report while preserving the original vehicle evidence.
         components = {k: v for k, v in result.items() if k != "_data_source"}
-        if not components or all(
+        if components and all(
             not c.get("anomaly_description") for c in components.values()
         ):
             _clear_csv_analysis_loading(loading_slot)
@@ -2160,8 +2160,10 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
     if not mock_data:
         st.markdown(
             empty_state_html(
-                "No components to display",
-                "Upload a valid OBD-II CSV file or explore with demo data.",
+                "No current risk patterns detected",
+                "The uploaded trips did not produce a Medium or High risk "
+                "pattern. Continue normal monitoring; this result does not "
+                "rule out every vehicle fault.",
                 tokens,
                 max_width="700px",
                 margin="16px auto",

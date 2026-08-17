@@ -134,11 +134,13 @@ def test_failure_prediction_pending_matches_info_notice_style():
     assert "max-width:600px" in src
 
 
-def test_data_quality_notes_uses_content_card_style():
-    """Test notes render as a content card when notes exist."""
+def test_owner_limitation_replaces_internal_data_notes():
+    """Detail page shows a plain limitation, not internal model notes."""
     src = _detail_text()
 
-    assert "Data Quality Notes</div>" in src
+    assert "Data Quality Notes</div>" not in src
+    assert "Important limitation</div>" in src
+    assert "cannot confirm that a mechanical fault is present" in src
     assert 'info", size=18, color=tokens["accent"]' in src
     assert 'background:{tokens["glass_surface"]}' in src
     assert 'border:1px solid {tokens["glass_border"]}' in src

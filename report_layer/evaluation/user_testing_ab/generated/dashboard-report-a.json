@@ -1,0 +1,324 @@
+[
+  {
+    "timestamp": "2017-08-02T05:40:04Z",
+    "risk_score": 1.0,
+    "risk_level": "High",
+    "component": "cooling_degradation",
+    "prediction_confidence": 0.6542,
+    "key_signals": [
+      {
+        "feature": "coolant_temp",
+        "value": 84.0,
+        "unit": "°C",
+        "reference_range": [
+          90,
+          95
+        ]
+      },
+      {
+        "feature": "ect_rate_180s",
+        "value": 5.5069,
+        "unit": "°C/min",
+        "reference_range": [
+          0,
+          2
+        ]
+      },
+      {
+        "feature": "speed",
+        "value": 70.0,
+        "unit": "km/h",
+        "reference_range": [
+          0,
+          218
+        ]
+      },
+      {
+        "feature": "rpm",
+        "value": 1408.0,
+        "unit": "RPM",
+        "reference_range": [
+          0,
+          3682
+        ]
+      }
+    ],
+    "estimated_cycles_to_failure": 28,
+    "estimated_failure_probability": 0.151,
+    "notes": [
+      "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
+      "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips."
+    ],
+    "risk_history": [
+      {
+        "timestamp": "2017-08-02T05:40:04Z",
+        "risk_score": 1.0
+      },
+      {
+        "timestamp": "2017-08-02T05:50:12Z",
+        "risk_score": 0.0853
+      },
+      {
+        "timestamp": "2017-08-02T06:00:20Z",
+        "risk_score": 0.0324
+      },
+      {
+        "timestamp": "2017-08-02T06:10:28Z",
+        "risk_score": 0.1059
+      },
+      {
+        "timestamp": "2017-08-02T06:20:36Z",
+        "risk_score": 0.0831
+      },
+      {
+        "timestamp": "2017-08-03T17:56:03Z",
+        "risk_score": 0.4463
+      },
+      {
+        "timestamp": "2017-08-03T18:06:11Z",
+        "risk_score": 0.0796
+      },
+      {
+        "timestamp": "2017-08-03T18:16:19Z",
+        "risk_score": 0.0622
+      },
+      {
+        "timestamp": "2017-08-04T17:03:16Z",
+        "risk_score": 0.2456
+      },
+      {
+        "timestamp": "2017-08-04T17:13:24Z",
+        "risk_score": 0.0131
+      },
+      {
+        "timestamp": "2017-08-04T17:23:32Z",
+        "risk_score": 0.0706
+      },
+      {
+        "timestamp": "2017-08-04T17:33:40Z",
+        "risk_score": 0.1127
+      },
+      {
+        "timestamp": "2017-08-05T07:31:07Z",
+        "risk_score": 0.1558
+      },
+      {
+        "timestamp": "2017-08-05T07:41:15Z",
+        "risk_score": 0.1214
+      },
+      {
+        "timestamp": "2017-08-05T07:51:23Z",
+        "risk_score": 0.091
+      },
+      {
+        "timestamp": "2017-08-05T08:01:31Z",
+        "risk_score": 0.1117
+      },
+      {
+        "timestamp": "2017-08-05T08:11:39Z",
+        "risk_score": 0.0799
+      },
+      {
+        "timestamp": "2017-08-05T08:21:47Z",
+        "risk_score": 0.0459
+      },
+      {
+        "timestamp": "2017-08-05T08:31:55Z",
+        "risk_score": 0.6145
+      },
+      {
+        "timestamp": "2017-08-07T17:15:32Z",
+        "risk_score": 0.9271
+      },
+      {
+        "timestamp": "2017-08-07T17:25:40Z",
+        "risk_score": 0.0588
+      },
+      {
+        "timestamp": "2017-08-07T17:35:48Z",
+        "risk_score": 0.0843
+      },
+      {
+        "timestamp": "2017-08-07T17:45:56Z",
+        "risk_score": 0.1205
+      },
+      {
+        "timestamp": "2017-08-07T17:56:04Z",
+        "risk_score": 0.1143
+      },
+      {
+        "timestamp": "2017-08-07T18:06:12Z",
+        "risk_score": 0.0932
+      }
+    ],
+    "anomaly_description": "The cooling system shows high risk because the coolant temperature is lower than expected and rising unusually quickly, indicating possible thermal stress that requires professional verification soon.",
+    "possible_cause": "The lower-than-expected coolant temperature combined with its rapid rise could indicate issues such as an inoperative cooling fan, a partially obstructed radiator, or a malfunctioning thermostat that isn't maintaining proper engine temperature. These conditions might lead to insufficient heat dissipation despite normal driving speeds, suggesting the need for professional evaluation.",
+    "recommended_action": [
+      "Now: Monitor your vehicle's temperature gauge while driving; note any unusual readings.",
+      "Service timing: Prompt professional inspection due to high risk of cooling system degradation.",
+      "Stop driving and seek help if: You observe the engine overheating warning light or a sudden drop in coolant temperature accompanied by loss of power.",
+      "Tell the mechanic: Verify the operation of the cooling fan, inspect the radiator for blockages, and check the thermostat function to diagnose the high-risk cooling system issue."
+    ]
+  },
+  {
+    "timestamp": "2017-08-07T17:35:48Z",
+    "risk_score": 0.8479,
+    "risk_level": "Medium",
+    "component": "air_intake_maf_anomaly",
+    "prediction_confidence": 0.9281,
+    "key_signals": [
+      {
+        "feature": "maf",
+        "value": 67.36,
+        "unit": "g/s",
+        "reference_range": [
+          0,
+          123
+        ]
+      },
+      {
+        "feature": "map",
+        "value": 199.0,
+        "unit": "kPa",
+        "reference_range": [
+          36,
+          237
+        ]
+      },
+      {
+        "feature": "speed_density_maf_residual",
+        "value": 32.4138,
+        "unit": "g/s",
+        "reference_range": [
+          -20,
+          20
+        ]
+      },
+      {
+        "feature": "rpm",
+        "value": 2749.0,
+        "unit": "RPM",
+        "reference_range": [
+          0,
+          3682
+        ]
+      }
+    ],
+    "estimated_cycles_to_failure": 28,
+    "estimated_failure_probability": 0.151,
+    "notes": [
+      "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
+      "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips."
+    ],
+    "risk_history": [
+      {
+        "timestamp": "2017-08-02T05:40:04Z",
+        "risk_score": 0.0561
+      },
+      {
+        "timestamp": "2017-08-02T05:50:12Z",
+        "risk_score": 0.1363
+      },
+      {
+        "timestamp": "2017-08-02T06:00:20Z",
+        "risk_score": 0.0868
+      },
+      {
+        "timestamp": "2017-08-02T06:10:28Z",
+        "risk_score": 0.0417
+      },
+      {
+        "timestamp": "2017-08-02T06:20:36Z",
+        "risk_score": 0.093
+      },
+      {
+        "timestamp": "2017-08-03T17:56:03Z",
+        "risk_score": 0.0621
+      },
+      {
+        "timestamp": "2017-08-03T18:06:11Z",
+        "risk_score": 0.1553
+      },
+      {
+        "timestamp": "2017-08-03T18:16:19Z",
+        "risk_score": 0.1033
+      },
+      {
+        "timestamp": "2017-08-04T17:03:16Z",
+        "risk_score": 0.0494
+      },
+      {
+        "timestamp": "2017-08-04T17:13:24Z",
+        "risk_score": 0.1507
+      },
+      {
+        "timestamp": "2017-08-04T17:23:32Z",
+        "risk_score": 0.119
+      },
+      {
+        "timestamp": "2017-08-04T17:33:40Z",
+        "risk_score": 0.0943
+      },
+      {
+        "timestamp": "2017-08-05T07:31:07Z",
+        "risk_score": 0.046
+      },
+      {
+        "timestamp": "2017-08-05T07:41:15Z",
+        "risk_score": 0.1274
+      },
+      {
+        "timestamp": "2017-08-05T07:51:23Z",
+        "risk_score": 0.0862
+      },
+      {
+        "timestamp": "2017-08-05T08:01:31Z",
+        "risk_score": 0.0908
+      },
+      {
+        "timestamp": "2017-08-05T08:11:39Z",
+        "risk_score": 0.0618
+      },
+      {
+        "timestamp": "2017-08-05T08:21:47Z",
+        "risk_score": 0.0994
+      },
+      {
+        "timestamp": "2017-08-05T08:31:55Z",
+        "risk_score": 0.1571
+      },
+      {
+        "timestamp": "2017-08-07T17:15:32Z",
+        "risk_score": 0.1243
+      },
+      {
+        "timestamp": "2017-08-07T17:25:40Z",
+        "risk_score": 0.1988
+      },
+      {
+        "timestamp": "2017-08-07T17:35:48Z",
+        "risk_score": 0.8479
+      },
+      {
+        "timestamp": "2017-08-07T17:45:56Z",
+        "risk_score": 0.0753
+      },
+      {
+        "timestamp": "2017-08-07T17:56:04Z",
+        "risk_score": 0.2128
+      },
+      {
+        "timestamp": "2017-08-07T18:06:12Z",
+        "risk_score": 0.0772
+      }
+    ],
+    "anomaly_description": "The mass airflow (MAF) sensor in the air intake system shows medium risk due to an abnormal internal comparison signal. This suggests possible sensor drift and should be checked soon by a professional.",
+    "possible_cause": "The abnormal Speed-Density MAF Residual suggests the mass airflow sensor (MAF) may have drifted or is experiencing electrical interference, potentially due to a dirty sensor surface or wiring issues. This could lead to inaccurate air flow readings, affecting engine performance and fuel efficiency.",
+    "recommended_action": [
+      "Now: Pay attention to any changes in how your vehicle accelerates or its fuel efficiency while driving.",
+      "Service timing: Arrange for a professional inspection soon to evaluate the mass airflow sensor and associated wiring.",
+      "Stop driving and seek help if: You notice a sudden drop in power, rough idling, or the Check Engine light comes on strongly while you're driving.",
+      "Tell the mechanic: Examine the abnormal Speed-Density MAF Residual signal and determine whether the mass airflow sensor needs cleaning or further assessment."
+    ]
+  }
+]

@@ -25,10 +25,12 @@ Rules:
   Medium risk means it should be checked soon. High risk means it needs prompt
   professional attention; it does not mean a mechanical fault is confirmed.
 - If a signal is NORMAL, never describe it as abnormal or elevated. If it is
-  ABNORMAL, explain how it differs from its displayed reference range.
-- Do not repeat all values already shown in the Dashboard's Key Signals table.
-  Prefer a plain comparison such as "lower than its expected range". Include
-  a rounded value only when it materially changes the owner's interpretation.
+  ABNORMAL, explain the direction of the change in plain language, such as
+  "higher than expected" or "changing unusually quickly".
+- Do not repeat numerical measurements or reference ranges already shown in
+  the Dashboard's Key Signals table. Use plain comparisons such as "lower
+  than expected". This summary must contain no signal values, units, ranges,
+  internal scores, percentages or decimal numbers.
 - Include a probability, cycle estimate or horizon only when that exact value
   is present in the Input context and is needed to explain urgency. Never
   invent or convert it into odds.

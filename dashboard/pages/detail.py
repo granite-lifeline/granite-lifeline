@@ -10,10 +10,7 @@ import streamlit as st
 
 from anomaly_display import COMPONENT_DISPLAY_NAMES
 from data_store import get_overview_components
-from failure_prediction import (
-    format_failure_prediction_text,
-    get_data_quality_notes,
-)
+from failure_prediction import format_failure_prediction_text
 from glossary import get_signal_display_name, get_signal_tooltip
 from theme import (
     COMPONENT_ICONS,
@@ -49,11 +46,10 @@ def _render_failure_prediction(
     component_data: dict,
     tokens: dict,
 ) -> None:
-    """Failure prediction banner + data-quality notes."""
+    """Failure prediction banner with an owner-facing limitation."""
     prediction_text, has_value = format_failure_prediction_text(
         component_data
     )
-    notes = get_data_quality_notes(component_data)
     text_color = tokens["text"] if has_value else tokens["text_secondary"]
     border_color = (
         hex_to_rgba(tokens["accent"], 0.35)
@@ -61,31 +57,24 @@ def _render_failure_prediction(
     )
     info_icon = lucide_icon("info", size=18, color=tokens["accent"])
 
-    note_items = "".join(
-        '<div style="display:flex;gap:8px;margin-top:8px;">'
-        f'<span style="color:{tokens["accent"]};'
-        'font-size:13px;line-height:1.45;">•</span>'
-        f'<span style="color:{tokens["text"]};'
-        f'font-size:13px;line-height:1.45;">{_html.escape(n)}</span>'
-        '</div>'
-        for n in notes
+    limitation_panel = (
+        f'<div style="flex:1;min-width:260px;'
+        f'background:{tokens["glass_surface"]};'
+        f'border:1px solid {tokens["glass_border"]};'
+        'border-radius:16px;padding:14px 16px 13px 16px;'
+        f'box-shadow:0 8px 24px {tokens["shadow"]},'
+        'inset 0 1px 0 rgba(255,255,255,0.10);">'
+        '<div style="display:flex;align-items:center;gap:8px;'
+        f'color:{tokens["text"]};font-size:14px;font-weight:700;'
+        f'padding-bottom:8px;border-bottom:2px solid {tokens["border"]};">'
+        f'{info_icon}Important limitation</div>'
+        f'<div style="color:{tokens["text"]};font-size:13px;'
+        'line-height:1.5;margin-top:10px;">'
+        'This analysis detects risk patterns in the uploaded driving data. '
+        'It cannot confirm that a mechanical fault is present. A qualified '
+        'mechanic should verify the vehicle before any repair decision.'
+        '</div></div>'
     )
-    notes_panel = ""
-    if notes:
-        notes_panel = (
-            f'<div style="flex:1;min-width:260px;'
-            f'background:{tokens["glass_surface"]};'
-            f'border:1px solid {tokens["glass_border"]};'
-            'border-radius:16px;padding:14px 16px 13px 16px;'
-            f'box-shadow:0 8px 24px {tokens["shadow"]},'
-            'inset 0 1px 0 rgba(255,255,255,0.10);">'
-            '<div style="display:flex;align-items:center;'
-            'justify-content:center;gap:8px;'
-            f'color:{tokens["text"]};font-size:14px;font-weight:700;'
-            f'padding-bottom:8px;border-bottom:2px solid {tokens["border"]};">'
-            f'{info_icon}Data Quality Notes</div>'
-            f'<div style="margin-top:4px;">{note_items}</div></div>'
-        )
 
     if has_value:
         prob = component_data.get("estimated_failure_probability")
@@ -135,7 +124,7 @@ def _render_failure_prediction(
         'align-items:center;justify-content:center;">'
         f'<div style="min-width:0;width:100%;">{prediction_html}</div>'
         '</div>'
-        f'{notes_panel}</div></div>'
+        f'{limitation_panel}</div></div>'
     )
     st.markdown(card_html, unsafe_allow_html=True)
 

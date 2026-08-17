@@ -481,7 +481,7 @@ def test_csv_upload_unexpected_error_clears_loading_state(monkeypatch):
     assert "unexpected pipeline issue" in html
 
 
-def test_csv_upload_empty_report_recovers_running_state(monkeypatch):
+def test_csv_upload_no_risk_result_opens_dashboard_empty_state(monkeypatch):
     overview, tokens, rendered = _capture_overview_markdown(monkeypatch)
     csv_bytes = _valid_csv_bytes()
 
@@ -498,12 +498,12 @@ def test_csv_upload_empty_report_recovers_running_state(monkeypatch):
         _FakeUpload(csv_bytes, "valid-drive.csv"), tokens
     )
 
-    html = "".join(rendered)
     assert overview.st.session_state["csv_analysis_running"] is False
-    assert "Analysing your CSV..." not in html
-    assert "Report Generation Unavailable" in html
-    assert "vehicle evidence was preserved" in html
-    assert "safe diagnostic report could not be generated" in html
+    assert overview.st.session_state["dashboard_mode"] == "dashboard"
+    assert overview.st.session_state["dashboard_data"] == {
+        "_data_source": {}
+    }
+    assert "Report Generation Unavailable" not in "".join(rendered)
 
 
 def test_stale_csv_loading_state_is_cleared(monkeypatch):
@@ -630,6 +630,37 @@ def test_run_model_layer_reads_output_json(monkeypatch, tmp_path):
     )
 
     assert result == envelope
+
+
+def test_run_model_layer_uses_run_local_risk_history(monkeypatch, tmp_path):
+    import dashboard.csv_pipeline as csv_pipeline
+
+    script = tmp_path / "detector.py"
+    script.write_text("# stub")
+    monkeypatch.setattr(csv_pipeline, "MODEL_LAYER_SCRIPT", script)
+    captured = {}
+
+    def fake_run(cmd, **kwargs):
+        captured["cmd"] = [str(part) for part in cmd]
+        output_path = Path(cmd[cmd.index("--output") + 1])
+        output_path.write_text(json.dumps({
+            "summary": _model_output(),
+            "windows": [],
+        }))
+        return subprocess.CompletedProcess(cmd, returncode=0)
+
+    monkeypatch.setattr(csv_pipeline.subprocess, "run", fake_run)
+    output_path = tmp_path / "model_output.json"
+    csv_pipeline._run_model_layer(
+        tmp_path / "production_features.csv",
+        None,
+        output_path,
+    )
+
+    history_index = captured["cmd"].index("--history-file")
+    assert captured["cmd"][history_index + 1] == str(
+        tmp_path / "risk_history.csv"
+    )
 
 
 def test_run_uploaded_csv_batch_passes_proxy_decisions_to_subprocess(
@@ -859,6 +890,46 @@ def test_run_uploaded_csv_history_batch_runs_each_trip_in_order(
 ):
     import dashboard.csv_pipeline as csv_pipeline
 
+    combined_features = Path("/tmp/combined_production_features.csv")
+    combined_proxy = Path("/tmp/combined_proxy_decisions.csv")
+    captured = {}
+
+    def fake_data_history(paths):
+        captured["names"] = [path.name for path in paths]
+        return combined_features, combined_proxy
+
+    def fake_model(features, proxy, output):
+        captured["model"] = (features, proxy)
+        return {"summary": _model_output(), "windows": []}
+
+    def fake_dashboard(raw, source):
+        captured["source"] = source
+        return {
+            "cooling_degradation": _model_output(),
+            "_data_source": {"cooling_degradation": source},
+        }
+
+    monkeypatch.setattr(
+        csv_pipeline, "_run_data_layer_history", fake_data_history
+    )
+    monkeypatch.setattr(csv_pipeline, "_run_model_layer", fake_model)
+    monkeypatch.setattr(
+        csv_pipeline, "load_model_output_for_dashboard", fake_dashboard
+    )
+    names = [f"2018-03-0{i}_Seat_Leon_RT_S_Normal.csv"
+             for i in range(1, 6)]
+    result = run_uploaded_csv_history_batch(
+        [(b"csv", name) for name in names]
+    )
+
+    assert captured["names"] == names
+    assert captured["model"] == (combined_features, combined_proxy)
+    assert captured["source"] == "uploaded_history"
+    assert result["dashboard_data"]["cooling_degradation"][
+        "risk_score"
+    ] == 0.7
+    return
+
     calls: list[str] = []
     progress_events: list[tuple[int, str]] = []
     file_names = [
@@ -1007,6 +1078,34 @@ def test_run_uploaded_csv_history_batch_requires_five_trips():
 
 def test_run_uploaded_csv_history_batch_requires_risk_score(monkeypatch):
     import dashboard.csv_pipeline as csv_pipeline
+
+    monkeypatch.setattr(
+        csv_pipeline,
+        "_run_data_layer_history",
+        lambda paths: (Path("features.csv"), None),
+    )
+    monkeypatch.setattr(
+        csv_pipeline,
+        "_run_model_layer",
+        lambda features, proxy, output: {
+            "summary": {"timestamp": "2018-03-01T10:00:00Z"},
+            "windows": [],
+        },
+    )
+    monkeypatch.setattr(
+        csv_pipeline,
+        "load_model_output_for_dashboard",
+        lambda raw, source: (_ for _ in ()).throw(
+            UploadedCsvPipelineError("risk_score is required")
+        ),
+    )
+
+    with pytest.raises(UploadedCsvPipelineError, match="risk_score"):
+        run_uploaded_csv_history_batch(
+            [(b"csv", f"2018-03-0{index}_trip.csv")
+             for index in range(1, 6)]
+        )
+    return
 
     monkeypatch.setattr(
         csv_pipeline,

@@ -185,6 +185,35 @@ class TestValidateLayer1:
         result = validate_layer1(text)
         assert any("too long" in w for w in result.warnings)
 
+    def test_machine_precision_and_metric_repetition_are_flagged(self):
+        text = (
+            "The cooling system is High risk. Coolant is 84.0 degrees "
+            "against a 90.0 to 95.0 range and rises at 5.5069 degrees per "
+            "minute against a 0.0 to 2.0 reference, so it needs attention."
+        )
+        result = validate_layer1(text)
+        assert any("numerical precision" in w for w in result.warnings)
+        assert any("too many measurements" in w for w in result.warnings)
+
+    def test_risk_score_restatement_is_flagged(self):
+        text = (
+            "The mass airflow sensor has a Medium risk category. The 85% "
+            "risk score is an internal severity measure, while the current "
+            "airflow comparison should be checked soon by a professional."
+        )
+        result = validate_layer1(text)
+        assert any("risk score" in w for w in result.warnings)
+
+    def test_parenthesised_percentage_after_risk_is_blocked(self):
+        text = (
+            "The mass airflow sensor shows medium risk (85%) because its "
+            "internal comparison is unusual. This pattern should be checked "
+            "soon by a professional, although no fault is confirmed."
+        )
+        result = validate_layer1(text)
+        assert result.score < 0.8
+        assert any("risk score" in w for w in result.warnings)
+
 
 class TestValidateLayer2:
     def test_negated_confirmed_language_is_not_flagged(self):
@@ -238,6 +267,11 @@ class TestValidateLayer2:
             GOOD_LAYER1,
         )
         assert not any("hedging" in w.lower() for w in result.warnings)
+
+    def test_overlong_cause_is_flagged(self):
+        text = "This may indicate " + " ".join(["detail"] * 70)
+        result = validate_layer2(text, GOOD_LAYER1)
+        assert any("too long" in w for w in result.warnings)
 
 
 class TestValidateLayer3:

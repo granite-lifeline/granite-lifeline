@@ -140,6 +140,35 @@ def test_batch_model_output_keeps_each_affected_component(monkeypatch):
     assert [entry["risk_score"] for entry in air_history] == [0.71, 0.86]
 
 
+def test_low_risk_model_output_does_not_create_dashboard_card(monkeypatch):
+    """A no-risk analysis opens the Dashboard without placeholder reports."""
+    import report_layer.pipeline.report_generator as report_generator
+
+    monkeypatch.setattr(
+        report_generator,
+        "generate_report",
+        lambda *_args, **_kwargs: pytest.fail(
+            "Low-risk output should not invoke report generation"
+        ),
+    )
+    low = {
+        "timestamp": "2026-01-01T10:00:00Z",
+        "anomaly_type": "cooling_degradation",
+        "risk_score": 0.2,
+        "risk_level": "Low",
+        "component": "cooling_degradation",
+        "prediction_confidence": 0.8,
+        "key_signals": [],
+        "estimated_cycles_to_failure": None,
+        "estimated_failure_probability": None,
+        "notes": [],
+    }
+
+    assert load_model_output_for_dashboard(low, source="uploaded") == {
+        "_data_source": {}
+    }
+
+
 def test_load_report_data_file_not_found():
     """Test error handling when file does not exist."""
     with pytest.raises(FileNotFoundError):

@@ -72,17 +72,15 @@ def test_export_section_options_for_future_popup():
     assert "summary" in keys
     assert "key_signals" in keys
     assert "diagnostic_report" in keys
-    assert "data_quality_notes" in keys
+    assert "data_quality_notes" not in keys
 
 
-def test_export_section_options_put_notes_after_failure_prediction():
-    """Test PDF section order keeps data quality after prediction."""
+def test_export_section_options_omit_internal_data_notes():
+    """Owner exports must not expose internal Model Layer notes."""
     keys = [option["key"] for option in get_export_section_options()]
 
-    assert keys.index("failure_prediction") < keys.index(
-        "data_quality_notes"
-    )
-    assert keys.index("data_quality_notes") < keys.index("key_signals")
+    assert "data_quality_notes" not in keys
+    assert keys.index("failure_prediction") < keys.index("key_signals")
 
 
 def test_clean_export_sections_uses_default_order():
@@ -331,13 +329,8 @@ def test_build_export_data_filters_optional_sections():
         selected_sections=["failure_prediction", "data_quality_notes"],
     )
 
-    assert export_data["sections"] == [
-        "failure_prediction",
-        "data_quality_notes",
-    ]
+    assert export_data["sections"] == ["failure_prediction"]
     assert export_data["failure_prediction"]["has_value"] is True
     assert "72% probability" in export_data["failure_prediction"]["text"]
-    assert export_data["data_quality_notes"] == [
-        "Failure estimate may change after more drive cycles."
-    ]
+    assert "data_quality_notes" not in export_data
     assert "summary" not in export_data

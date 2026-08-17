@@ -171,7 +171,35 @@ def validate_layer1(output: str) -> ValidationResult:
         warnings.append(
             f"Output is too long: {word_count} words (maximum 60)"
         )
+        score -= 0.4
+
+    # Owner-facing summaries should interpret the separate Key Signals table,
+    # not reproduce machine precision or enumerate a second set of metrics.
+    numeric_tokens = re.findall(r"-?\d+(?:\.\d+)?%?", output)
+    over_precise = [
+        token for token in numeric_tokens
+        if re.search(r"\.\d{2,}", token)
+    ]
+    if over_precise:
+        warnings.append(
+            "Uses unnecessary numerical precision; round or describe the "
+            "comparison in plain language"
+        )
         score -= 0.2
+    if len(numeric_tokens) > 3:
+        warnings.append(
+            "Repeats too many measurements; keep detailed values in Key "
+            "Signals and summarise only the decision-relevant change"
+        )
+        score -= 0.2
+    if re.search(
+        r"\b(?:risk score|% score)\b|\brisk\s*\(\s*\d+(?:\.\d+)?\s*%\s*\)",
+        output.lower(),
+    ):
+        warnings.append(
+            "Restates the internal risk score; use the risk category instead"
+        )
+        score -= 0.4
 
     # Ensure score is within bounds
     score = max(0.0, min(1.0, score))
@@ -265,6 +293,13 @@ def validate_layer2(output: str, layer1_output: str) -> ValidationResult:
             f"Contains confirmed fault language: '{unnegated_hits[0]}'"
         )
         score -= 0.2
+
+    word_count = len(output.split())
+    if word_count > 70:
+        warnings.append(
+            f"Output is too long: {word_count} words (maximum 70)"
+        )
+        score -= 0.4
 
     # Check minimum length
     word_count = len(output.split())

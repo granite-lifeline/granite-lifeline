@@ -11,7 +11,13 @@ from unittest.mock import patch, MagicMock
 
 import requests
 
-from report_layer.pipeline.report_generator import call_ollama, generate_report
+from report_layer.pipeline.report_generator import (
+    _apply_signal_direction_check,
+    call_ollama,
+    generate_report,
+)
+from report_layer.pipeline.prompt_chain_validator import ValidationResult
+from shared.interface_models import ModelLayerOutput
 
 
 # ---------------------------------------------------------------------------
@@ -37,6 +43,25 @@ VALID_MODEL_OUTPUT = {
     "estimated_failure_probability": 0.72,
     "notes": [],
 }
+
+
+def test_signal_direction_check_blocks_reversed_coolant_comparison():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["key_signals"] = [{
+        "feature": "coolant_temp",
+        "value": 84.0,
+        "unit": "°C",
+        "reference_range": [90.0, 95.0],
+    }]
+    result = _apply_signal_direction_check(
+        ValidationResult(layer=1, passed=True, warnings=[], score=1.0),
+        "The coolant temperature is higher than expected, so this pattern "
+        "requires professional verification soon.",
+        ModelLayerOutput(**payload),
+    )
+
+    assert result.score < 0.8
+    assert any("below, not above" in item for item in result.warnings)
 
 # Realistic enough to pass prompt_chain_validator.validate_chain() at
 # VALIDATOR_SCORE_THRESHOLD — word-count minimums, hedging language,
