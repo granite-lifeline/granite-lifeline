@@ -40,6 +40,7 @@ LEGACY_SIGNAL_ALIASES: Dict[str, str] = {
     "coolant_slope": "ect_rate_180s",
 }
 RETIRED_SIGNALS = {"coolant_stability"}
+AFFECTED_RISK_LEVELS = {"Medium", "High"}
 
 
 def extract_model_summary(raw: Dict[str, Any]) -> Dict[str, Any]:
@@ -75,6 +76,98 @@ def extract_risk_history(
             "risk_score": window["risk_score"],
         })
     return history
+
+
+def _is_batch_model_output(raw: Dict[str, Any]) -> bool:
+    return (
+        isinstance(raw, dict)
+        and isinstance(raw.get("summary"), dict)
+        and isinstance(raw.get("windows"), list)
+    )
+
+
+def _model_component(payload: Dict[str, Any]) -> Optional[str]:
+    return payload.get("component") or payload.get("anomaly_type")
+
+
+def _is_affected_component(payload: Dict[str, Any]) -> bool:
+    level = payload.get("risk_level")
+    if level in AFFECTED_RISK_LEVELS:
+        return True
+    if level in {"Low", None}:
+        return False
+    try:
+        return float(payload.get("risk_score", 0.0)) >= 0.5
+    except (TypeError, ValueError):
+        return False
+
+
+def _single_component_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Return one component-risk payload, without nested secondary data."""
+    single = dict(payload)
+    single.pop("secondary_risk", None)
+    return normalize_key_signals(single)
+
+
+def _iter_component_payloads(payload: Dict[str, Any]):
+    if not isinstance(payload, dict):
+        return
+    yield _single_component_payload(payload)
+    secondary = payload.get("secondary_risk")
+    if isinstance(secondary, dict):
+        yield _single_component_payload(secondary)
+
+
+def _component_risk_history(
+    raw: Dict[str, Any],
+    component: str,
+) -> Optional[List[Dict[str, Any]]]:
+    """Return batch-window risk history for one component."""
+    if not _is_batch_model_output(raw):
+        return None
+
+    history = []
+    for window in raw["windows"]:
+        for payload in _iter_component_payloads(window):
+            if _model_component(payload) != component:
+                continue
+            if "timestamp" not in payload or "risk_score" not in payload:
+                continue
+            history.append({
+                "timestamp": payload["timestamp"],
+                "risk_score": payload["risk_score"],
+            })
+    return sorted(history, key=lambda item: item["timestamp"]) or None
+
+
+def _best_component_payloads(raw: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """Pick the highest-risk payload for each affected component."""
+    entries = []
+    if _is_batch_model_output(raw):
+        entries.append(raw["summary"])
+        entries.extend(raw["windows"])
+    else:
+        entries.append(raw)
+
+    affected: Dict[str, Dict[str, Any]] = {}
+    for entry in entries:
+        for payload in _iter_component_payloads(entry):
+            component = _model_component(payload)
+            if not component or not _is_affected_component(payload):
+                continue
+            score = float(payload.get("risk_score", 0.0))
+            old = affected.get(component)
+            old_score = float(old.get("risk_score", 0.0)) if old else -1.0
+            if old is None or score > old_score:
+                affected[component] = payload
+
+    if affected:
+        return affected
+
+    summary = extract_model_summary(raw)
+    fallback = _single_component_payload(summary)
+    component = _model_component(fallback)
+    return {component: fallback} if component else {}
 
 
 def normalize_key_signals(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -287,19 +380,20 @@ def load_model_output_for_dashboard(
     source: str = "real",
 ) -> Dict[str, Any]:
     """Convert single or batch Model Layer output into dashboard data."""
-    model_payload = normalize_key_signals(extract_model_summary(raw))
-    risk_history = extract_risk_history(raw)
-
     from shared.interface_models import ModelLayerOutput
-    ModelLayerOutput(**model_payload)
-
     from report_layer.pipeline.report_generator import generate_report
-    report = generate_report(model_payload, risk_history=risk_history)
-    component_key = report.get("component", model_payload.get("component"))
-    return {
-        component_key: report,
-        "_data_source": {component_key: source},
-    }
+
+    result: Dict[str, Any] = {"_data_source": {}}
+    for component, model_payload in _best_component_payloads(raw).items():
+        ModelLayerOutput(**model_payload)
+        report = generate_report(
+            model_payload,
+            risk_history=_component_risk_history(raw, component),
+        )
+        component_key = report.get("component", component)
+        result[component_key] = report
+        result["_data_source"][component_key] = source
+    return result
 
 
 def load_dashboard_data(

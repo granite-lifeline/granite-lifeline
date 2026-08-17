@@ -412,15 +412,13 @@ def analyze_window(
     )
     residual = calculate_residuals(prediction, future)
     residual_summary = summarize_residuals(residual)
-    anomaly_type, score, confidence, top_signals, notes = (
-        calculate_risk(residual_summary, future, notes, forwarded)
+    ranked_risks, top_signals, notes = calculate_ranked_risks(
+        residual_summary, future, notes, forwarded
     )
-    return build_interface_json(
+    return build_ranked_interface_json(
         future=future,
         residual_summary=residual_summary,
-        anomaly_type=anomaly_type,
-        risk_score=score,
-        confidence=confidence,
+        ranked_risks=ranked_risks,
         top_residual_signals=top_signals,
         notes=notes,
     )
@@ -641,12 +639,24 @@ def finite_or(value: float, fallback: float = 0.0) -> float:
     return value if np.isfinite(value) else fallback
 
 
-def calculate_risk(
+def calculate_ranked_risks(
     residual_summary: dict[str, dict[str, float]],
     future: pd.DataFrame,
     notes: list[str] | None = None,
     forwarded: dict[str, ForwardedVerdict] | None = None,
-) -> tuple[str, float, float, list[str], list[str]]:
+) -> tuple[
+    list[tuple[str, float, float]],
+    list[str],
+    list[str],
+]:
+    """Return the two highest-scoring distinct component risks.
+
+    Entries are ``(anomaly_type, risk_score, confidence)`` tuples in
+    descending risk order. Python's stable sort preserves the existing
+    component priority when scores tie, so the former ``max`` winner
+    remains the primary risk while the other high-risk component is no
+    longer discarded.
+    """
     notes = list(notes) if notes else []
     scores = normalized_residual_scores(residual_summary)
 
@@ -710,23 +720,52 @@ def calculate_risk(
             forwarded, "map_load_signal_plausibility_fault"
         ),
     }
-    anomaly_type = max(anomaly_scores, key=anomaly_scores.get)
-    risk_score = float(anomaly_scores[anomaly_type])
-
     # Confidence and top signals stay residual-based (TTM channels
     # only); the rule-based pedal score is deliberately excluded.
     top_residual_signals = sorted(scores, key=scores.get, reverse=True)[:3]
     std = float(np.std(list(scores.values())))
-    confidence = float(max(0.35, min(0.95, 1.0 - std)))
+    residual_confidence = float(max(0.35, min(0.95, 1.0 - std)))
 
-    # A forwarded verdict carries the Data Layer's own confidence: the
-    # residual spread describes a forecast that had no part in it.
-    verdict = forwarded.get(anomaly_type)
-    if verdict is not None and risk_score > 0.0:
-        confidence = float(verdict.confidence)
-        if verdict.note and verdict.note not in notes:
-            notes.append(verdict.note)
-    return anomaly_type, risk_score, confidence, top_residual_signals, notes
+    ranked_scores = sorted(
+        anomaly_scores.items(),
+        key=lambda item: item[1],
+        reverse=True,
+    )[:2]
+    ranked_risks: list[tuple[str, float, float]] = []
+    for anomaly_type, score in ranked_scores:
+        risk_score = float(score)
+        confidence = residual_confidence
+
+        # A forwarded verdict carries the Data Layer's own confidence:
+        # the residual spread describes a forecast that had no part in it.
+        verdict = forwarded.get(anomaly_type)
+        if verdict is not None and risk_score > 0.0:
+            confidence = float(verdict.confidence)
+            if verdict.note and verdict.note not in notes:
+                notes.append(verdict.note)
+        ranked_risks.append((anomaly_type, risk_score, confidence))
+
+    return ranked_risks, top_residual_signals, notes
+
+
+def calculate_risk(
+    residual_summary: dict[str, dict[str, float]],
+    future: pd.DataFrame,
+    notes: list[str] | None = None,
+    forwarded: dict[str, ForwardedVerdict] | None = None,
+) -> tuple[str, float, float, list[str], list[str]]:
+    """Backward-compatible view of the highest-ranked component."""
+    ranked_risks, top_signals, result_notes = calculate_ranked_risks(
+        residual_summary, future, notes, forwarded
+    )
+    anomaly_type, risk_score, confidence = ranked_risks[0]
+    return (
+        anomaly_type,
+        risk_score,
+        confidence,
+        top_signals,
+        result_notes,
+    )
 
 
 def _forwarded_score(
@@ -872,6 +911,40 @@ def build_interface_json(
     }
 
 
+def build_ranked_interface_json(
+    future: pd.DataFrame,
+    residual_summary: dict[str, dict[str, float]],
+    ranked_risks: list[tuple[str, float, float]],
+    top_residual_signals: list[str],
+    notes: list[str],
+) -> dict[str, Any]:
+    """Build the primary interface JSON plus its second-ranked risk.
+
+    The established top-level fields remain the highest risk for
+    backwards compatibility. ``secondary_risk`` is itself a complete
+    Model Layer single-risk object, allowing a consumer to process it
+    with the same field semantics without changing the primary path.
+    """
+    if len(ranked_risks) < 2:
+        raise ValueError("At least two component risks are required")
+
+    outputs = [
+        build_interface_json(
+            future=future,
+            residual_summary=residual_summary,
+            anomaly_type=anomaly_type,
+            risk_score=score,
+            confidence=confidence,
+            top_residual_signals=top_residual_signals,
+            notes=notes,
+        )
+        for anomaly_type, score, confidence in ranked_risks[:2]
+    ]
+    primary, secondary = outputs
+    primary["secondary_risk"] = secondary
+    return primary
+
+
 def print_residual_summary(
     residual_summary: dict[str, dict[str, float]],
 ) -> None:
@@ -922,18 +995,16 @@ def run_single(
     residual_summary = summarize_residuals(residual)
     print_residual_summary(residual_summary)
 
-    anomaly_type, score, confidence, top_signals, notes = calculate_risk(
+    ranked_risks, top_signals, notes = calculate_ranked_risks(
         residual_summary,
         future,
         notes,
         segment_verdicts(decisions, trip_id_value, str(segment_id)),
     )
-    result = build_interface_json(
+    result = build_ranked_interface_json(
         future=future,
         residual_summary=residual_summary,
-        anomaly_type=anomaly_type,
-        risk_score=score,
-        confidence=confidence,
+        ranked_risks=ranked_risks,
         top_residual_signals=top_signals,
         notes=notes,
     )
