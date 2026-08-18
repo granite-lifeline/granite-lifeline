@@ -365,8 +365,18 @@ Immediately before launch:
 4. Preview every section on desktop and mobile, including every report page.
 5. Submit non-consent and complete form-test paths.
 6. Export the response sheet and verify dashboard scoring, report columns, and
-   no identifying data.
+   no identifying data. Anchor the column map recorded in
+   `results_log_template.md` §0 against that export.
 7. Pilot the Form, confirm completion within 15 minutes, then repeat the launch
    checks after any content, image, option, or order change.
 8. Obtain supervisor approval for the study materials before turning on
    responses.
+
+Responses carry no identity, so a test or pilot submission cannot be recognised
+afterwards from its answers. Record the exact submission timestamp and the
+applicable `results_log_template.md` §1 exclusion reason for every form-test and
+pilot submission, and for the window of any content change made while the Form
+was accepting responses. That log is the only thing that makes those rows
+excludable; without it they are indistinguishable from valid responses. Keep it
+as the `submission_log` of `results_log_template.md` §0, and never delete a row
+from the response sheet to remove one.

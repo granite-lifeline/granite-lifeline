@@ -16,6 +16,55 @@ and raw answer charts do not calculate correctness or either composite score.
 Create reported tables and charts from the linked Google Sheet or CSV only after
 applying the inclusion log and scoring rules below.
 
+## 0. Handover package
+
+The person who builds and administers the Form is not the person who analyses
+the responses. This section records what passes between them. It adds no
+measure and changes no analysis rule; it names where each input to §1–§3 lives.
+
+| Item | Access | What it is for |
+| --- | --- | --- |
+| `..._RAW` spreadsheet | Analyst has Viewer | The untouched record. Never edited, sorted, or filtered |
+| `..._WORKING` copy | Analyst has Editor | The working analysis sheet of §2 |
+| Dated CSV export plus its SHA-256 checksum | Delivered with the sheets | The analysis authority named above, fixed at a known state |
+| `codebook` tab | In both spreadsheets | Identifies every response column; see below |
+| `answer_key` tab | In both spreadsheets | Supplies the fourteen correctness flags of §3 |
+| `submission_log` tab | In both spreadsheets | Supplies the exclusions of §1 |
+
+`codebook.csv` and `answer_key.csv` in this directory are the source for the
+first two tabs. Both are written against the built Form and must be re-derived,
+not edited by hand, if a question is ever added, removed, or reordered.
+
+**`codebook`** carries one row per response-sheet column: its column letter,
+item code, verbatim header, type, allowed values, whether it is scored, and its
+§2 working-column name. It exists because the export identifies nothing. Two
+properties of this Form make it necessary rather than convenient. First, CL2 and
+CL3 share their wording by design, so their two headers are byte-identical and
+only column position distinguishes them; a lookup by header name collides
+silently, and §6 forbids averaging them. Second, the codebook is where the
+never-score rule for U1, U2, the clarity items, the report ratings, and the
+background items is recorded per column rather than as prose.
+
+**`answer_key`** carries one row per scored item, fourteen in all, with the
+correct response as the **complete option string** rather than an option number.
+The Form is not a Google Forms quiz, so the export marks no answer correct and
+every flag in §3 is derived here. The export stores option text, so scoring
+compares strings: reference the key cell rather than retyping it, since several
+options contain an em dash, a curly quotation mark, or an apostrophe.
+
+**`submission_log`** carries one row per non-study submission: its timestamp and
+one §1 exclusion reason. Responses are anonymous, so this log is the only way a
+pilot, form-test, or form-fault row can be identified after the fact. It is
+built during the `protocol.md` §10 launch gate, not reconstructed afterwards.
+
+Ordinal columns hold labels such as `4 — Clear`, so read the leading digit
+rather than matching the label text. The linear-scale background item already
+exports as an integer.
+
+Sheet protection on the raw response tab does not block Form submissions, but it
+does travel into a duplicate: remove it from the `..._WORKING` copy before
+handover, or the analyst cannot add the §2 columns.
+
 ## 1. Inclusion log
 
 Assign `P01`, `P02`, … only after exporting valid responses. These are row
