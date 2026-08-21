@@ -130,11 +130,10 @@ def test_build_context_warns_low_rising_cooling_pattern_differently():
     assert "Avoid explaining thermostat mechanics" not in context
 
 
-def test_low_rising_cooling_pattern_does_not_suppress_real_retrieval(
+def test_low_rising_cooling_rejects_overheating_only_retrieval(
     monkeypatch,
 ):
-    """Unlike the ambiguous low+falling case, low+rising must let real
-    retrieved knowledge through instead of the synthetic override."""
+    """A metadata match must not force conflicting knowledge into context."""
     monkeypatch.setattr(
         context_injection,
         "retrieve_all",
@@ -166,12 +165,53 @@ def test_low_rising_cooling_pattern_does_not_suppress_real_retrieval(
 
     context = build_context_with_rag(model)
 
-    assert context["fault_knowledge"] == (
-        "Thermostat stuck closed. Radiator blocked."
-    )
-    assert "mainly describes overheating faults" not in (
+    assert "No suitable retrieved fault knowledge" in (
         context["fault_knowledge"]
     )
+    assert "Thermostat stuck closed" not in context["fault_knowledge"]
+    assert "No retrieved procedure passed the relevance gate" in (
+        context["actions_knowledge"]
+    )
+
+
+def test_low_rising_cooling_accepts_direction_neutral_retrieval(monkeypatch):
+    """Relevant component knowledge remains available after the gate."""
+    monkeypatch.setattr(
+        context_injection,
+        "retrieve_all",
+        lambda anomaly_type, risk_level: {
+            "description_causes": (
+                "A temperature-sensor reading issue or unusual cooling "
+                "behaviour may produce this pattern."
+            ),
+            "actions": "Verify the temperature signal against the vehicle.",
+        },
+    )
+    model = _model_output(
+        anomaly_type="cooling_degradation",
+        component="cooling_degradation",
+        risk_level="High",
+        risk_score=1.0,
+        key_signals=[
+            KeySignal(
+                feature="coolant_temp",
+                value=84.0,
+                unit="°C",
+                reference_range=[90.0, 95.0],
+            ),
+            KeySignal(
+                feature="ect_rate_180s",
+                value=5.5,
+                unit="°C/min",
+                reference_range=[0.0, 2.0],
+            ),
+        ],
+    )
+
+    context = build_context_with_rag(model)
+
+    assert "temperature-sensor reading issue" in context["fault_knowledge"]
+    assert "Verify the temperature signal" in context["actions_knowledge"]
 
 
 def test_build_context_with_rag_governs_workshop_actions(monkeypatch):
@@ -219,7 +259,7 @@ def test_low_cooling_rag_filters_overheating_fault_list(monkeypatch):
 
     context = build_context_with_rag(model)
 
-    assert "mainly describes overheating faults" in (
+    assert "No suitable retrieved fault knowledge" in (
         context["fault_knowledge"]
     )
     assert "Thermostat stuck closed" not in context["fault_knowledge"]

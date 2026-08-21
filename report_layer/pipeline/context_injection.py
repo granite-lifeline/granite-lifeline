@@ -156,6 +156,41 @@ def _sanitize_prompt_text(text: str) -> str:
     return _sanitize_owner_facing_prompt_text(text)
 
 
+NO_USABLE_FAULT_KNOWLEDGE = (
+    "No suitable retrieved fault knowledge matched the current signal "
+    "pattern. Do not use general model knowledge to name a specific "
+    "mechanical cause; preserve the evidence boundary."
+)
+
+
+def _retrieved_knowledge_is_usable(
+    ttm_output: ModelLayerOutput,
+    fault_knowledge: str,
+) -> bool:
+    """Return whether retrieved fault text may enter the generation prompt.
+
+    Retrieval is attempted for traceability, but a metadata match alone is
+    not enough to justify injection. The current knowledge base is largely
+    component-level. Its cooling entry is dominated by overheating faults, so
+    it must not anchor a report whose measured coolant temperature is below
+    range. Other supported types retain their exact anomaly-type match until
+    richer signal-direction metadata is available.
+    """
+    candidate = fault_knowledge.strip()
+    if not candidate or candidate.startswith("No specific fault knowledge"):
+        return False
+
+    cooling_pattern = _cooling_direction_pattern(ttm_output)
+    if cooling_pattern in {"ambiguous", "low_rising"} and re.search(
+        r"\b(?:overheat(?:ing|ed)?|high coolant temperature|"
+        r"thermostat stuck closed|radiator blocked)\b",
+        candidate,
+        flags=re.IGNORECASE,
+    ):
+        return False
+    return True
+
+
 def _owner_decision_policy(anomaly_type: str, risk_level: str) -> str:
     """Return deterministic owner guidance for one component and risk."""
     timing = {
@@ -576,32 +611,28 @@ def build_context_with_rag(
             "'requires further monitoring'"
         )
 
-    cooling_direction_pattern = _cooling_direction_pattern(ttm_output)
-    if cooling_direction_pattern == "ambiguous":
-        fault_knowledge = (
-            "The retrieved material mainly describes overheating faults and "
-            "does not match this lower-than-expected coolant-temperature "
-            "pattern. Do not reuse that fault list. The current evidence can "
-            "support only a possible temperature-sensor reading issue, "
-            "unusual cooling behaviour, or an unresolved cause that needs "
-            "professional verification."
-        )
+    candidate_fault_knowledge = _sanitize_prompt_text(
+        rag_knowledge["description_causes"]
+    )
+    use_retrieved_knowledge = _retrieved_knowledge_is_usable(
+        ttm_output, candidate_fault_knowledge
+    )
+
+    if not use_retrieved_knowledge:
+        fault_knowledge = NO_USABLE_FAULT_KNOWLEDGE
         owner_policy = _owner_decision_policy(
             ttm_output.anomaly_type, risk_level_normalized
         )
         actions_knowledge = (
             "Owner decision-support policy:\n"
             f"{owner_policy}\n\n"
-            "Technician evidence:\nThe retrieved overheating procedures do "
-            "not match the direction of the current signal. Ask a qualified "
-            "mechanic to verify the coolant-temperature reading and reproduce "
-            "the temperature-rise pattern before deciding which cooling "
-            "component, if any, requires work."
+            "Technician evidence:\nNo retrieved procedure passed the "
+            "relevance gate for this signal pattern. Ask a qualified mechanic "
+            "to verify the reported signals and the vehicle's actual "
+            "condition before deciding what, if anything, requires work."
         )
     else:
-        fault_knowledge = _sanitize_prompt_text(
-            rag_knowledge["description_causes"]
-        )
+        fault_knowledge = candidate_fault_knowledge
         actions_knowledge = _govern_action_knowledge(
             rag_knowledge["actions"],
             ttm_output.anomaly_type,
