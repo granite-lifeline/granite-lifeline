@@ -1505,6 +1505,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .detail-card-title { display:flex; align-items:center; gap:9px; color:var(--text); font-size:clamp(16px,1.22vw,20px); font-weight:780; }
 .detail-card-title.center { justify-content:center; }
 .detail-card-title span { color:var(--accent-blue); font-size:22px; }
+.detail-card-title .detail-title-icon { width:22px; height:22px; flex:0 0 22px; fill:none; stroke:var(--accent-blue); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 .detail-risk-wrap { display:grid; grid-template-columns:132px 1fr; gap:12px; align-items:center; }
 .detail-risk-ring { width:110px; height:110px; border-radius:50%; display:grid; place-items:center; background:conic-gradient(var(--accent-red) 0 92%, #e0e0e0 92% 100%); position:relative; }
 .detail-risk-ring::before { content:""; position:absolute; inset:14px; border-radius:50%; background:#fff; }
@@ -2794,7 +2795,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
           <div class="dash-shot-stage detail-demo-stage">
             <div class="detail-dashboard-card">
               <section class="detail-main-card">
-                <div class="detail-card-title"><span>⚡</span> Cooling System</div>
+                <div class="detail-card-title"><svg class="detail-title-icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Cooling System</div>
                 <div class="detail-risk-wrap">
                   <div class="detail-risk-ring">
                     <div class="detail-risk-ring-content"><strong>92%</strong><span>Risk score</span><em class="risk-delta">▲30.5</em></div>
@@ -2807,7 +2808,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
                   </div>
                 </div>
                 <div class="trend-card">
-                  <div class="detail-card-title"><span>↗</span> Risk Score Trend</div>
+                  <div class="detail-card-title"><svg class="detail-title-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Risk Score Trend</div>
                   <svg viewBox="0 0 520 140" role="img" aria-label="Risk score trend">
                     <defs>
                       <linearGradient id="trendFill" x1="0" x2="0" y1="0" y2="1">
@@ -2828,7 +2829,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
               </section>
               <section class="detail-side-grid">
                 <div class="detail-side-card">
-                  <div class="detail-card-title"><span>↯</span> Key Signals</div>
+                  <div class="detail-card-title"><svg class="detail-title-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Key Signals</div>
                   <div class="signal-table">
                     <div class="signal-row header"><span>Signal</span><span>Reading</span><span>Normal Range</span><span>Unit</span><span>Status</span></div>
                     <div class="signal-row"><span>Coolant Temperature</span><strong>84.0</strong><span>90–95</span><span>°C</span><i class="signal-status">Abnormal</i></div>
@@ -2839,7 +2840,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
                   </div>
                 </div>
                 <div class="detail-side-card">
-                  <div class="detail-card-title"><span>▣</span> Diagnostic Report <span class="confidence-pill">Confidence: 68%</span></div>
+                  <div class="detail-card-title"><svg class="detail-title-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> Diagnostic Report <span class="confidence-pill">Confidence: 68%</span></div>
                   <div class="report-mini-grid">
                     <article class="report-mini-card"><b>What's happening</b></article>
                     <article class="report-mini-card"><b>Why this matters</b></article>
