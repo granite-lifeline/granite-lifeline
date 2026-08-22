@@ -68,6 +68,34 @@ def _find_unnegated_phrases(text: str, phrases: List[str]) -> List[str]:
     return hits
 
 
+def _has_substantial_cross_layer_repetition(
+    layer1_output: str,
+    layer2_output: str,
+    phrase_length: int = 12,
+) -> bool:
+    """Return whether Layer 2 copies a substantial phrase from Layer 1.
+
+    Layer 2 is expected to refer to the same component and supporting signals,
+    so general vocabulary overlap is legitimate. This check therefore looks
+    only for a long, contiguous sequence of words. It catches copied clauses
+    without penalising a new causal explanation that uses the same evidence.
+    """
+    token_pattern = r"[a-z0-9]+(?:'[a-z]+)?"
+    layer1_tokens = re.findall(token_pattern, layer1_output.lower())
+    layer2_tokens = re.findall(token_pattern, layer2_output.lower())
+    if min(len(layer1_tokens), len(layer2_tokens)) < phrase_length:
+        return False
+
+    layer1_phrases = {
+        tuple(layer1_tokens[index:index + phrase_length])
+        for index in range(len(layer1_tokens) - phrase_length + 1)
+    }
+    return any(
+        tuple(layer2_tokens[index:index + phrase_length]) in layer1_phrases
+        for index in range(len(layer2_tokens) - phrase_length + 1)
+    )
+
+
 @dataclass
 class ValidationResult:
     """Validation result for a single prompt layer."""
@@ -228,11 +256,12 @@ def validate_layer2(output: str, layer1_output: str) -> ValidationResult:
     - Output is not empty or error string
     - Presence of hedging phrases
     - Absence of confirmed fault language
+    - Absence of substantial near-verbatim repetition from Layer 1
     - Minimum length of 20 words
 
     Args:
         output: Layer 2 output string
-        layer1_output: Layer 1 output (for context, not currently used)
+        layer1_output: Layer 1 output used for cross-layer repetition checks
 
     Returns:
         ValidationResult with layer=2
@@ -301,6 +330,13 @@ def validate_layer2(output: str, layer1_output: str) -> ValidationResult:
             f"Contains confirmed fault language: '{unnegated_hits[0]}'"
         )
         score -= 0.2
+
+    if _has_substantial_cross_layer_repetition(layer1_output, output):
+        warnings.append(
+            "Substantially repeats the anomaly description; explain "
+            "possible causes instead of restating Layer 1"
+        )
+        score -= 0.4
 
     # Raised from 70: layer2_cause.txt now asks for reasoning tied to
     # specific signal values (not just a component name) and for naming
