@@ -68,6 +68,34 @@ def _find_unnegated_phrases(text: str, phrases: List[str]) -> List[str]:
     return hits
 
 
+def _has_substantial_cross_layer_repetition(
+    layer1_output: str,
+    layer2_output: str,
+    phrase_length: int = 12,
+) -> bool:
+    """Return whether Layer 2 copies a substantial phrase from Layer 1.
+
+    Layer 2 is expected to refer to the same component and supporting signals,
+    so general vocabulary overlap is legitimate. This check therefore looks
+    only for a long, contiguous sequence of words. It catches copied clauses
+    without penalising a new causal explanation that uses the same evidence.
+    """
+    token_pattern = r"[a-z0-9]+(?:'[a-z]+)?"
+    layer1_tokens = re.findall(token_pattern, layer1_output.lower())
+    layer2_tokens = re.findall(token_pattern, layer2_output.lower())
+    if min(len(layer1_tokens), len(layer2_tokens)) < phrase_length:
+        return False
+
+    layer1_phrases = {
+        tuple(layer1_tokens[index:index + phrase_length])
+        for index in range(len(layer1_tokens) - phrase_length + 1)
+    }
+    return any(
+        tuple(layer2_tokens[index:index + phrase_length]) in layer1_phrases
+        for index in range(len(layer2_tokens) - phrase_length + 1)
+    )
+
+
 @dataclass
 class ValidationResult:
     """Validation result for a single prompt layer."""
@@ -86,7 +114,7 @@ def validate_layer1(output: str) -> ValidationResult:
     - Output is not empty or error string
     - No unexplained raw field names
     - No confirmed fault language
-    - Minimum length of 30 words
+    - Length between 20 and 60 words
 
     Args:
         output: Layer 1 output string
@@ -122,20 +150,29 @@ def validate_layer1(output: str) -> ValidationResult:
         )
 
     # Check for unexplained raw field names
-    raw_fields = [
-        "coolant_temp", "maf", "map", "accel_pedal_d",
-        "accel_pedal_e", "tps"
-    ]
-    for field in raw_fields:
-        # Check if field appears without nearby explanation
-        if field in output.lower():
-            # Simple heuristic: check if there's a parenthetical nearby
-            pattern = rf'{field}\s*\([^)]+\)'
-            if not re.search(pattern, output.lower()):
-                warnings.append(
-                    f"Contains unexplained raw field name: {field}"
-                )
-                score -= 0.2
+    raw_field_explanations = {
+        "coolant_temp": (),
+        "maf": ("mass airflow", "mass air flow"),
+        "map": ("manifold pressure", "manifold absolute pressure"),
+        "accel_pedal_d": ("accelerator pedal",),
+        "accel_pedal_e": ("accelerator pedal",),
+        "tps": ("throttle position",),
+    }
+    lower_output = output.lower()
+    for field, explanations in raw_field_explanations.items():
+        # Word boundaries prevent short acronyms such as MAP from matching
+        # ordinary words such as "mapping". An acronym is owner-readable when
+        # its expanded component name appears in the same report section.
+        if not re.search(rf"\b{re.escape(field)}\b", lower_output):
+            continue
+        has_explanation = any(
+            explanation in lower_output for explanation in explanations
+        )
+        if not has_explanation:
+            warnings.append(
+                f"Contains unexplained raw field name: {field}"
+            )
+            score -= 0.2
 
     # Check for confirmed fault language (skipping negated wording such
     # as "not confirmed" or "no confirmed fault yet")
@@ -149,13 +186,56 @@ def validate_layer1(output: str) -> ValidationResult:
         )
         score -= 0.2
 
-    # Check minimum length
+    # The Dashboard already presents detailed measurements in a separate
+    # Key Signals table. Layer 1 should therefore be a short interpretation,
+    # not a prose copy of every value.
     word_count = len(output.split())
-    if word_count < 30:
+    if word_count < 20:
         warnings.append(
-            f"Output is too short: {word_count} words (minimum 30)"
+            f"Output is too short: {word_count} words (minimum 20)"
         )
         score -= 0.2
+    elif word_count > 60:
+        warnings.append(
+            f"Output is too long: {word_count} words (maximum 60)"
+        )
+        score -= 0.4
+
+    # Owner-facing summaries should interpret the separate Key Signals table,
+    # not reproduce machine precision or enumerate a second set of metrics.
+    numeric_tokens = re.findall(r"-?\d+(?:\.\d+)?%?", output)
+    over_precise = [
+        token for token in numeric_tokens
+        if re.search(r"\.\d{2,}", token)
+    ]
+    if over_precise:
+        warnings.append(
+            "Uses unnecessary numerical precision; round or describe the "
+            "comparison in plain language"
+        )
+        score -= 0.2
+    if len(numeric_tokens) > 3:
+        warnings.append(
+            "Repeats too many measurements; keep detailed values in Key "
+            "Signals and summarise only the decision-relevant change"
+        )
+        score -= 0.2
+    if re.search(
+        r"\b(?:risk score|% score)\b|\brisk\s*\(\s*\d+(?:\.\d+)?\s*%\s*\)",
+        output.lower(),
+    ):
+        warnings.append(
+            "Restates the internal risk score; use the risk category instead"
+        )
+        score -= 0.4
+
+    if re.search(
+        r"\bwithin (?:the )?(?:next )?(?:few|several|couple of) "
+        r"(?:drive cycles|trips|days|weeks|months)\b",
+        output.lower(),
+    ):
+        warnings.append("Introduces an unsupported service interval")
+        score -= 0.4
 
     # Ensure score is within bounds
     score = max(0.0, min(1.0, score))
@@ -176,11 +256,12 @@ def validate_layer2(output: str, layer1_output: str) -> ValidationResult:
     - Output is not empty or error string
     - Presence of hedging phrases
     - Absence of confirmed fault language
+    - Absence of substantial near-verbatim repetition from Layer 1
     - Minimum length of 20 words
 
     Args:
         output: Layer 2 output string
-        layer1_output: Layer 1 output (for context, not currently used)
+        layer1_output: Layer 1 output used for cross-layer repetition checks
 
     Returns:
         ValidationResult with layer=2
@@ -249,6 +330,28 @@ def validate_layer2(output: str, layer1_output: str) -> ValidationResult:
             f"Contains confirmed fault language: '{unnegated_hits[0]}'"
         )
         score -= 0.2
+
+    if _has_substantial_cross_layer_repetition(layer1_output, output):
+        warnings.append(
+            "Substantially repeats the anomaly description; explain "
+            "possible causes instead of restating Layer 1"
+        )
+        score -= 0.4
+
+    # Raised from 70: layer2_cause.txt now asks for reasoning tied to
+    # specific signal values (not just a component name) and for naming
+    # more than one cause when the evidence supports it, which
+    # legitimately needs more room than a single terse sentence. The old
+    # 70-word cap combined with this check's -0.4 penalty meant a single
+    # violation alone dropped the score below VALIDATOR_SCORE_THRESHOLD
+    # every time, triggering a correction that pushed length back down —
+    # actively fighting the richer explanation the prompt now asks for.
+    word_count = len(output.split())
+    if word_count > 130:
+        warnings.append(
+            f"Output is too long: {word_count} words (maximum 130)"
+        )
+        score -= 0.4
 
     # Check minimum length
     word_count = len(output.split())
@@ -319,15 +422,58 @@ def validate_layer3(output: Any, risk_level: str) -> ValidationResult:
             score=score
         )
 
-    # Check list length
-    if len(actions) < 2:
+    # The Dashboard contract remains a list, while stable prefixes preserve
+    # the four distinct decisions the owner needs from the report.
+    if len(actions) < 4:
         warnings.append(
-            f"Too few actions: {len(actions)} (should be 2-4)"
+            f"Too few actions: {len(actions)} (should be exactly 4)"
         )
         score -= 0.2
     elif len(actions) > 4:
         warnings.append(
-            f"Too many actions: {len(actions)} (should be 2-4)"
+            f"Too many actions: {len(actions)} (should be exactly 4)"
+        )
+        score -= 0.2
+
+    required_prefixes = (
+        "now:",
+        "service timing:",
+        "stop driving and seek help if:",
+        "tell the mechanic:",
+    )
+    normalized_actions = [str(action).strip().lower() for action in actions]
+    for prefix in required_prefixes:
+        if not any(action.startswith(prefix) for action in normalized_actions):
+            warnings.append(f"Missing owner-decision action: '{prefix}'")
+            score -= 0.1
+
+    actions_text = " ".join(str(a) for a in actions).lower()
+    invented_interval = re.search(
+        r"\b(?:within|after|in|next)\s+(?:the\s+)?(?:\d+|few|several|"
+        r"couple of)\s+"
+        r"(?:days?|weeks?|months?|miles?|trips?)\b",
+        actions_text,
+    )
+    if invented_interval:
+        warnings.append(
+            "Actions contain an unsupported numeric service interval"
+        )
+        score -= 0.4
+
+    if re.search(r"\breplac(?:e|ing|ement)\b", actions_text):
+        warnings.append(
+            "Actions recommend replacement before professional verification"
+        )
+        score -= 0.2
+
+    owner_actions_text = " ".join(normalized_actions[:3])
+    if re.search(
+        r"\b(?:inspect|check|test|clean)\b[^.]{0,45}"
+        r"\b(?:sensor|wiring|connector|harness|hose)\b",
+        owner_actions_text,
+    ):
+        warnings.append(
+            "Owner actions assign a technical component check to the driver"
         )
         score -= 0.2
 
@@ -341,7 +487,6 @@ def validate_layer3(output: Any, risk_level: str) -> ValidationResult:
             score -= 0.2
 
     # Check urgency language for high risk
-    actions_text = " ".join(str(a) for a in actions).lower()
     risk_level_lower = risk_level.lower()
 
     if risk_level_lower == "high":

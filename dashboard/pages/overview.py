@@ -797,7 +797,7 @@ def _handle_uploaded_csv_history_submit(uploaded_files, tokens: dict) -> None:
         components = {
             k: v for k, v in dashboard_data.items() if k != "_data_source"
         }
-        if not components or all(
+        if components and all(
             not c.get("anomaly_description") for c in components.values()
         ):
             _clear_csv_analysis_loading(loading_slot)
@@ -895,7 +895,7 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
         # retries or a semantic correction that still fails validation returns
         # an empty report while preserving the original vehicle evidence.
         components = {k: v for k, v in result.items() if k != "_data_source"}
-        if not components or all(
+        if components and all(
             not c.get("anomaly_description") for c in components.values()
         ):
             _clear_csv_analysis_loading(loading_slot)
@@ -2160,8 +2160,10 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
     if not mock_data:
         st.markdown(
             empty_state_html(
-                "No components to display",
-                "Upload a valid OBD-II CSV file or explore with demo data.",
+                "No current risk patterns detected",
+                "The uploaded trips did not produce a Medium or High risk "
+                "pattern. Continue normal monitoring; this result does not "
+                "rule out every vehicle fault.",
                 tokens,
                 max_width="700px",
                 margin="16px auto",
@@ -2253,8 +2255,8 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
                 size=ring_size,
                 stroke=10,
             )
-            score_text = f"{risk_pct}%" if has_score else "N/A"
-            score_label = "Risk Score" if has_score else "No Data"
+            score_text = risk_level if has_score else "N/A"
+            score_label = "Risk level" if has_score else "No Data"
             card_html = (
                 f'<div style="'
                 f'background:{tokens["glass_surface"]};'
@@ -2279,7 +2281,7 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
                 '<div style="position:absolute;inset:0;display:flex;'
                 'flex-direction:column;align-items:center;'
                 'justify-content:center;">'
-                f'<span style="font-family:{FONT_MONO};font-size:30px;'
+                f'<span style="font-family:{FONT_MONO};font-size:21px;'
                 f'font-weight:700;color:{tokens["text"]};line-height:1;">'
                 f'{score_text}</span>'
                 f'<span style="font-size:11px;'
@@ -2301,77 +2303,6 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
                 st.rerun()
 
     _show_dashboard_export_controls(sorted_components, tokens)
-
-    # ── Re-upload section (collapsed) ──
-    st.markdown(
-        "<div style='height:16px;'></div>", unsafe_allow_html=True
-    )
-    st.markdown(
-        f"""
-        <style>
-        .st-key-dashboard_reupload_expander {{
-            border: 1px solid {tokens["border"]} !important;
-            border-radius: 10px !important;
-            overflow: hidden !important;
-        }}
-        .st-key-dashboard_reupload_toggle button {{
-            align-items: center !important;
-            background: {tokens["surface"]} !important;
-            border: none !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-            color: {tokens["text"]} !important;
-            display: inline-flex !important;
-            font-size: 14px !important;
-            font-weight: 600 !important;
-            gap: 10px !important;
-            justify-content: flex-start !important;
-            line-height: 1.2 !important;
-            margin: 0 !important;
-            min-height: 44px !important;
-            padding: 0 18px !important;
-            text-align: left !important;
-            width: 100% !important;
-        }}
-        .st-key-dashboard_reupload_toggle button:hover {{
-            background: {hex_to_rgba(tokens["accent"], 0.06)} !important;
-            border: none !important;
-            color: {tokens["text"]} !important;
-        }}
-        .st-key-dashboard_reupload_toggle button p {{
-            align-items: center !important;
-            display: inline-flex !important;
-            gap: 10px !important;
-        }}
-        .st-key-dashboard_reupload_body {{
-            border-top: 1px solid {tokens["border"]} !important;
-            padding: 18px 16px 20px 16px !important;
-        }}
-        .st-key-dashboard_reupload_body .st-key-csv_upload_section {{
-            margin: 0 auto !important;
-            max-width: 100% !important;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-    if "dashboard_reupload_open" not in st.session_state:
-        st.session_state["dashboard_reupload_open"] = False
-
-    with st.container(key="dashboard_reupload_expander"):
-        is_open = st.session_state["dashboard_reupload_open"]
-        arrow = "\u25be" if is_open else "\u203a"
-        if st.button(
-            f"{arrow} Upload new data",
-            key="dashboard_reupload_toggle",
-            use_container_width=True,
-        ):
-            st.session_state["dashboard_reupload_open"] = not is_open
-            st.rerun()
-
-        if st.session_state["dashboard_reupload_open"]:
-            with st.container(key="dashboard_reupload_body"):
-                _show_csv_uploader(tokens)
 
     show_footer(dark_mode)
 

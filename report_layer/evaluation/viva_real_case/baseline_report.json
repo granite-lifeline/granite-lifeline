@@ -1,0 +1,10 @@
+{
+  "anomaly_description": "The cooling system is showing a medium risk of degradation. The coolant temperature sensor reads 85.0°C, which is below the normal range of 90.0–95.0°C, and the rate at which this temperature is rising (5.0486 °C/min) exceeds the expected maximum of 2.0 °C/min. These abnormal readings indicate that the cooling system may not be operating efficiently. The risk level is classified as Medium, suggesting that while there is no immediate emergency, the issue should be monitored and checked soon to prevent potential overheating. There is a projected 75% probability that this condition could cross into High-risk territory within the next 10 trips, meaning failure could occur in about five more drive cycles if conditions continue.",
+  "possible_cause": "The cooling system's medium risk may be due to a sensor reading issue, such as an inaccurate coolant temperature sensor or inconsistent readings from multiple cooling sensors. This could also relate to cooling fan behavior that isn't operating optimally under current driving conditions, even though engine RPM and vehicle speed are normal. Given the abnormal rise rate of coolant temperature, the system might not be dissipating heat effectively, suggesting a potential early sign of cooling inefficiency rather than a confirmed fault.",
+  "recommended_action": [
+    "Check the coolant temperature sensor and its wiring for possible issues. Locate it near the radiator or engine block; look for loose connections or damaged wires.",
+    "Inspect the cooling fan operation: ensure the fans turn on when the engine is warm. If they don’t, the fan may be faulty and need replacement.",
+    "Schedule a professional inspection of the cooling system within the next few days to prevent overheating, especially before longer trips.",
+    "Monitor the vehicle’s temperature gauge during normal driving; if it rises above the usual range again, contact a mechanic promptly."
+  ]
+}

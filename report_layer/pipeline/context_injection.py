@@ -7,7 +7,7 @@ passed to the LLM.
 """
 
 import re
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from report_layer.rag.rag_retriever import retrieve_all
 from shared.interface_models import ModelLayerOutput
@@ -113,6 +113,7 @@ PROXY_PROVENANCE_MARKERS = (
 )
 
 RAW_DTC_PATTERN = re.compile(r"\b(?:DTC\s*)?P\d{4}(?:-\d+)?\b", re.IGNORECASE)
+INTERNAL_RULE_PATTERN = re.compile(r"\b\d+-S\d+\b", re.IGNORECASE)
 
 
 def _sanitize_owner_facing_prompt_text(text: str) -> str:
@@ -132,6 +133,9 @@ def _sanitize_owner_facing_prompt_text(text: str) -> str:
         "rule-based evidence",
     )
     sanitized = RAW_DTC_PATTERN.sub("a diagnostic flag", sanitized)
+    sanitized = INTERNAL_RULE_PATTERN.sub(
+        "a rule-based diagnostic flag", sanitized
+    )
     sanitized = re.sub(
         r"\bDTCs?\b",
         "diagnostic codes",
@@ -152,6 +156,146 @@ def _sanitize_prompt_text(text: str) -> str:
     return _sanitize_owner_facing_prompt_text(text)
 
 
+NO_USABLE_FAULT_KNOWLEDGE = (
+    "No suitable retrieved fault knowledge matched the current signal "
+    "pattern. Do not use general model knowledge to name a specific "
+    "mechanical cause; preserve the evidence boundary."
+)
+
+
+def _retrieved_knowledge_is_usable(
+    ttm_output: ModelLayerOutput,
+    fault_knowledge: str,
+) -> bool:
+    """Return whether retrieved fault text may enter the generation prompt.
+
+    Retrieval is attempted for traceability, but a metadata match alone is
+    not enough to justify injection. The current knowledge base is largely
+    component-level. Its cooling entry is dominated by overheating faults, so
+    it must not anchor a report whose measured coolant temperature is below
+    range. Other supported types retain their exact anomaly-type match until
+    richer signal-direction metadata is available.
+    """
+    candidate = fault_knowledge.strip()
+    if not candidate or candidate.startswith("No specific fault knowledge"):
+        return False
+
+    cooling_pattern = _cooling_direction_pattern(ttm_output)
+    if cooling_pattern in {"ambiguous", "low_rising"} and re.search(
+        r"\b(?:overheat(?:ing|ed)?|high coolant temperature|"
+        r"thermostat stuck closed|radiator blocked)\b",
+        candidate,
+        flags=re.IGNORECASE,
+    ):
+        return False
+    return True
+
+
+def _owner_decision_policy(anomaly_type: str, risk_level: str) -> str:
+    """Return deterministic owner guidance for one component and risk."""
+    timing = {
+        "low": "routine monitoring; arrange service if the pattern persists",
+        "medium": "arrange professional inspection soon",
+        "high": "arrange prompt professional inspection",
+    }.get(risk_level, "routine monitoring")
+    component_policy = {
+        "cooling_degradation": (
+            "observe the temperature gauge and visible warning lights; a "
+            "coolant-level check is allowed only at the marked reservoir "
+            "when the engine is fully cool",
+            "a red temperature warning, steam, overheating, or sudden loss "
+            "of power appears",
+        ),
+        "air_intake_maf_anomaly": (
+            "observe warning lights, idle quality, acceleration response and "
+            "unexpected loss of power",
+            "the engine stalls, runs very roughly, or loses power in a way "
+            "that makes continued driving unsafe",
+        ),
+        "accelerator_pedal_sensor": (
+            "observe whether acceleration response feels normal; do not "
+            "inspect or manipulate sensor wiring",
+            "acceleration becomes delayed, inconsistent or uncontrolled, or "
+            "the vehicle enters reduced-power mode",
+        ),
+        "intake_air_temperature_sensor_fault": (
+            "observe warning lights, idle quality, acceleration response and "
+            "unexpected loss of power; do not inspect sensor wiring",
+            "the engine stalls, runs very roughly, overheats, or loses power "
+            "in a way that makes continued driving unsafe",
+        ),
+        "map_load_signal_plausibility_fault": (
+            "observe warning lights, idle quality, acceleration response and "
+            "unexpected loss of power; do not inspect sensor wiring or hoses",
+            "the engine stalls, runs very roughly, or loses power in a way "
+            "that makes continued driving unsafe",
+        ),
+    }
+    observation, stop_conditions = component_policy.get(
+        anomaly_type,
+        (
+            "observe warning lights and any change in vehicle behaviour",
+            "a red warning or unsafe change in drivability appears",
+        ),
+    )
+    return (
+        f"Owner observation: {observation}. Service timing: {timing}. "
+        f"Stop conditions: {stop_conditions}."
+    )
+
+
+def _govern_action_knowledge(
+    actions: str, anomaly_type: str, risk_level: str
+) -> str:
+    """Separate owner decisions from retrieved workshop procedures.
+
+    The source knowledge contains workshop-manual procedures. Keeping those
+    passages is useful because they tell the report what a technician could
+    verify, but presenting them directly to a non-technical owner can imply
+    self-repair. This compatibility layer keeps the existing string field
+    while assigning the retrieved material an explicit technician-only role.
+    """
+    sanitized = _sanitize_prompt_text(actions).strip()
+    owner_policy = _owner_decision_policy(anomaly_type, risk_level)
+    if not sanitized or sanitized.startswith("No specific action guidance"):
+        technician_evidence = (
+            "No component-specific workshop procedure was retrieved. Do not "
+            "invent one; ask for general professional diagnosis if needed."
+        )
+    else:
+        safe_lines = [
+            line.strip()
+            for line in sanitized.splitlines()
+            if line.strip()
+            and not re.search(
+                r"\b(?:replace|replacement|clear (?:the )?(?:fault|"
+                r"diagnostic)|relearn|in turbo engines)\b",
+                line,
+                flags=re.IGNORECASE,
+            )
+        ]
+        filtered = "\n".join(safe_lines)
+        if not filtered:
+            filtered = (
+                "No suitable verification procedure remains after action-"
+                "safety and relevance filtering."
+            )
+        technician_evidence = (
+            "The following retrieved material is technician-only evidence. "
+            "Never instruct the owner to perform it, buy tools, dismantle a "
+            "component, clear codes, or replace a part. Convert only relevant "
+            "material into a request the owner can give a qualified "
+            "mechanic:\n"
+            f"{filtered}"
+        )
+    return (
+        "Owner decision-support policy:\n"
+        f"{owner_policy}\n\n"
+        "Technician evidence:\n"
+        f"{technician_evidence}"
+    )
+
+
 def _format_probability(value: float) -> str:
     """Format a unit probability without rounding small values to zero."""
     percent = value * 100
@@ -162,21 +306,47 @@ def _format_probability(value: float) -> str:
     return f"{percent:.1f}%"
 
 
-def _needs_low_cooling_caution(ttm_output: ModelLayerOutput) -> bool:
-    """Return true for cooling cases with low/falling temperature evidence."""
+def _cooling_direction_pattern(
+    ttm_output: ModelLayerOutput,
+) -> Optional[str]:
+    """Classify a low coolant-temperature reading for cooling_degradation.
+
+    A low coolant_temp reading was previously treated as one uniform
+    "ambiguous, say little" case regardless of the rise-rate signal. That
+    conflated two different situations:
+
+    - "ambiguous": temperature is low and the rise rate is not abnormally
+      high (falling or within its normal range). This is genuinely weak,
+      non-correlated evidence that does not match the overheating-focused
+      knowledge base — keep interpretation short and cautious.
+    - "low_rising": temperature is low AND the rise rate is abnormally
+      high. These are two correlated abnormal signals, not one weak
+      reading — real evidence that deserves a clear, grounded
+      explanation connected to both values, not the same blanket
+      suppression as the ambiguous case.
+
+    Returns None when the component isn't cooling_degradation or the
+    temperature reading isn't low.
+    """
     if ttm_output.component != "cooling_degradation":
-        return False
-    has_lower_than_expected_temp = False
-    has_falling_temp_rate = False
+        return None
+    coolant_temp = None
+    rate = None
     for signal in ttm_output.key_signals:
-        if (
-            signal.feature == "coolant_temp"
-            and signal.value < signal.reference_range[0]
-        ):
-            has_lower_than_expected_temp = True
-        if signal.feature == "ect_rate_180s" and signal.value < 0:
-            has_falling_temp_rate = True
-    return has_lower_than_expected_temp or has_falling_temp_rate
+        if signal.feature == "coolant_temp":
+            coolant_temp = signal
+        elif signal.feature == "ect_rate_180s":
+            rate = signal
+    is_low = (
+        coolant_temp is not None
+        and coolant_temp.value < coolant_temp.reference_range[0]
+    )
+    if not is_low:
+        return None
+    is_rising_fast = (
+        rate is not None and rate.value > rate.reference_range[1]
+    )
+    return "low_rising" if is_rising_fast else "ambiguous"
 
 
 def build_context(ttm_output: ModelLayerOutput) -> str:
@@ -285,7 +455,8 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
                 f"{feature_name}"
             )
 
-    if _needs_low_cooling_caution(ttm_output):
+    cooling_pattern = _cooling_direction_pattern(ttm_output)
+    if cooling_pattern == "ambiguous":
         context_lines.append("")
         context_lines.append("Interpretation Caution:")
         context_lines.append(
@@ -294,7 +465,21 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
             "Limit interpretation to cautious possibilities such as "
             "sensor reading issue, cooling fan behavior, or insufficient "
             "evidence for a specific cause. Avoid explaining thermostat "
-            "mechanics for this low-risk pattern."
+            f"mechanics for this {risk_level.lower()}-risk pattern."
+        )
+    elif cooling_pattern == "low_rising":
+        context_lines.append("")
+        context_lines.append("Interpretation Caution:")
+        context_lines.append(
+            "- Coolant temperature is below its reference range while "
+            "the temperature rise rate is abnormally high — these two "
+            "signals together are real, correlated evidence, not a "
+            "weak or ambiguous reading. Connect the explanation "
+            "directly to both values. If more than one plausible "
+            "explanation applies, state each as its own short, clear "
+            "point rather than one vague catch-all sentence. Do not "
+            f"confirm a single mechanical diagnosis for this "
+            f"{risk_level.lower()}-risk pattern."
         )
 
     # Add Failure Projection section if prediction fields are present
@@ -304,15 +489,27 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
         context_lines.append("")
         context_lines.append("Failure Projection:")
         if failure_prob is not None:
-            context_lines.append(
-                f"- Failure probability: {_format_probability(failure_prob)}"
-            )
-            context_lines.append(
-                "- Probability meaning: model-estimated probability of "
-                "crossing the High-risk threshold within the configured "
-                "prediction horizon; not a calibrated probability of "
-                "mechanical failure."
-            )
+            if risk_level.lower() == "high":
+                context_lines.append(
+                    "- Threshold-crossing probability is not shown because "
+                    "the current classification is already High risk."
+                )
+                context_lines.append(
+                    "- Consistency caution: base owner guidance on current "
+                    "High risk and ask for professional verification; do not "
+                    "describe a later crossing of the same threshold."
+                )
+            else:
+                context_lines.append(
+                    f"- Failure probability: "
+                    f"{_format_probability(failure_prob)}"
+                )
+                context_lines.append(
+                    "- Probability meaning: model-estimated probability of "
+                    "crossing the High-risk threshold within the configured "
+                    "prediction horizon; not a calibrated probability of "
+                    "mechanical failure."
+                )
         if cycles_to_failure is not None:
             context_lines.append(
                 f"- Estimated cycles to failure: "
@@ -414,14 +611,38 @@ def build_context_with_rag(
             "'requires further monitoring'"
         )
 
+    candidate_fault_knowledge = _sanitize_prompt_text(
+        rag_knowledge["description_causes"]
+    )
+    use_retrieved_knowledge = _retrieved_knowledge_is_usable(
+        ttm_output, candidate_fault_knowledge
+    )
+
+    if not use_retrieved_knowledge:
+        fault_knowledge = NO_USABLE_FAULT_KNOWLEDGE
+        owner_policy = _owner_decision_policy(
+            ttm_output.anomaly_type, risk_level_normalized
+        )
+        actions_knowledge = (
+            "Owner decision-support policy:\n"
+            f"{owner_policy}\n\n"
+            "Technician evidence:\nNo retrieved procedure passed the "
+            "relevance gate for this signal pattern. Ask a qualified mechanic "
+            "to verify the reported signals and the vehicle's actual "
+            "condition before deciding what, if anything, requires work."
+        )
+    else:
+        fault_knowledge = candidate_fault_knowledge
+        actions_knowledge = _govern_action_knowledge(
+            rag_knowledge["actions"],
+            ttm_output.anomaly_type,
+            risk_level_normalized,
+        )
+
     return {
         "context": _sanitize_owner_facing_prompt_text(context),
-        "fault_knowledge": _sanitize_prompt_text(
-            rag_knowledge["description_causes"]
-        ),
-        "actions_knowledge": _sanitize_prompt_text(
-            rag_knowledge["actions"]
-        ),
+        "fault_knowledge": fault_knowledge,
+        "actions_knowledge": actions_knowledge,
         "certainty_guidance": certainty_guidance,
         "notes": ttm_output.notes if ttm_output.notes else [],
     }

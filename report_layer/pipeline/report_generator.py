@@ -76,6 +76,7 @@ DEFAULT_PROMPT_VALUES = {
 }
 
 RAW_DTC_PATTERN = re.compile(r"\b(?:DTC\s*)?P\d{4}(?:-\d+)?\b", re.IGNORECASE)
+INTERNAL_RULE_PATTERN = re.compile(r"\b\d+-S\d+\b", re.IGNORECASE)
 
 OWNER_FACING_COMPONENT_REPLACEMENTS = {
     "cooling_degradation": "cooling system pattern",
@@ -138,7 +139,16 @@ def _clean_owner_facing_text(text: str) -> str:
     cleaned = cleaned.replace("**", "")
     cleaned = cleaned.replace("*", "")
     cleaned = RAW_DTC_PATTERN.sub("a diagnostic flag", cleaned)
+    cleaned = INTERNAL_RULE_PATTERN.sub(
+        "a rule-based diagnostic flag", cleaned
+    )
     cleaned = re.sub(r"\bDTCs?\b", "diagnostic codes", cleaned)
+    cleaned = re.sub(
+        r"\bSpeed-Density MAF Residual\b",
+        "airflow consistency reading",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
     cleaned = re.sub(
         r"\s*\(e\.g\.,?\s*([^)]+)\)",
         _format_example_phrase,
@@ -167,6 +177,13 @@ def _clean_model_aware_text(
 ) -> str:
     """Clean generated text using the current signal-status context."""
     cleaned = _clean_owner_facing_text(text)
+    cleaned = re.sub(
+        r"\bwithin (?:the )?(?:next )?(?:few|several|couple of) "
+        r"(?:drive cycles|trips|days|weeks|months)\b",
+        "soon",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
     if not _normal_key_signals(model_output):
         cleaned = re.sub(
             r"Because the current readings still look normal,?\s*",
@@ -177,6 +194,13 @@ def _clean_model_aware_text(
         cleaned = re.sub(
             r"Although current readings [^,.]*normal,?\s*",
             "Because at least one key signal is outside its normal range, ",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+    if model_output.risk_level == "Medium":
+        cleaned = re.sub(
+            r"\b(?:warrants?|requires?) prompt professional inspection\b",
+            "should be checked soon by a professional",
             cleaned,
             flags=re.IGNORECASE,
         )
@@ -267,6 +291,13 @@ def _clean_recommended_actions(
             cleaned_actions.append(action)
             continue
         cleaned = _clean_owner_facing_text(action)
+        cleaned = re.sub(
+            r"\bwithin (?:the )?(?:next )?(?:few|several|couple of) "
+            r"(?:drive cycles|trips|days|weeks|months)\b",
+            "soon",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
         if proxy_normal_low_projection:
             cleaned = re.sub(
                 r"\boutside (?:of )?its normal range\b",
@@ -558,7 +589,7 @@ def _clean_layer_value(
     model_output: ModelLayerOutput,
 ) -> Any:
     """Apply the production owner-facing cleanup for one layer."""
-    if layer_num == 1:
+    if layer_num in {1, 2}:
         return _clean_model_aware_text(str(value), model_output)
     if layer_num == 2:
         cleaned = _clean_model_aware_text(str(value), model_output)
@@ -580,6 +611,126 @@ def _validate_layer_value(
     return validate_layer3(value, risk_level)
 
 
+def _apply_signal_direction_check(
+    validation: ValidationResult,
+    text: str,
+    model_output: ModelLayerOutput,
+) -> ValidationResult:
+    """Block a plain-language comparison that reverses supplied evidence."""
+    lower = text.lower()
+    if model_output.risk_level == "Medium" and re.search(
+        r"\b(?:prompt|urgent|immediate)\b", lower
+    ):
+        validation.warnings.append(
+            "Overstates Medium risk urgency; say it should be checked soon, "
+            "not promptly or urgently"
+        )
+        validation.score = max(0.0, validation.score - 0.4)
+        validation.passed = False
+    for signal in model_output.key_signals:
+        if signal.feature != "coolant_temp":
+            continue
+        low, high = signal.reference_range
+        if signal.value < low and re.search(
+            r"(?:coolant temperature.{0,45}(?:higher|above|elevated)|"
+            r"(?:high|elevated) coolant temperature)",
+            lower,
+        ):
+            validation.warnings.append(
+                "Reverses the supplied evidence: coolant temperature is "
+                "below, not above, its reference range"
+            )
+            validation.score = max(0.0, validation.score - 0.4)
+            validation.passed = False
+        elif signal.value > high and re.search(
+            r"coolant temperature.{0,45}(?:lower|below)", lower
+        ):
+            validation.warnings.append(
+                "Reverses the supplied evidence: coolant temperature is "
+                "above, not below, its reference range"
+            )
+            validation.score = max(0.0, validation.score - 0.4)
+            validation.passed = False
+    return validation
+
+
+def _apply_controlled_baseline_check(
+    validation: ValidationResult,
+    layer_num: int,
+    value: Any,
+    original_prompt: str,
+) -> ValidationResult:
+    """Enforce the evidence-only boundary in the no-retrieval condition."""
+    text = " ".join(value) if isinstance(value, list) else str(value)
+    lower = text.lower()
+    if layer_num == 2 and (
+        "No retrieved fault knowledge was supplied in this controlled "
+        "condition." in original_prompt
+    ):
+        has_boundary = re.search(
+            r"\b(?:cannot|can't|not enough|insufficient|unable to)\b.{0,45}"
+            r"\b(?:identify|determine|evidence|specific cause)\b",
+            lower,
+        )
+        if not has_boundary:
+            validation.warnings.append(
+                "Controlled no-retrieval output must state that the supplied "
+                "evidence cannot identify a specific cause"
+            )
+            validation.score = max(0.0, validation.score - 0.4)
+            validation.passed = False
+    if layer_num == 3 and (
+        "No retrieved action guidance was supplied in this controlled "
+        "condition." in original_prompt
+    ):
+        specialist_terms = re.search(
+            r"\b(?:scan tool|diagnostic scan|thermostat|radiator|cooling fan|"
+            r"wiring|connector|air filter|calibrat(?:e|ion)|replace)\b",
+            lower,
+        )
+        if specialist_terms:
+            validation.warnings.append(
+                "Controlled no-retrieval output invents a component test or "
+                "repair target"
+            )
+            validation.score = max(0.0, validation.score - 0.4)
+            validation.passed = False
+    return validation
+
+
+def _enforce_controlled_baseline_boundary(
+    layer_num: int,
+    value: Any,
+    original_prompt: str,
+) -> Any:
+    """Prevent parametric model knowledge entering the no-RAG stimulus."""
+    if layer_num == 2 and (
+        "No retrieved fault knowledge was supplied in this controlled "
+        "condition." in original_prompt
+    ):
+        return (
+            "The supplied driving data shows an unusual pattern, but it "
+            "cannot identify a specific mechanical cause. A qualified "
+            "mechanic would need to compare the readings with the vehicle's "
+            "actual condition before deciding what, if anything, requires "
+            "work."
+        )
+    if layer_num == 3 and isinstance(value, list) and (
+        "No retrieved action guidance was supplied in this controlled "
+        "condition." in original_prompt
+    ):
+        cleaned = list(value)
+        for index, action in enumerate(cleaned):
+            if str(action).lower().startswith("tell the mechanic:"):
+                cleaned[index] = (
+                    "Tell the mechanic: Investigate the reported signal "
+                    "pattern and verify whether it reflects a real vehicle "
+                    "problem before recommending any work."
+                )
+        return cleaned
+    return value
+
+
 def _correct_and_validate_layer(
     layer_num: int,
     original_prompt: str,
@@ -590,11 +741,21 @@ def _correct_and_validate_layer(
 ) -> Any:
     """Validate a layer and make one feedback-driven correction if needed."""
     cleaned = _clean_layer_value(layer_num, value, model_output)
+    cleaned = _enforce_controlled_baseline_boundary(
+        layer_num, cleaned, original_prompt
+    )
     validation = _validate_layer_value(
         layer_num,
         cleaned,
         layer1_output,
         model_output.risk_level or "Low",
+    )
+    if layer_num in {1, 2}:
+        validation = _apply_signal_direction_check(
+            validation, str(cleaned), model_output
+        )
+    validation = _apply_controlled_baseline_check(
+        validation, layer_num, cleaned, original_prompt
     )
     if validation.score >= VALIDATOR_SCORE_THRESHOLD:
         return cleaned
@@ -626,11 +787,21 @@ def _correct_and_validate_layer(
             corrected_response,
             model_output,
         )
+        corrected = _enforce_controlled_baseline_boundary(
+            layer_num, corrected, original_prompt
+        )
         validation = _validate_layer_value(
             layer_num,
             corrected,
             layer1_output,
             model_output.risk_level or "Low",
+        )
+        if layer_num in {1, 2}:
+            validation = _apply_signal_direction_check(
+                validation, str(corrected), model_output
+            )
+        validation = _apply_controlled_baseline_check(
+            validation, layer_num, corrected, original_prompt
         )
         if validation.score >= VALIDATOR_SCORE_THRESHOLD:
             logger.info(

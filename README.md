@@ -84,20 +84,18 @@ uv run streamlit run dashboard/app.py
 
 **Full local pipeline (real CSV upload → live Model Layer + Report Layer analysis):**
 
-`requirements.txt` contains the lightweight dashboard dependencies used by the
-hosted demo. The full local CSV pipeline also needs `requirements-local.txt`,
-the Model Layer's dedicated TTM environment, and a local
-[Ollama](https://ollama.com) instance with the Granite LLM pulled. On
-macOS/Linux, `setup.sh` does all of this in one step (installs dashboard deps,
-local pipeline deps, Model Layer deps, installs Ollama if missing, pulls the
-model, starts the dashboard):
+Run the setup command from the repository root. It installs both Python
+environments, starts Ollama, pulls `granite4.1:8b`, downloads and tests Granite
+TTM, builds the 20-document production RAG index, runs a readiness check, and
+only then starts Streamlit.
+
+macOS/Linux:
 
 ```bash
 ./setup.sh
 ```
 
-On Windows, `setup.ps1` does the same (installs Python deps, installs Ollama
-via `winget` if missing, pulls the model, starts the dashboard):
+Windows PowerShell:
 
 ```powershell
 .\setup.ps1
@@ -106,102 +104,121 @@ via `winget` if missing, pulls the model, starts the dashboard):
 If script execution is blocked, run once as administrator:
 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
 
-## Run the Full Pipeline Locally
+The first run downloads several large dependencies and the approximately
+5.3 GB Ollama model. Do not close the terminal while setup is running.
 
-Use this mode when you want the Dashboard CSV uploader to run the real
-local pipeline:
+## Full Local Pipeline
+
+The local uploader executes this real path:
 
 ```text
 OBD-II CSV upload -> Data Layer -> Model Layer -> Report Layer -> Dashboard
 ```
 
-**Prerequisites:**
+### Prerequisites
 
 - Python 3.11+
-- `uv`
-- Ollama
-- Data Layer and Model Layer dependencies installed locally
-- Enough disk space and time for the first install; `torch`, `transformers`,
-  `granite-tsfm`, `chromadb`, and related packages are large
+- Internet access during first-time setup
+- Enough disk space for PyTorch, Granite TTM, ChromaDB dependencies, and the
+  approximately 5.3 GB Granite LLM
+- macOS/Linux: Homebrew is needed only when Ollama is not already installed
+- Windows: `winget` is needed only when Ollama is not already installed
 
-**Install and run:**
+If automatic Ollama installation is unavailable, install it from
+<https://ollama.com/download>, then run the setup command again.
 
-If you already cloned the repository, start from `cd granite-lifeline`.
+### First-time setup
 
 ```bash
 git clone https://github.com/granite-lifeline/granite-lifeline.git
-```
-
-```bash
 cd granite-lifeline
+./setup.sh
 ```
 
-```bash
-uv sync
+Use `.\setup.ps1` instead of `./setup.sh` on Windows. Both scripts are safe to
+re-run after an interrupted install. A successful run prints all four checks:
+
+```text
+[PASS] Main Python environment
+[PASS] Model Layer runtime
+[PASS] RAG fault_knowledge collection (20 documents)
+[PASS] Ollama API and granite4.1:8b
+READY: CSV upload can use the full local pipeline.
 ```
 
-Install Ollama from <https://ollama.com/download>, then start Ollama in a
-separate terminal and keep it running:
+### Daily start after setup
+
+Start Ollama if it is not already running, then run the readiness check before
+Streamlit.
+
+macOS/Linux:
 
 ```bash
 ollama serve
 ```
 
-Pull the Granite model:
+In a second terminal:
 
 ```bash
-ollama pull granite4.1:8b
-```
-
-Build the ChromaDB knowledge bases:
-
-```bash
-uv run python -m report_layer.rag.knowledge_indexer
-```
-
-```bash
-uv run python -m report_layer.rag.symptom_knowledge_indexer
-```
-
-Start the Dashboard:
-
-```bash
-uv run streamlit run dashboard/app.py
-```
-
-Then open the local Streamlit URL, upload an OBD-II CSV file from the
-Dashboard, and wait for the analysis to complete.
-
-If you have already activated the local virtual environment, the equivalent
-commands are:
-
-```bash
-python -m report_layer.rag.knowledge_indexer
-```
-
-```bash
-python -m report_layer.rag.symptom_knowledge_indexer
-```
-
-```bash
+source .venv/bin/activate
+export MODEL_LAYER_PYTHON="$PWD/model_layer/ttm-related/.venv/bin/python"
+python scripts/verify_local_pipeline.py
 streamlit run dashboard/app.py
 ```
 
-**Expected first-run time:**
+Windows PowerShell:
 
-The first `uv sync` can reasonably take 10-30 minutes on a normal laptop,
-depending on internet speed and whether Python wheels are cached. Pulling
-`granite4.1:8b` with Ollama can also take several minutes because the model
-is large. Later runs are usually much faster because dependencies, the
-model, and the ChromaDB files are already cached locally.
+```powershell
+ollama serve
+```
 
-**Operating system notes:**
+In a second PowerShell window:
 
-The `uv sync`, `uv run python -m ...`, `ollama serve`, `ollama pull ...`,
-and `uv run streamlit run dashboard/app.py` commands work on macOS, Linux,
-and Windows when Python, uv, and Ollama are installed and available on
-`PATH`. The Ollama installation step itself is OS-specific: use the official
-installer for macOS or Windows, and the official Linux install instructions
-for Linux. On Windows PowerShell, use the same runtime commands; only
-shell-specific virtual-environment activation commands differ, which is why
-the recommended commands use `uv run`.
+```powershell
+.\.venv\Scripts\Activate.ps1
+$env:MODEL_LAYER_PYTHON = (Resolve-Path ".\model_layer\ttm-related\.venv\Scripts\python.exe").Path
+python scripts\verify_local_pipeline.py
+streamlit run dashboard\app.py
+```
+
+Open the local URL printed by Streamlit (normally `http://localhost:8501`).
+The public Streamlit Cloud URL is demo-only and cannot access models installed
+on your laptop.
+
+### CSV accepted by the live uploader
+
+Use an original KIT OBD-II CSV, for example:
+`2019-05-06_Seat_Leon_Karlsruhe_Stuttgart_Normal.csv`.
+
+The upload must:
+
+- keep its original KIT filename because the date is parsed from the name;
+- contain all 11 raw OBD-II columns checked in `dashboard/csv_validator.py`;
+- contain at least one continuous segment of 700 rows or more (roughly 70
+  seconds after 10 Hz resampling).
+
+After selecting the file, click **Run Analysis**. A successful run performs
+Data cleaning and feature generation, TTM/proxy anomaly analysis, three local
+Granite LLM report calls with RAG context, and Dashboard rendering. The first
+analysis is slower because model caches are cold.
+
+### Troubleshooting
+
+Run this first; it reports the exact missing runtime component and exits
+non-zero until all live-pipeline dependencies are ready:
+
+```bash
+python scripts/verify_local_pipeline.py
+```
+
+- **Ollama is not reachable:** keep `ollama serve` running in another terminal.
+- **Granite model is missing:** run `ollama pull granite4.1:8b`.
+- **RAG index is missing or stale:** activate `.venv`, then run
+  `python -m report_layer.rag.knowledge_indexer`.
+- **Model runtime is missing:** re-run `./setup.sh` or `.\setup.ps1`; do not
+  install TTM into only the Dashboard environment.
+- **CSV is rejected:** restore the original KIT filename and confirm the 11
+  required headers and a continuous 700-row segment.
+- **Generated report fields are empty:** inspect the terminal log. The Report
+  Layer deliberately returns empty generated fields if Ollama or one of its
+  three prompt calls fails; this is not a successful diagnosis.

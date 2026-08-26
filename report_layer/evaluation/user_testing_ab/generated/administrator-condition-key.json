@@ -1,0 +1,14 @@
+{
+  "A": "controlled_no_rag",
+  "B": "owner_safe_rag",
+  "controlled_variables": [
+    "five-trip Data Layer output",
+    "Model Layer output and risk history",
+    "granite4.1:8b",
+    "temperature=0",
+    "prompt templates",
+    "certainty guidance",
+    "validator and one-correction release gate",
+    "Dashboard layout"
+  ]
+}

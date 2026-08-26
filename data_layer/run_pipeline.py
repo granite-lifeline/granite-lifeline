@@ -41,6 +41,7 @@ __all__ = [
     "UploadRejected",
     "run_data_pipeline",
     "run_data_pipeline_for_upload",
+    "run_data_pipeline_for_uploads",
 ]
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -418,6 +419,60 @@ def run_data_pipeline_for_upload(
     # segment of >= 700 cleaned 1 Hz rows; a fragmented recording can
     # pass every intake heuristic and still fail this.  The run
     # directory is kept for inspection and named in the message.
+    validate_usable_segment(
+        Path(summary["production_features_path"]),
+        run_id=layout.run_id,
+    )
+    return summary
+
+
+def run_data_pipeline_for_uploads(
+    csv_paths: list[str | Path],
+    *,
+    run_id: str | None = None,
+    repo_root: str | Path = REPO_ROOT,
+    config_path: str | Path = DEFAULT_CONFIG,
+    include_proxy: bool = True,
+) -> dict[str, Any]:
+    """Run one joint pipeline over an ordered uploaded trip history.
+
+    Each source file is validated independently, then all files are copied
+    into one staging directory. The normal Data Layer discovers that directory
+    once, assigns chronological trip identifiers, preserves trip boundaries,
+    and produces one combined production feature artifact for the Model Layer.
+    """
+    if not csv_paths:
+        raise DataPipelineError("No upload files were supplied.")
+
+    sources = [Path(path).expanduser().resolve(strict=False)
+               for path in csv_paths]
+    config = load_config(Path(config_path).expanduser().resolve())
+    for source in sources:
+        validate_upload_csv(source, config)
+
+    resolved_run_id = run_id or datetime.now(timezone.utc).strftime(
+        "upload_history_%Y%m%dT%H%M%SZ"
+    )
+    layout = RunLayout.for_run_id(resolved_run_id, repo_root=repo_root)
+    staging_dir = Path(tempfile.mkdtemp(prefix="gl_upload_history_"))
+    try:
+        for source in sources:
+            shutil.copyfile(source, staging_dir / source.name)
+        summary = run_data_pipeline(
+            layout,
+            config_path=config_path,
+            input_dir=staging_dir,
+            include_proxy=include_proxy,
+        )
+    except DataPipelineError:
+        raise
+    except Exception as exc:
+        raise DataPipelineError(
+            f"Pipeline stage failed for run '{layout.run_id}': {exc}"
+        ) from exc
+    finally:
+        shutil.rmtree(staging_dir, ignore_errors=True)
+
     validate_usable_segment(
         Path(summary["production_features_path"]),
         run_id=layout.run_id,
