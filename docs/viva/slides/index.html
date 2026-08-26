@@ -1148,6 +1148,62 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .prompt-part.warning { background:linear-gradient(145deg,#fff,#fff8ed); border:1px solid rgba(245,124,0,.24); }
 .prompt-part.warning .prompt-example { color:#a75a00; }
 .prompt-call-label { width:min(100%,1110px); padding:11px 18px; border-radius:9px; background:rgba(15,98,254,.065); color:var(--text); font-size:14px; line-height:1.35; font-weight:730; text-align:center; }
+.prompt-build-flow { width:100%; max-width:1320px; display:grid; gap:9px; }
+.prompt-build-row { display:grid; grid-template-columns:150px 1.25fr .9fr; gap:18px; align-items:center; min-height:74px; padding:13px 20px; border-bottom:1px solid var(--border); background:rgba(255,255,255,.72); }
+.prompt-build-row:first-child { border-radius:14px 14px 0 0; }
+.prompt-build-row:last-child { border-bottom:0; border-radius:0 0 14px 14px; }
+.prompt-build-step { color:var(--accent-blue); font:800 12px/1.2 var(--font-mono); text-transform:uppercase; letter-spacing:.04em; }
+.prompt-build-example { color:var(--text); font-size:16px; line-height:1.3; font-weight:720; }
+.prompt-build-reason { color:var(--text-muted); font-size:13px; line-height:1.35; }
+.action-contract { display:grid; grid-template-columns:repeat(2,1fr); gap:6px; }
+.action-contract span { padding:7px 9px; border-left:3px solid var(--accent-blue); background:rgba(15,98,254,.055); color:var(--text); font:750 10px/1.25 var(--font-mono); }
+.prompt-research-note { width:min(100%,1150px); padding:10px 16px; border-left:5px solid var(--accent-blue); border-radius:8px; background:rgba(15,98,254,.055); color:var(--text); font-size:14px; line-height:1.3; font-weight:700; text-align:center; }
+
+.prompt-example-stage { width:100%; max-width:1240px; display:grid; grid-template-columns:1fr 86px 1fr; gap:22px; align-items:stretch; }
+.prompt-quote { min-height:245px; padding:30px 34px; border-radius:18px; display:flex; flex-direction:column; justify-content:center; background:#fff; box-shadow:0 16px 42px rgba(20,50,100,.08); }
+.prompt-quote.bad { border:1px solid rgba(218,30,40,.22); background:linear-gradient(145deg,#fff,#fff5f5); }
+.prompt-quote.good { border:2px solid var(--accent-blue); background:linear-gradient(145deg,#fff,#eef4ff); }
+.prompt-quote blockquote { margin:16px 0 0; color:var(--text); font-size:clamp(23px,2vw,31px); line-height:1.3; font-weight:680; }
+.prompt-quote.bad blockquote { color:var(--danger-text); }
+.prompt-example-arrow { display:grid; place-items:center; color:var(--accent-blue); font:850 31px/1 var(--font-mono); }
+.prompt-learning { width:min(100%,1080px); display:grid; grid-template-columns:1fr 70px 1fr; gap:14px; align-items:center; }
+.prompt-learning div:not(.prompt-learning-arrow) { padding:13px 18px; border-radius:9px; background:rgba(245,124,0,.07); color:#7f4500; font-size:14px; line-height:1.3; font-weight:740; text-align:center; }
+.prompt-learning div:last-child { background:rgba(15,98,254,.065); color:var(--accent-blue); }
+.prompt-learning-arrow { text-align:center; color:var(--accent-blue); font:850 23px/1 var(--font-mono); }
+
+.validator-score-flow { width:100%; max-width:1360px; display:grid; grid-template-columns:1fr .72fr 1.05fr; gap:22px; align-items:stretch; }
+.validator-output-card,.validator-score-card,.validator-corrected-card { min-height:330px; padding:27px 29px; border-radius:18px; background:#fff; box-shadow:0 17px 44px rgba(20,50,100,.08); }
+.validator-output-card { border:1px solid rgba(218,30,40,.22); background:linear-gradient(145deg,#fff,#fff5f5); }
+.validator-output-card blockquote,.validator-corrected-card blockquote { margin:24px 0 0; color:var(--text); font-size:clamp(19px,1.55vw,24px); line-height:1.38; font-weight:660; }
+.validator-output-card blockquote { color:var(--danger-text); }
+.validator-score-card { color:#fff; background:linear-gradient(150deg,#172033,#273a5f); }
+.validator-score-title { color:#b9c9e8; font:800 11px/1.2 var(--font-mono); text-transform:uppercase; letter-spacing:.05em; }
+.score-ledger { margin-top:19px; display:grid; gap:10px; font:760 13px/1.25 var(--font-mono); }
+.score-ledger div { display:flex; justify-content:space-between; gap:15px; color:#e8efff; }
+.score-ledger div span:last-child { color:#ffb6b6; }
+.score-ledger .score-start span:last-child { color:#fff; }
+.score-ledger .score-total { margin-top:4px; padding-top:13px; border-top:1px solid rgba(255,255,255,.25); font-size:20px; }
+.score-ledger .score-total span:last-child { color:#ff8e8e; }
+.validator-corrected-card { border:2px solid var(--accent-blue); background:linear-gradient(145deg,#fff,#eef4ff); }
+.correction-package { margin-top:16px; color:var(--accent-blue); font:800 11px/1.4 var(--font-mono); text-transform:uppercase; }
+.validator-release { margin-top:22px; display:inline-flex; padding:8px 12px; border-radius:18px; color:#fff; background:var(--accent-green); font:850 12px/1 var(--font-mono); }
+
+.slide-map-toggle { position:fixed; top:18px; left:154px; z-index:120; min-height:34px; padding:7px 12px; border:1px solid var(--border); border-radius:8px; background:rgba(255,255,255,.86); box-shadow:0 5px 18px rgba(15,35,80,.07); color:var(--text-dim); font:700 11px/1 var(--font-mono); cursor:pointer; backdrop-filter:blur(10px); }
+.slide-map-toggle:hover { color:var(--accent-blue); border-color:var(--accent-blue); }
+.slide-map-overlay { position:fixed; inset:0; z-index:18000; display:grid; place-items:center; padding:52px; background:rgba(237,241,249,.94); backdrop-filter:blur(15px); opacity:0; pointer-events:none; transition:opacity .18s ease; }
+.slide-map-overlay.open { opacity:1; pointer-events:auto; }
+.slide-map-dialog { width:min(1080px,94vw); max-height:84vh; overflow:auto; padding:34px 38px; border-radius:20px; background:#fff; box-shadow:0 30px 90px rgba(20,50,100,.18); }
+.slide-map-head { display:flex; justify-content:space-between; align-items:center; gap:20px; margin-bottom:25px; }
+.slide-map-head h2 { margin:0; font-size:31px; text-align:left; }
+.slide-map-close { width:38px; height:38px; border:1px solid var(--border); border-radius:50%; background:#fff; color:var(--text); font-size:24px; cursor:pointer; }
+.slide-map-groups { display:grid; grid-template-columns:repeat(3,1fr); gap:25px; }
+.slide-map-group h3 { margin:0 0 10px; color:var(--accent-blue); font:800 11px/1.2 var(--font-mono); text-transform:uppercase; letter-spacing:.06em; }
+.slide-map-list { display:grid; gap:7px; }
+.slide-map-item { display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:center; padding:10px 11px; border:1px solid transparent; border-radius:9px; background:rgba(15,98,254,.035); color:var(--text); font-size:13px; line-height:1.25; text-align:left; cursor:pointer; }
+.slide-map-item span:first-child { color:var(--accent-blue); font:800 10px/1 var(--font-mono); }
+.slide-map-item:hover,.slide-map-item.active { border-color:var(--accent-blue); background:rgba(15,98,254,.08); }
+:fullscreen .slide-map-toggle,:-webkit-full-screen .slide-map-toggle { left:24px; }
+@media (max-width:900px) { .slide-map-groups { grid-template-columns:1fr 1fr; } }
 
 .ablation-header { width:min(100%,1120px); display:flex; justify-content:center; align-items:center; gap:13px; flex-wrap:wrap; }
 .ablation-header strong { color:var(--accent-blue); font:850 25px/1 var(--font-mono); }
@@ -1891,12 +1947,20 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 <div class="slide-nav" id="slideNav"></div>
 <div class="progress-bar" id="progress"></div>
 <div class="slide-counter" id="counter"></div>
-<div class="nav-hints"><span><kbd>&larr;</kbd><kbd>&rarr;</kbd> navigate &nbsp;&middot;&nbsp; <kbd>F</kbd> fullscreen &nbsp;&middot;&nbsp; <kbd>B</kbd> backup</span></div>
+<div class="nav-hints"><span><kbd>&larr;</kbd><kbd>&rarr;</kbd> navigate &nbsp;&middot;&nbsp; <kbd>G</kbd> slide map &nbsp;&middot;&nbsp; <kbd>F</kbd> fullscreen &nbsp;&middot;&nbsp; <kbd>B</kbd> backup</span></div>
 <div class="version-tag" data-edit-id="version-tag">v3.1 &middot; Viva Synced Draft &middot; 2 Aug 2026</div>
 <button class="fullscreen-toggle-btn" id="fullscreenToggle" type="button" onclick="toggleFullscreen()" title="Enter fullscreen (F)" aria-label="Enter fullscreen">
   <span class="fullscreen-icon" aria-hidden="true">⛶</span><span id="fullscreenLabel">Full screen</span>
 </button>
+<button class="slide-map-toggle" id="slideMapToggle" type="button" onclick="toggleSlideMap()" title="Open slide map (G)" aria-label="Open slide map"><span id="slideMapCurrent">01 / 14 · Opening</span> &nbsp;▦</button>
 <button class="backup-toggle-btn" onclick="toggleBackup()" title="Backup slides — Q&amp;A reference (B)">&#8862; Backup (B)</button>
+
+<div class="slide-map-overlay" id="slideMapOverlay" aria-hidden="true" onclick="closeSlideMap()">
+  <div class="slide-map-dialog" role="dialog" aria-modal="true" aria-labelledby="slideMapTitle" onclick="event.stopPropagation()">
+    <div class="slide-map-head"><h2 id="slideMapTitle">Go to slide</h2><button class="slide-map-close" type="button" onclick="closeSlideMap()" aria-label="Close slide map">&times;</button></div>
+    <div class="slide-map-groups" id="slideMapGroups"></div>
+  </div>
+</div>
 
 <div class="pdm-zoom" id="pdmZoom" aria-hidden="true" onclick="closePdmZoom()">
   <div class="pdm-zoom-dialog" role="dialog" aria-modal="true" aria-label="Expanded Geotab evidence image" onclick="event.stopPropagation()">
@@ -2627,35 +2691,35 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
         </div>
 
         <div class="report-stage" data-report-stage="1">
-          <div class="prompt-call-label"><b>CALL 3 EXAMPLE · “WHAT SHOULD I DO?”</b> &nbsp; The same design pattern is applied to each focused report call.</div>
-          <div class="prompt-anatomy">
-            <article class="prompt-part"><div class="method-num">01 · Role</div><h3>Who speaks?</h3><div class="prompt-example">Vehicle-maintenance decision-support assistant</div></article>
-            <article class="prompt-part"><div class="method-num">02 · Task</div><h3>What output?</h3><div class="prompt-example">Generate four owner action roles</div></article>
-            <article class="prompt-part"><div class="method-num">03 · Constraints</div><h3>Which boundaries?</h3><div class="prompt-example">Plain language · current risk · supported facts</div></article>
-            <article class="prompt-part"><div class="method-num">04 · Edge cases</div><h3>What if evidence conflicts?</h3><div class="prompt-example">Ask a mechanic to verify the evidence</div></article>
-            <article class="prompt-part warning"><div class="method-num">05 · Examples</div><h3>Show the distinction</h3><div class="prompt-example">“Replace the fan” → “Ask a mechanic to check the cooling evidence”</div></article>
+          <div class="prompt-call-label"><b>CALL 3 · WHAT SHOULD I DO NEXT?</b> &nbsp; Each design step narrows how Granite may use the retrieved knowledge.</div>
+          <div class="prompt-build-flow">
+            <div class="prompt-build-row"><div class="prompt-build-step">01 · Role</div><div class="prompt-build-example">“Vehicle-maintenance decision-support assistant”</div><div class="prompt-build-reason">Keeps the response focused on a non-technical owner.</div></div>
+            <div class="prompt-build-row"><div class="prompt-build-step">02 · Task</div><div class="action-contract"><span>NOW</span><span>SERVICE TIMING</span><span>STOP DRIVING AND SEEK HELP IF</span><span>TELL THE MECHANIC</span></div><div class="prompt-build-reason">Turns one broad question into four clear decisions.</div></div>
+            <div class="prompt-build-row"><div class="prompt-build-step">03 · Constraints</div><div class="prompt-build-example">“Plain language · current risk · supported facts”</div><div class="prompt-build-reason">Controls wording, urgency and factual scope.</div></div>
+            <div class="prompt-build-row"><div class="prompt-build-step">04 · Edge cases</div><div class="prompt-build-example">“If knowledge conflicts, ask a mechanic to verify the evidence.”</div><div class="prompt-build-reason">Gives Granite a safe response path.</div></div>
           </div>
-          <div class="report-definition"><b>Fixed JSON contract:</b> Now · Service timing · Stop driving and seek help if · Tell the mechanic</div>
+          <div class="prompt-research-note">Prompt-engineering research informed the structure; project testing determined the exact rules.</div>
         </div>
 
         <div class="report-stage" data-report-stage="2">
-          <div class="correction-flow">
-            <article class="correction-card bad">
-              <div class="method-num">First output · score 0.40</div>
-              <blockquote>“coolant_temp is high and the cooling fan has failed.”</blockquote>
-              <div class="correction-feedback"><span>Internal field name exposed</span><span>Unsupported confirmed failure</span><span>Explanation too short</span></div>
-            </article>
-            <div class="correction-arrow"><b>→</b><ul class="correction-instructions"><li>Original task</li><li>Failed output</li><li>Exact warnings</li></ul></div>
-            <article class="correction-card good">
-              <div class="method-num">Targeted rewrite · score 1.00</div>
-              <blockquote>“The engine's coolant temperature is running higher than normal. This abnormal reading may need prompt attention to prevent overheating.”</blockquote>
-              <div class="correction-score">≥ 0.80 · RELEASE</div>
-            </article>
+          <div class="prompt-example-stage">
+            <article class="prompt-quote bad"><div class="method-num">Negative example</div><blockquote>“Replace the cooling fan.”</blockquote></article>
+            <div class="prompt-example-arrow">→</div>
+            <article class="prompt-quote good"><div class="method-num">Positive example</div><blockquote>“Ask a mechanic to check the cooling evidence.”</blockquote></article>
           </div>
-          <div class="report-definition"><b>Only the failed section is regenerated.</b> A second failure returns an explicit error instead of a silent report.</div>
+          <div class="prompt-learning"><div>Fictional example detail appeared in a generated report</div><div class="prompt-learning-arrow">→</div><div>Keep the lesson as an explicit rule + Validator check</div></div>
         </div>
 
         <div class="report-stage" data-report-stage="3">
+          <div class="validator-score-flow">
+            <article class="validator-output-card"><div class="method-num">First output</div><blockquote>“coolant_temp is high and the cooling fan has failed.”</blockquote></article>
+            <article class="validator-score-card"><div class="validator-score-title">Rule-based quality score</div><div class="score-ledger"><div class="score-start"><span>Start</span><span>1.00</span></div><div><span>Raw field</span><span>−0.20</span></div><div><span>“has failed”</span><span>−0.20</span></div><div><span>Too short</span><span>−0.20</span></div><div class="score-total"><span>Blocked</span><span>0.40</span></div></div></article>
+            <article class="validator-corrected-card"><div class="method-num">One targeted correction</div><div class="correction-package">Original task + failed output + exact warnings</div><blockquote>“The engine's coolant temperature is running higher than normal. This abnormal reading may need prompt attention to prevent overheating.”</blockquote><div class="validator-release">1.00 · RELEASE</div></article>
+          </div>
+          <div class="report-definition"><b>Release threshold: 0.80.</b> Only the failed section is regenerated.</div>
+        </div>
+
+        <div class="report-stage" data-report-stage="4">
           <div class="evidence-boundary-flow">
             <section class="assurance-path">
               <div class="method-num">What the implemented design provides</div>
@@ -2685,6 +2749,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
           <div class="ch-dot" data-report-dot="1" onclick="reportGoTo(1)"></div>
           <div class="ch-dot" data-report-dot="2" onclick="reportGoTo(2)"></div>
           <div class="ch-dot" data-report-dot="3" onclick="reportGoTo(3)"></div>
+          <div class="ch-dot" data-report-dot="4" onclick="reportGoTo(4)"></div>
         </div>
         <button class="ch-nav-btn primary" id="reportNextBtn" onclick="reportNext()">Next &rarr;</button>
       </div>
@@ -4416,6 +4481,61 @@ const slideNav = document.getElementById('slideNav');
 let pdmZoomOpen = false;
 let current = 0;
 const total = slides.length;
+let slideMapOpen = false;
+const slideMapSections = [
+  { title:'Opening', slides:[[0,'Title'],[1,'Owner warning'],[2,'Professional fleets'],[3,'Four-layer approach']] },
+  { title:'Challenge 1 · Data', slides:[[4,'Define failure'],[5,'Data → Model']] },
+  { title:'Challenge 2 · Model', slides:[[6,'Detect change'],[7,'Model → Report']] },
+  { title:'Challenge 3 · Report', slides:[[8,'Explain risk'],[9,'Report → Dashboard']] },
+  { title:'Dashboard', slides:[[10,'Owner journey']] },
+  { title:'Closing', slides:[[11,'What we built'],[12,'Evidence boundary'],[13,'Future work']] },
+];
+
+function buildSlideMap() {
+  const root = document.getElementById('slideMapGroups');
+  root.innerHTML = '';
+  slideMapSections.forEach((section) => {
+    const group = document.createElement('section');
+    group.className = 'slide-map-group';
+    const heading = document.createElement('h3');
+    heading.textContent = section.title;
+    const list = document.createElement('div');
+    list.className = 'slide-map-list';
+    section.slides.forEach(([index,label]) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'slide-map-item';
+      button.dataset.slideMapIndex = String(index);
+      button.innerHTML = `<span>${String(index + 1).padStart(2,'0')}</span><span>${label}</span>`;
+      button.addEventListener('click', () => {
+        closeSlideMap();
+        if (index !== current) goTo(index);
+      });
+      list.appendChild(button);
+    });
+    group.append(heading,list);
+    root.appendChild(group);
+  });
+}
+
+function openSlideMap() {
+  const overlay = document.getElementById('slideMapOverlay');
+  overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden','false');
+  slideMapOpen = true;
+  updateUI();
+  const active = overlay.querySelector('.slide-map-item.active');
+  if (active) active.focus();
+}
+
+function closeSlideMap() {
+  const overlay = document.getElementById('slideMapOverlay');
+  overlay.classList.remove('open');
+  overlay.setAttribute('aria-hidden','true');
+  slideMapOpen = false;
+}
+
+function toggleSlideMap() { slideMapOpen ? closeSlideMap() : openSlideMap(); }
 
 function openPdmZoom(figure) {
   const img = figure.querySelector('img');
@@ -4449,6 +4569,10 @@ function updateUI() {
   progress.style.width = ((current + 1) / total * 100) + '%';
   counter.textContent = `${current + 1} / ${total}`;
   document.querySelectorAll('.slide-nav-dot').forEach((d, i) => d.classList.toggle('active', i === current));
+  document.querySelectorAll('[data-slide-map-index]').forEach((item) => item.classList.toggle('active', Number(item.dataset.slideMapIndex) === current));
+  const section = slideMapSections.find((entry) => entry.slides.some(([index]) => index === current));
+  const locator = document.getElementById('slideMapCurrent');
+  if (locator) locator.textContent = `${String(current + 1).padStart(2,'0')} / ${String(total).padStart(2,'0')} · ${section ? section.title : 'Slide'}`;
 }
 
 function goTo(index) {
@@ -4501,6 +4625,10 @@ document.addEventListener('webkitfullscreenchange', updateFullscreenControl);
 
 document.addEventListener('keydown', (e) => {
   if (document.activeElement && document.activeElement.isContentEditable) return;
+  if (slideMapOpen) {
+    if (e.key === 'Escape' || e.key.toLowerCase() === 'g') { e.preventDefault(); closeSlideMap(); }
+    return;
+  }
   if (pdmZoomOpen) {
     if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -4509,6 +4637,7 @@ document.addEventListener('keydown', (e) => {
     return;
   }
   if (backupOpen) return;
+  if (e.key.toLowerCase() === 'g') { e.preventDefault(); openSlideMap(); return; }
   if (e.key.toLowerCase() === 'f') { e.preventDefault(); toggleFullscreen(); return; }
   if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
   if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
@@ -4534,6 +4663,7 @@ document.addEventListener('wheel', (e) => {
   else prev();
 }, { passive: true });
 
+buildSlideMap();
 updateUI();
 updateFullscreenControl();
 
@@ -4704,10 +4834,11 @@ function resetModel() {
    Evidence + knowledge → grounded owner report.
    =========================================== */
 let reportCurrent = 0;
-const reportTotal = 4;
+const reportTotal = 5;
 const reportLabels = [
   'Choose a traceable starting design',
-  'Control one case-specific prompt',
+  'Build one case-specific call step by step',
+  'Use examples to make the boundary concrete',
   'Correct a failed section before release',
   'State the evidence boundary'
 ];
