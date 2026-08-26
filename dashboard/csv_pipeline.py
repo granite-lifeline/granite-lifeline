@@ -29,8 +29,11 @@ MODEL_LAYER_SCRIPT = (
 )
 # Recommended per model_layer/ttm-related/README.md: a dedicated venv,
 # since the detector pins specific torch/transformers versions.
+_MODEL_VENV = _REPO_ROOT / "model_layer" / "ttm-related" / ".venv"
 MODEL_LAYER_VENV_PYTHON = (
-    _REPO_ROOT / "model_layer" / "ttm-related" / ".venv" / "bin" / "python"
+    _MODEL_VENV / "Scripts" / "python.exe"
+    if os.name == "nt"
+    else _MODEL_VENV / "bin" / "python"
 )
 # Matches report_layer/pipeline/report_generator.py's Ollama TIMEOUT —
 # both are the pipeline's "slow AI call" thresholds. Estimated, not
@@ -113,6 +116,12 @@ def _run_model_layer(
         str(production_features_path),
         "--batch",
         "--output", str(output_path),
+        # Each uploaded trip is an independent detector run. Reusing the
+        # detector's repository-level default would mix identically named
+        # trip_0001 records from different dates and can make an otherwise
+        # ordered upload fail validation. Keep the temporary history beside
+        # this run's output instead.
+        "--history-file", str(output_path.with_name("risk_history.csv")),
     ]
     if proxy_decisions_path is not None:
         command.extend(["--proxy-decisions", str(proxy_decisions_path)])
@@ -200,6 +209,41 @@ def _run_data_layer(raw_csv_path: Path) -> tuple[Path, Path | None]:
                 "was not created."
             )
 
+    return production_path, proxy_path
+
+
+def _run_data_layer_history(
+    raw_csv_paths: list[Path],
+) -> tuple[Path, Path | None]:
+    """Run all uploaded trips together and return combined artifacts."""
+    try:
+        from data_layer.run_pipeline import (
+            UploadRejected,
+            run_data_pipeline_for_uploads,
+        )
+    except Exception as exc:
+        raise UploadedCsvPipelineError(
+            "Data Layer history pipeline is not available."
+        ) from exc
+
+    try:
+        summary = run_data_pipeline_for_uploads(
+            raw_csv_paths, run_id=_build_upload_run_id()
+        )
+    except UploadRejected as exc:
+        raise UploadedCsvPipelineError(str(exc)) from exc
+
+    production_path = Path(summary["production_features_path"])
+    proxy_value = summary.get("proxy_decisions_path")
+    proxy_path = Path(proxy_value) if proxy_value else None
+    if not production_path.is_file():
+        raise UploadedCsvPipelineError(
+            "Data Layer did not produce combined production features."
+        )
+    if proxy_path is not None and not proxy_path.is_file():
+        raise UploadedCsvPipelineError(
+            "Data Layer did not produce combined proxy decisions."
+        )
     return production_path, proxy_path
 
 
@@ -373,60 +417,46 @@ def run_uploaded_csv_history_batch(
     progress_callback: Optional[ProgressCallback] = None,
 ) -> Dict[str, Any]:
     """
-    Run an ordered set of uploaded CSV trips through the existing pipeline.
+    Run an ordered set of uploaded CSV trips as one joint history pipeline.
 
-    The caller is responsible for sorting by filename date before calling this
-    function.  The returned dashboard data uses the last trip as the current
-    report, with the full trip history and failure-estimation fields attached.
+    The caller sorts by filename date. Data Layer processes the complete set in
+    one run, preserving trip boundaries; Model Layer then analyses the combined
+    production feature artifact once before Report Layer generates the current
+    affected-component reports.
     """
     if len(csv_trips) < HISTORY_MIN_TRIPS:
         raise UploadedCsvPipelineError(
             "Failure prediction needs at least five chronological trips."
         )
 
-    trip_results: list[Dict[str, Any]] = []
-    latest_dashboard_data: Dict[str, Any] | None = None
-    trip_count = len(csv_trips)
+    with tempfile.TemporaryDirectory(
+        prefix="granite_history_upload_"
+    ) as temp_dir:
+        raw_paths = []
+        for csv_bytes, original_filename in csv_trips:
+            if not csv_bytes.strip():
+                raise UploadedCsvPipelineError(
+                    f"{original_filename} is empty."
+                )
+            raw_path = Path(temp_dir) / original_filename
+            raw_path.write_bytes(csv_bytes)
+            raw_paths.append(raw_path)
 
-    for index, (csv_bytes, original_filename) in enumerate(csv_trips, start=1):
-        dashboard_data = run_uploaded_csv_batch(
-            csv_bytes,
-            original_filename,
-            progress_callback=_trip_progress_callback(
-                progress_callback, index, trip_count
-            ),
+        _emit_progress_stage(progress_callback, "processing_signals")
+        production_features, proxy_decisions = _run_data_layer_history(
+            raw_paths
         )
-        component_key, component_data = _first_dashboard_component(
-            dashboard_data
+        _emit_progress_stage(progress_callback, "estimating_risk")
+        output_path = Path(temp_dir) / "model_output.json"
+        model_output = _run_model_layer(
+            production_features, proxy_decisions, output_path
         )
-        risk_score = component_data.get("risk_score")
-        if risk_score is None:
-            raise UploadedCsvPipelineError(
-                f"{original_filename} did not return a risk_score."
-            )
-
-        trip_results.append(
-            {
-                "trip_id": f"trip_{index:04d}",
-                "file_name": original_filename,
-                "component": component_key,
-                "timestamp": (
-                    component_data.get("timestamp")
-                    or _trip_timestamp_from_name(original_filename)
-                ),
-                "risk_score": risk_score,
-                "risk_level": component_data.get("risk_level"),
-            }
+        _emit_progress_stage(progress_callback, "generating_report")
+        dashboard_data = load_model_output_for_dashboard(
+            model_output, "uploaded_history"
         )
-        latest_dashboard_data = dashboard_data
-
-    risk_history = _build_risk_history(trip_results)
-    dashboard_data = _add_failure_estimate_to_latest_report(
-        latest_dashboard_data or {}, risk_history
-    )
-    _emit_progress(progress_callback, 100, "Preparing dashboard results...")
-    return {
-        "dashboard_data": dashboard_data,
-        "trip_results": trip_results,
-        "risk_history": risk_history,
-    }
+        _emit_progress_stage(progress_callback, "preparing_dashboard")
+        return {
+            "dashboard_data": dashboard_data,
+            "model_output": model_output,
+        }

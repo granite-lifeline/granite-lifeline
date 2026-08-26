@@ -11,7 +11,14 @@ from unittest.mock import patch, MagicMock
 
 import requests
 
-from report_layer.pipeline.report_generator import call_ollama, generate_report
+from report_layer.pipeline.report_generator import (
+    _apply_signal_direction_check,
+    _validate_layer_value,
+    call_ollama,
+    generate_report,
+)
+from report_layer.pipeline.prompt_chain_validator import ValidationResult
+from shared.interface_models import ModelLayerOutput
 
 
 # ---------------------------------------------------------------------------
@@ -37,6 +44,58 @@ VALID_MODEL_OUTPUT = {
     "estimated_failure_probability": 0.72,
     "notes": [],
 }
+
+
+def test_signal_direction_check_blocks_reversed_coolant_comparison():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["key_signals"] = [{
+        "feature": "coolant_temp",
+        "value": 84.0,
+        "unit": "°C",
+        "reference_range": [90.0, 95.0],
+    }]
+    result = _apply_signal_direction_check(
+        ValidationResult(layer=1, passed=True, warnings=[], score=1.0),
+        "The coolant temperature is higher than expected, so this pattern "
+        "requires professional verification soon.",
+        ModelLayerOutput(**payload),
+    )
+
+    assert result.score < 0.8
+    assert any("below, not above" in item for item in result.warnings)
+
+
+def test_validate_layer_value_dispatches_to_the_matching_layer():
+    """Regression test: _validate_layer_value's dispatch previously had
+    `if layer_num in {1, 2}: return validate_layer1(...)` catching layer
+    2 before the `if layer_num == 2` branch could ever run — so
+    possible_cause was silently checked against anomaly_description's
+    rules (no hedging requirement, and the wrong 20-60 word range
+    instead of layer 2's real range) for as long as that code existed.
+
+    This text is valid for layer 2 (has hedging, 61 words — inside
+    layer 2's 130-word cap but over layer 1's 60-word cap) and invalid
+    for layer 1 (no hedging is fine for layer 1, but 61 words trips
+    layer 1's real cap). If dispatch is broken again, this comes back
+    as a length warning that shouldn't exist at layer 2.
+    """
+    text = (
+        "This may indicate a partially blocked radiator, a thermostat "
+        "that is not fully opening, or a failing water pump — each "
+        "could reduce how effectively the engine sheds heat given the "
+        "current signal pattern. Because the coolant temperature is "
+        "below its reference range while rising abnormally quickly, "
+        "these remain possibilities rather than a confirmed cause "
+        "until a mechanic verifies which component is responsible for "
+        "the drop in cooling performance observed here today."
+    )
+    assert 60 < len(text.split()) <= 130
+
+    result = _validate_layer_value(2, text, "", "High")
+
+    assert not any("too long" in w for w in result.warnings)
+    assert not any("too short" in w for w in result.warnings)
+
 
 # Realistic enough to pass prompt_chain_validator.validate_chain() at
 # VALIDATOR_SCORE_THRESHOLD — word-count minimums, hedging language,
@@ -67,10 +126,13 @@ LAYER2_RESPONSE = json.dumps(
 LAYER3_RESPONSE = json.dumps(
     {
         "recommended_action": [
-            "Avoid heavy driving or towing until the cooling system "
-            "has been inspected by a professional.",
-            "Schedule a prompt inspection of the radiator and "
-            "thermostat within the next few days.",
+            "Now: Watch the temperature gauge and avoid unusual vehicle "
+            "load while arranging an inspection.",
+            "Service timing: Arrange a prompt professional inspection.",
+            "Stop driving and seek help if: A red temperature warning "
+            "appears, the engine overheats, or power drops.",
+            "Tell the mechanic: Ask them to inspect the radiator, "
+            "thermostat and coolant flow with suitable equipment.",
         ]
     }
 )
@@ -297,10 +359,14 @@ class TestGenerateReportValidationGate(unittest.TestCase):
         corrected_layer3 = json.dumps(
             {
                 "recommended_action": [
-                    "Avoid heavy driving until the cooling system has "
-                    "received a professional inspection.",
-                    "Arrange a prompt cooling-system inspection within the "
-                    "next few days.",
+                    "Now: Watch the temperature gauge and avoid unusual "
+                    "vehicle load while arranging an inspection.",
+                    "Service timing: Arrange a prompt cooling-system "
+                    "inspection.",
+                    "Stop driving and seek help if: A red temperature "
+                    "warning appears, the engine overheats, or power drops.",
+                    "Tell the mechanic: Ask them to inspect the radiator, "
+                    "thermostat and coolant flow with suitable equipment.",
                 ]
             }
         )
@@ -313,8 +379,8 @@ class TestGenerateReportValidationGate(unittest.TestCase):
 
         result = generate_report(VALID_MODEL_OUTPUT)
 
-        self.assertEqual(len(result["recommended_action"]), 2)
-        self.assertIn("Avoid heavy driving", result["recommended_action"][0])
+        self.assertEqual(len(result["recommended_action"]), 4)
+        self.assertTrue(result["recommended_action"][0].startswith("Now:"))
         self.assertEqual(mock_post.call_count, 4)
 
     @patch(

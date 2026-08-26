@@ -32,12 +32,14 @@ GOOD_LAYER2 = (
     "from the engine."
 )
 GOOD_LAYER3 = [
-    "Schedule an inspection of the cooling system soon, focusing on "
-    "the radiator and thermostat components.",
-    "Check coolant levels and top up if necessary, using the "
-    "manufacturer-recommended coolant type.",
-    "Avoid extended highway driving or towing until the issue is "
-    "resolved to prevent engine damage.",
+    "Now: Watch the temperature gauge and avoid placing unusual load on "
+    "the vehicle while arranging an inspection.",
+    "Service timing: Arrange a prompt professional cooling-system "
+    "inspection.",
+    "Stop driving and seek help if: A red temperature warning appears, "
+    "the engine overheats, or the vehicle loses power.",
+    "Tell the mechanic: Ask them to inspect the radiator, thermostat and "
+    "coolant flow using appropriate diagnostic equipment.",
 ]
 
 
@@ -149,9 +151,68 @@ class TestValidateLayer1:
         )
         assert any("coolant_temp" in w for w in result.warnings)
 
+    def test_explained_maf_and_map_acronyms_are_not_flagged(self):
+        text = (
+            "The mass airflow (MAF) sensor and manifold pressure (MAP) "
+            "sensor readings are being compared with their expected "
+            "ranges. This relationship helps show whether the current "
+            "air-intake measurements agree, but it does not confirm a "
+            "mechanical fault and should be checked with further evidence."
+        )
+        result = validate_layer1(text)
+        assert not any(
+            "unexplained raw field name" in warning
+            for warning in result.warnings
+        )
+
+    def test_map_inside_mapping_is_not_treated_as_raw_field(self):
+        text = (
+            "The current signal mapping compares the air-intake readings "
+            "with the expected operating pattern. The relationship does "
+            "not confirm a mechanical fault, but it provides useful "
+            "evidence for a professional inspection if the pattern "
+            "continues over later trips."
+        )
+        result = validate_layer1(text)
+        assert not any("map" in warning for warning in result.warnings)
+
     def test_short_output_is_flagged(self):
         result = validate_layer1("Coolant is warm.")
         assert any("too short" in w for w in result.warnings)
+
+    def test_long_output_is_flagged(self):
+        text = " ".join(["clear"] * 61)
+        result = validate_layer1(text)
+        assert any("too long" in w for w in result.warnings)
+
+    def test_machine_precision_and_metric_repetition_are_flagged(self):
+        text = (
+            "The cooling system is High risk. Coolant is 84.0 degrees "
+            "against a 90.0 to 95.0 range and rises at 5.5069 degrees per "
+            "minute against a 0.0 to 2.0 reference, so it needs attention."
+        )
+        result = validate_layer1(text)
+        assert any("numerical precision" in w for w in result.warnings)
+        assert any("too many measurements" in w for w in result.warnings)
+
+    def test_risk_score_restatement_is_flagged(self):
+        text = (
+            "The mass airflow sensor has a Medium risk category. The 85% "
+            "risk score is an internal severity measure, while the current "
+            "airflow comparison should be checked soon by a professional."
+        )
+        result = validate_layer1(text)
+        assert any("risk score" in w for w in result.warnings)
+
+    def test_parenthesised_percentage_after_risk_is_blocked(self):
+        text = (
+            "The mass airflow sensor shows medium risk (85%) because its "
+            "internal comparison is unusual. This pattern should be checked "
+            "soon by a professional, although no fault is confirmed."
+        )
+        result = validate_layer1(text)
+        assert result.score < 0.8
+        assert any("risk score" in w for w in result.warnings)
 
 
 class TestValidateLayer2:
@@ -207,6 +268,11 @@ class TestValidateLayer2:
         )
         assert not any("hedging" in w.lower() for w in result.warnings)
 
+    def test_overlong_cause_is_flagged(self):
+        text = "This may indicate " + " ".join(["detail"] * 130)
+        result = validate_layer2(text, GOOD_LAYER1)
+        assert any("too long" in w for w in result.warnings)
+
 
 class TestValidateLayer3:
     def test_good_actions_pass_without_warnings(self):
@@ -241,6 +307,33 @@ class TestValidateLayer3:
             "Low",
         )
         assert any("panic language" in w for w in result.warnings)
+
+    def test_invented_numeric_service_interval_is_flagged(self):
+        actions = list(GOOD_LAYER3)
+        actions[1] = (
+            "Service timing: Arrange an inspection within 3 months if "
+            "the pattern remains present."
+        )
+        result = validate_layer3(actions, "Low")
+        assert any("numeric service interval" in w for w in result.warnings)
+
+    def test_unverified_replacement_is_flagged(self):
+        actions = list(GOOD_LAYER3)
+        actions[3] = (
+            "Tell the mechanic: Ask them to replace the sensor after "
+            "reading this report."
+        )
+        result = validate_layer3(actions, "High")
+        assert any("replacement" in w for w in result.warnings)
+
+    def test_owner_sensor_inspection_is_flagged(self):
+        actions = list(GOOD_LAYER3)
+        actions[0] = (
+            "Now: Inspect the sensor wiring and connector for visible "
+            "damage before continuing to drive."
+        )
+        result = validate_layer3(actions, "Medium")
+        assert any("technical component check" in w for w in result.warnings)
 
 
 class TestValidateChain:

@@ -1,0 +1,76 @@
+[
+  {
+    "timestamp": "2017-07-28T06:46:23Z",
+    "risk_score": 0.5021,
+    "risk_level": "Medium",
+    "component": "cooling_degradation",
+    "prediction_confidence": 0.842,
+    "key_signals": [
+      {
+        "feature": "coolant_temp",
+        "value": 85.0,
+        "unit": "°C",
+        "reference_range": [90, 95]
+      },
+      {
+        "feature": "ect_rate_180s",
+        "value": 5.0486,
+        "unit": "°C/min",
+        "reference_range": [0, 2]
+      },
+      {
+        "feature": "rpm",
+        "value": 1490.0,
+        "unit": "RPM",
+        "reference_range": [0, 3682]
+      },
+      {
+        "feature": "speed",
+        "value": 58.0,
+        "unit": "km/h",
+        "reference_range": [0, 218]
+      }
+    ],
+    "risk_history": [
+      {
+        "timestamp": "2017-07-24T05:32:31Z",
+        "risk_score": 0.16447142857142857
+      },
+      {
+        "timestamp": "2017-07-26T05:50:00Z",
+        "risk_score": 0.18295000000000003
+      },
+      {
+        "timestamp": "2017-07-26T17:00:00Z",
+        "risk_score": 0.20948000000000003
+      },
+      {
+        "timestamp": "2017-07-27T06:53:33Z",
+        "risk_score": 0.823
+      },
+      {
+        "timestamp": "2017-07-27T19:21:25Z",
+        "risk_score": 0.36465000000000003
+      },
+      {
+        "timestamp": "2017-07-28T06:46:23Z",
+        "risk_score": 0.5021
+      }
+    ],
+    "anomaly_description": "Your vehicle's cooling system is showing signs of potential degradation. The coolant temperature sensor reports a reading of 85.0°C, which is below the normal operating range of 90.0–95.0°C, indicating an abnormal condition. Additionally, the rate at which the coolant temperature is rising (5.0486 °C per minute) exceeds the expected maximum of 2.0 °C per minute, further confirming that something is not functioning as it should within the cooling system. The overall risk level for this issue is classified as Medium, meaning you should monitor the situation and consider having a technician inspect the cooling components soon to prevent possible overheating or more serious damage.",
+    "possible_cause": "The observed lower-than-expected coolant temperature and unusually rapid rise rate may suggest a sensor reading issue or an intermittent cooling fan behavior. Because related signals are still within normal ranges, the evidence is limited; it could also indicate early signs of sensor drift or minor airflow restriction that does not yet confirm a mechanical fault. Monitoring the system over additional drive cycles will help determine if this pattern persists and requires further inspection.",
+    "recommended_action": [
+      "Inspect the cooling system for blockages or leaks. Start by checking the radiator and coolant hoses for any signs of damage, clogs, or loose clamps.",
+      "Verify that the cooling fan is operating correctly when the engine reaches higher temperatures. Listen for unusual noises or observe if the fan engages as expected during warm driving conditions.",
+      "Check the coolant level and condition. Ensure it's filled to the proper mark on the reservoir and looks clean; add a 60:40 water-to-antifreeze mix if needed.",
+      "Schedule an appointment with a mechanic within the next few days for a thorough cooling system inspection, especially focusing on the thermostat and any sensor readings that may be drifting."
+    ],
+    "estimated_cycles_to_failure": 5,
+    "estimated_failure_probability": 0.7502,
+    "notes": [
+      "The trend uses six chronological Seat Leon trips and 22 model windows.",
+      "The estimate projects the trip-level mean risk score to the configured High-risk threshold of 0.9000.",
+      "The probability is the chance of crossing that risk threshold within the next 10 trips; it is not a probability of mechanical failure."
+    ]
+  }
+]
