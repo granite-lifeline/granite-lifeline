@@ -2328,7 +2328,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
               <span class="model-kicker">Our dataset</span>
               <h3>Contains no real fault examples</h3>
               <div class="contrast-list">
-                <div class="contrast-row"><b>WE HAVE</b><span>healthy everyday driving</span></div>
+                <div class="contrast-row"><b>WE HAVE</b><span>baseline driving without verified fault labels</span></div>
                 <div class="contrast-row"><b>WE DO NOT HAVE</b><span>verified mechanical failures</span></div>
               </div>
             </div>
@@ -2350,7 +2350,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
               <div class="ttm-sequence">
                 <div><strong>512 s history</strong><span>what the car just did</span></div>
                 <i>→</i>
-                <div><strong>TTM</strong><span>zero-shot forecast</span></div>
+                <div><strong>TTM</strong><span>fine-tuned forecast</span></div>
                 <i>→</i>
                 <div><strong>96 s future</strong><span>what should happen next</span></div>
               </div>
@@ -2369,7 +2369,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
           </div>
           <div class="pred-wrap" style="max-width:1240px;">
             <div class="pred-panel" style="padding:20px 24px;">
-              <div class="pred-panel-label">Healthy behaviour</div>
+              <div class="pred-panel-label">Baseline behaviour</div>
               <svg viewBox="0 0 220 90" class="pred-svg" preserveAspectRatio="none" style="height:170px;">
                 <polyline points="0,52 25,46 50,54 75,42 100,48 125,40 150,46 175,38 200,44 220,40" fill="none" stroke-width="3" stroke-linecap="round" style="stroke:var(--accent-blue)"/>
                 <polyline points="0,54 25,45 50,55 75,43 100,47 125,42 150,45 175,40 200,43 220,41" fill="none" stroke-width="2.5" stroke-dasharray="5 4" style="stroke:#6f6f73"/>
@@ -2450,15 +2450,15 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
         </div>
 
         <div class="model-stage" data-model-stage="5">
-          <div class="validation-boundary">Limitation: both tests use healthy driving or synthetic changes. They do not prove detection of real vehicle breakdowns.</div>
+          <div class="validation-boundary">Limitation: both tests use baseline driving or synthetic changes. They do not prove detection of real vehicle breakdowns.</div>
           <div class="validation-detail">
             <div class="injection-test">
               <h3 class="test-question">1. Does it identify a known change?</h3>
-              <p class="test-purpose">Test the detector, while keeping the original driving situation unchanged.</p>
+              <p class="test-purpose">154 controlled cases across 11 held-out baseline segments.</p>
               <div class="test-flow">
-                <div class="test-node"><strong>Healthy trip</strong><span>preserve real driving context</span></div>
+                <div class="test-node"><strong>Baseline segment</strong><span>preserve real driving context</span></div>
                 <div class="monitor-arrow">→</div>
-                <div class="fault-plants"><span>coolant +15°C</span><span>air intake −30%</span><span>pressure +25%</span></div>
+                <div class="fault-plants"><span>coolant rise</span><span>airflow under-read</span><span>pedal mismatch</span></div>
                 <div class="monitor-arrow">→</div>
                 <div class="test-node"><strong>Expected answer</strong><span>name the change we planted</span></div>
               </div>
@@ -2470,14 +2470,14 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
             </div>
             <div class="finetune-test">
               <h3 class="test-question">2. Does extra training improve the forecast?</h3>
-              <p class="test-purpose">Compare both model versions on the same held-out healthy trips.</p>
+              <p class="test-purpose">Compare both models on 250 held-out windows from 12 validation segments.</p>
               <div class="compare-bars">
                 <div class="compare-bar"><span>Zero-shot</span><i style="--bar:100%;"></i><b>58.00</b></div>
                 <div class="compare-bar"><span>Fine-tuned</span><i style="--bar:94.8%;"></i><b>54.97</b></div>
               </div>
               <div class="metric-placeholders" style="grid-template-columns:1fr 1fr;margin-top:22px;">
-                <div><strong>5.2%</strong><span>lower mean error</span></div>
-                <div><strong>5 / 6</strong><span>signals did not worsen</span></div>
+                <div><strong>5.23%</strong><span>lower mean error</span></div>
+                <div><strong>5 / 6</strong><span>signals improved</span></div>
               </div>
             </div>
           </div>
@@ -2498,7 +2498,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
       </div>
     </div>
     <script type="application/json" class="slide-notes">
-    {"title":"Challenge 2: Detecting Change Without Fault Examples","script":"A classifier needs verified healthy and faulty examples, but this dataset contains only healthy driving. Reusing the Data Layer's stand-in rules as both the answer and the test would be marking our own homework. We therefore use Granite Tiny Time Mixers to forecast normal behaviour. For every eligible 608-second window, TTM reads 512 seconds and forecasts the next 96 seconds. We compare forecast with reality and use that gap as independent evidence of change. Planted-fault testing showed sharply different limits: cooling achieved perfect precision and recall, pedal alarms were precise but missed smaller faults, and gradual air-intake under-read was rarely caught. Across the three types, macro F1 was 0.521 and healthy false-positive rate was 0.091. Healthy-only fine-tuning reduced held-out forecast error from 58.00 to 54.97, or 5.2 percent, with five of six signals no worse. Story 8 now also projects threshold crossing from rising risk history. These are synthetic-detection and forecasting results, not proof of real mechanical-failure recall.","notes":["Medium risk starts at 0.4129 and High at 0.9 under provisional synthetic-only calibration","Cooling P/R 1.000/1.000; pedal 1.000/0.325; MAF 0.200/0.045","Failure projection is a linear risk-history projection, not a calibrated remaining-useful-life model","Five problem types are exposed: three scored here and two forwarded from Data Layer proxy decisions"]}
+    {"title":"Challenge 2: Detecting Change Without Fault Examples","script":"A classifier needs verified normal-operation and faulty examples, but this dataset has no mechanically verified fault or repair labels. Reusing the Data Layer's stand-in rules as both the answer and the test would be marking our own homework. We therefore use Granite Tiny Time Mixers to forecast baseline behaviour. For every eligible 608-second window, TTM reads 512 seconds and forecasts the next 96 seconds. We compare forecast with reality and use that gap as independent evidence of change. Planted-fault testing showed sharply different limits: cooling achieved perfect precision and recall, pedal alarms were precise but missed smaller faults, and gradual air-intake under-read was rarely caught. Across the three types, macro F1 was 0.521 and the baseline alarm rate was 0.091. Quality-gated fine-tuning reduced held-out forecast error from 58.00 to 54.97, or 5.23 percent, with five of six signals improving. The final detector and formal evaluation use the same epoch-five fine-tuned artefact. Story 8 also projects threshold crossing from rising risk history. These are synthetic-detection and forecasting results, not proof of real mechanical-failure recall.","notes":["Medium risk starts at 0.4129 and High at 0.9 under provisional synthetic-only calibration","Cooling P/R 1.000/1.000; pedal 1.000/0.325; MAF 0.200/0.045","Failure projection is a linear risk-history projection, not a calibrated remaining-useful-life model","Five problem types are exposed: three scored here and two forwarded from Data Layer proxy decisions","Zero-shot is retained as the forecasting comparison baseline; runtime inference uses the selected epoch-five fine-tuned artefact"]}
     </script>
   </div>
 
@@ -3861,7 +3861,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
             <div class="pipeline-flow" aria-label="TTM residual detection">
               <div class="pipeline-flow-step"><b>512 × 6 context</b><span>RPM, speed, coolant, MAP, MAF and TPS from one segment.</span></div>
               <div class="pipeline-flow-step"><b>Window normalisation</b><span>Per-signal mean/std; near-zero std safely replaced by 1.</span></div>
-              <div class="pipeline-flow-step"><b>Granite TTM</b><span>Zero-shot model forecasts 96 × 6 in the shipped detector.</span></div>
+              <div class="pipeline-flow-step"><b>Granite TTM</b><span>The selected epoch-five fine-tuned model forecasts 96 × 6 in the final detector.</span></div>
               <div class="pipeline-flow-step"><b>Absolute residual</b><span>|forecast − observed future|, summarised by mean and max per signal.</span></div>
             </div>
 
@@ -3875,7 +3875,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
               </ul></div>
               <div class="pipeline-block"><div class="pipeline-block-label">EXACT FORECAST IMPLEMENTATION</div><ul>
                 <li><code>run_ttm_forecast()</code> converts the six context channels to float32 and normalises each channel within the current window.</li>
-                <li><code>get_model()</code> loads <code>ibm-granite/granite-timeseries-ttm-r2</code> with context=512 and prediction=96.</li>
+                <li><code>get_model()</code> loads the committed <code>ttm_finetuned_e5_lr5e-5/model</code> artefact with context=512 and prediction=96.</li>
                 <li>Inference runs in <code>eval()</code> and <code>torch.no_grad()</code>; the output is checked for exactly 96 timesteps and six signals.</li>
                 <li>The prediction is transformed back to original units before comparison with the observed future.</li>
                 <li><code>calculate_residuals()</code> uses absolute error; <code>summarize_residuals()</code> records mean and maximum error for each signal.</li>
@@ -3895,7 +3895,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
                 <div class="evolution-step"><b>15 JUN · EARLY DRAFT</b><span>The brief-inspired design proposed extracting TTM embeddings and attaching a fault classifier head.</span></div><div class="evolution-arrow">→</div>
                 <div class="evolution-step"><b>20 JUN · REDESIGN</b><span>Missing real labels and proxy-label circularity led to forecast-residual detection in <code>kit_residual_detector.py</code>.</span></div><div class="evolution-arrow">→</div>
                 <div class="evolution-step"><b>23 JUN · MVP</b><span>A working Data → TTM → residual → risk → interface pipeline was delivered without a training bottleneck.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>ADR 201 · 22 JUL</b><span>The decision and its limits were formally recorded; healthy-only fine-tuning preserved the same paradigm.</span></div>
+                <div class="evolution-step"><b>ADR 201 · 22 JUL</b><span>The decision and its limits were formally recorded; quality-gated fine-tuning preserved the same paradigm.</span></div>
               </div></div></details>
               <details><summary>How residual evidence remains independent from proxy rules</summary><div class="pipeline-detail"><ul>
                 <li>TTM never receives <code>anomaly_type</code>, DTC or proxy result as a training target.</li>
@@ -3923,7 +3923,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
                 <li><code>kit_residual_detector.py</code>: <code>load_model()</code>, <code>run_ttm_forecast()</code>, <code>extract_prediction_tensor()</code>, <code>calculate_residuals()</code>, <code>summarize_residuals()</code>.</li>
                 <li><code>MODEL_SIGNALS = [rpm, speed, coolant_temp, map, maf, tps]</code>; context 512; prediction 96.</li>
                 <li><code>docs/adr/201-residual-detection-over-classification.md</code>: options, anti-circularity rationale, implementation and consequences.</li><li><code>finetune_residual_comparison_e5_lr5e-5.json</code> records 250 paired validation windows produced through this forecast/residual path: overall MAE 58.0004 zero-shot and 54.9666 fine-tuned.</li><li>Batch-mode tests exercise 512+96 window orchestration with <code>run_ttm_forecast()</code> replaced by a deterministic forecast stub; numerical model quality is therefore evidenced by the committed comparison artefact, not those unit tests.</li>
-                <li>Shipped detector's default and only model path: <code>ibm-granite/granite-timeseries-ttm-r2</code> (zero-shot). The healthy-only fine-tuned checkpoint is reachable only from <code>run_synthetic_evaluation.py --model-path</code> and <code>compare_finetune_residuals.py</code> — the M4 detection results and slide 6 P/R figures were measured on that fine-tuned checkpoint, not on the model the shipped detector loads today. Promoting the fine-tuned checkpoint into the shipped detector is outstanding work.</li>
+                <li>The final detector and <code>run_synthetic_evaluation.py</code> both load <code>OFFICIAL_DETECTOR_MODEL_PATH</code>, which resolves to the committed epoch-five fine-tuned artefact. The production CLI exposes no model override. The released zero-shot checkpoint remains only in the separate forecasting comparison.</li>
               </ul></div></details>
             </div>
             </div>
@@ -4010,12 +4010,12 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
 
           <article class="pipeline-node" id="modelM3">
             <details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">M3</span><div><h4>Healthy-only TTM fine-tuning</h4><p class="pipeline-node-purpose">Adapt the pretrained forecaster to this vehicle's healthy dynamics without introducing proxy fault labels, then compare it fairly with zero-shot TTM on exactly the same held-out trips and windows.</p></div><span class="pipeline-status">5.23% LOWER MAE · MODEST WIN</span></summary>
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">M3</span><div><h4>Quality-gated TTM fine-tuning</h4><p class="pipeline-node-purpose">Adapt the pretrained forecaster to this vehicle's baseline dynamics without introducing proxy fault labels, then compare it fairly with zero-shot TTM on exactly the same held-out trips and windows.</p></div><span class="pipeline-status">5.23% LOWER MAE · MODEST WIN</span></summary>
             <div class="pipeline-node-body">
-              <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Quality gate</b><span>Only high-confidence, OK evidence and ≥700-row segments.</span></div><div class="pipeline-flow-step"><b>Trip-level split</b><span>47 training trips / 12 validation trips; no neighbouring-window leakage.</span></div><div class="pipeline-flow-step"><b>Healthy forecast loss</b><span>5 epochs, learning rate 5e−5, batch size 8.</span></div><div class="pipeline-flow-step"><b>Paired comparison</b><span>Zero-shot and fine-tuned models score the same 250 validation windows.</span></div></div>
+              <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Quality gate</b><span>Only high-confidence, OK evidence and ≥700-row segments.</span></div><div class="pipeline-flow-step"><b>Trip-level split</b><span>47 training trips / 12 validation trips; no neighbouring-window leakage.</span></div><div class="pipeline-flow-step"><b>Forecast loss</b><span>5 epochs, learning rate 5e−5, batch size 8.</span></div><div class="pipeline-flow-step"><b>Paired comparison</b><span>Zero-shot and fine-tuned models score the same 250 validation windows.</span></div></div>
               <div class="pipeline-columns"><div class="pipeline-block"><div class="pipeline-block-label">SPLIT AND TRAINING EVIDENCE</div><ul><li>118 total segments became 61 eligible segments across 59 trips; 57 short/ineligible segments were excluded.</li><li>The split occurs by <code>trip_id</code>, not random windows, so one trip cannot appear in both training and validation.</li><li>Training produced 1,286 forecast windows; validation used 30,708 rows, 12 segments/trips and 250 windows.</li><li>All six validation model channels had zero missing values.</li><li>Fine-tuning predicts the same six healthy signals; no anomaly type, proxy result or DTC enters the loss.</li></ul></div><div class="pipeline-block"><div class="pipeline-block-label">ZERO-SHOT VS FINE-TUNED</div><ul><li>Overall MAE: <strong>58.0004 → 54.9666</strong>, a 5.2307% reduction.</li><li>RPM improved 5.77%, speed 5.59%, TPS 6.93%.</li><li>Coolant improved only 0.33%; MAF 0.59%.</li><li>MAP worsened slightly: 21.6310 → 21.6636, or −0.1507% improvement.</li><li>The predeclared decision required ≥5% overall gain and at least 4/6 non-worse signals; overall passed and 5/6 signals were non-worse.</li></ul></div></div>
               <div class="evidence-chips"><div class="evidence-chip"><b>47 / 12 TRIPS</b><span>train / validation</span></div><div class="evidence-chip"><b>1,286 / 250 WINDOWS</b><span>train / validation</span></div><div class="evidence-chip"><b>5 EPOCHS</b><span>LR 5e−5 · batch 8</span></div><div class="evidence-chip"><b>5.2307% GAIN</b><span>overall MAE</span></div><div class="evidence-chip"><b>MAP −0.1507%</b><span>one channel worsened</span></div></div>
-              <div class="pipeline-disclosure"><details open><summary>Historical evolution and model-selection discipline</summary><div class="pipeline-detail"><div class="evolution-rail"><div class="evolution-step"><b>ZERO-SHOT MVP</b><span>TTM worked immediately without project-specific training.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>STORY 6 · GL-207</b><span>Healthy-only split, dry-run validation and fine-tuning workflow were implemented.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>SCHEMA-v1 REPOINT</b><span>Training and evaluation moved to frozen production features.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>5-EPOCH REFRESH</b><span>The committed model met the predeclared overall/non-worse decision rule.</span></div></div></div></details><details><summary>Why the result is reported as modest evidence</summary><div class="pipeline-detail"><ul><li>The 5.23% overall improvement narrowly clears the 5% rule; it is useful, not transformative.</li><li>Only 12 validation trips are available and all come from one vehicle/corpus.</li><li>Overall MAE is scale-dominated by RPM; per-signal results prevent the average hiding MAP degradation.</li><li>Lower healthy forecast MAE does not automatically imply better fault detection; that requires the separate synthetic evaluation.</li></ul></div></details><details><summary>Code, artefacts and verification</summary><div class="pipeline-detail"><ul><li><code>prepare_finetune_split.py</code>: trip-safe eligibility and split manifest.</li><li><code>finetune_ttm.py</code>: segment-bounded forecast datasets and Trainer configuration.</li><li><code>compare_finetune_residuals.py</code>: paired zero-shot/fine-tuned MAE evaluation.</li><li><code>finetune_residual_comparison_e5_lr5e-5.json</code>: exact 250-window results.</li></ul></div></details></div>
+              <div class="pipeline-disclosure"><details open><summary>Historical evolution and model-selection discipline</summary><div class="pipeline-detail"><div class="evolution-rail"><div class="evolution-step"><b>ZERO-SHOT MVP</b><span>TTM worked immediately without project-specific training.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>STORY 6 · GL-207</b><span>Quality-gated split, dry-run validation and fine-tuning workflow were implemented.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>SCHEMA-v1 REPOINT</b><span>Training and evaluation moved to frozen production features.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>5-EPOCH REFRESH</b><span>The committed model met the predeclared overall/non-worse decision rule.</span></div></div></div></details><details><summary>Why the result is reported as modest evidence</summary><div class="pipeline-detail"><ul><li>The 5.23% overall improvement narrowly clears the 5% rule; it is useful, not transformative.</li><li>Only 12 validation trips are available and all come from one vehicle/corpus.</li><li>Overall MAE is scale-dominated by RPM; per-signal results prevent the average hiding MAP degradation.</li><li>Lower baseline forecast MAE does not automatically imply better fault detection; that requires the separate synthetic evaluation.</li></ul></div></details><details><summary>Code, artefacts and verification</summary><div class="pipeline-detail"><ul><li><code>prepare_finetune_split.py</code>: trip-safe eligibility and split manifest.</li><li><code>finetune_ttm.py</code>: segment-bounded forecast datasets and Trainer configuration.</li><li><code>compare_finetune_residuals.py</code>: paired zero-shot/fine-tuned MAE evaluation.</li><li><code>finetune_residual_comparison_e5_lr5e-5.json</code>: exact 250-window results.</li></ul></div></details></div>
             </div></details>
           </article>
 
