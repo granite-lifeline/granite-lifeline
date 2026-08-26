@@ -18,17 +18,19 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from dashboard.data_loader import (
+from dashboard.data_loader import (  # noqa: E402
     _best_component_payloads,
     _component_risk_history,
 )
-from report_layer.pipeline import report_generator
-from report_layer.pipeline.context_injection import build_context_with_rag
-from report_layer.rag.rag_retriever import (
+from report_layer.pipeline import report_generator  # noqa: E402
+from report_layer.pipeline.context_injection import (  # noqa: E402
+    build_context_with_rag,
+)
+from report_layer.rag.rag_retriever import (  # noqa: E402
     FALLBACK_ACTIONS,
     FALLBACK_DESCRIPTION,
 )
-from shared.interface_models import ModelLayerOutput
+from shared.interface_models import ModelLayerOutput  # noqa: E402
 
 
 def _condition_contexts(model: ModelLayerOutput) -> dict[str, dict[str, Any]]:
@@ -73,8 +75,12 @@ def generate(model_batch: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
                     payload, risk_history=history
                 )
                 if not report.get("anomaly_description"):
+                    message = (
+                        f"Condition {label} produced a fallback "
+                        f"for {component}"
+                    )
                     raise RuntimeError(
-                        f"Condition {label} produced a fallback for {component}"
+                        message
                     )
                 outputs[label].append(report)
     finally:
@@ -92,7 +98,9 @@ def main() -> int:
     outputs = generate(model_batch)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     for label, reports in outputs.items():
-        (args.output_dir / f"dashboard-report-{label.lower()}.json").write_text(
+        filename = f"dashboard-report-{label.lower()}.json"
+        output_path = args.output_dir / filename
+        output_path.write_text(
             json.dumps(reports, indent=2, ensure_ascii=False) + "\n"
         )
     (args.output_dir / "administrator-condition-key.json").write_text(

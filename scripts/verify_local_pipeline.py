@@ -37,7 +37,8 @@ def failed(message: str, fixes: list[str]) -> None:
 def check_main_environment() -> bool:
     if not ((3, 11) <= sys.version_info[:2] <= (3, 13)):
         failed(
-            f"Unsupported Python {sys.version_info.major}.{sys.version_info.minor}.",
+            "Unsupported Python "
+            f"{sys.version_info.major}.{sys.version_info.minor}.",
             ["Use Python 3.11, 3.12, or 3.13 for TTM compatibility."],
         )
         return False

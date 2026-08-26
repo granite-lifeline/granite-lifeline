@@ -15,13 +15,11 @@ import streamlit as st
 try:
     from data_loader import load_static_dashboard_data
     from anomaly_display import (
-        GROUND_KNOWLEDGE_ANOMALY_TYPES,
         LEGACY_COMPONENT_ALIASES,
     )
 except ImportError:  # package import during tests
     from dashboard.data_loader import load_static_dashboard_data
     from dashboard.anomaly_display import (
-        GROUND_KNOWLEDGE_ANOMALY_TYPES,
         LEGACY_COMPONENT_ALIASES,
     )
 

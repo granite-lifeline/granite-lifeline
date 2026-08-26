@@ -18,7 +18,10 @@ def test_layer2_blocks_substantial_copy_from_layer1() -> None:
     result = validate_layer2(layer2, layer1)
 
     assert result.score == 0.6
-    assert any("Substantially repeats" in warning for warning in result.warnings)
+    assert any(
+        "Substantially repeats" in warning
+        for warning in result.warnings
+    )
 
 
 def test_layer2_allows_shared_evidence_without_copying_description() -> None:

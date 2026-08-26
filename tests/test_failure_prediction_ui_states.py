@@ -138,7 +138,10 @@ def test_owner_limitation_replaces_internal_data_notes():
     src = _detail_text()
 
     assert "Data Quality Notes</div>" not in src
-    assert "This is a risk-pattern estimate, not a confirmed mechanical fault." in src
+    assert (
+        "This is a risk-pattern estimate, not a confirmed mechanical fault."
+        in src
+    )
     assert "Important limitation</div>" not in src
     assert 'background:{tokens["glass_surface"]}' in src
 
