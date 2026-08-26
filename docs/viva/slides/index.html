@@ -1140,6 +1140,14 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .boundary-line { margin-top:auto; padding-top:20px; color:var(--accent-blue); font:800 15px/1.3 var(--font-mono); text-transform:uppercase; letter-spacing:.035em; }
 .action-role-row { margin-top:16px; display:grid; grid-template-columns:repeat(2,1fr); gap:7px; }
 .action-role-row span { padding:8px 7px; border-radius:7px; background:rgba(15,98,254,.065); color:var(--text); font:750 9.5px/1.2 var(--font-mono); text-align:center; }
+.prompt-anatomy { width:100%; max-width:1370px; display:grid; grid-template-columns:repeat(5,1fr); gap:18px; align-items:stretch; }
+.prompt-part { min-height:282px; padding:25px 22px; border-radius:17px; background:#fff; box-shadow:0 16px 40px rgba(20,50,100,.08); display:flex; flex-direction:column; }
+.prompt-part h3 { margin:13px 0 15px; font-size:clamp(20px,1.5vw,26px); }
+.prompt-part p { margin:0; color:var(--text-muted); font-size:14px; line-height:1.4; }
+.prompt-part .prompt-example { margin-top:auto; padding-top:18px; color:var(--accent-blue); font:800 11px/1.35 var(--font-mono); text-transform:uppercase; }
+.prompt-part.warning { background:linear-gradient(145deg,#fff,#fff8ed); border:1px solid rgba(245,124,0,.24); }
+.prompt-part.warning .prompt-example { color:#a75a00; }
+.prompt-call-label { width:min(100%,1110px); padding:11px 18px; border-radius:9px; background:rgba(15,98,254,.065); color:var(--text); font-size:14px; line-height:1.35; font-weight:730; text-align:center; }
 
 .ablation-header { width:min(100%,1120px); display:flex; justify-content:center; align-items:center; gap:13px; flex-wrap:wrap; }
 .ablation-header strong { color:var(--accent-blue); font:850 25px/1 var(--font-mono); }
@@ -1896,7 +1904,6 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
     <img class="pdm-zoom-image" id="pdmZoomImage" src="" alt="" onclick="closePdmZoom()">
     <div class="pdm-zoom-meta">
       <div class="pdm-zoom-title" id="pdmZoomTitle"></div>
-      <div class="pdm-zoom-source">Source · Geotab, Fleet Maintenance Software</div>
     </div>
   </div>
 </div>
@@ -1934,15 +1941,12 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
       <div class="story-visual" id="storyFlow">
         <div class="story-scene" data-story-step="0">
           <img class="story-photo" src="assets/check-engine-dashboard-v1.png" alt="Car dashboard with the amber check-engine warning light illuminated">
-          <div class="story-photo-note"><span></span><span>Source · John Hughes, 2025</span></div>
         </div>
         <div class="story-scene" data-story-step="1">
           <img class="story-photo" src="assets/bluedriver-scanner-v1.png" alt="Car owner holding a BlueDriver OBD-II scanner and its phone app">
-          <div class="story-photo-note"><span></span><span>Source · BlueDriver</span></div>
         </div>
         <div class="story-scene" data-story-step="2">
           <div class="story-code-crop"><img src="assets/obd-consumer-tool-crop-v1.png" alt="EOBD Facile trouble-code screen showing P0670 and P0401 descriptions"></div>
-          <div class="story-scope">Source · EOBD Facile, Google Play product listing, accessed July 2026</div>
         </div>
         <div class="story-scene" data-story-step="3">
           <div class="reactive-flow">
@@ -1971,7 +1975,6 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
       <strong>
         <span><span class="highlight-blue">OBD-II — On-Board Diagnostics, Second Generation:</span></span>
         <span>provides standardised access to real-time vehicle performance data and diagnostic trouble codes.</span>
-        <span class="term-source">Michailidis et al., 2025</span>
       </strong>
     </div>
     <script type="application/json" class="slide-notes">
@@ -2016,7 +2019,6 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
             <div class="oxmaint-action">Flag for next PM</div>
           </div>
         </div>
-        <div class="oxmaint-source">Source · Oxmaint vendor dashboard example, accessed July 2026</div>
       </div>
     </div>
     <div class="owner-bridge anim-5">
@@ -2058,7 +2060,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
           <div class="data-fit-row"><strong>Establishes a normal baseline</strong></div>
         </div>
       </div>
-      <div class="truth-label">SOURCE · KIT Automotive OBD-II Dataset · Weber, 2023 · DOI 10.35097/1130</div>
+      <div class="truth-label">KIT AUTOMOTIVE OBD-II DATASET</div>
     </div>
     <script type="application/json" class="slide-notes">
     {"title":"Pipeline — Why Data First","script":"We begin with the KIT Automotive OBD-II dataset: 81 real road trips from one Seat Leon, sampled at one hertz across ten OBD-II signals and varied traffic conditions. We chose it because it matches the private-owner use case, captures vehicle behaviour over time, and gives us repeated history from which to establish a normal baseline. The next question is whether that normal history is enough to define failure.","notes":["Why KIT: matches the owner use case, captures behaviour over time, establishes a normal baseline","Input: 81 trips, one Seat Leon, 1 Hz, 10 signals","Transition: can normal history define failure?"]}
@@ -2347,7 +2349,6 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
         </div>
       </div>
       <div class="pipeline-question">Without faulty training examples, how could we know that drift meant risk?</div>
-      <div class="truth-label">SOURCE · raw KIT CSV + data_layer/tests/fixtures/production_features.v1.fixture.csv</div>
     </div>
     <script type="application/json" class="slide-notes">
     {"title":"Pipeline — Data Output Becomes Model Input","script":"Challenge one transforms the raw trip into the confirmed 46-column production feature file. Watch the identity of the artifact change: production_features.csv is the Data Layer's output, and without changing its contents it becomes the Model Layer's input. That takes us to Challenge 2: without faulty training examples, how could we know that drift meant risk?","notes":["Input appears first","Data transformation appears second","Output appears last, then relabels itself as Model input","No Model output is revealed before Challenge 2"]}
@@ -2585,7 +2586,6 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
         </div>
       </div>
       <div class="pipeline-question">How could we explain the evidence without inventing a diagnosis?</div>
-      <div class="truth-label">SOURCE · report_layer/evaluation/viva_real_case/real_case_input.json</div>
     </div>
     <script type="application/json" class="slide-notes">
     {"title":"Pipeline — Evidence Ready for Explanation","script":"Here, cooling degradation is Medium risk. Coolant is eighty-five degrees—below its ninety-to-ninety-five reference—but rising at five degrees per minute, above the zero-to-two range. This becomes the Report Layer's input: how do you explain that evidence without inventing a diagnosis?","notes":["All values come from report_layer/evaluation/viva_real_case","The source history contains 22 Model windows from six chronological Seat Leon trips","Five trips and 75.02 percent describe projected High-risk threshold crossing, not mechanical-failure probability","Do not reveal the generated report before Challenge 3"]}
@@ -2627,31 +2627,15 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
         </div>
 
         <div class="report-stage" data-report-stage="1">
-          <div class="prompt-source-map">
-            <article class="call-card">
-              <div class="method-num">Call 1</div>
-              <div class="input-pills"><span>MODEL JSON ONLY</span></div>
-              <h3>What happened?</h3>
-              <div class="call-source">Translate the observed risk and signal pattern into owner-readable language.</div>
-              <div class="boundary-line">Evidence · not causes</div>
-            </article>
-            <article class="call-card">
-              <div class="method-num">Call 2</div>
-              <div class="input-pills"><span>MODEL JSON</span><span>FILTERED CAUSES</span></div>
-              <h3>What might cause it?</h3>
-              <div class="call-source">Connect relevant retrieved causes to the current signal direction.</div>
-              <div class="boundary-line">Possibilities · not diagnosis</div>
-            </article>
-            <article class="call-card">
-              <div class="method-num">Call 3</div>
-              <div class="input-pills"><span>CURRENT RISK</span><span>GOVERNED ACTIONS</span></div>
-              <h3>What should I do?</h3>
-              <div class="call-source">Turn technical guidance into decisions for an owner and requests for a mechanic.</div>
-              <div class="action-role-row"><span>NOW</span><span>SERVICE</span><span>STOP IF</span><span>TELL MECHANIC</span></div>
-              <div class="boundary-line">Decisions · not self-repair</div>
-            </article>
+          <div class="prompt-call-label"><b>CALL 3 EXAMPLE · “WHAT SHOULD I DO?”</b> &nbsp; The same design pattern is applied to each focused report call.</div>
+          <div class="prompt-anatomy">
+            <article class="prompt-part"><div class="method-num">01 · Role</div><h3>Set the perspective</h3><p>Define who the model represents and who will read the answer.</p><div class="prompt-example">Vehicle maintenance decision-support assistant</div></article>
+            <article class="prompt-part"><div class="method-num">02 · Task</div><h3>One clear job</h3><p>Break the report into focused calls so each output has one purpose.</p><div class="prompt-example">Generate four owner action roles</div></article>
+            <article class="prompt-part"><div class="method-num">03 · Constraints</div><h3>Control the answer</h3><p>Set evidence, language, urgency and output boundaries.</p><div class="prompt-example">Plain language · current risk · supported facts</div></article>
+            <article class="prompt-part"><div class="method-num">04 · Edge cases</div><h3>Define safe handling</h3><p>Tell the model how to proceed when knowledge is missing or conflicts with the current signals.</p><div class="prompt-example">Request professional verification</div></article>
+            <article class="prompt-part warning"><div class="method-num">05 · Examples</div><h3>Test both directions</h3><p>Positive and negative examples exposed useful rules, but example details sometimes leaked into reports.</p><div class="prompt-example">Lessons retained as rules + validator checks</div></article>
           </div>
-          <div class="report-definition"><b>Different evidence · different rules · independent correction</b></div>
+          <div class="report-definition"><b>Fixed JSON contract:</b> Now · Service timing · Stop driving and seek help if · Tell the mechanic</div>
         </div>
 
         <div class="report-stage" data-report-stage="2">
@@ -2770,7 +2754,6 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
         </div>
       </div>
       <div class="pipeline-question">How does the owner see the warning, understand it, and take action?</div>
-      <div class="truth-label">SOURCE · report output contract + dashboard detail view</div>
     </div>
     <script type="application/json" class="slide-notes">
     {"title":"Pipeline — Explanation Becomes Visible Action","script":"We now have more than a warning. We have three things the owner can use: what changed, what it may mean, and what to do next. That same owner-facing result now becomes the dashboard input. The final step is not another technical transformation. It is where the owner sees the warning, understands the evidence and chooses an action.","notes":["All four architecture stages are now complete","The report output becomes the dashboard input without introducing another technical concept","Transition: show the owner journey in the dashboard"]}
@@ -4141,7 +4124,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
               <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Grounded YAML</b><span>Five current anomaly families, causes and source-attributed actions.</span></div><div class="pipeline-flow-step"><b>Section indexing</b><span>Four documents per type: description+causes, low, medium and high actions.</span></div><div class="pipeline-flow-step"><b>Exact metadata retrieval</b><span>Known anomaly type + section + current risk level.</span></div><div class="pipeline-flow-step"><b>Prompt grounding</b><span>Only relevant explanation and risk-appropriate actions reach Granite.</span></div></div>
               <div class="pipeline-columns"><div class="pipeline-block"><div class="pipeline-block-label">CURRENT COLLECTIONS</div><ul><li><code>fault_knowledge</code>: 5 types × 4 sections = <strong>20 documents</strong>.</li><li><code>symptom_knowledge</code>: 5 types × one merged document = <strong>5 documents</strong>; retained for comparison.</li><li>The four production sections are exactly: <code>description_causes</code>, <code>actions_low</code>, <code>actions_medium</code>, <code>actions_high</code>.</li><li>Collections are deleted/rebuilt on indexing so changed source text cannot hide behind stable document IDs.</li><li>Startup validates all five interface anomaly names and exact expected document counts.</li></ul></div><div class="pipeline-block"><div class="pipeline-block-label">WHY SECTION-LEVEL MATTERS</div><ul><li>Layer 1/2 need explanation and possible causes; Layer 3 needs actions.</li><li>More importantly, Layer 3 must receive only the action tier appropriate to Low, Medium or High risk.</li><li>A merged document contains all three tiers; a semantic match could expose “stop immediately” guidance to a Low-risk report.</li><li>Section metadata makes retrieval deterministic and reduces token/attention dilution.</li><li>Adding a type changes source/index content, not prompt templates or retrieval algorithm.</li></ul></div></div>
               <div class="evidence-chips"><div class="evidence-chip"><b>20 CURRENT DOCS</b><span>fault_knowledge</span></div><div class="evidence-chip"><b>5 MERGED DOCS</b><span>symptom_knowledge</span></div><div class="evidence-chip"><b>4 SECTIONS / TYPE</b><span>risk-scoped actions</span></div><div class="evidence-chip"><b>100% META ACCURACY</b><span>historical 7-type test</span></div><div class="evidence-chip"><b>~180× FASTER</b><span>metadata vs semantic</span></div></div>
-              <div class="pipeline-disclosure"><details open><summary>Historical evolution and design decisions</summary><div class="pipeline-detail"><div class="evolution-rail"><div class="evolution-step"><b>ADR 303 · GL-111/112</b><span>ChromaDB metadata retrieval was selected, with indexing/exact filters.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>GL-114/135/136</b><span>RAG entered context injection with certainty guidance and correlation evidence.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>GL-156/166 · 7 JUL</b><span>A 2×2 metadata/semantic × section/document experiment tested the design rather than assuming it.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>INTERFACE v1.x</b><span>Seven historical types became five; indexers now validate and rebuild 20/5-document current collections.</span></div></div></div></details><details><summary>Exact historical 2×2 retrieval experiment</summary><div class="pipeline-detail"><ul><li><strong>A Meta+28:</strong> 7/7 = 100%; mean 0.341 ms.</li><li><strong>B Semantic+28:</strong> 4/7 = 57.14%; mean 61.011 ms.</li><li><strong>C Meta+7:</strong> 7/7 = 100%; mean 0.309 ms.</li><li><strong>D Semantic+7:</strong> 6/7 = 85.71%; mean 57.407 ms.</li><li>Metadata was approximately 178.8× faster under section chunking and 186.0× faster under document chunking.</li><li>The experiment used three timing trials per method and evaluation-authored symptom descriptions—not real user queries.</li></ul></div></details><details><summary>What semantic retrieval got wrong</summary><div class="pipeline-detail"><ul><li><code>electronic_throttle_tracking_fault</code> failed semantic retrieval under both chunking strategies.</li><li>Its symptom language overlapped strongly with pedal, RPM, airflow and load concepts, so embedding similarity did not preserve the exact intended type.</li><li>Section-level semantic search also missed the historical IAT/heat-soak and MAF cases, giving only 4/7 accuracy.</li><li>This is not evidence that semantic search is universally poor; it shows semantic uncertainty was unnecessary when Model already supplied an exact enum key.</li></ul></div></details><details><summary>RAG versus fine-tuning versus lookup table</summary><div class="pipeline-detail"><ul><li><strong>LLM fine-tuning:</strong> rejected for domain facts because updating sources would require retraining and source attribution would remain opaque.</li><li><strong>Hard-coded lookup output:</strong> deterministic but cannot combine live signals, confidence, correlation and owner-readable explanation flexibly.</li><li><strong>RAG:</strong> keeps knowledge external, reviewable, source-attributed and updateable while Granite performs controlled language generation.</li><li>Metadata retrieval is intentionally lookup-like for selection, but retrieved content remains richer evidence for the three-layer generator.</li></ul></div></details><details><summary>Knowledge sources and hallucination boundary</summary><div class="pipeline-detail"><ul><li>Sources include Bosch Automotive Handbook, Nissan Patrol Y62 and Mitsubishi Eclipse Cross workshop manuals, MAHLE troubleshooting, SAE DTC/technical papers, NGK/ELTA/TechASSIST and declared diagnostic references.</li><li>Huang et al. (2025) motivates grounding against faithfulness/factuality hallucination.</li><li>Retrieval reduces unsupported generation risk; it does not guarantee Granite will use every fact correctly.</li><li>The knowledge base contains project-classified urgency tiers and vehicle-general guidance—not confirmation of the uploaded vehicle's physical root cause.</li></ul></div></details><details><summary>Code and evaluation evidence</summary><div class="pipeline-detail"><ul><li><code>knowledge_indexer.py</code>: <code>create_documents_for_anomaly()</code>, <code>index_knowledge_base()</code>.</li><li><code>symptom_knowledge_indexer.py</code>: merged-document comparison collection.</li><li><code>rag_retriever.py::retrieve_all()</code> and <code>context_injection.py::build_context_with_rag()</code>.</li><li><code>retrieval_comparison.md</code> preserves the historical 7-type experiment; current code truth is five types and 20/5 documents.</li></ul></div></details></div>
+              <div class="pipeline-disclosure"><details open><summary>Historical evolution and design decisions</summary><div class="pipeline-detail"><div class="evolution-rail"><div class="evolution-step"><b>ADR 303 · GL-111/112</b><span>ChromaDB metadata retrieval was selected, with indexing/exact filters.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>GL-114/135/136</b><span>RAG entered context injection with certainty guidance and correlation evidence.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>GL-156/166 · 7 JUL</b><span>A 2×2 metadata/semantic × section/document experiment tested the design.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>INTERFACE v1.x</b><span>Seven historical types became five; indexers now validate and rebuild 20/5-document current collections.</span></div></div></div></details><details><summary>Exact historical 2×2 retrieval experiment</summary><div class="pipeline-detail"><ul><li><strong>A Meta+28:</strong> 7/7 = 100%; mean 0.341 ms.</li><li><strong>B Semantic+28:</strong> 4/7 = 57.14%; mean 61.011 ms.</li><li><strong>C Meta+7:</strong> 7/7 = 100%; mean 0.309 ms.</li><li><strong>D Semantic+7:</strong> 6/7 = 85.71%; mean 57.407 ms.</li><li>Metadata was approximately 178.8× faster under section chunking and 186.0× faster under document chunking.</li><li>The experiment used three timing trials per method and evaluation-authored symptom descriptions.</li></ul></div></details><details><summary>What semantic retrieval got wrong</summary><div class="pipeline-detail"><ul><li><code>electronic_throttle_tracking_fault</code> failed semantic retrieval under both chunking strategies.</li><li>Its symptom language overlapped strongly with pedal, RPM, airflow and load concepts, so embedding similarity did not preserve the exact intended type.</li><li>Section-level semantic search also missed the historical IAT/heat-soak and MAF cases, giving only 4/7 accuracy.</li><li>The exact Model enum made semantic uncertainty unnecessary for this interface.</li></ul></div></details><details><summary>RAG, fine-tuning and lookup table</summary><div class="pipeline-detail"><ul><li><strong>LLM fine-tuning:</strong> domain updates would require retraining and sources would be harder to inspect.</li><li><strong>Hard-coded lookup output:</strong> deterministic, with limited flexibility for combining live evidence into owner-readable language.</li><li><strong>RAG:</strong> keeps knowledge external, reviewable and updateable while Granite performs controlled language generation.</li><li>Metadata retrieval is lookup-like for selection; the retrieved content supplies richer evidence to the generator.</li></ul></div></details><details><summary>Knowledge and generation boundary</summary><div class="pipeline-detail"><ul><li>The collection uses declared automotive handbooks, workshop manuals and troubleshooting references.</li><li>Retrieval reduces unsupported generation risk, while generated claims still require validation.</li><li>The knowledge base contains vehicle-general guidance and project-classified urgency tiers.</li></ul></div></details><details><summary>Code and evaluation evidence</summary><div class="pipeline-detail"><ul><li><code>knowledge_indexer.py</code>: <code>create_documents_for_anomaly()</code>, <code>index_knowledge_base()</code>.</li><li><code>symptom_knowledge_indexer.py</code>: merged-document comparison collection.</li><li><code>rag_retriever.py::retrieve_all()</code> and <code>context_injection.py::build_context_with_rag()</code>.</li><li><code>retrieval_comparison.md</code> preserves the historical 7-type experiment; current code truth is five types and 20/5 documents.</li></ul></div></details></div>
             </div></details>
           </article>
 
@@ -4172,7 +4155,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
             <summary class="pipeline-node-head"><span class="pipeline-node-id">R4</span><div><h4>Controlled RAG ablation and manual review</h4><p class="pipeline-node-purpose">Hold the generation pipeline constant, vary only the knowledge supplied to the prompts, and inspect what retrieval changes across all five current anomaly types.</p></div><span class="pipeline-status">4 CONDITIONS · 5 TYPES · 20 REPORTS</span></summary>
             <div class="pipeline-node-body">
               <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Hold constant</b><span>Granite 4.1 8B, temperature 0, model inputs, prompt rules and validator.</span></div><div class="pipeline-flow-step"><b>Vary knowledge</b><span>Baseline, Cause RAG, Full workshop RAG and Owner-safe RAG.</span></div><div class="pipeline-flow-step"><b>Cover scope</b><span>One controlled fixture for each of the five implemented anomaly types.</span></div><div class="pipeline-flow-step"><b>Manual review</b><span>Check relevance, use, audience fit, action roles and contradictions.</span></div></div>
-              <div class="pipeline-columns"><div class="pipeline-block"><div class="pipeline-block-label">FOUR EXACT DIMENSIONS</div><ul><li><strong>Factual Grounding:</strong> values from context, cause-to-signal language and some urgency vocabulary. Huang et al.'s faithfulness hallucination motivates this dimension.</li><li><strong>Readability:</strong> raw fields/acronyms and description sentence length above 30 words. Qi et al. motivates owner-readable language.</li><li><strong>Hedging Appropriateness:</strong> hedging phrases, confirmed-fault vocabulary and definite claims. Huang et al.'s factuality hallucination motivates this dimension.</li><li><strong>Actionability:</strong> 2–4 actions, ≥10 words per item and Low/Medium/High urgency keywords. This project-specific operational dimension was added through ADR 302.</li><li>Overall is the unweighted mean of the four 0–1 scores; the documented acceptance threshold is &gt;0.7.</li></ul></div><div class="pipeline-block"><div class="pipeline-block-label">EXACT SCENARIO SCORES · FG / R / H / A</div><ul><li><strong>Typical High:</strong> baseline 1.00/1.00/1.00/1.00 = <strong>1.00</strong>; RAG 1.00/0.70/1.00/0.70 = <strong>0.85</strong>.</li><li><strong>Atypical Medium:</strong> baseline 1.00/1.00/0.60/1.00 = <strong>0.90</strong>; RAG 1.00/1.00/1.00/1.00 = <strong>1.00</strong>.</li><li><strong>Contradictory Low:</strong> baseline 1.00/1.00/0.60/1.00 = <strong>0.90</strong>; RAG 1.00/1.00/1.00/1.00 = <strong>1.00</strong>.</li><li><strong>Overall average:</strong> baseline <strong>0.93</strong>; RAG <strong>0.95</strong>.</li><li>All scenarios use <code>cooling_degradation</code>; scores show comparative prompt behaviour, not broad domain validation.</li></ul></div></div>
+              <div class="pipeline-columns"><div class="pipeline-block"><div class="pipeline-block-label">FOUR EXACT DIMENSIONS</div><ul><li><strong>Factual Grounding:</strong> values from context, cause-to-signal language and urgency vocabulary.</li><li><strong>Readability:</strong> raw fields, acronyms and description sentence length above 30 words.</li><li><strong>Hedging Appropriateness:</strong> uncertainty phrases, confirmed-fault vocabulary and definite claims.</li><li><strong>Actionability:</strong> 2–4 actions, ≥10 words per item and Low/Medium/High urgency keywords.</li><li>Overall is the unweighted mean of the four 0–1 scores; the documented acceptance threshold is &gt;0.7.</li></ul></div><div class="pipeline-block"><div class="pipeline-block-label">EXACT SCENARIO SCORES · FG / R / H / A</div><ul><li><strong>Typical High:</strong> baseline 1.00/1.00/1.00/1.00 = <strong>1.00</strong>; RAG 1.00/0.70/1.00/0.70 = <strong>0.85</strong>.</li><li><strong>Atypical Medium:</strong> baseline 1.00/1.00/0.60/1.00 = <strong>0.90</strong>; RAG 1.00/1.00/1.00/1.00 = <strong>1.00</strong>.</li><li><strong>Contradictory Low:</strong> baseline 1.00/1.00/0.60/1.00 = <strong>0.90</strong>; RAG 1.00/1.00/1.00/1.00 = <strong>1.00</strong>.</li><li><strong>Overall average:</strong> baseline <strong>0.93</strong>; RAG <strong>0.95</strong>.</li><li>All scenarios use <code>cooling_degradation</code>; scores show comparative prompt behaviour within one anomaly family.</li></ul></div></div>
               <div class="evidence-chips"><div class="evidence-chip"><b>4 CONDITIONS</b><span>knowledge ablation</span></div><div class="evidence-chip"><b>5 TYPES</b><span>current implemented scope</span></div><div class="evidence-chip"><b>20 REPORTS</b><span>held generation settings</span></div><div class="evidence-chip"><b>5/5 AUDIENCE</b><span>Owner-safe RAG</span></div><div class="evidence-chip"><b>5/5 ACTION</b><span>Owner-safe RAG</span></div></div>
               <div class="pipeline-disclosure"><details open><summary>Why RAG scored lower in the typical case</summary><div class="pipeline-detail"><ul><li>The RAG report gave technically specific advice—thermostat operation around 82°C, radiator, coolant and fan checks—but omitted the evaluator's expected word “soon,” losing 0.30 Actionability.</li><li>It also exposed raw <code>coolant_temp</code>, losing 0.30 Readability.</li><li>The baseline used more generic but keyword-friendly urgency language, so scored 1.00.</li><li>GL-206 added <code>SIGNAL_DISPLAY_NAMES</code> so future context uses “coolant temperature” rather than raw schema names; prompt rules were also tightened.</li><li>The honest interpretation is: RAG added useful specificity but presentation quality still needed refinement.</li></ul></div></details><details><summary>What the evaluator actually checks—and misses</summary><div class="pipeline-detail"><ul><li>Factual Grounding detects whether any description number exists and matches a context number; it does not verify every numerical claim or unit.</li><li>Readability uses a finite blacklist and regex acronym heuristic; plain language outside the list is not semantically assessed.</li><li>Hedging performs substring matching, so “no confirmed fault yet” is incorrectly penalised because it contains <code>confirmed</code>.</li><li>Actionability recognises fixed urgency words; a detailed safe action can lose points merely because it omits “soon.”</li><li>Therefore 0.95 is an automated comparison supported by manual review—not proof of factual correctness or safety.</li></ul></div></details><details><summary>Contradictory evidence remains unresolved</summary><div class="pipeline-detail"><ul><li>The contradictory fixture combines Low risk/31% confidence with abnormal coolant temperature at 108°C.</li><li>RAG hedged successfully, but neither baseline nor RAG explicitly explained why the abnormal signal and Low classification disagree.</li><li>A useful next design would detect input contradictions deterministically and require the report to surface them before possible causes.</li><li>This limitation matters more than the perfect 1.00 heuristic score in that scenario.</li></ul></div></details><details><summary>Critical self-evaluation and future work</summary><div class="pipeline-detail"><ul><li>Only three authored scenarios were tested, all cooling degradation; no real owner language or full five-type report set was evaluated.</li><li>No automotive domain expert validated causal statements, urgency tiers or maintenance actions.</li><li>Replace substring rules with semantic entailment/similarity and explicit negation handling.</li><li>Add blinded human-in-the-loop review by vehicle owners and domain experts, inter-rater agreement, all anomaly types and real/mixed inputs.</li><li>Integrate quality/schema gates into production only after deciding whether low-quality output should retry, degrade or be blocked.</li></ul></div></details><details><summary>Code and evidence</summary><div class="pipeline-detail"><ul><li><code>report_quality_evaluator.py::evaluate_factual_grounding()</code>, <code>evaluate_readability()</code>, <code>evaluate_hedging_appropriateness()</code>, <code>evaluate_actionability()</code>, <code>evaluate_report()</code>.</li><li><code>rag_baseline_comparison_table.md</code>: exact scenario and aggregate scores plus manual interpretation.</li><li><code>rag_evaluation_criteria.md</code>: Huang/Qi/ADR 302 grounding and &gt;0.7 quality threshold.</li><li>GL-119/120/121 and GL-123 preserve the evaluation design, execution artefacts and report-ready comparison.</li></ul></div></details></div>
             </div></details>
@@ -4285,7 +4268,6 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
           <div class="data-pipeline-node output-node"><strong>4. Proxy failure diagnosis</strong><small>evidence + decision</small></div>
         </div>
         <div class="data-stage-question">We turn raw trips into evidence in four auditable stages.</div>
-        <p class="ch-source">Source · scripts 00–70 · production_features.csv · proxy_decisions.csv</p>
       </div>
 
       <div class="ch-stage active" data-ch-stage="0">
@@ -4305,7 +4287,6 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
           </div>
         </div>
         <div class="data-stage-question">We had to define the missing fault evidence ourselves.</div>
-        <p class="ch-source">Source · KIT OBD-II filenames and docs/viva/data_challenge.md</p>
       </div>
 
       <div class="ch-stage" data-ch-stage="1">
@@ -4338,7 +4319,6 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
           </div>
         </div>
         <div class="data-stage-question">The same reading means something different in a different state.</div>
-        <p class="ch-source">Source · 2017-07-05_Seat_Leon_RT_S_Stau.csv · Data-group Visual 2</p>
       </div>
 
       <div class="ch-stage" data-ch-stage="4">
@@ -4356,7 +4336,6 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
           <div class="proxy-checks"><div class="mini">14 individual checks</div><div class="check-dots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
         </div>
         <div class="data-stage-question">Grounded rules define what evidence to look for—but do they respond as designed?</div>
-        <p class="ch-source">Source · SAE J2012/J1979 · calibration_registry.v1.json · docs/viva/data_challenge.md</p>
       </div>
 
       <div class="ch-stage" data-ch-stage="3">
@@ -4388,7 +4367,6 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
           </div>
         </div>
         <div class="data-stage-question">The main path leads to a fault; failed checks exit safely.</div>
-        <p class="ch-source">Source · 50_rule_state_builder.py · 61_duration_evidence_builder.py · 70_proxy_decision_builder.py</p>
       </div>
 
       <div class="ch-stage" data-ch-stage="5">
@@ -4412,7 +4390,6 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
           <div class="severity-matrix"><div></div><b>Trip 1</b><b>Trip 2</b><b>Trip 3</b><strong>Mild</strong><i></i><i></i><i></i><strong>Moderate</strong><i></i><i></i><i></i><strong>Strong</strong><i class="on"></i><i class="on"></i><i class="on"></i></div>
           <div class="validation-summary">3 levels × 3 trips = 9 observations for each check</div>
         </div>
-        <p class="ch-source">Source · docs/viva/data_challenge.md · fault_injection_summary_20260724T205415Z.csv</p>
       </div>
 
       <div class="ch-stage" data-ch-stage="6">
@@ -4422,7 +4399,6 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
           <div class="validation-outcome-card injected"><strong>14 / 14</strong><span>checks responded</span><small>3 / 3 trips each at strongest injection</small></div>
         </div>
         <div class="validation-boundary-main"><strong>Simulated signals ≠ real mechanical failures</strong><span>Upper section: validation method</span></div>
-        <p class="ch-source">Source · docs/viva/data_challenge.md · Stage-4 fault-injection campaign</p>
       </div>
     </div>
 
@@ -4760,7 +4736,7 @@ let reportCurrent = 0;
 const reportTotal = 5;
 const reportLabels = [
   'Choose a traceable starting design',
-  'Separate evidence, interpretation and action',
+  'Build a prompt that controls the full task',
   'Test what each knowledge condition changes',
   'Correct a failed section before release',
   'State the evidence boundary'
