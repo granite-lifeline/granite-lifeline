@@ -1,0 +1,52 @@
+﻿section,item_code,result_type,category_or_measure,count_n,valid_n,percentage_pct,median,q1,q3,observed_range,ci_lower_pct,ci_upper_pct,finding
+study,N,sample,Included valid study responses,12,12,100,,,,,,,All 12 submitted responses were included.
+dashboard_comprehension,comprehension_total,composite_score,Dashboard total / 10,,12,,9,8.75,10,5–10,,,Dashboard and report totals are not pooled.
+dashboard_comprehension,Q1,scored_item,Demo entry,7,12,58.3,,,,,32,80.7,Weakest dashboard objective item.
+dashboard_comprehension,Q2,scored_item,History-upload requirement,10,12,83.3,,,,,55.2,95.3,
+dashboard_comprehension,Q3,scored_item,Overall vehicle status,12,12,100,,,,,75.8,100,
+dashboard_comprehension,Q4,scored_item,Priority component,10,12,83.3,,,,,55.2,95.3,
+dashboard_comprehension,Q5,scored_item,Cooling failure prediction,10,12,83.3,,,,,55.2,95.3,
+dashboard_comprehension,Q6,scored_item,Cooling abnormal signals,12,12,100,,,,,75.8,100,
+dashboard_comprehension,Q7,scored_item,Stop-driving trigger,12,12,100,,,,,75.8,100,
+dashboard_comprehension,Q8,scored_item,Air Intake failure prediction,11,12,91.7,,,,,64.6,98.5,
+dashboard_comprehension,Q9,scored_item,Air Intake abnormal signal,11,12,91.7,,,,,64.6,98.5,
+dashboard_comprehension,Q10,scored_item,Default PDF export scope,11,12,91.7,,,,,64.6,98.5,
+dashboard_clarity,CL1,ordinal_rating,Overview clarity; count is Clear/Very clear,12,12,100,4.5,4,5,,,,
+dashboard_clarity,CL2,ordinal_rating,Cooling System clarity; count is Clear/Very clear,11,12,91.7,4,4,5,,,,
+dashboard_clarity,CL3,ordinal_rating,Air Intake System clarity; count is Clear/Very clear,12,12,100,4,4,4.25,,,,
+dashboard_clarity,CL4,ordinal_rating,Export clarity; count is Clear/Very clear,10,12,83.3,4,4,5,,,,
+ambiguity_probe,U1,unscored_distribution,Mechanical-breakdown probability,6,12,50,,,,,,,Material ambiguity: half interpreted the index as breakdown probability.
+ambiguity_probe,U1,unscored_distribution,Internal Low/Medium/High risk index,6,12,50,,,,,,,
+ambiguity_probe,U1,unscored_distribution,Proportion of completed trips,0,12,0,,,,,,,
+ambiguity_probe,U1,unscored_distribution,Could not tell,0,12,0,,,,,,,
+ambiguity_probe,U2,unscored_distribution,Mechanical failure around trip 20,1,12,8.3,,,,,,,
+ambiguity_probe,U2,unscored_distribution,Risk score crosses High threshold around trip 20,10,12,83.3,,,,,,,Most participants identified the intended threshold-crossing meaning.
+ambiguity_probe,U2,unscored_distribution,Twenty trips already recorded,0,12,0,,,,,,,
+ambiguity_probe,U2,unscored_distribution,Could not tell,1,12,8.3,,,,,,,
+report_comprehension,report_comprehension_total,composite_score,Report total / 4,,12,,4,4,4,3–4,,,Dashboard exposure preceded report exposure.
+report_comprehension,RC1,scored_item,Locating individual sensor evidence,12,12,100,,,,,75.8,100,
+report_comprehension,RC2,scored_item,Model confidence,11,12,91.7,,,,,64.6,98.5,
+report_comprehension,RC3,scored_item,Immediate Air Intake advice,12,12,100,,,,,75.8,100,
+report_comprehension,RC4,scored_item,Information to give the mechanic,12,12,100,,,,,75.8,100,
+report_rating,RCL1,ordinal_rating,Cooling System ease of understanding,,12,,4,4,5,4–5,,,Reports are reported separately and are not directly compared.
+report_rating,RRN1,ordinal_rating,Cooling System reasonableness,,12,,4,4,4.25,4–5,,,Reports are reported separately and are not directly compared.
+report_rating,RCL2,ordinal_rating,Air Intake System ease of understanding,,12,,4,4,5,4–5,,,Reports are reported separately and are not directly compared.
+report_rating,RRN2,ordinal_rating,Air Intake System reasonableness,,12,,5,4,5,3–5,,,Reports are reported separately and are not directly compared.
+participant_background,age_band,aggregate_distribution,18–24,6,12,50,,,,,,,No subgroup comparisons were performed.
+participant_background,age_band,aggregate_distribution,25–34,5,12,41.7,,,,,,,No subgroup comparisons were performed.
+participant_background,age_band,aggregate_distribution,35–44,1,12,8.3,,,,,,,No subgroup comparisons were performed.
+participant_background,mechanical_knowledge,aggregate_distribution,None,1,12,8.3,,,,,,,No subgroup comparisons were performed.
+participant_background,mechanical_knowledge,aggregate_distribution,A little,5,12,41.7,,,,,,,No subgroup comparisons were performed.
+participant_background,mechanical_knowledge,aggregate_distribution,Moderate,3,12,25,,,,,,,No subgroup comparisons were performed.
+participant_background,mechanical_knowledge,aggregate_distribution,Good,3,12,25,,,,,,,No subgroup comparisons were performed.
+participant_background,software_confidence,aggregate_distribution,2/5,2,12,16.7,,,,,,,No subgroup comparisons were performed.
+participant_background,software_confidence,aggregate_distribution,3/5,3,12,25,,,,,,,No subgroup comparisons were performed.
+participant_background,software_confidence,aggregate_distribution,4/5,3,12,25,,,,,,,No subgroup comparisons were performed.
+participant_background,software_confidence,aggregate_distribution,5/5,4,12,33.3,,,,,,,No subgroup comparisons were performed.
+participant_background,obd_experience,aggregate_distribution,No,10,12,83.3,,,,,,,No subgroup comparisons were performed.
+participant_background,obd_experience,aggregate_distribution,Not sure,1,12,8.3,,,,,,,No subgroup comparisons were performed.
+participant_background,obd_experience,aggregate_distribution,Yes,1,12,8.3,,,,,,,No subgroup comparisons were performed.
+optional_comments,dashboard_density,descriptive_theme,Summarised theme; no verbatim participant response,,12,,,,,,,,Too much text; small font; desire to view modules separately.
+optional_comments,report_presentation,descriptive_theme,Summarised theme; no verbatim participant response,,12,,,,,,,,Layout could be improved and important information emphasised.
+optional_comments,demo_discoverability,descriptive_theme,Summarised theme; no verbatim participant response,,12,,,,,,,,Demo-data button could be more prominent.
+optional_comments,no_requested_change,descriptive_theme,Summarised theme; no verbatim participant response,,12,,,,,,,,Two comments were positive or reported no required change.
