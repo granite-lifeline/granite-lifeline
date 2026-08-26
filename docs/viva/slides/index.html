@@ -1149,16 +1149,14 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .prompt-part.warning { background:linear-gradient(145deg,#fff,#fff8ed); border:1px solid rgba(245,124,0,.24); }
 .prompt-part.warning .prompt-example { color:#a75a00; }
 .prompt-call-label { width:min(100%,1110px); padding:11px 18px; border-radius:9px; background:rgba(15,98,254,.065); color:var(--text); font-size:14px; line-height:1.35; font-weight:730; text-align:center; }
-.prompt-build-flow { width:100%; max-width:1320px; display:grid; gap:9px; }
-.prompt-build-row { display:grid; grid-template-columns:150px 1.25fr .9fr; gap:18px; align-items:center; min-height:74px; padding:13px 20px; border-bottom:1px solid var(--border); background:rgba(255,255,255,.72); }
-.prompt-build-row:first-child { border-radius:14px 14px 0 0; }
-.prompt-build-row:last-child { border-bottom:0; border-radius:0 0 14px 14px; }
-.prompt-build-step { color:var(--accent-blue); font:800 12px/1.2 var(--font-mono); text-transform:uppercase; letter-spacing:.04em; }
-.prompt-build-example { color:var(--text); font-size:18px; line-height:1.3; font-weight:720; }
-.prompt-build-reason { color:var(--text-muted); font-size:15px; line-height:1.35; }
+.prompt-build-flow { width:100%; max-width:1240px; display:grid; grid-template-columns:repeat(2,1fr); gap:28px; }
+.prompt-build-row { min-height:305px; padding:34px 36px; border:1px solid rgba(15,98,254,.12); border-radius:20px; background:rgba(255,255,255,.9); box-shadow:0 17px 44px rgba(20,50,100,.08); display:flex; flex-direction:column; justify-content:center; }
+.prompt-build-step { margin-bottom:22px; color:var(--accent-blue); font:850 15px/1.2 var(--font-mono); text-transform:uppercase; letter-spacing:.05em; }
+.prompt-build-example { color:var(--text); font-size:clamp(24px,2vw,31px); line-height:1.28; font-weight:760; }
+.prompt-build-reason { margin-top:24px; padding-top:19px; border-top:1px solid var(--border); color:var(--text-muted); font-size:clamp(17px,1.25vw,20px); line-height:1.4; }
 .prompt-build-reason strong { color:var(--text); font-weight:820; }
-.action-contract { display:grid; grid-template-columns:repeat(2,1fr); gap:6px; }
-.action-contract span { padding:7px 9px; border-left:3px solid var(--accent-blue); background:rgba(15,98,254,.055); color:var(--text); font:750 10px/1.25 var(--font-mono); }
+.action-contract { display:grid; grid-template-columns:repeat(2,1fr); gap:9px; }
+.action-contract span { padding:12px 13px; border-left:4px solid var(--accent-blue); background:rgba(15,98,254,.055); color:var(--text); font:800 12px/1.28 var(--font-mono); }
 .prompt-research-note { width:min(100%,1150px); padding:10px 16px; border-left:5px solid var(--accent-blue); border-radius:8px; background:rgba(15,98,254,.055); color:var(--text); font-size:14px; line-height:1.3; font-weight:700; text-align:center; }
 
 .prompt-example-stage { width:100%; max-width:1240px; display:grid; grid-template-columns:1fr 86px 1fr; gap:22px; align-items:stretch; }
@@ -1178,8 +1176,8 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .validator-output-card { border:1px solid rgba(218,30,40,.22); background:linear-gradient(145deg,#fff,#fff5f5); }
 .validator-output-card blockquote,.validator-corrected-card blockquote { margin:24px 0 0; color:var(--text); font-size:clamp(19px,1.55vw,24px); line-height:1.38; font-weight:660; }
 .validator-output-card blockquote { color:var(--danger-text); }
-.validator-warning-list { margin-top:auto; display:grid; gap:7px; }
-.validator-warning-list span { padding:8px 10px; border-left:3px solid var(--accent-red); background:rgba(218,30,40,.055); color:var(--danger-text); font:750 10px/1.25 var(--font-mono); }
+.validator-warning-list { margin-top:auto; display:grid; gap:9px; }
+.validator-warning-list span { padding:11px 12px; border-radius:7px; background:rgba(218,30,40,.07); color:var(--danger-text); font:820 12px/1.25 var(--font-mono); text-align:center; }
 .validator-score-card { justify-content:center; color:#fff; background:linear-gradient(150deg,#172033,#273a5f); }
 .validator-score-title { color:#b9c9e8; font:800 11px/1.2 var(--font-mono); text-transform:uppercase; letter-spacing:.05em; }
 .score-ledger { margin-top:19px; display:grid; gap:10px; font:760 13px/1.25 var(--font-mono); }
@@ -1190,7 +1188,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .score-ledger .score-total span:last-child { color:#ff8e8e; }
 .validator-corrected-card { justify-content:center; border:2px solid var(--accent-blue); background:linear-gradient(145deg,#fff,#eef4ff); }
 .correction-package { margin-top:16px; color:var(--accent-blue); font:800 11px/1.4 var(--font-mono); text-transform:uppercase; }
-.validator-release { margin-top:22px; display:inline-flex; padding:8px 12px; border-radius:18px; color:#fff; background:var(--accent-green); font:850 12px/1 var(--font-mono); }
+.validator-release { align-self:stretch; justify-content:center; margin-top:22px; padding:10px 15px; border-radius:18px; color:#fff; background:var(--accent-green); font:900 14px/1 var(--font-mono); text-align:center; }
 
 .slide-map-toggle { position:fixed; top:18px; left:154px; z-index:120; min-height:34px; padding:7px 12px; border:1px solid var(--border); border-radius:8px; background:rgba(255,255,255,.86); box-shadow:0 5px 18px rgba(15,35,80,.07); color:var(--text-dim); font:700 11px/1 var(--font-mono); cursor:pointer; backdrop-filter:blur(10px); }
 .slide-map-toggle:hover { color:var(--accent-blue); border-color:var(--accent-blue); }
@@ -1227,16 +1225,15 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 
 .evidence-boundary-flow { width:100%; max-width:1320px; display:grid; grid-template-columns:1.12fr 70px .88fr; gap:22px; align-items:stretch; }
 .assurance-path { min-height:350px; padding:30px 32px; border-radius:20px; color:#fff; background:linear-gradient(150deg,#0b2a60,#1763c6); box-shadow:0 22px 54px rgba(16,46,98,.18); }
-.assurance-path h3,.boundary-card h3 { margin:13px 0 22px; font-size:clamp(25px,2vw,33px); }
+.assurance-path h3,.boundary-card h3 { margin:13px 0 22px; font-size:clamp(28px,2.2vw,36px); text-align:center; }
 .assurance-steps { display:grid; grid-template-columns:1fr 34px 1fr 34px 1fr; align-items:stretch; }
 .assurance-step-box { min-height:190px; padding:20px 17px; display:flex; flex-direction:column; justify-content:center; border-radius:13px; background:rgba(255,255,255,.11); text-align:center; }
-.assurance-step-box b { color:#fff; font-size:18px; }
-.assurance-step-box span { margin-top:10px; color:#d4e3ff; font-size:12px; line-height:1.38; }
+.assurance-step-box b { color:#fff; font-size:clamp(20px,1.55vw,25px); line-height:1.25; }
 .assurance-step-arrow { display:grid; place-items:center; color:#9fc2ff; font:850 23px/1 var(--font-mono); }
 .boundary-card { min-height:350px; padding:30px 32px; border-radius:20px; background:linear-gradient(145deg,#fff,#fff5f5); border:1px solid rgba(218,30,40,.2); box-shadow:0 18px 46px rgba(20,50,100,.08); }
 .boundary-list { display:grid; gap:11px; }
 .boundary-list div { padding:14px 16px; border-left:5px solid var(--accent-red); background:rgba(218,30,40,.055); color:var(--danger-text); font-size:17px; font-weight:750; }
-.boundary-next { margin-top:19px; color:var(--accent-blue); font:800 12px/1.35 var(--font-mono); text-transform:uppercase; }
+.boundary-next { margin-top:23px; padding:15px 17px; border:2px solid var(--accent-blue); border-radius:10px; background:rgba(15,98,254,.07); color:var(--accent-blue); font:900 16px/1.35 var(--font-mono); text-transform:uppercase; text-align:center; }
 .evidence-boundary-arrow { display:grid; place-items:center; color:var(--accent-blue); font:850 31px/1 var(--font-mono); }
 @media (max-width:1050px) {
   .report-story-layout { grid-template-columns:1fr; }
@@ -2697,12 +2694,17 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
           <div class="prompt-build-flow">
             <div class="prompt-build-row"><div class="prompt-build-step">01 · Role</div><div class="prompt-build-example">“Vehicle-maintenance decision-support assistant”</div><div class="prompt-build-reason">Keeps the response focused on a <strong>non-technical owner</strong>.</div></div>
             <div class="prompt-build-row"><div class="prompt-build-step">02 · Task</div><div class="action-contract"><span>NOW</span><span>SERVICE TIMING</span><span>STOP DRIVING AND SEEK HELP IF</span><span>TELL THE MECHANIC</span></div><div class="prompt-build-reason">Turns one broad question into <strong>four clear decisions</strong>.</div></div>
+          </div>
+        </div>
+
+        <div class="report-stage" data-report-stage="2">
+          <div class="prompt-build-flow">
             <div class="prompt-build-row"><div class="prompt-build-step">03 · Constraints</div><div class="prompt-build-example">“Plain language · current risk · supported facts”</div><div class="prompt-build-reason">Controls <strong>wording, urgency and factual scope</strong>.</div></div>
             <div class="prompt-build-row"><div class="prompt-build-step">04 · Edge cases</div><div class="prompt-build-example">“If knowledge conflicts, ask a mechanic to verify the evidence.”</div><div class="prompt-build-reason">Gives Granite a <strong>safe response path</strong>.</div></div>
           </div>
         </div>
 
-        <div class="report-stage" data-report-stage="2">
+        <div class="report-stage" data-report-stage="3">
           <div class="prompt-example-stage">
             <article class="prompt-quote bad"><div class="method-num">Negative example · intake-temperature sensor flag</div><blockquote>“Replace the mass airflow sensor.”</blockquote></article>
             <div class="prompt-example-arrow">→</div>
@@ -2711,7 +2713,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
           <div class="prompt-learning"><div>Fictional example detail appeared in a generated report</div><div class="prompt-learning-arrow">→</div><div>Keep the lesson as an explicit rule + Validator check</div></div>
         </div>
 
-        <div class="report-stage" data-report-stage="3">
+        <div class="report-stage" data-report-stage="4">
           <div class="validator-score-flow">
             <article class="validator-output-card"><div class="method-num">First output</div><blockquote>“coolant_temp is high and the cooling fan has failed.”</blockquote><div class="validator-warning-list"><span>RAW FIELD · coolant_temp</span><span>CONFIRMED CLAIM · has failed</span><span>INCOMPLETE EXPLANATION</span></div></article>
             <article class="validator-score-card"><div class="validator-score-title">Rule-based quality score</div><div class="score-ledger"><div class="score-start"><span>Start</span><span>1.00</span></div><div><span>Raw field</span><span>−0.20</span></div><div><span>“has failed”</span><span>−0.20</span></div><div><span>Too short</span><span>−0.20</span></div><div class="score-total"><span>Blocked</span><span>0.40</span></div></div></article>
@@ -2720,17 +2722,17 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
           <div class="report-definition"><b>Release threshold: 0.80.</b> Only the failed section is regenerated.</div>
         </div>
 
-        <div class="report-stage" data-report-stage="4">
+        <div class="report-stage" data-report-stage="5">
           <div class="evidence-boundary-flow">
             <section class="assurance-path">
               <div class="method-num">What the implemented design provides</div>
               <h3>Three controlled boundaries</h3>
               <div class="assurance-steps">
-                <div class="assurance-step-box"><b>Relevant retrieval</b><span>Traceable supporting knowledge</span></div>
+                <div class="assurance-step-box"><b>Relevant retrieval</b></div>
                 <div class="assurance-step-arrow">→</div>
-                <div class="assurance-step-box"><b>Separated prompts</b><span>Evidence · possibilities · decisions</span></div>
+                <div class="assurance-step-box"><b>Separated prompts</b></div>
                 <div class="assurance-step-arrow">→</div>
-                <div class="assurance-step-box"><b>Validator</b><span>Known rule violations</span></div>
+                <div class="assurance-step-box"><b>Validator</b></div>
               </div>
             </section>
             <div class="evidence-boundary-arrow">≠</div>
@@ -2751,6 +2753,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
           <div class="ch-dot" data-report-dot="2" onclick="reportGoTo(2)"></div>
           <div class="ch-dot" data-report-dot="3" onclick="reportGoTo(3)"></div>
           <div class="ch-dot" data-report-dot="4" onclick="reportGoTo(4)"></div>
+          <div class="ch-dot" data-report-dot="5" onclick="reportGoTo(5)"></div>
         </div>
         <button class="ch-nav-btn primary" id="reportNextBtn" onclick="reportNext()">Next &rarr;</button>
       </div>
@@ -4835,10 +4838,11 @@ function resetModel() {
    Evidence + knowledge → grounded owner report.
    =========================================== */
 let reportCurrent = 0;
-const reportTotal = 5;
+const reportTotal = 6;
 const reportLabels = [
   'Choose a traceable starting design',
-  'Build one case-specific call step by step (Call 3 · What should I do next?)',
+  'Define the audience and decisions (Call 3 · What should I do next?)',
+  'Control the language and edge cases (Call 3 · What should I do next?)',
   'Use examples to make the boundary concrete',
   'Correct a failed section before release',
   'State the evidence boundary'
