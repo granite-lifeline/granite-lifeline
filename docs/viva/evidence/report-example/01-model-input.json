@@ -1,0 +1,61 @@
+{
+  "timestamp": "2017-07-05T05:26:37Z",
+  "anomaly_type": "cooling_degradation",
+  "risk_score": 0.585,
+  "risk_level": "Medium",
+  "component": "cooling_degradation",
+  "prediction_confidence": 0.6534,
+  "key_signals": [
+    {
+      "feature": "coolant_temp",
+      "value": 98.0,
+      "unit": "°C",
+      "reference_range": [
+        90,
+        95
+      ]
+    },
+    {
+      "feature": "ect_rate_180s",
+      "value": 1.5,
+      "unit": "°C/min",
+      "reference_range": [
+        0,
+        2
+      ]
+    },
+    {
+      "feature": "maf_integral_180s",
+      "value": 3000.0,
+      "unit": "g",
+      "reference_range": [
+        0,
+        2500
+      ]
+    },
+    {
+      "feature": "speed",
+      "value": 85.0,
+      "unit": "km/h",
+      "reference_range": [
+        0,
+        218
+      ]
+    },
+    {
+      "feature": "rpm",
+      "value": 1443.0,
+      "unit": "RPM",
+      "reference_range": [
+        0,
+        3682
+      ]
+    }
+  ],
+  "estimated_cycles_to_failure": 4,
+  "estimated_failure_probability": 1.0,
+  "notes": [
+    "Illustrative output generated from the synthetic rising-risk-history estimator demonstration; it is not a real vehicle lifetime prediction.",
+    "estimated_failure_probability is the model-based probability of crossing the High-risk threshold within the next 10 trips."
+  ]
+}

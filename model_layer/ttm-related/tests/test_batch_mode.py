@@ -180,6 +180,46 @@ class TestRunBatch:
         assert (df["risk_score"] >= 0).all()
         assert (df["risk_score"] <= 1).all()
 
+    def test_failure_projection_is_calculated_per_component(
+        self, monkeypatch
+    ):
+        """Different component histories must not share one projection."""
+        monkeypatch.setattr(
+            detector, "run_ttm_forecast", fake_forecast
+        )
+        envelope, _ = detector.run_batch(
+            self._frame(), 512, 96, model=None
+        )
+        calls = []
+
+        class Estimate:
+            notes = []
+            estimated_failure_probability = 0.0
+
+            def __init__(self, marker):
+                self.marker = marker
+
+            def interface_fields(self):
+                return {
+                    "estimated_cycles_to_failure": self.marker,
+                    "estimated_failure_probability": self.marker / 100,
+                }
+
+        def fake_estimate(history):
+            calls.append(history.copy())
+            marker = 11 if len(calls) == 1 else 22
+            return Estimate(marker)
+
+        monkeypatch.setattr(detector, "estimate_from_history", fake_estimate)
+        result = detector.add_component_estimates_to_batch(envelope)
+
+        primary = result["windows"][0]
+        secondary = primary["secondary_risk"]
+        assert primary["estimated_cycles_to_failure"] != (
+            secondary["estimated_cycles_to_failure"]
+        )
+        assert len(calls) == 2
+
     def test_trip_filter_restricts_sweep(self, monkeypatch):
         monkeypatch.setattr(
             detector, "run_ttm_forecast", fake_forecast

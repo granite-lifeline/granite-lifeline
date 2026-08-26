@@ -1,0 +1,430 @@
+[
+  {
+    "fixture": "cooling_degradation__trip_0040_seg_001__w003.json",
+    "anomaly_type": "cooling_degradation",
+    "risk_level": "Low",
+    "elapsed_seconds": 41.27,
+    "report": {
+      "timestamp": "2018-02-14T06:47:06Z",
+      "risk_score": 0.1802,
+      "risk_level": "Low",
+      "component": "cooling_degradation",
+      "prediction_confidence": 0.95,
+      "key_signals": [
+        {
+          "feature": "coolant_temp",
+          "value": 89.0,
+          "unit": "\u00b0C",
+          "reference_range": [
+            90,
+            95
+          ]
+        },
+        {
+          "feature": "ect_rate_180s",
+          "value": -0.2951,
+          "unit": "\u00b0C/min",
+          "reference_range": [
+            0,
+            2
+          ]
+        },
+        {
+          "feature": "maf_integral_180s",
+          "value": 3266.3368,
+          "unit": "g",
+          "reference_range": [
+            0,
+            2500
+          ]
+        },
+        {
+          "feature": "rpm",
+          "value": 1571.0,
+          "unit": "RPM",
+          "reference_range": [
+            0,
+            3682
+          ]
+        },
+        {
+          "feature": "speed",
+          "value": 42.0,
+          "unit": "km/h",
+          "reference_range": [
+            0,
+            218
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": 0.0031,
+      "notes": [
+        "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
+        "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips.",
+        "No positive trip-level risk trend was observed; no threshold crossing cycle is projected."
+      ],
+      "risk_history": null,
+      "anomaly_description": "The cooling system shows a low-risk pattern where several signals indicate potential issues with temperature regulation. Specifically, the coolant temperature is slightly below the normal range at 89.0\u00b0C (reference 90.0-95.0\u00b0C), and the rate of temperature change is unusually negative (-0.2951\u00b0C/min) compared to the expected 0.0-2.0\u00b0C/min range. Additionally, the mass airflow (MAF) sensor reading over 180 seconds exceeds its normal limit at 3266.3368g (reference 0.0-2500.0g). Despite these abnormalities, the overall risk level is low at 18%, with a high prediction confidence of 95%. This suggests that while there are signs consistent with possible cooling system concerns\u2014such as sensor readings or fan behavior\u2014the situation does not yet warrant urgent action. The vehicle should be monitored, and any persistent issues should be checked by a professional to ensure the cooling system remains effective.",
+      "possible_cause": "The observed low-risk cooling pattern may indicate a sensor reading issue, such as the coolant temperature sensor providing slightly lower readings than expected, or abnormal behavior of the cooling fan that is causing the coolant temperature to drop more rapidly than typical. Additionally, the elevated MAF integral suggests potential airflow irregularities that could be contributing to the cooling system's apparent performance. However, without definitive evidence of a mechanical failure, these signs remain uncertain and would benefit from professional verification to ensure the cooling system functions correctly.",
+      "recommended_action": [
+        "Now: Check the coolant level in the reservoir tank when the engine is cool, ensuring it is between the MIN and MAX marks.",
+        "Service timing: Routine monitoring for Low risk; schedule a professional inspection if the pattern persists beyond normal operation.",
+        "Stop driving and seek help if: You observe a red temperature warning light, steam coming from under the hood, or sudden loss of power while driving.",
+        "Tell the mechanic: Verify the coolant temperature sensor reading and the cooling fan behavior; measure the inlet and outlet coolant temperatures with an infrared thermometer to assess the cooling system's performance."
+      ]
+    },
+    "audit": {
+      "released": true,
+      "action_count": 4,
+      "prefixes_present": {
+        "Now:": true,
+        "Service timing:": true,
+        "Stop driving and seek help if:": true,
+        "Tell the mechanic:": true
+      },
+      "owner_technical_instructions": []
+    }
+  },
+  {
+    "fixture": "air_intake_maf_anomaly__trip_0061_seg_001__w002.json",
+    "anomaly_type": "air_intake_maf_anomaly",
+    "risk_level": "Low",
+    "elapsed_seconds": 33.31,
+    "report": {
+      "timestamp": "2018-02-28T16:22:08Z",
+      "risk_score": 0.1832,
+      "risk_level": "Low",
+      "component": "air_intake_maf_anomaly",
+      "prediction_confidence": 0.95,
+      "key_signals": [
+        {
+          "feature": "maf",
+          "value": 31.41,
+          "unit": "g/s",
+          "reference_range": [
+            0,
+            123
+          ]
+        },
+        {
+          "feature": "map",
+          "value": 159.0,
+          "unit": "kPa",
+          "reference_range": [
+            36,
+            237
+          ]
+        },
+        {
+          "feature": "speed_density_maf_residual",
+          "value": -2.0564,
+          "unit": "g/s",
+          "reference_range": [
+            -20,
+            20
+          ]
+        },
+        {
+          "feature": "tps",
+          "value": 83.5,
+          "unit": "%",
+          "reference_range": [
+            0,
+            89
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": 0.0031,
+      "notes": [
+        "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
+        "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips.",
+        "No positive trip-level risk trend was observed; no threshold crossing cycle is projected."
+      ],
+      "risk_history": null,
+      "anomaly_description": "The diagnostic system has flagged a potential issue with the mass airflow (MAF) sensor, which measures how much air enters the engine to ensure the correct fuel mixture. Currently, all key signals related to the MAF sensor are within normal ranges: Mass Airflow is 31.41 grams per second (g/s), Manifold Air Pressure is 159.0 kilopascals (kPa), Speed-Density MAF Residual is -2.0564 g/s, and Throttle Position is 83.5%. The overall risk level for this anomaly is low, with a risk score of 18% and high prediction confidence at 95%. The model projects only a 0.31% chance of the risk rising to a higher threshold within the next 10 trips, essentially indicating no immediate concern. In practical terms, this suggests that while the MAF sensor shows signs consistent with potential future monitoring needs, there is currently no urgent action required. Monitoring will continue, and any significant changes should be addressed by a professional service.",
+      "possible_cause": "The low-risk MAF sensor anomaly could suggest that the mass airflow sensor is functioning within normal parameters right now, but it may indicate potential future issues such as contamination from oil or dirt on an aftermarket air filter, wiring problems at the connector, internal degradation due to age and vibration, or moisture ingress causing distorted readings. Since all current key signals are normal and the risk remains low with a high prediction confidence, these possibilities remain uncertain and would require professional verification if symptoms arise.",
+      "recommended_action": [
+        "Now: Monitor your vehicle's performance during normal driving. Pay attention to any unusual changes in idle quality, acceleration response, or unexpected loss of power.",
+        "Service timing: Routine monitoring for Low risk; continue regular driving and schedule a service visit if symptoms persist beyond typical operation.",
+        "Stop driving and seek help if: You observe the engine stalling, running very roughly, losing power suddenly, or experiencing any unsafe pedal response that makes continued driving hazardous.",
+        "Tell the mechanic: Request that they connect a scan tool to view the MAF sensor Parameter Identification Data (PID) while the engine runs between 1000 and 2250 rpm. Verify the sensor's output is steady and linear across this range."
+      ]
+    },
+    "audit": {
+      "released": true,
+      "action_count": 4,
+      "prefixes_present": {
+        "Now:": true,
+        "Service timing:": true,
+        "Stop driving and seek help if:": true,
+        "Tell the mechanic:": true
+      },
+      "owner_technical_instructions": []
+    }
+  },
+  {
+    "fixture": "accelerator_pedal_sensor__trip_0041_seg_001__w002.json",
+    "anomaly_type": "accelerator_pedal_sensor",
+    "risk_level": "Medium",
+    "elapsed_seconds": 43.23,
+    "report": {
+      "timestamp": "2018-02-14T17:01:01Z",
+      "risk_score": 0.5579,
+      "risk_level": "Medium",
+      "component": "accelerator_pedal_sensor",
+      "prediction_confidence": 0.9364,
+      "key_signals": [
+        {
+          "feature": "accel_pedal_d",
+          "value": 14.1,
+          "unit": "%",
+          "reference_range": [
+            0,
+            100
+          ]
+        },
+        {
+          "feature": "accel_pedal_e",
+          "value": 14.5,
+          "unit": "%",
+          "reference_range": [
+            0,
+            100
+          ]
+        },
+        {
+          "feature": "accel_pedal_channel_delta",
+          "value": 6.463,
+          "unit": "pp",
+          "reference_range": [
+            0,
+            10
+          ]
+        },
+        {
+          "feature": "speed",
+          "value": 86.0,
+          "unit": "km/h",
+          "reference_range": [
+            0,
+            218
+          ]
+        },
+        {
+          "feature": "rpm",
+          "value": 1740.0,
+          "unit": "RPM",
+          "reference_range": [
+            0,
+            3682
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": 0.0031,
+      "notes": [
+        "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
+        "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips.",
+        "No positive trip-level risk trend was observed; no threshold crossing cycle is projected."
+      ],
+      "risk_history": null,
+      "anomaly_description": "The diagnostic data indicates a medium risk (56%) associated with the accelerator pedal position sensor (APPS). Both internal sensors (Channel D and Channel E) are reporting normal accelerator pedal positions at 14.1% and 14.5%, respectively, which falls within their expected ranges of 0.0-100.0%. The difference between these channels is also normal at 6.463 pp, well within the 0.0-10.0 pp reference range. Vehicle speed (86 km/h) and engine RPM (1740 RPM) are both operating normally. The system projects a very low failure probability (0.31%) over the next 10 trips, suggesting no imminent high-risk condition. However, because the current risk level is medium, it is advisable to have this component inspected by a professional soon to ensure continued safe operation. The accelerator pedal position sensor transmits the driver's throttle input to the engine control module; if it malfunctions, the vehicle may enter 'limp-home-mode' to protect itself. At present, no abnormal signals are detected, but monitoring is recommended.",
+      "possible_cause": "The accelerator pedal position sensor (APPS) might be experiencing issues such as wiring damage, connector problems, or exposure to high heat near the firewall. Although current readings show normal pedal positions and no immediate risk of failure, these factors could still contribute to a medium-risk condition. The sensor's role in transmitting throttle input to the engine control module means any malfunction could trigger 'limp-home-mode' as a protective measure. Professional inspection is recommended to verify if the sensor or its connections are compromised.",
+      "recommended_action": [
+        "Now: Observe whether the accelerator pedal feels normal when you press it; no special tools are needed.",
+        "Service timing: Inspection soon \u2013 have a professional check the accelerator pedal position sensor at your next service appointment.",
+        "Stop driving and seek help if: You notice delayed, inconsistent, or uncontrolled acceleration, or the vehicle enters reduced-power mode (limp-home-mode).",
+        "Tell the mechanic: Check that the accelerator pedal moves smoothly through its full range when fully depressed and released; inspect the harness connector at the accelerator pedal position sensor for any damage; verify there are no loose or damaged wires/connectors linked to the sensor; and test for an open circuit between the sensor\u2019s connector and the ECM connector."
+      ]
+    },
+    "audit": {
+      "released": true,
+      "action_count": 4,
+      "prefixes_present": {
+        "Now:": true,
+        "Service timing:": true,
+        "Stop driving and seek help if:": true,
+        "Tell the mechanic:": true
+      },
+      "owner_technical_instructions": []
+    }
+  },
+  {
+    "fixture": "intake_air_temperature_sensor_fault__trip_0001_seg_001__w001.json",
+    "anomaly_type": "intake_air_temperature_sensor_fault",
+    "risk_level": "High",
+    "elapsed_seconds": 45.99,
+    "report": {
+      "timestamp": "2017-07-05T05:36:45Z",
+      "risk_score": 0.9,
+      "risk_level": "High",
+      "component": "intake_air_temperature_sensor_fault",
+      "prediction_confidence": 0.9,
+      "key_signals": [
+        {
+          "feature": "intake_temp",
+          "value": 19.0,
+          "unit": "\u00b0C",
+          "reference_range": [
+            -3,
+            41
+          ]
+        },
+        {
+          "feature": "intake_temp_stability",
+          "value": 1.5177,
+          "unit": "\u00b0C",
+          "reference_range": [
+            0,
+            5
+          ]
+        },
+        {
+          "feature": "intake_ambient_delta",
+          "value": 1.0,
+          "unit": "\u00b0C",
+          "reference_range": [
+            0,
+            20
+          ]
+        },
+        {
+          "feature": "ambient_temp",
+          "value": 18.0,
+          "unit": "\u00b0C",
+          "reference_range": [
+            -7,
+            25
+          ]
+        },
+        {
+          "feature": "coolant_temp",
+          "value": 90.0,
+          "unit": "\u00b0C",
+          "reference_range": [
+            90,
+            95
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": 0.0031,
+      "notes": [
+        "intake air temperature sensor issue forwarded from Data Layer rule-based evidence: a rule-based diagnostic flag triggered, a diagnostic flag, confidence high",
+        "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
+        "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips.",
+        "No positive trip-level risk trend was observed; no threshold crossing cycle is projected."
+      ],
+      "risk_history": null,
+      "anomaly_description": "The intake air temperature (IAT) sensor, which measures the temperature of incoming air to help the engine control unit (ECU) calculate fuel mixture and ignition timing, has triggered a high-risk fault flag. The current risk level is classified as High with a confidence score of 90%. While most supporting signals\u2014such as intake air temperature (19.0\u00b0C), intake temperature stability (1.5177\u00b0C), intake-ambient temperature difference (1.0\u00b0C), ambient temperature (18.0\u00b0C), and coolant temperature (90.0\u00b0C)\u2014are within their normal ranges, the rule-based diagnostic evidence from the Data Layer indicates a potential issue with the intake air temperature sensor circuit or its signal plausibility. This flag suggests that the sensor may be providing an implausible or inconsistent reading despite normal ambient conditions. Because the risk is already marked as High, professional verification and inspection are recommended to confirm whether the sensor itself or related wiring/connectors is at fault. No specific cycle-to-failure estimate is provided, but prompt attention is advised to prevent potential drivability issues.",
+      "possible_cause": "The high-risk fault flag for the intake air temperature (IAT) sensor suggests that there may be an issue with the sensor itself or its wiring/connectors. Although most related signals are normal, a rule-based diagnostic from the Data Layer indicates potential implausibility in the sensor's reading. Possible explanations include a faulty intake air temperature sensor, damaged or corroded wiring, a poor electrical connection at the connector, or even an open circuit within the sensor\u2019s harness. These factors could cause the sensor to provide inconsistent data despite normal ambient conditions. Because the risk is already marked as High and the evidence is rule-based proxy rather than direct measurement, professional verification is recommended to pinpoint the exact cause.",
+      "recommended_action": [
+        "Now: Note any unusual engine behavior, such as rough idling or a change in acceleration response, while continuing to drive safely.",
+        "Service timing: Prompt professional inspection due to High risk level.",
+        "Stop driving and seek help if: The engine stalls, runs very roughly, overheats, or you experience an unexpected loss of power that makes continued driving unsafe.",
+        "Tell the mechanic: Verify the integrity of the intake air temperature sensor circuit, including checking for wiring damage, connector corrosion, or a poor electrical connection; assess whether the sensor itself is faulty."
+      ]
+    },
+    "audit": {
+      "released": true,
+      "action_count": 4,
+      "prefixes_present": {
+        "Now:": true,
+        "Service timing:": true,
+        "Stop driving and seek help if:": true,
+        "Tell the mechanic:": true
+      },
+      "owner_technical_instructions": []
+    }
+  },
+  {
+    "fixture": "map_load_signal_plausibility_fault__trip_0001_seg_001__w001.json",
+    "anomaly_type": "map_load_signal_plausibility_fault",
+    "risk_level": "High",
+    "elapsed_seconds": 49.89,
+    "report": {
+      "timestamp": "2017-07-05T05:36:45Z",
+      "risk_score": 0.9,
+      "risk_level": "High",
+      "component": "map_load_signal_plausibility_fault",
+      "prediction_confidence": 0.9,
+      "key_signals": [
+        {
+          "feature": "map",
+          "value": 104.0,
+          "unit": "kPa",
+          "reference_range": [
+            36,
+            237
+          ]
+        },
+        {
+          "feature": "pedal_slope",
+          "value": 0.0,
+          "unit": "pp/s",
+          "reference_range": [
+            -2.4,
+            2.4
+          ]
+        },
+        {
+          "feature": "speed_density_maf_residual",
+          "value": -1.3061,
+          "unit": "g/s",
+          "reference_range": [
+            -20,
+            20
+          ]
+        },
+        {
+          "feature": "map_range_60s",
+          "value": 98.0,
+          "unit": "kPa",
+          "reference_range": [
+            0,
+            80
+          ]
+        },
+        {
+          "feature": "rpm_slope",
+          "value": -8.2708,
+          "unit": "RPM/s",
+          "reference_range": [
+            -120,
+            135
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": 0.0031,
+      "notes": [
+        "manifold pressure sensor plausibility issue forwarded from Data Layer rule-based evidence: a rule-based diagnostic flag triggered, a diagnostic flag, confidence high",
+        "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
+        "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips.",
+        "No positive trip-level risk trend was observed; no threshold crossing cycle is projected."
+      ],
+      "risk_history": null,
+      "anomaly_description": "The diagnostic system has flagged a high-risk issue related to the manifold pressure sensor plausibility issue, indicating that the intake manifold pressure (MAP) sensor's readings are implausible compared to other engine measurements. Specifically, while most signals such as Manifold Air Pressure, Pedal Demand Rate of Change, Speed-Density MAF Residual, and RPM Rate of Change are within normal ranges, the Manifold Pressure Range signal is marked as ABNORMAL, falling outside its expected reference range (0.0-80.0 kPa). This suggests a potential problem with the MAP sensor or its wiring/connectors, possibly due to contamination, electrical issues, or physical damage. The risk level is classified as High (90% confidence), meaning professional verification and likely inspection by a technician are recommended promptly. Note that this detection originated from rule-based evidence in the Data Layer rather than direct TTM residual scoring.",
+      "possible_cause": "The high-risk flag suggests that the intake manifold pressure (MAP) sensor might be reporting an implausible pressure reading. This could be due to contamination from oil or debris affecting the sensor's ability to measure accurately, faulty wiring or a loose connection disrupting signal transmission, physical damage such as excessive heat or vibration degrading the sensor's internal components, or even age-related wear causing inaccurate pressure readings. Since most other engine signals are normal and the detection comes from rule-based evidence rather than direct measurement, these issues may indicate but do not confirm a problem with the MAP sensor itself, and professional verification is recommended.",
+      "recommended_action": [
+        "Now: Observe any warning lights on the dashboard, note any changes in idle quality or acceleration response, and be aware of any unexpected loss of power while driving.",
+        "Service timing: Prompt professional inspection due to high risk (90% confidence) of a potential issue with the intake manifold pressure (MAP) sensor.",
+        "Stop driving and seek help if: You experience engine stalling, rough running, or a sudden loss of power that makes continued driving unsafe.",
+        "Tell the mechanic: Verify the plausibility of the MAP sensor readings by checking for contamination, inspecting wiring/connectors for faults, assessing physical damage, and evaluating sensor age/wear. Use rule-based diagnostic evidence to confirm if the MAP sensor is reporting implausible pressure values."
+      ]
+    },
+    "audit": {
+      "released": true,
+      "action_count": 4,
+      "prefixes_present": {
+        "Now:": true,
+        "Service timing:": true,
+        "Stop driving and seek help if:": true,
+        "Tell the mechanic:": true
+      },
+      "owner_technical_instructions": []
+    }
+  }
+]

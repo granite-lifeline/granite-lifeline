@@ -385,6 +385,10 @@ def load_model_output_for_dashboard(
 
     result: Dict[str, Any] = {"_data_source": {}}
     for component, model_payload in _best_component_payloads(raw).items():
+        # Low-risk results remain in the model history but do not become
+        # owner-facing exception cards.
+        if not _is_affected_component(model_payload):
+            continue
         ModelLayerOutput(**model_payload)
         report = generate_report(
             model_payload,

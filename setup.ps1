@@ -13,6 +13,12 @@ Set-Location -Path $PSScriptRoot
 
 $OllamaModel = "granite4.1:8b"
 
+python -c "import sys; raise SystemExit(not ((3, 11) <= sys.version_info[:2] <= (3, 13)))"
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Python 3.11, 3.12, or 3.13 is required (TTM compatibility)."
+    exit 1
+}
+
 Write-Host "==> Installing dashboard Python dependencies..."
 if (-not (Test-Path ".venv")) {
     python -m venv .venv
@@ -54,11 +60,34 @@ try {
 }
 if (-not $ollamaUp) {
     Start-Process -FilePath "ollama" -ArgumentList "serve" -WindowStyle Hidden
-    Start-Sleep -Seconds 3
+    for ($attempt = 0; $attempt -lt 15; $attempt++) {
+        Start-Sleep -Seconds 1
+        try {
+            Invoke-WebRequest -Uri "http://localhost:11434/api/tags" -TimeoutSec 2 -UseBasicParsing | Out-Null
+            $ollamaUp = $true
+            break
+        } catch {
+            $ollamaUp = $false
+        }
+    }
+}
+if (-not $ollamaUp) {
+    Write-Host "Ollama did not become ready on http://localhost:11434."
+    exit 1
 }
 
 Write-Host "==> Pulling $OllamaModel (~5.3GB on first run; skips if already present)..."
 ollama pull $OllamaModel
 
-Write-Host "==> Setup complete. Starting the dashboard..."
+Write-Host "==> Building the production RAG knowledge index..."
+python -m report_layer.rag.knowledge_indexer
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+$env:MODEL_LAYER_PYTHON = (Resolve-Path ".\model_layer\ttm-related\.venv\Scripts\python.exe").Path
+
+Write-Host "==> Verifying the complete local runtime..."
+python scripts\verify_local_pipeline.py
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+Write-Host "==> All checks passed. Starting the dashboard..."
 streamlit run dashboard\app.py

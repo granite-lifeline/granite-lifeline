@@ -97,3 +97,5 @@ def download_ttm_model():
 
 if __name__ == "__main__":
     model = download_ttm_model()
+    if model is None:
+        raise SystemExit(1)

@@ -535,6 +535,62 @@ def run_batch(
     return envelope, history_records
 
 
+def component_histories_from_batch(
+    envelope: dict[str, Any],
+) -> dict[str, pd.DataFrame]:
+    """Build one five-trip risk history per component from batch windows."""
+    records: dict[str, list[dict[str, Any]]] = {}
+    for window in envelope.get("windows", []):
+        for payload in (window, window.get("secondary_risk")):
+            if not isinstance(payload, dict):
+                continue
+            component = payload.get("component") or payload.get(
+                "anomaly_type"
+            )
+            if not component:
+                continue
+            records.setdefault(str(component), []).append({
+                "trip_id": window["trip_id"],
+                "window_id": (
+                    f"{window['window_id']}::{component}"
+                ),
+                "timestamp": payload["timestamp"],
+                "risk_score": payload["risk_score"],
+            })
+    return {
+        component: pd.DataFrame(component_records)
+        for component, component_records in records.items()
+    }
+
+
+def add_component_estimates_to_batch(
+    envelope: dict[str, Any],
+) -> dict[str, Any]:
+    """Annotate each component with its own independent trip projection."""
+    estimates = {
+        component: estimate_from_history(history)
+        for component, history in component_histories_from_batch(
+            envelope
+        ).items()
+    }
+
+    def annotate(payload: dict[str, Any]) -> dict[str, Any]:
+        updated = dict(payload)
+        component = updated.get("component") or updated.get("anomaly_type")
+        estimate = estimates.get(str(component))
+        if estimate is not None:
+            updated = add_estimate_to_output(updated, estimate)
+        secondary = updated.get("secondary_risk")
+        if isinstance(secondary, dict):
+            updated["secondary_risk"] = annotate(secondary)
+        return updated
+
+    return {
+        "summary": annotate(envelope["summary"]),
+        "windows": [annotate(window) for window in envelope["windows"]],
+    }
+
+
 def load_model(
     context_length: int,
     prediction_length: int,
@@ -1065,18 +1121,8 @@ def run_detector(args: argparse.Namespace) -> None:
         f"{args.history_file}"
     )
 
-    estimate = estimate_from_history(load_history(args.history_file))
     if args.batch:
-        result["summary"] = add_estimate_to_output(
-            result["summary"], estimate
-        )
-        result["windows"] = [
-            {
-                **window,
-                **add_estimate_to_output(window, estimate),
-            }
-            for window in result["windows"]
-        ]
+        result = add_component_estimates_to_batch(result)
         for window in result["windows"]:
             errors = validate_output(window)
             if errors:
@@ -1085,6 +1131,7 @@ def run_detector(args: argparse.Namespace) -> None:
                     + "; ".join(errors)
                 )
     else:
+        estimate = estimate_from_history(load_history(args.history_file))
         result = add_estimate_to_output(result, estimate)
         errors = validate_output(result)
         if errors:

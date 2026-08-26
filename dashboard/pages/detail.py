@@ -10,10 +10,7 @@ import streamlit as st
 
 from anomaly_display import COMPONENT_DISPLAY_NAMES
 from data_store import get_overview_components
-from failure_prediction import (
-    format_failure_prediction_text,
-    get_data_quality_notes,
-)
+from failure_prediction import format_failure_prediction_text
 from glossary import get_signal_display_name, get_signal_tooltip
 from theme import (
     COMPONENT_ICONS,
@@ -49,61 +46,23 @@ def _render_failure_prediction(
     component_data: dict,
     tokens: dict,
 ) -> None:
-    """Failure prediction banner + data-quality notes."""
+    """Failure prediction banner with an owner-facing limitation."""
     prediction_text, has_value = format_failure_prediction_text(
         component_data
     )
-    notes = get_data_quality_notes(component_data)
     text_color = tokens["text"] if has_value else tokens["text_secondary"]
     border_color = (
         hex_to_rgba(tokens["accent"], 0.35)
         if has_value else tokens["glass_border"]
     )
-    info_icon = lucide_icon("info", size=18, color=tokens["accent"])
-
-    note_items = "".join(
-        '<div style="display:flex;gap:8px;margin-top:8px;">'
-        f'<span style="color:{tokens["accent"]};'
-        'font-size:13px;line-height:1.45;">•</span>'
-        f'<span style="color:{tokens["text"]};'
-        f'font-size:13px;line-height:1.45;">{_html.escape(n)}</span>'
-        '</div>'
-        for n in notes
-    )
-    notes_panel = ""
-    if notes:
-        notes_panel = (
-            f'<div style="flex:1;min-width:260px;'
-            f'background:{tokens["glass_surface"]};'
-            f'border:1px solid {tokens["glass_border"]};'
-            'border-radius:16px;padding:14px 16px 13px 16px;'
-            f'box-shadow:0 8px 24px {tokens["shadow"]},'
-            'inset 0 1px 0 rgba(255,255,255,0.10);">'
-            '<div style="display:flex;align-items:center;'
-            'justify-content:center;gap:8px;'
-            f'color:{tokens["text"]};font-size:14px;font-weight:700;'
-            f'padding-bottom:8px;border-bottom:2px solid {tokens["border"]};">'
-            f'{info_icon}Data Quality Notes</div>'
-            f'<div style="margin-top:4px;">{note_items}</div></div>'
-        )
 
     if has_value:
-        prob = component_data.get("estimated_failure_probability")
-        cycles = component_data.get("estimated_cycles_to_failure")
-        pct = int(round(float(prob) * 100))
-        cnt = int(cycles)
         prediction_html = (
-            '<div style="display:flex;align-items:baseline;'
-            'justify-content:center;gap:8px;flex-wrap:wrap;'
-            'text-align:center;">'
-            f'<span style="color:{tokens["accent"]};'
-            f'font-family:{FONT_MONO};font-size:16px;font-weight:800;">'
-            f'{pct}%</span>'
-            f'<span style="color:{tokens["text"]};font-size:15px;'
-            'line-height:1.45;">probability of failure within the next</span>'
-            f'<span style="color:{tokens["text"]};'
-            'font-size:16px;font-weight:800;line-height:1.45;">'
-            f'{cnt} trips</span></div>'
+            '<div style="display:flex;justify-content:center;width:100%;'
+            'text-align:left;">'
+            f'<div style="color:{tokens["text"]};font-size:14px;'
+            'line-height:1.55;max-width:620px;">'
+            f'{_html.escape(prediction_text)}</div></div>'
         )
     else:
         pending = lucide_icon("info", size=20, color=tokens["text_secondary"])
@@ -134,8 +93,12 @@ def _render_failure_prediction(
         '<div style="flex:1.25;min-width:260px;display:flex;'
         'align-items:center;justify-content:center;">'
         f'<div style="min-width:0;width:100%;">{prediction_html}</div>'
+        f'<div style="color:{tokens["text_secondary"]};font-size:12px;'
+        'line-height:1.45;margin-top:10px;text-align:center;">'
+        'This is a risk-pattern estimate, not a confirmed mechanical fault.'
         '</div>'
-        f'{notes_panel}</div></div>'
+        '</div>'
+        '</div></div>'
     )
     st.markdown(card_html, unsafe_allow_html=True)
 
@@ -162,21 +125,9 @@ def _render_gauge(
         return
 
     risk_pct = int(component_data["risk_score"] * 100)
-    delta_config = None
-    if len(trend) >= 2:
-        delta_config = dict(
-            reference=trend[-2] * 100,
-            increasing=dict(color=tokens["risk_high"]),
-            decreasing=dict(color=tokens["risk_low"]),
-        )
     fig = go.Figure(go.Indicator(
-        mode="gauge+number+delta" if delta_config else "gauge+number",
+        mode="gauge",
         value=risk_pct,
-        number=dict(
-            suffix="%",
-            font=dict(family=FONT_MONO, size=40, color=tokens["text"]),
-        ),
-        delta=delta_config,
         gauge=dict(
             axis=dict(
                 range=[0, 100],
@@ -193,6 +144,14 @@ def _render_gauge(
         font=dict(color=tokens["text_secondary"]),
         margin=dict(l=40, r=40, t=30, b=10),
         height=282,
+        annotations=[dict(
+            text=f"<b>{risk_level}</b><br><span style='font-size:12px'>"
+            "Risk level</span>",
+            x=0.5,
+            y=0.42,
+            showarrow=False,
+            font=dict(color=tokens["text"], size=24),
+        )],
     )
     st.plotly_chart(fig, use_container_width=True, key="detail_risk_gauge")
 
@@ -258,8 +217,8 @@ def _render_trend(
         ),
         fill="tozeroy",
         fillcolor=fill_color,
-        name="Risk Score",
-        hovertemplate="<b>%{x}</b><br>Risk Score: %{y:.0%}<extra></extra>",
+        name="Risk index",
+        hovertemplate="<b>%{x}</b><br>Risk index: %{y:.2f}<extra></extra>",
     ))
     fig.update_layout(
         plot_bgcolor="rgba(0,0,0,0)",
@@ -270,7 +229,7 @@ def _render_trend(
             gridcolor=tokens["border"],
             showgrid=True,
             range=[0, 1],
-            tickformat=".0%",
+            tickformat=".1f",
         ),
         margin=dict(l=40, r=20, t=20, b=40),
         height=260,
@@ -278,8 +237,9 @@ def _render_trend(
     )
     st.plotly_chart(fig, use_container_width=True, key="detail_trend_chart")
     st.caption(
-        "Risk score over the latest recorded model windows. "
-        "Higher values indicate greater risk."
+        "Internal risk index over the recorded model windows. It supports "
+        "the Low, Medium and High categories; it is not a probability of "
+        "mechanical failure."
     )
 
 
@@ -571,7 +531,7 @@ def render_component_detail(
     hero_cols = st.columns([4, 8], gap="large")
     with hero_cols[0]:
         show_icon_heading(
-            "Risk Score",
+            "Risk Level",
             lucide_icon("zap", size=24, color=tokens["accent"]),
             center=True,
             tokens=tokens,
@@ -581,7 +541,7 @@ def render_component_detail(
 
     with hero_cols[1]:
         show_icon_heading(
-            "Risk Score Trend",
+            "Risk Trend",
             lucide_icon("trending-up", size=24, color=tokens["accent"]),
             center=True,
             tokens=tokens,
