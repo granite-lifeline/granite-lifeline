@@ -122,6 +122,12 @@ Useful flags:
 | `--history-file` | where the risk-score history is appended (default `outputs/risk_history.csv`) |
 | `--output` | save the interface JSON to a file |
 
+The detector, Dashboard, and formal synthetic evaluation always use the
+committed epoch-5 fine-tuned artefact. Zero-shot inference is retained only
+inside the separate model-comparison tooling and is not selectable through
+the production detector CLI. This keeps deployed inference aligned with the
+model used for threshold calibration and formal evaluation.
+
 A segment needs at least 700 contiguous rows (512 context + 96
 forecast + margin) and windows never cross segment boundaries, per
 INTERFACE.md §1.5. Expected failures (bad input, no usable segment,

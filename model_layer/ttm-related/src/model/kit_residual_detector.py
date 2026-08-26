@@ -1,5 +1,5 @@
 """
-Zero-shot KIT residual detector using IBM Granite TTM.
+KIT residual detector using IBM Granite TTM.
 
 Consumes the Data Layer's production feature handoff
 (`production_features.csv`, INTERFACE.md v0.14 / feature_schema.v1)
@@ -84,7 +84,14 @@ except ImportError:  # direct script run: src/ not on sys.path
     from risk_level_calibration import risk_level
 
 
+_TTM_RELATED_DIR = Path(__file__).resolve().parents[2]
+
+# Keep the upstream model id as the fine-tuning/zero-shot reference.
 MODEL_PATH = "ibm-granite/granite-timeseries-ttm-r2"
+OFFICIAL_DETECTOR_MODEL_PATH = (
+    _TTM_RELATED_DIR
+    / "outputs" / "ttm_finetuned_e5_lr5e-5" / "model"
+)
 DEFAULT_INPUT_CSV = Path(
     "data_layer/tests/fixtures/production_features.v1.fixture.csv"
 )
@@ -175,7 +182,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Run Data Layer's production_features.csv through Granite TTM "
-            "zero-shot residual detection."
+            "residual detection."
         )
     )
     parser.add_argument(
@@ -531,10 +538,9 @@ def run_batch(
 def load_model(
     context_length: int,
     prediction_length: int,
-    model_path: str | Path = MODEL_PATH,
 ):
     model = get_model(
-        str(model_path),
+        str(OFFICIAL_DETECTOR_MODEL_PATH),
         context_length=context_length,
         prediction_length=prediction_length,
     )
@@ -1026,6 +1032,7 @@ def run_single(
 def run_detector(args: argparse.Namespace) -> None:
     csv_path = args.csv_path or DEFAULT_INPUT_CSV
     print(f"Reading Group 1 feature dataset: {csv_path}")
+    print(f"Loading TTM model: {OFFICIAL_DETECTOR_MODEL_PATH}")
     df = load_group1_features(csv_path)
 
     decisions = None
