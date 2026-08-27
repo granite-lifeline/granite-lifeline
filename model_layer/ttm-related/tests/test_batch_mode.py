@@ -484,3 +484,55 @@ class TestCliErrors:
         assert detector.main() == 0
         assert load_calls == [(512, 96)]
         assert (tmp_path / "history.csv").exists()
+
+
+class TestSingleRunFailureProjection:
+    """Non-batch mode has one global history, but still emits a
+    ``secondary_risk`` object (GL-445): it must get the same real
+    projection as the primary risk, not the ``None`` placeholders."""
+
+    def test_secondary_risk_shares_the_primary_projection(
+        self, monkeypatch, tmp_path
+    ):
+        monkeypatch.setattr(
+            detector, "run_ttm_forecast", fake_forecast
+        )
+        monkeypatch.setattr(
+            detector, "load_model", lambda *a, **k: None
+        )
+
+        class Estimate:
+            notes = []
+            estimated_failure_probability = 0.42
+
+            def interface_fields(self):
+                return {
+                    "estimated_cycles_to_failure": 7,
+                    "estimated_failure_probability": 0.42,
+                }
+
+        monkeypatch.setattr(
+            detector, "estimate_from_history", lambda history: Estimate()
+        )
+
+        csv_path = tmp_path / "ok.csv"
+        make_multi_segment_frame(
+            [("trip_0001", "trip_0001_seg_001", 700)]
+        ).to_csv(csv_path, index=False)
+        output_path = tmp_path / "result.json"
+        monkeypatch.setattr(sys, "argv", [
+            "kit_residual_detector.py", str(csv_path),
+            "--history-file", str(tmp_path / "history.csv"),
+            "--output", str(output_path),
+        ])
+
+        assert detector.main() == 0
+        result = json.loads(output_path.read_text())
+
+        assert result["estimated_cycles_to_failure"] == 7
+        assert result["estimated_failure_probability"] == 0.42
+        assert result["secondary_risk"]["estimated_cycles_to_failure"] == 7
+        assert (
+            result["secondary_risk"]["estimated_failure_probability"]
+            == 0.42
+        )

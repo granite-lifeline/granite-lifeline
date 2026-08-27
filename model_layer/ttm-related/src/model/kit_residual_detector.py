@@ -1133,6 +1133,14 @@ def run_detector(args: argparse.Namespace) -> None:
     else:
         estimate = estimate_from_history(load_history(args.history_file))
         result = add_estimate_to_output(result, estimate)
+        secondary = result.get("secondary_risk")
+        if isinstance(secondary, dict):
+            # Single-run mode has only one global risk history, so the
+            # primary and secondary risk share the same projection
+            # (batch mode fits an independent one per component instead).
+            result["secondary_risk"] = add_estimate_to_output(
+                secondary, estimate
+            )
         errors = validate_output(result)
         if errors:
             raise ValueError(
