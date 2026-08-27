@@ -35,7 +35,6 @@ DEFAULT_CSV = Path(
     "ttm-related/data/production_feature_manifest/production_features.csv"
 )
 DEFAULT_MANIFEST = Path("ttm-related/outputs/finetune_split_manifest.json")
-DEFAULT_MODEL = Path("ttm-related/outputs/ttm_finetuned_e5_lr5e-5/model")
 DEFAULT_OUTPUT = Path(
     "ttm-related/outputs/synthetic_eval_results_e5_lr5e-5_calibrated.json"
 )
@@ -133,7 +132,6 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("csv_path", nargs="?", type=Path, default=DEFAULT_CSV)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
-    parser.add_argument("--model-path", type=Path, default=DEFAULT_MODEL)
     parser.add_argument(
         "--segments", choices=["validation", "all"], default="validation"
     )
@@ -223,7 +221,7 @@ def main() -> None:
     transforms = load_feature_transforms(args.calibration_registry)
     scenarios = build_scenarios(transforms)
     model = detector.load_model(
-        args.context_length, args.prediction_length, args.model_path
+        args.context_length, args.prediction_length
     )
     records: list[dict[str, Any]] = []
     needed = args.context_length + args.prediction_length
@@ -278,7 +276,7 @@ def main() -> None:
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "csv_path": str(args.csv_path),
             "manifest_path": str(args.manifest),
-            "model_path": str(args.model_path),
+            "model_path": str(detector.OFFICIAL_DETECTOR_MODEL_PATH),
             "segments": args.segments,
             "context_length": args.context_length,
             "prediction_length": args.prediction_length,

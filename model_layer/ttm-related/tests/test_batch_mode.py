@@ -394,6 +394,37 @@ class TestProxyDecisionForwarding:
 
 
 class TestCliErrors:
+    def test_cli_does_not_expose_a_runtime_model_override(
+        self, monkeypatch
+    ):
+        monkeypatch.setattr(sys, "argv", ["kit_residual_detector.py"])
+        args = detector.parse_args()
+        assert not hasattr(args, "model_path")
+
+    def test_runtime_loads_the_evaluated_fine_tuned_model(
+        self, monkeypatch
+    ):
+        captured = {}
+
+        class FakeModel:
+            def eval(self):
+                return self
+
+        def fake_get_model(model_path, **kwargs):
+            captured["model_path"] = model_path
+            captured.update(kwargs)
+            return FakeModel()
+
+        monkeypatch.setattr(detector, "get_model", fake_get_model)
+
+        detector.load_model(512, 96)
+
+        assert captured == {
+            "model_path": str(detector.OFFICIAL_DETECTOR_MODEL_PATH),
+            "context_length": 512,
+            "prediction_length": 96,
+        }
+
     def test_missing_csv_is_single_clear_error(
         self, monkeypatch, capsys, tmp_path
     ):
@@ -428,11 +459,17 @@ class TestCliErrors:
     def test_success_returns_zero(
         self, monkeypatch, capsys, tmp_path
     ):
+        load_calls = []
+
+        def fake_load_model(context_length, prediction_length):
+            load_calls.append((context_length, prediction_length))
+            return None
+
         monkeypatch.setattr(
             detector, "run_ttm_forecast", fake_forecast
         )
         monkeypatch.setattr(
-            detector, "load_model", lambda *a, **k: None
+            detector, "load_model", fake_load_model
         )
         csv_path = tmp_path / "ok.csv"
         make_multi_segment_frame(
@@ -445,4 +482,5 @@ class TestCliErrors:
             str(tmp_path / "history.csv"),
         ])
         assert detector.main() == 0
+        assert load_calls == [(512, 96)]
         assert (tmp_path / "history.csv").exists()
