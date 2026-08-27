@@ -1118,6 +1118,132 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .limit-item { color:var(--danger-text); background:rgba(218,30,40,.055); }
 .future-item { color:var(--accent-blue); background:rgba(15,98,254,.065); }
 .limit-arrows { padding-top:50px; display:grid; grid-template-rows:repeat(3,1fr); align-items:center; justify-items:center; color:var(--accent-blue); font:800 34px/1 var(--font-mono); }
+
+/* Challenge 3 v8 — horizontal, evidence-led two-minute narrative. */
+.report-choice-flow { width:100%; max-width:1340px; display:grid; grid-template-columns:1fr 54px 1fr 104px 1.12fr; gap:14px; align-items:stretch; }
+.choice-card { min-height:330px; padding:34px 32px; border-radius:20px; background:#fff; box-shadow:0 18px 46px rgba(20,50,100,.08); display:flex; flex-direction:column; justify-content:center; }
+.choice-card h3 { margin:14px 0 17px; font-size:clamp(29px,2.15vw,36px); }
+.choice-card p { margin:0; color:var(--text-muted); font-size:clamp(18px,1.28vw,21px); line-height:1.42; }
+.choice-card .method-num { font-size:13px; }
+.choice-card.selected { color:#fff; background:linear-gradient(150deg,#0b2a60,#1763c6); box-shadow:0 24px 58px rgba(15,98,254,.2); }
+.choice-card.selected p { color:#dbe8ff; }
+.choice-card.selected .method-num { color:#b8d1ff; }
+.choice-tags { margin-top:24px; display:flex; gap:9px; flex-wrap:wrap; }
+.choice-tags span { padding:8px 11px; border-radius:18px; color:var(--accent-blue); background:rgba(15,98,254,.075); font:750 11px/1 var(--font-mono); }
+.choice-card.selected .choice-tags span { color:#fff; background:rgba(255,255,255,.14); }
+.choice-operator { display:grid; place-items:center; color:var(--accent-blue); font:850 32px/1 var(--font-mono); }
+.choice-operator.combine { font-size:14px; line-height:1.4; text-align:center; }
+
+.prompt-source-map { width:100%; max-width:1340px; display:grid; grid-template-columns:repeat(3,1fr); gap:56px; }
+.prompt-source-map .call-card { min-height:345px; }
+.input-pills { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:17px; }
+.input-pills span { padding:7px 10px; border-radius:16px; color:var(--accent-blue); background:rgba(15,98,254,.075); font:750 10px/1 var(--font-mono); }
+.boundary-line { margin-top:auto; padding-top:20px; color:var(--accent-blue); font:800 15px/1.3 var(--font-mono); text-transform:uppercase; letter-spacing:.035em; }
+.action-role-row { margin-top:16px; display:grid; grid-template-columns:repeat(2,1fr); gap:7px; }
+.action-role-row span { padding:8px 7px; border-radius:7px; background:rgba(15,98,254,.065); color:var(--text); font:750 9.5px/1.2 var(--font-mono); text-align:center; }
+.prompt-anatomy { width:100%; max-width:1370px; display:grid; grid-template-columns:repeat(5,1fr); gap:18px; align-items:stretch; }
+.prompt-part { min-height:248px; padding:25px 22px; border-radius:17px; background:#fff; box-shadow:0 16px 40px rgba(20,50,100,.08); display:flex; flex-direction:column; }
+.prompt-part h3 { margin:13px 0 15px; font-size:clamp(20px,1.5vw,26px); }
+.prompt-part p { margin:0; color:var(--text-muted); font-size:14px; line-height:1.4; }
+.prompt-part .prompt-example { margin-top:auto; padding-top:18px; color:var(--accent-blue); font:800 11px/1.35 var(--font-mono); text-transform:uppercase; }
+.prompt-part.warning { background:linear-gradient(145deg,#fff,#fff8ed); border:1px solid rgba(245,124,0,.24); }
+.prompt-part.warning .prompt-example { color:#a75a00; }
+.prompt-call-label { width:min(100%,1110px); padding:11px 18px; border-radius:9px; background:rgba(15,98,254,.065); color:var(--text); font-size:14px; line-height:1.35; font-weight:730; text-align:center; }
+.prompt-build-flow { width:100%; max-width:1240px; display:grid; grid-template-columns:repeat(2,1fr); gap:28px; }
+.prompt-build-row { min-height:305px; padding:34px 36px; border:1px solid rgba(15,98,254,.12); border-radius:20px; background:rgba(255,255,255,.9); box-shadow:0 17px 44px rgba(20,50,100,.08); display:flex; flex-direction:column; justify-content:center; }
+.prompt-build-step { margin-bottom:22px; color:var(--accent-blue); font:850 15px/1.2 var(--font-mono); text-transform:uppercase; letter-spacing:.05em; }
+.prompt-build-example { color:var(--text); font-size:clamp(24px,2vw,31px); line-height:1.28; font-weight:760; }
+.prompt-build-reason { margin-top:24px; padding-top:19px; border-top:1px solid var(--border); color:var(--text-muted); font-size:clamp(17px,1.25vw,20px); line-height:1.4; }
+.prompt-build-reason strong { color:var(--text); font-weight:820; }
+.action-contract { display:grid; grid-template-columns:repeat(2,1fr); gap:9px; }
+.action-contract span { padding:12px 13px; border-left:4px solid var(--accent-blue); background:rgba(15,98,254,.055); color:var(--text); font:800 12px/1.28 var(--font-mono); }
+.edge-example-pair { margin-top:15px; display:grid; gap:7px; }
+.edge-example-pair span { padding:9px 11px; border-radius:7px; font:800 11px/1.3 var(--font-mono); }
+.edge-example-pair .edge-bad { color:var(--danger-text); background:rgba(218,30,40,.065); }
+.edge-example-pair .edge-good { color:#176c35; background:rgba(36,161,72,.075); }
+.prompt-build-row.has-edge-example .prompt-build-example { font-size:clamp(21px,1.7vw,27px); }
+.prompt-build-row.has-edge-example .prompt-build-reason { margin-top:15px; padding-top:14px; }
+.prompt-research-note { width:min(100%,1150px); padding:10px 16px; border-left:5px solid var(--accent-blue); border-radius:8px; background:rgba(15,98,254,.055); color:var(--text); font-size:14px; line-height:1.3; font-weight:700; text-align:center; }
+
+.prompt-example-stage { width:100%; max-width:1240px; display:grid; grid-template-columns:1fr 86px 1fr; gap:22px; align-items:stretch; }
+.prompt-quote { min-height:245px; padding:30px 34px; border-radius:18px; display:flex; flex-direction:column; justify-content:center; background:#fff; box-shadow:0 16px 42px rgba(20,50,100,.08); }
+.prompt-quote.bad { border:1px solid rgba(218,30,40,.22); background:linear-gradient(145deg,#fff,#fff5f5); }
+.prompt-quote.good { border:2px solid var(--accent-blue); background:linear-gradient(145deg,#fff,#eef4ff); }
+.prompt-quote blockquote { margin:16px 0 0; color:var(--text); font-size:clamp(23px,2vw,31px); line-height:1.3; font-weight:680; }
+.prompt-quote.bad blockquote { color:var(--danger-text); }
+.prompt-example-arrow { display:grid; place-items:center; color:var(--accent-blue); font:850 31px/1 var(--font-mono); }
+.prompt-learning { width:min(100%,1080px); display:grid; grid-template-columns:1fr 70px 1fr; gap:14px; align-items:center; }
+.prompt-learning div:not(.prompt-learning-arrow) { padding:13px 18px; border-radius:9px; background:rgba(245,124,0,.07); color:#7f4500; font-size:14px; line-height:1.3; font-weight:740; text-align:center; }
+.prompt-learning div:last-child { background:rgba(15,98,254,.065); color:var(--accent-blue); }
+.prompt-learning-arrow { text-align:center; color:var(--accent-blue); font:850 23px/1 var(--font-mono); }
+
+.validator-score-flow { width:100%; max-width:1360px; display:grid; grid-template-columns:1fr .72fr 1.05fr; gap:22px; align-items:stretch; }
+.validator-output-card,.validator-score-card,.validator-corrected-card { min-height:330px; padding:27px 29px; border-radius:18px; background:#fff; box-shadow:0 17px 44px rgba(20,50,100,.08); display:flex; flex-direction:column; }
+.validator-output-card { border:1px solid rgba(218,30,40,.22); background:linear-gradient(145deg,#fff,#fff5f5); }
+.validator-output-card blockquote,.validator-corrected-card blockquote { margin:24px 0 0; color:var(--text); font-size:clamp(19px,1.55vw,24px); line-height:1.38; font-weight:660; }
+.validator-output-card blockquote { color:var(--danger-text); }
+.validator-warning-list { margin-top:auto; display:grid; gap:9px; }
+.validator-warning-list span { padding:11px 12px; border-radius:7px; background:rgba(218,30,40,.07); color:var(--danger-text); font:820 12px/1.25 var(--font-mono); text-align:center; }
+.validator-score-card { justify-content:center; color:#fff; background:linear-gradient(150deg,#172033,#273a5f); }
+.validator-score-title { color:#b9c9e8; font:800 11px/1.2 var(--font-mono); text-transform:uppercase; letter-spacing:.05em; }
+.score-ledger { margin-top:19px; display:grid; gap:10px; font:760 13px/1.25 var(--font-mono); }
+.score-ledger div { display:flex; justify-content:space-between; gap:15px; color:#e8efff; }
+.score-ledger div span:last-child { color:#ffb6b6; }
+.score-ledger .score-start span:last-child { color:#fff; }
+.score-ledger .score-total { margin-top:4px; padding-top:13px; border-top:1px solid rgba(255,255,255,.25); font-size:20px; }
+.score-ledger .score-total span:last-child { color:#ff8e8e; }
+.validator-corrected-card { justify-content:center; border:2px solid var(--accent-blue); background:linear-gradient(145deg,#fff,#eef4ff); }
+.correction-package { margin-top:16px; color:var(--accent-blue); font:800 11px/1.4 var(--font-mono); text-transform:uppercase; }
+.validator-release { align-self:stretch; justify-content:center; margin-top:22px; padding:10px 15px; border-radius:18px; color:#fff; background:var(--accent-green); font:900 14px/1 var(--font-mono); text-align:center; }
+
+.slide-map-toggle { position:fixed; top:18px; left:154px; z-index:120; min-height:34px; padding:7px 12px; border:1px solid var(--border); border-radius:8px; background:rgba(255,255,255,.86); box-shadow:0 5px 18px rgba(15,35,80,.07); color:var(--text-dim); font:700 11px/1 var(--font-mono); cursor:pointer; backdrop-filter:blur(10px); }
+.slide-map-toggle:hover { color:var(--accent-blue); border-color:var(--accent-blue); }
+.slide-map-overlay { position:fixed; inset:0; z-index:18000; display:grid; place-items:center; padding:52px; background:rgba(237,241,249,.94); backdrop-filter:blur(15px); opacity:0; pointer-events:none; transition:opacity .18s ease; }
+.slide-map-overlay.open { opacity:1; pointer-events:auto; }
+.slide-map-dialog { width:min(1080px,94vw); max-height:84vh; overflow:auto; padding:34px 38px; border-radius:20px; background:#fff; box-shadow:0 30px 90px rgba(20,50,100,.18); }
+.slide-map-head { display:flex; justify-content:space-between; align-items:center; gap:20px; margin-bottom:25px; }
+.slide-map-head h2 { margin:0; font-size:31px; text-align:left; }
+.slide-map-close { width:38px; height:38px; border:1px solid var(--border); border-radius:50%; background:#fff; color:var(--text); font-size:24px; cursor:pointer; }
+.slide-map-groups { display:grid; grid-template-columns:repeat(3,1fr); gap:25px; }
+.slide-map-group h3 { margin:0 0 10px; color:var(--accent-blue); font:800 11px/1.2 var(--font-mono); text-transform:uppercase; letter-spacing:.06em; }
+.slide-map-list { display:grid; gap:7px; }
+.slide-map-item { display:grid; grid-template-columns:30px 1fr; gap:10px; align-items:center; padding:10px 11px; border:1px solid transparent; border-radius:9px; background:rgba(15,98,254,.035); color:var(--text); font-size:13px; line-height:1.25; text-align:left; cursor:pointer; }
+.slide-map-item span:first-child { color:var(--accent-blue); font:800 10px/1 var(--font-mono); }
+.slide-map-item:hover,.slide-map-item.active { border-color:var(--accent-blue); background:rgba(15,98,254,.08); }
+:fullscreen .slide-map-toggle,:-webkit-full-screen .slide-map-toggle { left:24px; }
+@media (max-width:900px) { .slide-map-groups { grid-template-columns:1fr 1fr; } }
+
+.ablation-header { width:min(100%,1120px); display:flex; justify-content:center; align-items:center; gap:13px; flex-wrap:wrap; }
+.ablation-header strong { color:var(--accent-blue); font:850 25px/1 var(--font-mono); }
+.ablation-header span { color:var(--text-muted); font:700 11px/1.25 var(--font-mono); }
+.ablation-findings { width:100%; max-width:1340px; display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
+.finding-card { min-height:330px; padding:29px 30px; border-radius:19px; background:#fff; box-shadow:0 18px 46px rgba(20,50,100,.08); display:flex; flex-direction:column; }
+.finding-card.warning { background:linear-gradient(145deg,#fff,#fff7f4); border:1px solid rgba(218,30,40,.18); }
+.finding-card.selected { background:linear-gradient(145deg,#fff,#eef4ff); border:2px solid var(--accent-blue); box-shadow:0 24px 58px rgba(15,98,254,.14); }
+.finding-card h3 { margin:13px 0 20px; font-size:clamp(23px,1.7vw,29px); }
+.finding-score { color:var(--accent-blue); font:850 clamp(31px,2.7vw,45px)/1 var(--font-mono); }
+.finding-score small { color:var(--text-muted); font-size:12px; }
+.finding-card.warning .finding-score { color:var(--danger-text); }
+.finding-detail { margin-top:17px; color:var(--text-muted); font-size:15px; line-height:1.42; }
+.finding-decision { margin-top:auto; padding-top:19px; color:var(--accent-blue); font:800 13px/1.35 var(--font-mono); text-transform:uppercase; }
+.finding-card.warning .finding-decision { color:var(--danger-text); }
+.eval-caveat { width:min(100%,1090px); padding:10px 17px; border-left:5px solid var(--accent-orange); border-radius:8px; background:rgba(245,124,0,.06); color:var(--text); font-size:14px; line-height:1.3; font-weight:730; text-align:center; }
+
+.evidence-boundary-flow { width:100%; max-width:1320px; display:grid; grid-template-columns:1.12fr 70px .88fr; gap:22px; align-items:stretch; }
+.assurance-path { min-height:350px; padding:30px 32px; border-radius:20px; color:#fff; background:linear-gradient(150deg,#0b2a60,#1763c6); box-shadow:0 22px 54px rgba(16,46,98,.18); }
+.assurance-path h3,.boundary-card h3 { margin:13px 0 22px; font-size:clamp(28px,2.2vw,36px); text-align:center; }
+.assurance-steps { display:grid; grid-template-columns:1fr 34px 1fr 34px 1fr; align-items:stretch; }
+.assurance-step-box { position:relative; min-height:220px; padding:42px 17px 24px; overflow:hidden; display:flex; flex-direction:column; justify-content:center; border:1px solid rgba(255,255,255,.14); border-radius:13px; background:linear-gradient(155deg,rgba(255,255,255,.18),rgba(255,255,255,.08)); text-align:center; }
+.assurance-step-box::before { content:attr(data-step); position:absolute; top:14px; left:16px; color:#9fc2ff; font:900 15px/1 var(--font-mono); letter-spacing:.05em; }
+.assurance-step-box b { color:#fff; font-size:clamp(22px,1.7vw,28px); line-height:1.22; }
+.assurance-step-arrow { display:grid; place-items:center; color:#9fc2ff; font:850 23px/1 var(--font-mono); }
+.boundary-card { min-height:350px; padding:30px 32px; border-radius:20px; background:linear-gradient(145deg,#fff,#fff5f5); border:1px solid rgba(218,30,40,.2); box-shadow:0 18px 46px rgba(20,50,100,.08); }
+.boundary-list { display:grid; gap:11px; }
+.boundary-list div { padding:14px 16px; border-left:5px solid var(--accent-red); background:rgba(218,30,40,.055); color:var(--danger-text); font-size:17px; font-weight:750; text-align:center; }
+.boundary-next { margin-top:23px; padding:13px 17px 15px; border:2px solid var(--accent-blue); border-radius:10px; background:rgba(15,98,254,.07); color:var(--accent-blue); text-align:center; }
+.boundary-next small { display:block; margin-bottom:7px; font:900 11px/1 var(--font-mono); letter-spacing:.1em; text-transform:uppercase; }
+.boundary-next strong { display:block; color:var(--text); font-size:18px; line-height:1.28; }
+.evidence-boundary-arrow { display:grid; place-items:center; color:var(--accent-blue); font:850 31px/1 var(--font-mono); }
 @media (max-width:1050px) {
   .report-story-layout { grid-template-columns:1fr; }
   .report-design-panel { display:none; }
@@ -1831,12 +1957,20 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 <div class="slide-nav" id="slideNav"></div>
 <div class="progress-bar" id="progress"></div>
 <div class="slide-counter" id="counter"></div>
-<div class="nav-hints"><span><kbd>&larr;</kbd><kbd>&rarr;</kbd> navigate &nbsp;&middot;&nbsp; <kbd>F</kbd> fullscreen &nbsp;&middot;&nbsp; <kbd>B</kbd> backup</span></div>
+<div class="nav-hints"><span><kbd>&larr;</kbd><kbd>&rarr;</kbd> navigate &nbsp;&middot;&nbsp; <kbd>G</kbd> slide map &nbsp;&middot;&nbsp; <kbd>F</kbd> fullscreen &nbsp;&middot;&nbsp; <kbd>B</kbd> backup</span></div>
 <div class="version-tag" data-edit-id="version-tag">v3.1 &middot; Viva Synced Draft &middot; 2 Aug 2026</div>
 <button class="fullscreen-toggle-btn" id="fullscreenToggle" type="button" onclick="toggleFullscreen()" title="Enter fullscreen (F)" aria-label="Enter fullscreen">
   <span class="fullscreen-icon" aria-hidden="true">⛶</span><span id="fullscreenLabel">Full screen</span>
 </button>
+<button class="slide-map-toggle" id="slideMapToggle" type="button" onclick="toggleSlideMap()" title="Open slide map (G)" aria-label="Open slide map"><span id="slideMapCurrent">01 / 14 · Opening</span> &nbsp;▦</button>
 <button class="backup-toggle-btn" onclick="toggleBackup()" title="Backup slides — Q&amp;A reference (B)">&#8862; Backup (B)</button>
+
+<div class="slide-map-overlay" id="slideMapOverlay" aria-hidden="true" onclick="closeSlideMap()">
+  <div class="slide-map-dialog" role="dialog" aria-modal="true" aria-labelledby="slideMapTitle" onclick="event.stopPropagation()">
+    <div class="slide-map-head"><h2 id="slideMapTitle">Go to slide</h2><button class="slide-map-close" type="button" onclick="closeSlideMap()" aria-label="Close slide map">&times;</button></div>
+    <div class="slide-map-groups" id="slideMapGroups"></div>
+  </div>
+</div>
 
 <div class="pdm-zoom" id="pdmZoom" aria-hidden="true" onclick="closePdmZoom()">
   <div class="pdm-zoom-dialog" role="dialog" aria-modal="true" aria-label="Expanded Geotab evidence image" onclick="event.stopPropagation()">
@@ -1844,7 +1978,6 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
     <img class="pdm-zoom-image" id="pdmZoomImage" src="" alt="" onclick="closePdmZoom()">
     <div class="pdm-zoom-meta">
       <div class="pdm-zoom-title" id="pdmZoomTitle"></div>
-      <div class="pdm-zoom-source">Source · Geotab, Fleet Maintenance Software</div>
     </div>
   </div>
 </div>
@@ -1882,15 +2015,12 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
       <div class="story-visual" id="storyFlow">
         <div class="story-scene" data-story-step="0">
           <img class="story-photo" src="assets/check-engine-dashboard-v1.png" alt="Car dashboard with the amber check-engine warning light illuminated">
-          <div class="story-photo-note"><span></span><span>Source · John Hughes, 2025</span></div>
         </div>
         <div class="story-scene" data-story-step="1">
           <img class="story-photo" src="assets/bluedriver-scanner-v1.png" alt="Car owner holding a BlueDriver OBD-II scanner and its phone app">
-          <div class="story-photo-note"><span></span><span>Source · BlueDriver</span></div>
         </div>
         <div class="story-scene" data-story-step="2">
           <div class="story-code-crop"><img src="assets/obd-consumer-tool-crop-v1.png" alt="EOBD Facile trouble-code screen showing P0670 and P0401 descriptions"></div>
-          <div class="story-scope">Source · EOBD Facile, Google Play product listing, accessed July 2026</div>
         </div>
         <div class="story-scene" data-story-step="3">
           <div class="reactive-flow">
@@ -1919,7 +2049,6 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
       <strong>
         <span><span class="highlight-blue">OBD-II — On-Board Diagnostics, Second Generation:</span></span>
         <span>provides standardised access to real-time vehicle performance data and diagnostic trouble codes.</span>
-        <span class="term-source">Michailidis et al., 2025</span>
       </strong>
     </div>
     <script type="application/json" class="slide-notes">
@@ -1964,7 +2093,6 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
             <div class="oxmaint-action">Flag for next PM</div>
           </div>
         </div>
-        <div class="oxmaint-source">Source · Oxmaint vendor dashboard example, accessed July 2026</div>
       </div>
     </div>
     <div class="owner-bridge anim-5">
@@ -2006,7 +2134,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
           <div class="data-fit-row"><strong>Establishes a normal baseline</strong></div>
         </div>
       </div>
-      <div class="truth-label">SOURCE · KIT Automotive OBD-II Dataset · Weber, 2023 · DOI 10.35097/1130</div>
+      <div class="truth-label">KIT AUTOMOTIVE OBD-II DATASET</div>
     </div>
     <script type="application/json" class="slide-notes">
     {"title":"Pipeline — Why Data First","script":"We begin with the KIT Automotive OBD-II dataset: 81 real road trips from one Seat Leon, sampled at one hertz across ten OBD-II signals and varied traffic conditions. We chose it because it matches the private-owner use case, captures vehicle behaviour over time, and gives us repeated history from which to establish a normal baseline. The next question is whether that normal history is enough to define failure.","notes":["Why KIT: matches the owner use case, captures behaviour over time, establishes a normal baseline","Input: 81 trips, one Seat Leon, 1 Hz, 10 signals","Transition: can normal history define failure?"]}
@@ -2295,7 +2423,6 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
         </div>
       </div>
       <div class="pipeline-question">Without faulty training examples, how could we know that drift meant risk?</div>
-      <div class="truth-label">SOURCE · raw KIT CSV + data_layer/tests/fixtures/production_features.v1.fixture.csv</div>
     </div>
     <script type="application/json" class="slide-notes">
     {"title":"Pipeline — Data Output Becomes Model Input","script":"Challenge one transforms the raw trip into the confirmed 46-column production feature file. Watch the identity of the artifact change: production_features.csv is the Data Layer's output, and without changing its contents it becomes the Model Layer's input. That takes us to Challenge 2: without faulty training examples, how could we know that drift meant risk?","notes":["Input appears first","Data transformation appears second","Output appears last, then relabels itself as Model input","No Model output is revealed before Challenge 2"]}
@@ -2532,125 +2659,88 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
           <div class="artifact-code">anomaly_type <b>cooling_degradation</b><br>risk_score <b>0.5021 · Medium</b><br>confidence <b>84.2%</b><br>key signals <b>coolant 85°C (reference 90–95)</b>, warming rate <b>5.05°C/min (reference 0–2)</b><br>risk-threshold projection <b>5 trips · 75.02% within 10 trips</b></div>
         </div>
       </div>
-      <div class="pipeline-question">How could we explain the evidence without inventing a diagnosis?</div>
-      <div class="truth-label">SOURCE · report_layer/evaluation/viva_real_case/real_case_input.json</div>
+      <div class="pipeline-question">How can we turn technical evidence into clear, reliable guidance for vehicle owners?</div>
     </div>
     <script type="application/json" class="slide-notes">
-    {"title":"Pipeline — Evidence Ready for Explanation","script":"Here, cooling degradation is Medium risk. Coolant is eighty-five degrees—below its ninety-to-ninety-five reference—but rising at five degrees per minute, above the zero-to-two range. This becomes the Report Layer's input: how do you explain that evidence without inventing a diagnosis?","notes":["All values come from report_layer/evaluation/viva_real_case","The source history contains 22 Model windows from six chronological Seat Leon trips","Five trips and 75.02 percent describe projected High-risk threshold crossing, not mechanical-failure probability","Do not reveal the generated report before Challenge 3"]}
+    {"title":"Pipeline — Evidence Ready for Explanation","script":"Here, cooling degradation is Medium risk. Coolant is eighty-five degrees—below its ninety-to-ninety-five reference—but rising at five degrees per minute, above the zero-to-two range. This structured evidence now passes to the Report Layer. Charlotte will explain how it becomes useful to a vehicle owner.","notes":["All values come from report_layer/evaluation/viva_real_case","The source history contains 22 Model windows from six chronological Seat Leon trips","Five trips and 75.02 percent describe projected High-risk threshold crossing, not mechanical-failure probability","Do not reveal the generated report before Challenge 3"]}
     </script>
   </div>
 
   <!-- ===== 9 / CHALLENGE 3: ONE REAL CASE, EVIDENCE → OWNER REPORT ===== -->
   <div class="slide" data-slide="8">
     <p class="slide-tag anim-1">Challenge 3 of 3</p>
-    <h2 class="anim-2">How can we explain risk <span class="highlight-blue">without inventing a diagnosis?</span></h2>
+    <h2 class="anim-2">How can we turn technical evidence into clear, reliable guidance for vehicle owners?</h2>
     <p class="subtitle anim-2">Charlotte Yu &middot; Jintong He</p>
     <div class="report-stepper anim-3" id="reportStepper">
-      <div class="report-stage-label" id="reportStageLabel">Choose how to explain the evidence</div>
+      <div class="report-stage-label" id="reportStageLabel">Choose a traceable starting design</div>
       <div class="report-stage-wrap" id="reportStageWrap">
         <div class="report-stage" data-report-stage="0">
-          <div class="report-methods">
-            <article class="report-method">
-              <div class="method-num">01 · Pure retrieval</div>
-              <h3>Verified but fixed</h3>
-              <p>Returns verified workshop knowledge in fixed wording.</p>
-              <strong>RELIABLE · NOT ADAPTIVE</strong>
+          <div class="report-choice-flow">
+            <article class="choice-card">
+              <div class="method-num">Workshop knowledge</div>
+              <h3>Reviewed sources</h3>
+              <p>Traceable information written for technicians.</p>
+              <div class="choice-tags"><span>TRACEABLE</span><span>TECHNICAL</span></div>
             </article>
-            <article class="report-method">
-              <div class="method-num">02 · Large Language Model (LLM)</div>
-              <h3>Readable but unbounded</h3>
-              <p>A large-scale, pre-trained neural language model for language understanding and generation.</p>
-              <cite class="term-source">Minaee et al., 2024</cite>
-              <strong>CLEAR · NOT GROUNDED</strong>
+            <div class="choice-operator">+</div>
+            <article class="choice-card">
+              <div class="method-num">Granite LLM</div>
+              <h3>Owner-readable</h3>
+              <p>Natural language adapted to the current case.</p>
+              <div class="choice-tags"><span>CLEAR</span><span>CASE-SPECIFIC</span></div>
             </article>
-            <article class="report-method selected">
-              <div class="method-num">03 · RAG + model</div>
-              <h3>Verified and readable</h3>
-              <p>Verified knowledge sets the boundary; the model explains this case.</p>
-              <strong>OUR DESIGN</strong>
+            <div class="choice-operator combine">STARTING<br>HYPOTHESIS<br>→</div>
+            <article class="choice-card selected">
+              <div class="method-num">RAG + Granite</div>
+              <h3>Reviewed knowledge → clear report</h3>
+              <p>Granite explains selected knowledge alongside Model evidence.</p>
+              <div class="choice-tags"><span>OUR STARTING DESIGN</span></div>
             </article>
           </div>
-          <div class="report-definition"><b>RAG — Retrieval-Augmented Generation</b> retrieves external documents as additional context for language generation. <span>Lewis et al., 2020</span></div>
         </div>
 
         <div class="report-stage" data-report-stage="1">
-          <div class="three-call-flow">
-            <article class="call-card">
-              <div class="method-num">Call 1</div>
-              <h3>What happened?</h3>
-              <div class="call-source">Uses current readings, reference ranges and risk evidence.</div>
-              <div class="call-rule">Describe the evidence. Do not guess a cause.</div>
-            </article>
-            <article class="call-card">
-              <div class="method-num">Call 2</div>
-              <h3>What might cause it?</h3>
-              <div class="call-source">Adds retrieved knowledge linked to the current signals.</div>
-              <div class="call-rule">Present supported possibilities—not a diagnosis.</div>
-            </article>
-            <article class="call-card">
-              <div class="method-num">Call 3</div>
-              <h3>What should I do?</h3>
-              <div class="call-source">Uses the current risk tier and verified action guidance.</div>
-              <div class="call-rule">Return safe actions. Do not invent a repair.</div>
-            </article>
+          <div class="prompt-build-flow">
+            <div class="prompt-build-row"><div class="prompt-build-step">01 · Role</div><div class="prompt-build-example">“Vehicle-maintenance decision-support assistant”</div><div class="prompt-build-reason">Keeps the response focused on a <strong>non-technical owner</strong>.</div></div>
+            <div class="prompt-build-row"><div class="prompt-build-step">02 · Task</div><div class="action-contract"><span>NOW</span><span>SERVICE TIMING</span><span>STOP DRIVING AND SEEK HELP IF</span><span>TELL THE MECHANIC</span></div><div class="prompt-build-reason">Turns one broad question into <strong>four clear decisions</strong>.</div></div>
           </div>
-          <div class="report-definition"><b>Hallucination</b> generated content that is nonsensical or unfaithful to the provided source. <span>Ji et al., 2023</span></div>
         </div>
 
         <div class="report-stage" data-report-stage="2">
-          <div class="real-case-comparison">
-            <aside class="real-case-facts">
-              <h3>Cooling evidence</h3>
-              <div class="case-fact-list">
-                <div><span>Risk</span><b>Medium</b></div>
-                <div><span>Confidence</span><b>84.2%</b></div>
-                <div><span>Coolant</span><b>85°C</b></div>
-                <div><span>Rise rate</span><b>5.05°C/min</b></div>
-              </div>
-            </aside>
-            <div class="version-stack">
-              <article class="version-card">
-                <div><div class="method-num">Without retrieval</div><h3>Unsupported certainty</h3></div>
-                <blockquote>“Failure could occur in about five more drive cycles.” “The fan may be faulty and need replacement.”</blockquote>
-              </article>
-              <article class="version-card grounded">
-                <div><div class="method-num">With RAG</div><h3>Bounded explanation</h3></div>
-                <blockquote>“The evidence is <strong>limited</strong>; it could also <strong>indicate</strong> early signs of sensor drift or minor airflow restriction that <strong>does not yet confirm a mechanical fault</strong>.”</blockquote>
-              </article>
-            </div>
+          <div class="prompt-build-flow">
+            <div class="prompt-build-row"><div class="prompt-build-step">03 · Constraints</div><div class="prompt-build-example">“Plain language · current risk · supported facts”</div><div class="prompt-build-reason">Controls <strong>wording, urgency and factual scope</strong>.</div></div>
+            <div class="prompt-build-row has-edge-example"><div class="prompt-build-step">04 · Edge cases + examples</div><div class="prompt-build-example">“If knowledge conflicts, ask a mechanic to verify the evidence.”</div><div class="edge-example-pair"><span class="edge-bad">AVOID · Replace the mass airflow sensor.</span><span class="edge-good">USE · Verify the intake-temperature evidence first.</span></div><div class="prompt-build-reason">The rule defines the response; examples make its <strong>boundary concrete</strong>.</div></div>
           </div>
         </div>
 
         <div class="report-stage" data-report-stage="3">
-          <div class="correction-flow">
-            <article class="correction-card bad">
-              <div class="method-num">Controlled unsafe answer</div>
-              <blockquote>“coolant_temp is high and the cooling fan has failed.”</blockquote>
-              <div class="correction-feedback"><span>Internal field name exposed</span><span>Unsupported confirmed failure</span><span>Explanation too short</span></div>
-            </article>
-            <div class="correction-arrow"><b>→</b><ul class="correction-instructions"><li>Use a driver-friendly signal name</li><li>Change certainty to a possibility</li><li>Explain the evidence completely</li></ul></div>
-            <article class="correction-card good">
-              <div class="method-num">Corrected by the model</div>
-              <blockquote>“The engine's coolant temperature is running higher than normal. This abnormal reading may need prompt attention to prevent overheating.”</blockquote>
-              <div class="correction-score">ALL IMPLEMENTED CHECKS PASSED</div>
-            </article>
+          <div class="validator-score-flow">
+            <article class="validator-output-card"><div class="method-num">First output</div><blockquote>“coolant_temp is high and the cooling fan has failed.”</blockquote><div class="validator-warning-list"><span>RAW FIELD · coolant_temp</span><span>CONFIRMED CLAIM · has failed</span><span>INCOMPLETE EXPLANATION</span></div></article>
+            <article class="validator-score-card"><div class="validator-score-title">Rule-based quality score</div><div class="score-ledger"><div class="score-start"><span>Start</span><span>1.00</span></div><div><span>Raw field</span><span>−0.20</span></div><div><span>“has failed”</span><span>−0.20</span></div><div><span>Too short</span><span>−0.20</span></div><div class="score-total"><span>Blocked</span><span>0.40</span></div></div></article>
+            <article class="validator-corrected-card"><div class="method-num">One targeted correction</div><div class="correction-package">Original task + failed output + exact warnings</div><blockquote>“The engine's coolant temperature is running higher than normal. This abnormal reading may need prompt attention to prevent overheating.”</blockquote><div class="validator-release">1.00 · RELEASE</div></article>
           </div>
+          <div class="report-definition"><b>Release threshold: 0.80.</b> Only the failed section is regenerated.</div>
         </div>
 
         <div class="report-stage" data-report-stage="4">
-          <div class="limit-future-map">
-            <section class="limit-column">
-              <div class="method-num">Current limitation</div>
-              <div class="limit-item"><b>Known unsafe patterns only</b></div>
-              <div class="limit-item"><b>Unseen wording may pass</b></div>
-              <div class="limit-item"><b>No real-failure semantic benchmark</b></div>
+          <div class="evidence-boundary-flow">
+            <section class="assurance-path">
+              <div class="method-num">What the implemented design provides</div>
+              <h3>Three controlled boundaries</h3>
+              <div class="assurance-steps">
+                <div class="assurance-step-box" data-step="01"><b>Relevant retrieval</b></div>
+                <div class="assurance-step-arrow">→</div>
+                <div class="assurance-step-box" data-step="02"><b>Separated prompts</b></div>
+                <div class="assurance-step-arrow">→</div>
+                <div class="assurance-step-box" data-step="03"><b>Validator</b></div>
+              </div>
             </section>
-            <div class="limit-arrows" aria-hidden="true"><span>→</span><span>→</span><span>→</span></div>
-            <section class="future-column">
-              <div class="method-num">Future work</div>
-              <div class="future-item"><b>Expand semantic rules</b></div>
-              <div class="future-item"><b>Paraphrase + adversarial tests</b></div>
-              <div class="future-item"><b>Expert-reviewed failure reports</b></div>
+            <div class="evidence-boundary-arrow">≠</div>
+            <section class="boundary-card">
+              <div class="method-num">What is not established</div>
+              <h3>A confirmed diagnosis</h3>
+              <div class="boundary-list"><div>Mechanical accuracy</div><div>Every semantic contradiction</div><div>Cross-vehicle generalisation</div></div>
+              <div class="boundary-next"><small>Next</small><strong>Technician review with confirmed-fault cases</strong></div>
             </section>
           </div>
         </div>
@@ -2668,7 +2758,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
       </div>
     </div>
     <script type="application/json" class="slide-notes">
-    {"title":"Challenge 3: From Evidence to a Safe Owner Report","script":"We have structured evidence, but the driver still needs three answers: what happened, what might cause it and what should I do? We compared pure retrieval, a Large Language Model, or LLM, alone and RAG. Retrieval is verified but fixed; the model is readable but may add unsupported claims. RAG combines verified knowledge with case-specific language. Because each question uses different evidence and rules, we generate the three answers separately. Each call sees only the inputs needed for one question and follows its own boundary, so observations, possible causes and actions are less likely to be mixed together. A failed answer can also be corrected without regenerating the other two. We then tested the same uncertain cooling case with and without retrieval. RAG connected the mixed evidence to relevant cooling-system possibilities without presenting them as a diagnosis. Every answer also passes a live validator. In a controlled correction run, the validator found three exact problems: replace the internal field name with plain language, change the confirmed fan failure into a supported possibility and complete the explanation. Those instructions were returned to the model with the original answer for one targeted rewrite. The revised answer was checked again and improved from 0.40 to 1.00. If a safe answer still cannot be generated, the original evidence is preserved and the Dashboard shows an explicit error.","notes":["LLM means Large Language Model","RAG means Retrieval-Augmented Generation","The uncertain-case excerpts come from the committed RAG versus baseline evaluation","The correction example is a controlled live validator run, not a naturally failed production report","The remaining limitation is the coverage of the current semantic rules"]}
+    {"title":"Challenge 3: From Evidence to a Safe Owner Report","script":"","notes":[]}
     </script>
   </div>
 
@@ -2703,7 +2793,6 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
         </div>
       </div>
       <div class="pipeline-question">How does the owner see the warning, understand it, and take action?</div>
-      <div class="truth-label">SOURCE · report output contract + dashboard detail view</div>
     </div>
     <script type="application/json" class="slide-notes">
     {"title":"Pipeline — Explanation Becomes Visible Action","script":"We now have more than a warning. We have three things the owner can use: what changed, what it may mean, and what to do next. That same owner-facing result now becomes the dashboard input. The final step is not another technical transformation. It is where the owner sees the warning, understands the evidence and chooses an action.","notes":["All four architecture stages are now complete","The report output becomes the dashboard input without introducing another technical concept","Transition: show the owner journey in the dashboard"]}
@@ -3019,7 +3108,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
         <div class="pipeline-columns" style="margin-top:14px;">
           <div class="pipeline-block"><div class="pipeline-block-label">DATA · RERUN</div><ul><li><strong>148 passed in 10.95 s</strong>: continuity, manifests, feature assembly, proxy stages, upload intake and injection regression.</li><li>Dataset/result artefacts: 249,694 rows; 81 trips/118 segments; 48/48 calibration audit; 14/14 graded case curves accepted from 126 observations.</li><li>Does not establish real-fault recall.</li></ul></div>
           <div class="pipeline-block"><div class="pipeline-block-label">MODEL · RERUN + ARTEFACTS</div><ul><li><strong>209 passed, 16 skipped, 3 warnings</strong> (225 collected).</li><li>Measured artefacts: 250-window MAE comparison; 165 completed synthetic runs; calibrated macro F1 0.5214 and healthy FPR 1/11.</li><li>No labelled run-to-failure validation.</li></ul></div>
-          <div class="pipeline-block"><div class="pipeline-block-label">REPORT · RERUN + REVIEW</div><ul><li><strong>78 passed in 0.95 s</strong>: interface, index, retrieval, context, generator and end-to-end contracts.</li><li>Artefacts: 2×2 retrieval study; three-scenario RAG comparison; 732-window discovery manifest and five selected current-type reports.</li><li>No automotive expert scoring; RAG quality study remains three cooling scenarios.</li></ul></div>
+          <div class="pipeline-block"><div class="pipeline-block-label">REPORT · RERUN + REVIEW</div><ul><li><strong>78 passed in 0.95 s</strong>: interface, index, retrieval, context, generator and end-to-end contracts.</li><li>Final controlled ablation: four knowledge conditions across five current anomaly fixtures, producing 20 reports under held generation settings.</li><li>Manual review assessed retrieval relevance, knowledge use, audience fit and action-role safety; no automotive expert scored diagnostic correctness.</li></ul></div>
           <div class="pipeline-block"><div class="pipeline-block-label">DASHBOARD · RERUN</div><ul><li><strong>171 passed, 1 skipped in 5.28 s</strong>: upload, provenance, UI states, What-If, export and projection display.</li><li>19 tests exercise upload orchestration with controlled substitutes; 40 cover real/mock loading; 62 cover overview/detail states.</li><li>A full live four-layer upload was not rerun here because Model/Ollama availability and latency are environment-dependent.</li></ul></div>
         </div>
       </div>
@@ -4074,7 +4163,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
               <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Grounded YAML</b><span>Five current anomaly families, causes and source-attributed actions.</span></div><div class="pipeline-flow-step"><b>Section indexing</b><span>Four documents per type: description+causes, low, medium and high actions.</span></div><div class="pipeline-flow-step"><b>Exact metadata retrieval</b><span>Known anomaly type + section + current risk level.</span></div><div class="pipeline-flow-step"><b>Prompt grounding</b><span>Only relevant explanation and risk-appropriate actions reach Granite.</span></div></div>
               <div class="pipeline-columns"><div class="pipeline-block"><div class="pipeline-block-label">CURRENT COLLECTIONS</div><ul><li><code>fault_knowledge</code>: 5 types × 4 sections = <strong>20 documents</strong>.</li><li><code>symptom_knowledge</code>: 5 types × one merged document = <strong>5 documents</strong>; retained for comparison.</li><li>The four production sections are exactly: <code>description_causes</code>, <code>actions_low</code>, <code>actions_medium</code>, <code>actions_high</code>.</li><li>Collections are deleted/rebuilt on indexing so changed source text cannot hide behind stable document IDs.</li><li>Startup validates all five interface anomaly names and exact expected document counts.</li></ul></div><div class="pipeline-block"><div class="pipeline-block-label">WHY SECTION-LEVEL MATTERS</div><ul><li>Layer 1/2 need explanation and possible causes; Layer 3 needs actions.</li><li>More importantly, Layer 3 must receive only the action tier appropriate to Low, Medium or High risk.</li><li>A merged document contains all three tiers; a semantic match could expose “stop immediately” guidance to a Low-risk report.</li><li>Section metadata makes retrieval deterministic and reduces token/attention dilution.</li><li>Adding a type changes source/index content, not prompt templates or retrieval algorithm.</li></ul></div></div>
               <div class="evidence-chips"><div class="evidence-chip"><b>20 CURRENT DOCS</b><span>fault_knowledge</span></div><div class="evidence-chip"><b>5 MERGED DOCS</b><span>symptom_knowledge</span></div><div class="evidence-chip"><b>4 SECTIONS / TYPE</b><span>risk-scoped actions</span></div><div class="evidence-chip"><b>100% META ACCURACY</b><span>historical 7-type test</span></div><div class="evidence-chip"><b>~180× FASTER</b><span>metadata vs semantic</span></div></div>
-              <div class="pipeline-disclosure"><details open><summary>Historical evolution and design decisions</summary><div class="pipeline-detail"><div class="evolution-rail"><div class="evolution-step"><b>ADR 303 · GL-111/112</b><span>ChromaDB metadata retrieval was selected, with indexing/exact filters.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>GL-114/135/136</b><span>RAG entered context injection with certainty guidance and correlation evidence.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>GL-156/166 · 7 JUL</b><span>A 2×2 metadata/semantic × section/document experiment tested the design rather than assuming it.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>INTERFACE v1.x</b><span>Seven historical types became five; indexers now validate and rebuild 20/5-document current collections.</span></div></div></div></details><details><summary>Exact historical 2×2 retrieval experiment</summary><div class="pipeline-detail"><ul><li><strong>A Meta+28:</strong> 7/7 = 100%; mean 0.341 ms.</li><li><strong>B Semantic+28:</strong> 4/7 = 57.14%; mean 61.011 ms.</li><li><strong>C Meta+7:</strong> 7/7 = 100%; mean 0.309 ms.</li><li><strong>D Semantic+7:</strong> 6/7 = 85.71%; mean 57.407 ms.</li><li>Metadata was approximately 178.8× faster under section chunking and 186.0× faster under document chunking.</li><li>The experiment used three timing trials per method and evaluation-authored symptom descriptions—not real user queries.</li></ul></div></details><details><summary>What semantic retrieval got wrong</summary><div class="pipeline-detail"><ul><li><code>electronic_throttle_tracking_fault</code> failed semantic retrieval under both chunking strategies.</li><li>Its symptom language overlapped strongly with pedal, RPM, airflow and load concepts, so embedding similarity did not preserve the exact intended type.</li><li>Section-level semantic search also missed the historical IAT/heat-soak and MAF cases, giving only 4/7 accuracy.</li><li>This is not evidence that semantic search is universally poor; it shows semantic uncertainty was unnecessary when Model already supplied an exact enum key.</li></ul></div></details><details><summary>RAG versus fine-tuning versus lookup table</summary><div class="pipeline-detail"><ul><li><strong>LLM fine-tuning:</strong> rejected for domain facts because updating sources would require retraining and source attribution would remain opaque.</li><li><strong>Hard-coded lookup output:</strong> deterministic but cannot combine live signals, confidence, correlation and owner-readable explanation flexibly.</li><li><strong>RAG:</strong> keeps knowledge external, reviewable, source-attributed and updateable while Granite performs controlled language generation.</li><li>Metadata retrieval is intentionally lookup-like for selection, but retrieved content remains richer evidence for the three-layer generator.</li></ul></div></details><details><summary>Knowledge sources and hallucination boundary</summary><div class="pipeline-detail"><ul><li>Sources include Bosch Automotive Handbook, Nissan Patrol Y62 and Mitsubishi Eclipse Cross workshop manuals, MAHLE troubleshooting, SAE DTC/technical papers, NGK/ELTA/TechASSIST and declared diagnostic references.</li><li>Huang et al. (2025) motivates grounding against faithfulness/factuality hallucination.</li><li>Retrieval reduces unsupported generation risk; it does not guarantee Granite will use every fact correctly.</li><li>The knowledge base contains project-classified urgency tiers and vehicle-general guidance—not confirmation of the uploaded vehicle's physical root cause.</li></ul></div></details><details><summary>Code and evaluation evidence</summary><div class="pipeline-detail"><ul><li><code>knowledge_indexer.py</code>: <code>create_documents_for_anomaly()</code>, <code>index_knowledge_base()</code>.</li><li><code>symptom_knowledge_indexer.py</code>: merged-document comparison collection.</li><li><code>rag_retriever.py::retrieve_all()</code> and <code>context_injection.py::build_context_with_rag()</code>.</li><li><code>retrieval_comparison.md</code> preserves the historical 7-type experiment; current code truth is five types and 20/5 documents.</li></ul></div></details></div>
+              <div class="pipeline-disclosure"><details open><summary>Historical evolution and design decisions</summary><div class="pipeline-detail"><div class="evolution-rail"><div class="evolution-step"><b>ADR 303 · GL-111/112</b><span>ChromaDB metadata retrieval was selected, with indexing/exact filters.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>GL-114/135/136</b><span>RAG entered context injection with certainty guidance and correlation evidence.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>GL-156/166 · 7 JUL</b><span>A 2×2 metadata/semantic × section/document experiment tested the design.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>INTERFACE v1.x</b><span>Seven historical types became five; indexers now validate and rebuild 20/5-document current collections.</span></div></div></div></details><details><summary>Exact historical 2×2 retrieval experiment</summary><div class="pipeline-detail"><ul><li><strong>A Meta+28:</strong> 7/7 = 100%; mean 0.341 ms.</li><li><strong>B Semantic+28:</strong> 4/7 = 57.14%; mean 61.011 ms.</li><li><strong>C Meta+7:</strong> 7/7 = 100%; mean 0.309 ms.</li><li><strong>D Semantic+7:</strong> 6/7 = 85.71%; mean 57.407 ms.</li><li>Metadata was approximately 178.8× faster under section chunking and 186.0× faster under document chunking.</li><li>The experiment used three timing trials per method and evaluation-authored symptom descriptions.</li></ul></div></details><details><summary>What semantic retrieval got wrong</summary><div class="pipeline-detail"><ul><li><code>electronic_throttle_tracking_fault</code> failed semantic retrieval under both chunking strategies.</li><li>Its symptom language overlapped strongly with pedal, RPM, airflow and load concepts, so embedding similarity did not preserve the exact intended type.</li><li>Section-level semantic search also missed the historical IAT/heat-soak and MAF cases, giving only 4/7 accuracy.</li><li>The exact Model enum made semantic uncertainty unnecessary for this interface.</li></ul></div></details><details><summary>RAG, fine-tuning and lookup table</summary><div class="pipeline-detail"><ul><li><strong>LLM fine-tuning:</strong> domain updates would require retraining and sources would be harder to inspect.</li><li><strong>Hard-coded lookup output:</strong> deterministic, with limited flexibility for combining live evidence into owner-readable language.</li><li><strong>RAG:</strong> keeps knowledge external, reviewable and updateable while Granite performs controlled language generation.</li><li>Metadata retrieval is lookup-like for selection; the retrieved content supplies richer evidence to the generator.</li></ul></div></details><details><summary>Knowledge and generation boundary</summary><div class="pipeline-detail"><ul><li>The collection uses declared automotive handbooks, workshop manuals and troubleshooting references.</li><li>Retrieval reduces unsupported generation risk, while generated claims still require validation.</li><li>The knowledge base contains vehicle-general guidance and project-classified urgency tiers.</li></ul></div></details><details><summary>Code and evaluation evidence</summary><div class="pipeline-detail"><ul><li><code>knowledge_indexer.py</code>: <code>create_documents_for_anomaly()</code>, <code>index_knowledge_base()</code>.</li><li><code>symptom_knowledge_indexer.py</code>: merged-document comparison collection.</li><li><code>rag_retriever.py::retrieve_all()</code> and <code>context_injection.py::build_context_with_rag()</code>.</li><li><code>retrieval_comparison.md</code> preserves the historical 7-type experiment; current code truth is five types and 20/5 documents.</li></ul></div></details></div>
             </div></details>
           </article>
 
@@ -4082,10 +4171,10 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
             <details class="pipeline-node-shell">
             <summary class="pipeline-node-head"><span class="pipeline-node-id">R2</span><div><h4>Three-layer Granite prompt chain</h4><p class="pipeline-node-purpose">Generate the owner-facing report in three dependent, narrowly scoped steps so observed evidence, possible explanation and recommended action remain distinguishable—and so only the action layer receives risk-specific maintenance guidance.</p></div><span class="pipeline-status">ADR 302 · GRANITE 4.1:8B</span></summary>
             <div class="pipeline-node-body">
-              <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Layer 1 · What?</b><span>Describe anomaly, signals, practical risk and available projection; no causes or repairs.</span></div><div class="pipeline-flow-step"><b>Layer 2 · Why?</b><span>Use Layer 1 + fault knowledge to propose supported, explicitly uncertain causes.</span></div><div class="pipeline-flow-step"><b>Layer 3 · What next?</b><span>Use both prior sections + only the current risk tier's actions to return 2–4 steps.</span></div><div class="pipeline-flow-step"><b>JSON fields</b><span>One exact key per call: description, cause, then action array.</span></div></div>
-              <div class="pipeline-columns"><div class="pipeline-block"><div class="pipeline-block-label">EVIDENCE VISIBILITY BY LAYER</div><ul><li><strong>All three:</strong> deterministic context, fault knowledge, certainty guidance and audience=<code>non-technical vehicle owner</code>.</li><li><strong>Layer 1:</strong> cannot add causes or repair advice; abnormality comes from context, not Granite calculation.</li><li><strong>Layer 2:</strong> also receives Layer 1, must connect possible causes to current signals and use hedging.</li><li><strong>Layer 3:</strong> also receives both prior outputs and <code>actions_knowledge</code>; this is the only layer exposed to maintenance actions.</li><li>Context wins whenever retrieved knowledge conflicts with live evidence.</li></ul></div><div class="pipeline-block"><div class="pipeline-block-label">OWNER-SAFETY RULES</div><ul><li>Translate raw names and unexplained acronyms into plain language.</li><li>Never claim a mechanical fault is confirmed; confidence controls wording strength, not diagnostic truth.</li><li>Never invent dates, mileage, cycle counts or failure probability when absent.</li><li>Low means monitor/simple checks; Medium means check soon; High means prompt inspection and avoiding heavy driving if safe.</li><li>Layer 3 must return 2–4 concrete strings and must not recommend unsafe owner procedures.</li></ul></div></div>
-              <div class="evidence-chips"><div class="evidence-chip"><b>3 CALLS</b><span>description → cause → action</span></div><div class="evidence-chip"><b>1 JSON KEY / CALL</b><span>parseable contract</span></div><div class="evidence-chip"><b>2–4 ACTIONS</b><span>owner-specific</span></div><div class="evidence-chip"><b>120 s TIMEOUT</b><span>per Ollama request</span></div><div class="evidence-chip"><b>4.85 / 5.00</b><span>ADR 302 selection score</span></div></div>
-              <div class="pipeline-disclosure"><details open><summary>Why three calls instead of one large prompt?</summary><div class="pipeline-detail"><ul><li>Each call has one semantic responsibility and one JSON key, reducing format ambiguity.</li><li>Layer 2 must explain the already-written evidence rather than silently replacing it; Layer 3 must act on both the observation and its cautious interpretation.</li><li>Separating action retrieval prevents Low/Medium/High instructions from competing in one prompt.</li><li>The cost is three local inference calls and accumulated latency; it is a controllability decision, not a throughput optimisation.</li></ul></div></details><details><summary>ADR 302 model-selection evidence</summary><div class="pipeline-detail"><ul><li>The team evaluated four local Granite candidates using weighted criteria: plain-language quality 30%, data grounding 25%, valid JSON 20%, actionability 15%, avoidance of false certainty 10%.</li><li>Scores were Granite 3.3 2B: 3.15; Granite 3.3 8B: 4.05; Granite 4.1 3B: 4.15; Granite 4.1 8B: <strong>4.85</strong>.</li><li><code>granite4.1:8b</code> was selected for the local Ollama pipeline; this compares prompt fitness on project scenarios, not general intelligence.</li><li>Local inference keeps vehicle-derived context within the running environment but still requires Ollama/model availability.</li></ul></div></details><details><summary>Prompt evolution and design rationale</summary><div class="pipeline-detail"><div class="evolution-rail"><div class="evolution-step"><b>GL-30 · ADR 301</b><span>The three-stage report decomposition was established and context boundary.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>ADR 302</b><span>Four Granite variants were scored against report-specific criteria.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>GL-139/140/148</b><span>Layer validator and quality evaluator turned prompt expectations into inspectable checks.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>GL-191/192 + GL-248</b><span>Projection, notes, input-first grounding, missing-knowledge and plain-language rules were tightened.</span></div></div></div></details><details><summary>Validator scope—important implementation truth</summary><div class="pipeline-detail"><ul><li><code>prompt_chain_validator.py</code> can inspect Layer 1 for empty/error output, raw field names, confirmation language and a 30-word minimum.</li><li>It checks Layer 2 for hedging, confirmation language and a 20-word minimum; Layer 3 for 2–4 items, ≥8 words each, High urgency and absence of Low-risk panic language.</li><li>It returns warnings and 0–1 heuristic scores; warnings do not raise.</li><li><strong>Current production <code>generate_report()</code> does not call this validator.</strong> The production acceptance gate is JSON/key presence; therefore the validator is evaluation evidence and a clear future integration task, not a live safety guarantee.</li></ul></div></details><details><summary>Code evidence</summary><div class="pipeline-detail"><ul><li><code>prompts/layer1_description.txt</code>, <code>layer2_cause.txt</code>, <code>layer3_action.txt</code>: exact task/rules/examples/JSON contracts.</li><li><code>report_generator.py::render_prompt()</code>, <code>load_prompt_template()</code>, <code>call_ollama()</code>.</li><li><code>prompt_chain_validator.py::validate_layer1()</code>, <code>validate_layer2()</code>, <code>validate_layer3()</code>.</li><li>The 2 Aug prompt-refinement corpus enumerated 732 candidate windows across all five current anomaly types, selected five representative reports, and exposed projection wording, low-risk certainty, proxy provenance, normal-signal handling and cause-overreach issues.</li><li><code>window_candidate_manifest.csv</code>, <code>selected_window_reports/</code> and <code>report_review.md</code> preserve inputs, outputs and review conclusions; 16 discovery/window/context-refinement tests passed in 0.82 s.</li></ul></div></details></div>
+              <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Layer 1 · What?</b><span>Describe anomaly, signals, practical risk and available projection.</span></div><div class="pipeline-flow-step"><b>Layer 2 · Why?</b><span>Use Layer 1 + fault knowledge to propose supported, explicitly uncertain causes.</span></div><div class="pipeline-flow-step"><b>Layer 3 · What next?</b><span>Use both prior sections + governed action knowledge to return four role-based steps.</span></div><div class="pipeline-flow-step"><b>JSON fields</b><span>One exact key per call: description, cause, then action array.</span></div></div>
+              <div class="pipeline-columns"><div class="pipeline-block"><div class="pipeline-block-label">EVIDENCE VISIBILITY BY LAYER</div><ul><li><strong>All three:</strong> deterministic context, certainty guidance and audience=<code>non-technical vehicle owner</code>.</li><li><strong>Layer 1:</strong> receives Model evidence only and translates the observed pattern.</li><li><strong>Layer 2:</strong> also receives Layer 1 and filtered cause knowledge.</li><li><strong>Layer 3:</strong> receives both prior outputs plus governed action knowledge.</li><li>Input context remains authoritative when retrieved knowledge conflicts with live evidence.</li></ul></div><div class="pipeline-block"><div class="pipeline-block-label">OWNER-SAFETY RULES</div><ul><li>Translate raw names and unexplained acronyms into plain language.</li><li>Preserve uncertainty around possible mechanical causes.</li><li>Use only supplied projection values and current risk.</li><li>Return four roles in order: Now, Service timing, Stop driving and seek help if, Tell the mechanic.</li><li>Technical checks are framed as requests for a qualified mechanic.</li></ul></div></div>
+              <div class="evidence-chips"><div class="evidence-chip"><b>3 CALLS</b><span>description → cause → action</span></div><div class="evidence-chip"><b>1 JSON KEY / CALL</b><span>parseable contract</span></div><div class="evidence-chip"><b>4 ACTION ROLES</b><span>fixed owner contract</span></div><div class="evidence-chip"><b>0.80</b><span>validator release threshold</span></div><div class="evidence-chip"><b>1 CORRECTION</b><span>failed section only</span></div></div>
+              <div class="pipeline-disclosure"><details open><summary>Why three focused calls?</summary><div class="pipeline-detail"><ul><li>Each call has one semantic responsibility and one JSON key.</li><li>Layer 2 builds on the written evidence; Layer 3 acts on the observation and cautious interpretation.</li><li>Each failed section can be corrected independently.</li><li>The trade-off is three local inference calls and accumulated latency.</li></ul></div></details><details><summary>Prompt evolution</summary><div class="pipeline-detail"><ul><li>The three-stage decomposition established separate evidence, cause and action responsibilities.</li><li>Positive and negative examples helped expose missing boundaries during development.</li><li>Example details sometimes reappeared in output, so production templates retain the lessons as explicit rules.</li><li>Action guidance was reorganised into owner and mechanic roles after controlled review.</li></ul></div></details><details><summary>Live validator scope</summary><div class="pipeline-detail"><ul><li>Each generated section is scored against layer-specific deterministic checks.</li><li>A score below 0.80 blocks release and creates exact correction instructions.</li><li>The failed section receives one targeted regeneration attempt.</li><li>A second failure returns an explicit error through the report fallback path.</li></ul></div></details><details><summary>Code evidence</summary><div class="pipeline-detail"><ul><li><code>prompts/layer1_description.txt</code>, <code>layer2_cause.txt</code>, <code>layer3_action.txt</code>: current roles, tasks, constraints, edge cases and JSON contracts.</li><li><code>report_generator.py::_correct_and_validate_layer()</code> connects validation and one targeted correction.</li><li><code>prompt_chain_validator.py::validate_layer1()</code>, <code>validate_layer2()</code>, <code>validate_layer3()</code>.</li><li>Prompt-refinement and final-ablation artefacts preserve the controlled inputs, outputs and review conclusions.</li></ul></div></details></div>
             </div></details>
           </article>
 
@@ -4094,7 +4183,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
             <summary class="pipeline-node-head"><span class="pipeline-node-id">R3</span><div><h4>Production execution, retry and graceful fallback</h4><p class="pipeline-node-purpose">Run the three dependent local-LLM calls defensively: accept parseable field-level JSON, retry transient or malformed responses, and preserve Model evidence in a schema-shaped fallback instead of crashing the Dashboard pipeline.</p></div><span class="pipeline-status">GL-241–246 · NEVER RAISES</span></summary>
             <div class="pipeline-node-body">
               <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Validate + retrieve</b><span>Any invalid input or context/RAG failure enters the outer fallback boundary.</span></div><div class="pipeline-flow-step"><b>Call each layer</b><span>Ollama Granite 4.1:8B, non-streaming, 120-second request timeout.</span></div><div class="pipeline-flow-step"><b>Parse + retry</b><span>Direct JSON first, then first “{” to last “}”; up to 3 attempts with 2-second gaps.</span></div><div class="pipeline-flow-step"><b>Assemble or preserve</b><span>All three fields succeed, otherwise return pass-through evidence with empty generated fields.</span></div></div>
-              <div class="pipeline-columns"><div class="pipeline-block"><div class="pipeline-block-label">SUCCESS PATH</div><ul><li><code>extract_json()</code> first uses <code>json.loads(response)</code>, then extracts an embedded outer object as a repair attempt.</li><li>Each layer is accepted only when parsing succeeds and its expected key exists.</li><li>Layer 2 is not called until Layer 1 succeeds; Layer 3 is not called until both earlier outputs exist.</li><li>After Layer 3, pass-through Model fields, request-local risk history and three generated fields are assembled.</li><li>No live semantic validator or final <code>ReportLayerOutput</code> Pydantic construction occurs inside this function.</li></ul></div><div class="pipeline-block"><div class="pipeline-block-label">FAILURE PATH</div><ul><li>Timeout, connection failure or absent/unparseable key triggers another attempt for that layer.</li><li>Maximum: 3 attempts per layer, 2 seconds between attempts; HTTP status and other exceptions reach the outer catch.</li><li>If any stage ultimately fails, <code>_build_empty_report()</code> keeps scores, signals, estimates, notes and risk history.</li><li>Only <code>anomaly_description</code>, <code>possible_cause</code> and <code>recommended_action</code> become empty.</li><li>The function logs the failure and promises never to raise to its caller.</li></ul></div></div>
+              <div class="pipeline-columns"><div class="pipeline-block"><div class="pipeline-block-label">SUCCESS PATH</div><ul><li><code>extract_json()</code> first uses <code>json.loads(response)</code>, then extracts an embedded outer object as a repair attempt.</li><li>Each layer is accepted only when parsing succeeds and its expected key exists.</li><li>The cleaned section passes its live layer-specific validator at ≥0.80.</li><li>Layer 2 starts after Layer 1; Layer 3 starts after both earlier sections pass.</li><li>Pass-through Model fields, request-local risk history and three generated fields are assembled.</li></ul></div><div class="pipeline-block"><div class="pipeline-block-label">FAILURE PATH</div><ul><li>Request or JSON failure uses the request retry path.</li><li>A validator score below 0.80 triggers one targeted correction for that section.</li><li>A second validation failure returns an explicit error and enters the report fallback.</li><li><code>_build_empty_report()</code> keeps Model scores, signals, estimates, notes and risk history.</li><li>The function logs the failure and does not raise to its caller.</li></ul></div></div>
               <div class="evidence-chips"><div class="evidence-chip"><b>3 ATTEMPTS</b><span>per prompt layer</span></div><div class="evidence-chip"><b>2 s BACKOFF</b><span>between attempts</span></div><div class="evidence-chip"><b>120 s</b><span>request timeout</span></div><div class="evidence-chip"><b>MODEL DATA KEPT</b><span>on fallback</span></div><div class="evidence-chip"><b>0 GENERATED FIELDS</b><span>on fallback</span></div></div>
               <div class="pipeline-disclosure"><details open><summary>Why fallback is deliberately incomplete</summary><div class="pipeline-detail"><ul><li>Inventing generic advice after a generation failure would hide the fact that grounding or generation did not complete.</li><li>Preserving Model evidence allows Dashboard to show risk/signals while treating narrative fields as unavailable.</li><li>The trade-off is that an empty report can still look structurally plausible; downstream UI must visibly distinguish “generation unavailable” from “no anomaly.”</li><li>Current fallback uses safe defaults for absent pass-through keys, so strict downstream schema validation remains valuable.</li></ul></div></details><details><summary>Failure modes a viva question may target</summary><div class="pipeline-detail"><ul><li><strong>Ollama offline:</strong> connection failures retry, then fallback.</li><li><strong>Slow model:</strong> each request has a 120-second timeout; worst-case user latency can still be large across three layers.</li><li><strong>Markdown around JSON:</strong> outer-brace extraction may recover it.</li><li><strong>Valid JSON but wrong value type:</strong> expected key is accepted here; this reveals the need for final schema/semantic validation.</li><li><strong>Layer 3 failure after Layers 1/2:</strong> current all-or-fallback policy discards both generated strings, preserving atomic report consistency.</li></ul></div></details><details><summary>Historical implementation evidence</summary><div class="pipeline-detail"><div class="evolution-rail"><div class="evolution-step"><b>SCENARIO SCRIPTS</b><span>Prompt calls and parsing first existed as evaluation helpers.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>GL-241/242</b><span>The end-to-end production function connected validated Model input to RAG and three prompts.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>GL-243/244</b><span>Retry behaviour and empty-field fallback were formalised.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>GL-245/246</b><span>Pipeline code and mocked unit coverage made the failure paths repeatable without live Ollama.</span></div></div></div></details><details><summary>Code evidence</summary><div class="pipeline-detail"><ul><li><code>report_generator.py::generate_report()</code>: outer non-raising boundary and sequential layer loops.</li><li><code>extract_json()</code>, <code>call_ollama()</code>, <code>_build_empty_report()</code>.</li><li><code>tests/test_report_generator.py</code>: success, timeout, malformed JSON, invalid input and pass-through preservation on success/fallback; 6 tests passed in 0.30 s with HTTP mocked rather than a live Ollama dependency.</li></ul></div></details></div>
             </div></details>
@@ -4102,11 +4191,11 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
 
           <article class="pipeline-node" id="reportR4">
             <details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">R4</span><div><h4>Report-quality framework and RAG-versus-baseline evidence</h4><p class="pipeline-node-purpose">Score whether generated text stays tied to sensor evidence, remains understandable and appropriately uncertain, and gives usable risk-matched actions—then manually interpret where keyword heuristics misread meaning.</p></div><span class="pipeline-status">GL-118–123 · AVG 0.93 → 0.95</span></summary>
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R4</span><div><h4>Controlled RAG ablation and manual review</h4><p class="pipeline-node-purpose">Hold the generation pipeline constant, vary only the knowledge supplied to the prompts, and inspect what retrieval changes across all five current anomaly types.</p></div><span class="pipeline-status">4 CONDITIONS · 5 TYPES · 20 REPORTS</span></summary>
             <div class="pipeline-node-body">
-              <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Fixed input</b><span>Three cooling scenarios: typical, atypical and contradictory.</span></div><div class="pipeline-flow-step"><b>Two pipelines</b><span>Baseline context-only versus the same generator with RAG context.</span></div><div class="pipeline-flow-step"><b>Four dimensions</b><span>Each heuristic starts at 1.0, subtracts rule penalties and is bounded 0–1.</span></div><div class="pipeline-flow-step"><b>Manual reading</b><span>Explain keyword penalties and identify contradictions neither pipeline handled.</span></div></div>
-              <div class="pipeline-columns"><div class="pipeline-block"><div class="pipeline-block-label">FOUR EXACT DIMENSIONS</div><ul><li><strong>Factual Grounding:</strong> values from context, cause-to-signal language and some urgency vocabulary. Huang et al.'s faithfulness hallucination motivates this dimension.</li><li><strong>Readability:</strong> raw fields/acronyms and description sentence length above 30 words. Qi et al. motivates owner-readable language.</li><li><strong>Hedging Appropriateness:</strong> hedging phrases, confirmed-fault vocabulary and definite claims. Huang et al.'s factuality hallucination motivates this dimension.</li><li><strong>Actionability:</strong> 2–4 actions, ≥10 words per item and Low/Medium/High urgency keywords. This project-specific operational dimension was added through ADR 302.</li><li>Overall is the unweighted mean of the four 0–1 scores; the documented acceptance threshold is &gt;0.7.</li></ul></div><div class="pipeline-block"><div class="pipeline-block-label">EXACT SCENARIO SCORES · FG / R / H / A</div><ul><li><strong>Typical High:</strong> baseline 1.00/1.00/1.00/1.00 = <strong>1.00</strong>; RAG 1.00/0.70/1.00/0.70 = <strong>0.85</strong>.</li><li><strong>Atypical Medium:</strong> baseline 1.00/1.00/0.60/1.00 = <strong>0.90</strong>; RAG 1.00/1.00/1.00/1.00 = <strong>1.00</strong>.</li><li><strong>Contradictory Low:</strong> baseline 1.00/1.00/0.60/1.00 = <strong>0.90</strong>; RAG 1.00/1.00/1.00/1.00 = <strong>1.00</strong>.</li><li><strong>Overall average:</strong> baseline <strong>0.93</strong>; RAG <strong>0.95</strong>.</li><li>All scenarios use <code>cooling_degradation</code>; scores show comparative prompt behaviour, not broad domain validation.</li></ul></div></div>
-              <div class="evidence-chips"><div class="evidence-chip"><b>4 DIMENSIONS</b><span>0.0–1.0 each</span></div><div class="evidence-chip"><b>3 SCENARIOS</b><span>one anomaly family</span></div><div class="evidence-chip"><b>0.93 BASELINE</b><span>mean overall</span></div><div class="evidence-chip"><b>0.95 RAG</b><span>mean overall</span></div><div class="evidence-chip"><b>+0.02</b><span>small measured gain</span></div></div>
+              <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Hold constant</b><span>Granite 4.1 8B, temperature 0, model inputs, prompt rules and validator.</span></div><div class="pipeline-flow-step"><b>Vary knowledge</b><span>Baseline, Cause RAG, Full workshop RAG and Owner-safe RAG.</span></div><div class="pipeline-flow-step"><b>Cover scope</b><span>One controlled fixture for each of the five implemented anomaly types.</span></div><div class="pipeline-flow-step"><b>Manual review</b><span>Check relevance, use, audience fit, action roles and contradictions.</span></div></div>
+              <div class="pipeline-columns"><div class="pipeline-block"><div class="pipeline-block-label">FOUR CONTROLLED CONDITIONS</div><ul><li><strong>Baseline:</strong> Model context only.</li><li><strong>Cause RAG:</strong> reviewed component descriptions and possible causes.</li><li><strong>Full workshop RAG:</strong> cause knowledge plus workshop procedures.</li><li><strong>Owner-safe RAG:</strong> owner observations and mechanic requests governed separately.</li><li>Granite 4.1 8B, temperature 0, fixtures, prompt rules and validator were held constant.</li></ul></div><div class="pipeline-block"><div class="pipeline-block-label">FINAL MANUAL-REVIEW FINDINGS</div><ul><li><strong>Cause RAG:</strong> relevant in 4/5 cases; one Cooling case was partially relevant.</li><li><strong>Full workshop RAG:</strong> audience and action-role criteria passed in 1/5 cases.</li><li><strong>Owner-safe RAG:</strong> audience and action-role criteria passed in 5/5 cases.</li><li><strong>Release:</strong> all 20 reports completed, while two High-risk fixtures retained relationship-level contradictions.</li><li>These are structured review outcomes, not diagnostic-accuracy percentages.</li></ul></div></div>
+              <div class="evidence-chips"><div class="evidence-chip"><b>4 CONDITIONS</b><span>knowledge ablation</span></div><div class="evidence-chip"><b>5 TYPES</b><span>current implemented scope</span></div><div class="evidence-chip"><b>20 REPORTS</b><span>held generation settings</span></div><div class="evidence-chip"><b>5/5 AUDIENCE</b><span>Owner-safe RAG</span></div><div class="evidence-chip"><b>5/5 ACTION</b><span>Owner-safe RAG</span></div></div>
               <div class="pipeline-disclosure"><details open><summary>Why RAG scored lower in the typical case</summary><div class="pipeline-detail"><ul><li>The RAG report gave technically specific advice—thermostat operation around 82°C, radiator, coolant and fan checks—but omitted the evaluator's expected word “soon,” losing 0.30 Actionability.</li><li>It also exposed raw <code>coolant_temp</code>, losing 0.30 Readability.</li><li>The baseline used more generic but keyword-friendly urgency language, so scored 1.00.</li><li>GL-206 added <code>SIGNAL_DISPLAY_NAMES</code> so future context uses “coolant temperature” rather than raw schema names; prompt rules were also tightened.</li><li>The honest interpretation is: RAG added useful specificity but presentation quality still needed refinement.</li></ul></div></details><details><summary>What the evaluator actually checks—and misses</summary><div class="pipeline-detail"><ul><li>Factual Grounding detects whether any description number exists and matches a context number; it does not verify every numerical claim or unit.</li><li>Readability uses a finite blacklist and regex acronym heuristic; plain language outside the list is not semantically assessed.</li><li>Hedging performs substring matching, so “no confirmed fault yet” is incorrectly penalised because it contains <code>confirmed</code>.</li><li>Actionability recognises fixed urgency words; a detailed safe action can lose points merely because it omits “soon.”</li><li>Therefore 0.95 is an automated comparison supported by manual review—not proof of factual correctness or safety.</li></ul></div></details><details><summary>Contradictory evidence remains unresolved</summary><div class="pipeline-detail"><ul><li>The contradictory fixture combines Low risk/31% confidence with abnormal coolant temperature at 108°C.</li><li>RAG hedged successfully, but neither baseline nor RAG explicitly explained why the abnormal signal and Low classification disagree.</li><li>A useful next design would detect input contradictions deterministically and require the report to surface them before possible causes.</li><li>This limitation matters more than the perfect 1.00 heuristic score in that scenario.</li></ul></div></details><details><summary>Critical self-evaluation and future work</summary><div class="pipeline-detail"><ul><li>Only three authored scenarios were tested, all cooling degradation; no real owner language or full five-type report set was evaluated.</li><li>No automotive domain expert validated causal statements, urgency tiers or maintenance actions.</li><li>Replace substring rules with semantic entailment/similarity and explicit negation handling.</li><li>Add blinded human-in-the-loop review by vehicle owners and domain experts, inter-rater agreement, all anomaly types and real/mixed inputs.</li><li>Integrate quality/schema gates into production only after deciding whether low-quality output should retry, degrade or be blocked.</li></ul></div></details><details><summary>Code and evidence</summary><div class="pipeline-detail"><ul><li><code>report_quality_evaluator.py::evaluate_factual_grounding()</code>, <code>evaluate_readability()</code>, <code>evaluate_hedging_appropriateness()</code>, <code>evaluate_actionability()</code>, <code>evaluate_report()</code>.</li><li><code>rag_baseline_comparison_table.md</code>: exact scenario and aggregate scores plus manual interpretation.</li><li><code>rag_evaluation_criteria.md</code>: Huang/Qi/ADR 302 grounding and &gt;0.7 quality threshold.</li><li>GL-119/120/121 and GL-123 preserve the evaluation design, execution artefacts and report-ready comparison.</li></ul></div></details></div>
             </div></details>
           </article>
@@ -4218,7 +4307,6 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
           <div class="data-pipeline-node output-node"><strong>4. Proxy failure diagnosis</strong><small>evidence + decision</small></div>
         </div>
         <div class="data-stage-question">We turn raw trips into evidence in four auditable stages.</div>
-        <p class="ch-source">Source · scripts 00–70 · production_features.csv · proxy_decisions.csv</p>
       </div>
 
       <div class="ch-stage active" data-ch-stage="0">
@@ -4238,7 +4326,6 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
           </div>
         </div>
         <div class="data-stage-question">We had to define the missing fault evidence ourselves.</div>
-        <p class="ch-source">Source · KIT OBD-II filenames and docs/viva/data_challenge.md</p>
       </div>
 
       <div class="ch-stage" data-ch-stage="1">
@@ -4271,7 +4358,6 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
           </div>
         </div>
         <div class="data-stage-question">The same reading means something different in a different state.</div>
-        <p class="ch-source">Source · 2017-07-05_Seat_Leon_RT_S_Stau.csv · Data-group Visual 2</p>
       </div>
 
       <div class="ch-stage" data-ch-stage="4">
@@ -4289,7 +4375,6 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
           <div class="proxy-checks"><div class="mini">14 individual checks</div><div class="check-dots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
         </div>
         <div class="data-stage-question">Grounded rules define what evidence to look for—but do they respond as designed?</div>
-        <p class="ch-source">Source · SAE J2012/J1979 · calibration_registry.v1.json · docs/viva/data_challenge.md</p>
       </div>
 
       <div class="ch-stage" data-ch-stage="3">
@@ -4321,7 +4406,6 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
           </div>
         </div>
         <div class="data-stage-question">The main path leads to a fault; failed checks exit safely.</div>
-        <p class="ch-source">Source · 50_rule_state_builder.py · 61_duration_evidence_builder.py · 70_proxy_decision_builder.py</p>
       </div>
 
       <div class="ch-stage" data-ch-stage="5">
@@ -4345,7 +4429,6 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
           <div class="severity-matrix"><div></div><b>Trip 1</b><b>Trip 2</b><b>Trip 3</b><strong>Mild</strong><i></i><i></i><i></i><strong>Moderate</strong><i></i><i></i><i></i><strong>Strong</strong><i class="on"></i><i class="on"></i><i class="on"></i></div>
           <div class="validation-summary">3 levels × 3 trips = 9 observations for each check</div>
         </div>
-        <p class="ch-source">Source · docs/viva/data_challenge.md · fault_injection_summary_20260724T205415Z.csv</p>
       </div>
 
       <div class="ch-stage" data-ch-stage="6">
@@ -4355,7 +4438,6 @@ document.querySelector('.slide[data-slide="4"]').innerHTML = `
           <div class="validation-outcome-card injected"><strong>14 / 14</strong><span>checks responded</span><small>3 / 3 trips each at strongest injection</small></div>
         </div>
         <div class="validation-boundary-main"><strong>Simulated signals ≠ real mechanical failures</strong><span>Upper section: validation method</span></div>
-        <p class="ch-source">Source · docs/viva/data_challenge.md · Stage-4 fault-injection campaign</p>
       </div>
     </div>
 
@@ -4402,6 +4484,61 @@ const slideNav = document.getElementById('slideNav');
 let pdmZoomOpen = false;
 let current = 0;
 const total = slides.length;
+let slideMapOpen = false;
+const slideMapSections = [
+  { title:'Opening', slides:[[0,'Title'],[1,'Owner warning'],[2,'Professional fleets'],[3,'Four-layer approach']] },
+  { title:'Challenge 1 · Data', slides:[[4,'Define failure'],[5,'Data → Model']] },
+  { title:'Challenge 2 · Model', slides:[[6,'Detect change'],[7,'Model → Report']] },
+  { title:'Challenge 3 · Report', slides:[[8,'Owner guidance'],[9,'Report → Dashboard']] },
+  { title:'Dashboard', slides:[[10,'Owner journey']] },
+  { title:'Closing', slides:[[11,'What we built'],[12,'Evidence boundary'],[13,'Future work']] },
+];
+
+function buildSlideMap() {
+  const root = document.getElementById('slideMapGroups');
+  root.innerHTML = '';
+  slideMapSections.forEach((section) => {
+    const group = document.createElement('section');
+    group.className = 'slide-map-group';
+    const heading = document.createElement('h3');
+    heading.textContent = section.title;
+    const list = document.createElement('div');
+    list.className = 'slide-map-list';
+    section.slides.forEach(([index,label]) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'slide-map-item';
+      button.dataset.slideMapIndex = String(index);
+      button.innerHTML = `<span>${String(index + 1).padStart(2,'0')}</span><span>${label}</span>`;
+      button.addEventListener('click', () => {
+        closeSlideMap();
+        if (index !== current) goTo(index);
+      });
+      list.appendChild(button);
+    });
+    group.append(heading,list);
+    root.appendChild(group);
+  });
+}
+
+function openSlideMap() {
+  const overlay = document.getElementById('slideMapOverlay');
+  overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden','false');
+  slideMapOpen = true;
+  updateUI();
+  const active = overlay.querySelector('.slide-map-item.active');
+  if (active) active.focus();
+}
+
+function closeSlideMap() {
+  const overlay = document.getElementById('slideMapOverlay');
+  overlay.classList.remove('open');
+  overlay.setAttribute('aria-hidden','true');
+  slideMapOpen = false;
+}
+
+function toggleSlideMap() { slideMapOpen ? closeSlideMap() : openSlideMap(); }
 
 function openPdmZoom(figure) {
   const img = figure.querySelector('img');
@@ -4435,6 +4572,10 @@ function updateUI() {
   progress.style.width = ((current + 1) / total * 100) + '%';
   counter.textContent = `${current + 1} / ${total}`;
   document.querySelectorAll('.slide-nav-dot').forEach((d, i) => d.classList.toggle('active', i === current));
+  document.querySelectorAll('[data-slide-map-index]').forEach((item) => item.classList.toggle('active', Number(item.dataset.slideMapIndex) === current));
+  const section = slideMapSections.find((entry) => entry.slides.some(([index]) => index === current));
+  const locator = document.getElementById('slideMapCurrent');
+  if (locator) locator.textContent = `${String(current + 1).padStart(2,'0')} / ${String(total).padStart(2,'0')} · ${section ? section.title : 'Slide'}`;
 }
 
 function goTo(index) {
@@ -4487,6 +4628,10 @@ document.addEventListener('webkitfullscreenchange', updateFullscreenControl);
 
 document.addEventListener('keydown', (e) => {
   if (document.activeElement && document.activeElement.isContentEditable) return;
+  if (slideMapOpen) {
+    if (e.key === 'Escape' || e.key.toLowerCase() === 'g') { e.preventDefault(); closeSlideMap(); }
+    return;
+  }
   if (pdmZoomOpen) {
     if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -4495,6 +4640,7 @@ document.addEventListener('keydown', (e) => {
     return;
   }
   if (backupOpen) return;
+  if (e.key.toLowerCase() === 'g') { e.preventDefault(); openSlideMap(); return; }
   if (e.key.toLowerCase() === 'f') { e.preventDefault(); toggleFullscreen(); return; }
   if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
   if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
@@ -4520,6 +4666,7 @@ document.addEventListener('wheel', (e) => {
   else prev();
 }, { passive: true });
 
+buildSlideMap();
 updateUI();
 updateFullscreenControl();
 
@@ -4692,11 +4839,11 @@ function resetModel() {
 let reportCurrent = 0;
 const reportTotal = 5;
 const reportLabels = [
-  'Choose how to translate evidence',
-  'One question per focused call',
-  'Test the same case with and without retrieval',
-  'Correct unsafe wording before delivery',
-  'Current limitation → future work'
+  'Combine Granite with traceable knowledge',
+  'Define the audience and decisions (Call 3 · What should I do next?)',
+  'Control the language and edge cases (Call 3 · What should I do next?)',
+  'Correct a failed section before release',
+  'State the evidence boundary'
 ];
 
 function renderReport() {
