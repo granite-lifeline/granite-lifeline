@@ -94,6 +94,18 @@ versions):
 pip install -r model_layer/ttm-related/requirements.txt
 ```
 
+Optionally pre-cache the base TTM model from Hugging Face (otherwise it
+downloads on first detector run):
+
+```
+python model_layer/ttm-related/src/model/download_ttm.py
+```
+
+This exits non-zero if the download/import fails, so a broken
+environment (wrong Python version, missing `granite-tsfm`, no network
+access) is caught immediately instead of surfacing later as a
+detector-time failure.
+
 ## Running the detector
 
 From the repository root, pointing at a feature CSV produced by the
@@ -226,6 +238,22 @@ cycles. Neither is a remaining-useful-life estimate or a calibrated
 probability of mechanical failure — KIT supplies no labelled failure
 times, so nothing here is fitted to observed failures. Every emitted
 estimate carries that statement in the output `notes`.
+
+Single-window runs and `--batch` sweeps source that history
+differently:
+
+- **Single-window mode** projects from the one persisted
+  `--history-file`, shared across all runs and both the primary result
+  and `secondary_risk`.
+- **`--batch` mode** builds an independent risk-history and trend line
+  per component/anomaly type — primary and `secondary_risk` alike —
+  purely from the windows inside that sweep
+  (`component_histories_from_batch` /
+  `add_component_estimates_to_batch` in `kit_residual_detector.py`).
+  A component that appears in fewer than five windows of the sweep, or
+  whose trend is flat/falling, gets `null` estimates independently of
+  every other component — one noisy or short-lived component does not
+  drag down another's projection, and vice versa.
 
 ## Output format
 
