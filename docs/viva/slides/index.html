@@ -1227,13 +1227,16 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .assurance-path { min-height:350px; padding:30px 32px; border-radius:20px; color:#fff; background:linear-gradient(150deg,#0b2a60,#1763c6); box-shadow:0 22px 54px rgba(16,46,98,.18); }
 .assurance-path h3,.boundary-card h3 { margin:13px 0 22px; font-size:clamp(28px,2.2vw,36px); text-align:center; }
 .assurance-steps { display:grid; grid-template-columns:1fr 34px 1fr 34px 1fr; align-items:stretch; }
-.assurance-step-box { min-height:190px; padding:20px 17px; display:flex; flex-direction:column; justify-content:center; border-radius:13px; background:rgba(255,255,255,.11); text-align:center; }
-.assurance-step-box b { color:#fff; font-size:clamp(20px,1.55vw,25px); line-height:1.25; }
+.assurance-step-box { position:relative; min-height:220px; padding:42px 17px 24px; overflow:hidden; display:flex; flex-direction:column; justify-content:center; border:1px solid rgba(255,255,255,.14); border-radius:13px; background:linear-gradient(155deg,rgba(255,255,255,.18),rgba(255,255,255,.08)); text-align:center; }
+.assurance-step-box::before { content:attr(data-step); position:absolute; top:14px; left:16px; color:#9fc2ff; font:900 15px/1 var(--font-mono); letter-spacing:.05em; }
+.assurance-step-box b { color:#fff; font-size:clamp(22px,1.7vw,28px); line-height:1.22; }
 .assurance-step-arrow { display:grid; place-items:center; color:#9fc2ff; font:850 23px/1 var(--font-mono); }
 .boundary-card { min-height:350px; padding:30px 32px; border-radius:20px; background:linear-gradient(145deg,#fff,#fff5f5); border:1px solid rgba(218,30,40,.2); box-shadow:0 18px 46px rgba(20,50,100,.08); }
 .boundary-list { display:grid; gap:11px; }
-.boundary-list div { padding:14px 16px; border-left:5px solid var(--accent-red); background:rgba(218,30,40,.055); color:var(--danger-text); font-size:17px; font-weight:750; }
-.boundary-next { margin-top:23px; padding:15px 17px; border:2px solid var(--accent-blue); border-radius:10px; background:rgba(15,98,254,.07); color:var(--accent-blue); font:900 16px/1.35 var(--font-mono); text-transform:uppercase; text-align:center; }
+.boundary-list div { padding:14px 16px; border-left:5px solid var(--accent-red); background:rgba(218,30,40,.055); color:var(--danger-text); font-size:17px; font-weight:750; text-align:center; }
+.boundary-next { margin-top:23px; padding:13px 17px 15px; border:2px solid var(--accent-blue); border-radius:10px; background:rgba(15,98,254,.07); color:var(--accent-blue); text-align:center; }
+.boundary-next small { display:block; margin-bottom:7px; font:900 11px/1 var(--font-mono); letter-spacing:.1em; text-transform:uppercase; }
+.boundary-next strong { display:block; color:var(--text); font-size:18px; line-height:1.28; }
 .evidence-boundary-arrow { display:grid; place-items:center; color:var(--accent-blue); font:850 31px/1 var(--font-mono); }
 @media (max-width:1050px) {
   .report-story-layout { grid-template-columns:1fr; }
@@ -2705,15 +2708,6 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
         </div>
 
         <div class="report-stage" data-report-stage="3">
-          <div class="prompt-example-stage">
-            <article class="prompt-quote bad"><div class="method-num">Negative example · intake-temperature sensor flag</div><blockquote>“Replace the mass airflow sensor.”</blockquote></article>
-            <div class="prompt-example-arrow">→</div>
-            <article class="prompt-quote good"><div class="method-num">Positive example · same evidence</div><blockquote>“Tell the mechanic: verify the intake-temperature evidence before deciding what work is needed.”</blockquote></article>
-          </div>
-          <div class="prompt-learning"><div>Fictional example detail appeared in a generated report</div><div class="prompt-learning-arrow">→</div><div>Keep the lesson as an explicit rule + Validator check</div></div>
-        </div>
-
-        <div class="report-stage" data-report-stage="4">
           <div class="validator-score-flow">
             <article class="validator-output-card"><div class="method-num">First output</div><blockquote>“coolant_temp is high and the cooling fan has failed.”</blockquote><div class="validator-warning-list"><span>RAW FIELD · coolant_temp</span><span>CONFIRMED CLAIM · has failed</span><span>INCOMPLETE EXPLANATION</span></div></article>
             <article class="validator-score-card"><div class="validator-score-title">Rule-based quality score</div><div class="score-ledger"><div class="score-start"><span>Start</span><span>1.00</span></div><div><span>Raw field</span><span>−0.20</span></div><div><span>“has failed”</span><span>−0.20</span></div><div><span>Too short</span><span>−0.20</span></div><div class="score-total"><span>Blocked</span><span>0.40</span></div></div></article>
@@ -2722,17 +2716,17 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
           <div class="report-definition"><b>Release threshold: 0.80.</b> Only the failed section is regenerated.</div>
         </div>
 
-        <div class="report-stage" data-report-stage="5">
+        <div class="report-stage" data-report-stage="4">
           <div class="evidence-boundary-flow">
             <section class="assurance-path">
               <div class="method-num">What the implemented design provides</div>
               <h3>Three controlled boundaries</h3>
               <div class="assurance-steps">
-                <div class="assurance-step-box"><b>Relevant retrieval</b></div>
+                <div class="assurance-step-box" data-step="01"><b>Relevant retrieval</b></div>
                 <div class="assurance-step-arrow">→</div>
-                <div class="assurance-step-box"><b>Separated prompts</b></div>
+                <div class="assurance-step-box" data-step="02"><b>Separated prompts</b></div>
                 <div class="assurance-step-arrow">→</div>
-                <div class="assurance-step-box"><b>Validator</b></div>
+                <div class="assurance-step-box" data-step="03"><b>Validator</b></div>
               </div>
             </section>
             <div class="evidence-boundary-arrow">≠</div>
@@ -2740,7 +2734,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
               <div class="method-num">What is not established</div>
               <h3>A confirmed diagnosis</h3>
               <div class="boundary-list"><div>Mechanical accuracy</div><div>Every semantic contradiction</div><div>Cross-vehicle generalisation</div></div>
-              <div class="boundary-next">Next · technician review · confirmed-fault cases</div>
+              <div class="boundary-next"><small>Next</small><strong>Technician review with confirmed-fault cases</strong></div>
             </section>
           </div>
         </div>
@@ -2753,7 +2747,6 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
           <div class="ch-dot" data-report-dot="2" onclick="reportGoTo(2)"></div>
           <div class="ch-dot" data-report-dot="3" onclick="reportGoTo(3)"></div>
           <div class="ch-dot" data-report-dot="4" onclick="reportGoTo(4)"></div>
-          <div class="ch-dot" data-report-dot="5" onclick="reportGoTo(5)"></div>
         </div>
         <button class="ch-nav-btn primary" id="reportNextBtn" onclick="reportNext()">Next &rarr;</button>
       </div>
@@ -4838,12 +4831,11 @@ function resetModel() {
    Evidence + knowledge → grounded owner report.
    =========================================== */
 let reportCurrent = 0;
-const reportTotal = 6;
+const reportTotal = 5;
 const reportLabels = [
-  'Choose a traceable starting design',
+  'Combine Granite with traceable knowledge',
   'Define the audience and decisions (Call 3 · What should I do next?)',
   'Control the language and edge cases (Call 3 · What should I do next?)',
-  'Use examples to make the boundary concrete',
   'Correct a failed section before release',
   'State the evidence boundary'
 ];
