@@ -106,6 +106,55 @@ class ValidationResult:
     score: float  # 0.0-1.0
 
 
+def apply_high_risk_projection_consistency(
+    validation: ValidationResult,
+    output: Any,
+    risk_level: str,
+) -> ValidationResult:
+    """Block future High-threshold wording when risk is already High.
+
+    Projection fields can remain in the cross-layer payload because they use
+    trip-history aggregation, but owner-facing language must follow the current
+    component classification. Once that classification is High, saying that it
+    will reach or cross High in a future trip is self-contradictory.
+    """
+    if str(risk_level).lower() != "high":
+        return validation
+
+    if isinstance(output, list):
+        text = " ".join(str(item) for item in output)
+    else:
+        text = str(output)
+    lower = text.lower()
+
+    future_high_patterns = (
+        re.compile(
+            r"\b(?:will|may|could|expected to|projected to)\b.{0,50}"
+            r"\b(?:reach|cross|enter)\b.{0,25}"
+            r"\bhigh(?:-risk| risk)?\b"
+        ),
+        re.compile(
+            r"\bhigh(?:-risk| risk)?(?: threshold)?\b.{0,35}"
+            r"\b(?:within|in|after|around)\b.{0,20}"
+            r"\b(?:trip|drive cycle)s?\b"
+        ),
+        re.compile(
+            r"\b(?:reach|cross(?:ing)?(?: into)?|enter)\b.{0,30}"
+            r"\bhigh(?:-risk| risk)?\b.{0,35}"
+            r"\b(?:trip|drive cycle)s?\b"
+        ),
+    )
+    if any(pattern.search(lower) for pattern in future_high_patterns):
+        validation.warnings.append(
+            "Current classification is already High risk; do not describe "
+            "a future crossing of the High-risk threshold or give trips "
+            "until High risk"
+        )
+        validation.score = max(0.0, validation.score - 0.4)
+        validation.passed = False
+    return validation
+
+
 def validate_layer1(output: str) -> ValidationResult:
     """
     Validate Layer 1 (anomaly_description) output.
@@ -541,9 +590,15 @@ def validate_chain(
     Returns:
         List of three ValidationResult objects
     """
-    result1 = validate_layer1(layer1)
-    result2 = validate_layer2(layer2, layer1)
-    result3 = validate_layer3(layer3, risk_level)
+    result1 = apply_high_risk_projection_consistency(
+        validate_layer1(layer1), layer1, risk_level
+    )
+    result2 = apply_high_risk_projection_consistency(
+        validate_layer2(layer2, layer1), layer2, risk_level
+    )
+    result3 = apply_high_risk_projection_consistency(
+        validate_layer3(layer3, risk_level), layer3, risk_level
+    )
 
     return [result1, result2, result3]
 
