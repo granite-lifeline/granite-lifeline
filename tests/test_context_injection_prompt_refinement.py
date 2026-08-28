@@ -31,12 +31,14 @@ def _model_output(**overrides):
 
 
 def test_build_context_suppresses_high_to_high_threshold_projection():
-    context = build_context(_model_output())
+    context = build_context(
+        _model_output(estimated_cycles_to_failure=4)
+    )
 
     assert "Failure probability: 0.31%" not in context
-    assert "current classification is already High risk" in context
-    assert "do not describe a later crossing" in context
-    assert "Estimated cycles to failure: unavailable" in context
+    assert "Estimated cycles to failure: 4" not in context
+    assert "already reached High risk" in context
+    assert "Do not quote or describe either" in context
     assert "Failure probability: 0%" not in context
 
 
