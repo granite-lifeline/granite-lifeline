@@ -348,3 +348,56 @@ class TestValidateChain:
             GOOD_LAYER1, GOOD_LAYER2, GOOD_LAYER3, "High"
         )
         assert all(r.passed for r in results)
+
+    def test_high_risk_cause_cannot_predict_crossing_high_threshold(self):
+        cause = (
+            "This pattern could be related to restricted coolant flow. "
+            "There is a 0.31% chance of crossing into High risk within "
+            "the next 10 trips."
+        )
+
+        results = validate_chain(
+            GOOD_LAYER1, cause, GOOD_LAYER3, "High"
+        )
+
+        assert not results[1].passed
+        assert results[1].score < 0.8
+        assert any(
+            "already High risk" in warning
+            for warning in results[1].warnings
+        )
+
+    def test_high_risk_action_cannot_give_trips_until_high_risk(self):
+        actions = list(GOOD_LAYER3)
+        actions[1] = (
+            "Service timing: High risk is expected around trip 4, so "
+            "arrange a professional inspection before then."
+        )
+
+        results = validate_chain(
+            GOOD_LAYER1, GOOD_LAYER2, actions, "High"
+        )
+
+        assert not results[2].passed
+        assert results[2].score < 0.8
+        assert any(
+            "already High risk" in warning
+            for warning in results[2].warnings
+        )
+
+    def test_medium_risk_can_describe_a_future_high_threshold(self):
+        observation = (
+            "The current readings show a rising cooling-system risk "
+            "pattern across recent trips. If the trend continues, it "
+            "may reach High risk in about four trips."
+        )
+
+        results = validate_chain(
+            observation, GOOD_LAYER2, GOOD_LAYER3, "Medium"
+        )
+
+        assert not any(
+            "already High risk" in warning
+            for result in results
+            for warning in result.warnings
+        )

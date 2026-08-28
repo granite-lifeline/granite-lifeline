@@ -31,6 +31,7 @@ from report_layer.pipeline.context_injection import (  # noqa: E402
 )
 from report_layer.pipeline.prompt_chain_validator import (  # noqa: E402
     ValidationResult,
+    apply_high_risk_projection_consistency,
     format_validation_summary,
     validate_chain,
     validate_layer1,
@@ -605,10 +606,14 @@ def _validate_layer_value(
 ) -> ValidationResult:
     """Run the relevant live quality checks for one generated layer."""
     if layer_num == 1:
-        return validate_layer1(str(value))
-    if layer_num == 2:
-        return validate_layer2(str(value), layer1_output)
-    return validate_layer3(value, risk_level)
+        validation = validate_layer1(str(value))
+    elif layer_num == 2:
+        validation = validate_layer2(str(value), layer1_output)
+    else:
+        validation = validate_layer3(value, risk_level)
+    return apply_high_risk_projection_consistency(
+        validation, value, risk_level
+    )
 
 
 def _apply_signal_direction_check(

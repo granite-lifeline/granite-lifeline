@@ -482,24 +482,28 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
             f"{risk_level.lower()}-risk pattern."
         )
 
-    # Add Failure Projection section if prediction fields are present
+    # Add projection evidence only while the component is below High risk.
+    # The fields remain in the interface for audit, but a later crossing of
+    # the High threshold is not meaningful owner guidance once the current
+    # classification has already reached High.
     failure_prob = ttm_output.estimated_failure_probability
     cycles_to_failure = ttm_output.estimated_cycles_to_failure
     if failure_prob is not None or cycles_to_failure is not None:
         context_lines.append("")
-        context_lines.append("Failure Projection:")
-        if failure_prob is not None:
-            if risk_level.lower() == "high":
-                context_lines.append(
-                    "- Threshold-crossing probability is not shown because "
-                    "the current classification is already High risk."
-                )
-                context_lines.append(
-                    "- Consistency caution: base owner guidance on current "
-                    "High risk and ask for professional verification; do not "
-                    "describe a later crossing of the same threshold."
-                )
-            else:
+        if risk_level.lower() == "high":
+            context_lines.append("Current Risk Context:")
+            context_lines.append(
+                "- The current classification has already reached High "
+                "risk. Base owner guidance on the current state and ask "
+                "for professional verification."
+            )
+            context_lines.append(
+                "- Do not quote or describe either future High-threshold "
+                "projection field in the owner-facing report."
+            )
+        else:
+            context_lines.append("Failure Projection:")
+            if failure_prob is not None:
                 context_lines.append(
                     f"- Failure probability: "
                     f"{_format_probability(failure_prob)}"
@@ -510,16 +514,16 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
                     "prediction horizon; not a calibrated probability of "
                     "mechanical failure."
                 )
-        if cycles_to_failure is not None:
-            context_lines.append(
-                f"- Estimated cycles to failure: "
-                f"{cycles_to_failure} drive cycles"
-            )
-        else:
-            context_lines.append(
-                "- Estimated cycles to failure: unavailable for this "
-                "window."
-            )
+            if cycles_to_failure is not None:
+                context_lines.append(
+                    f"- Estimated cycles to failure: "
+                    f"{cycles_to_failure} drive cycles"
+                )
+            else:
+                context_lines.append(
+                    "- Estimated cycles to failure: unavailable for this "
+                    "window."
+                )
 
     has_proxy_provenance = any(
         any(marker in note for marker in PROXY_PROVENANCE_MARKERS)
