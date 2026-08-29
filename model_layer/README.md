@@ -221,10 +221,10 @@ they are not evidence of performance on real vehicle faults.
 ## Failure estimation
 
 `estimated_cycles_to_failure` and `estimated_failure_probability` are
-projected from the accumulated risk-score history. Detector-window
-risk scores are aggregated into per-trip means, a least-squares line
-is fitted across chronological trips, and the crossing point with the
-High-risk threshold is reported.
+projected from chronological risk-score histories whose source depends
+on the runtime mode. Detector-window risk scores are aggregated into
+per-trip means, a least-squares line is fitted across chronological
+trips, and the crossing point with the High-risk threshold is reported.
 
 ```
 python model_layer/ttm-related/src/model/failure_estimation.py \
@@ -232,12 +232,15 @@ python model_layer/ttm-related/src/model/failure_estimation.py \
     --json-output /tmp/estimate.json --markdown-output /tmp/estimate.md
 ```
 
-Both fields are `null` when fewer than five trips of history exist,
-when the trend is flat or falling, or when the projection exceeds 50
-cycles. Neither is a remaining-useful-life estimate or a calibrated
-probability of mechanical failure — KIT supplies no labelled failure
-times, so nothing here is fitted to observed failures. Every emitted
-estimate carries that statement in the output `notes`.
+Both fields are `null` only when fewer than five chronological trips are
+available. For a flat or falling trend, or when the projected crossing
+lies beyond 50 trips, `estimated_cycles_to_failure` is `null` while
+`estimated_failure_probability` still reports the model-based probability
+of crossing the High-risk line within the next ten trips. Neither is a
+remaining-useful-life estimate or a calibrated probability of mechanical
+failure — KIT supplies no labelled failure times, so nothing here is fitted
+to observed failures. Every emitted estimate carries that statement in the
+output `notes`.
 
 Single-window runs and `--batch` sweeps source that history
 differently:
@@ -250,10 +253,12 @@ differently:
   purely from the windows inside that sweep
   (`component_histories_from_batch` /
   `add_component_estimates_to_batch` in `kit_residual_detector.py`).
-  A component that appears in fewer than five windows of the sweep, or
-  whose trend is flat/falling, gets `null` estimates independently of
-  every other component — one noisy or short-lived component does not
-  drag down another's projection, and vice versa.
+  A component that appears in fewer than five chronological trips of the
+  sweep gets both estimates as `null`. For a flat/falling trend, only its
+  cycle estimate is `null`; its ten-trip crossing probability is still
+  reported. Each component is estimated independently — one noisy or
+  short-lived component does not drag down another's projection, and vice
+  versa.
 
 ## Output format
 

@@ -15,11 +15,13 @@ very low sensitivity to the current MAF-under-read scenarios.  This is an
 evaluation of synthetic perturbations, not evidence of performance on real
 vehicle faults.
 
-The other two executable anomaly types are **not Model Layer responsibilities**:
-`intake_air_temperature_sensor_or_heat_soak_fault` and
+The remaining two runtime anomaly types are Data-scored and Model-forwarded.
+`intake_air_temperature_sensor_fault` and
 `map_load_signal_plausibility_fault` are determined by the Data Layer's
-rule-based proxy decisions and are connected directly by the Data Layer to the
-final output.  They are deliberately excluded from the TTM metrics below.
+rule-based proxy decisions. The Model Layer validates, maps, and forwards those
+verdicts, their confidence, and DTC context into the shared output without
+recomputing their physical rules. They are excluded from the TTM detection
+metrics below because they are not TTM-scored types.
 
 ## Model and evaluation design
 
@@ -28,24 +30,28 @@ final output.  They are deliberately excluded from the TTM metrics below.
 - Input: held-out validation segments from
   `production_features.csv`; 11 segments were usable and one was skipped
   because it lacked enough post-warmup rows.
-- Window: 512 healthy context rows followed by 96 future rows.
+- Window: 512 quality-gated, unmodified context rows followed by 96 future
+  rows.
 - Injection: the future portion only was perturbed using schema-v1-aware
   cooling-offset, MAF-gain-drift, and pedal-channel-disagreement scenarios.
 - Hit definition: the detector must raise an alarm and select the injected
   anomaly type. A wrong type is not counted as a hit.
 
 The raw per-window results are in
-`synthetic_eval_results_e5_lr5e-5.json`.  The injection functions propagate
-changes through the delivered derived features using the frozen Data Layer
-feature transforms; they do not encode the detector's decision thresholds.
+`model_layer/ttm-related/outputs/synthetic_eval_results_e5_lr5e-5.json`. The
+injection functions propagate changes through the delivered derived features
+using the frozen Data Layer feature transforms; they do not encode the
+detector's decision thresholds.
 
 ## Risk-level calibration
 
-The original alarm line was `risk_score >= 0.30`.  A reproducible threshold
+The original alarm line was `risk_score >= 0.30`. A reproducible threshold
 sweep over synthetic results selected `risk_score >= 0.4129` as the Medium
-(alarm) boundary: it maximises macro F1 among candidate lines with a healthy
-false-positive rate (FPR) no greater than 10% on a deterministic
-segment-level calibration subset.  `risk_score >= 0.90` is labelled High.
+(alarm) boundary: it maximises macro F1 among candidate lines with an
+unchanged-control false-positive rate (FPR) no greater than 10% on a
+deterministic segment-level calibration subset. `risk_score >= 0.90` is the
+High boundary: a conservative near-maximum-evidence presentation boundary,
+not a threshold calibrated from mechanical-failure probabilities.
 
 | Risk score | Output level | Action |
 |---|---|---|
@@ -53,8 +59,9 @@ segment-level calibration subset.  `risk_score >= 0.90` is labelled High.
 | `0.4129–<0.90` | Medium | Inspection alarm |
 | `>= 0.90` | High | Priority inspection alarm |
 
-The policy is stored in `ttm-related/config/risk_level_calibration.v1.json`.
-It is separate from, and does not modify,
+The policy is stored in
+`model_layer/ttm-related/config/risk_level_calibration.v1.json`. It is separate
+from, and does not modify,
 `data_layer/calibration/calibration_registry.v1.json`: the latter remains the
 frozen owner of physical proxy rules and feature transforms.
 
@@ -88,15 +95,18 @@ For each fault type separately, the counts and metrics are:
 | Recall | Of the injected cases of this type, how many were found correctly? | `TP / (TP + FN)` |
 | F1 | A single number that is high only when both precision and recall are high. | `2 × Precision × Recall / (Precision + Recall)` |
 
-The **healthy false-positive rate (FPR)** answers a different question:
+The **unchanged-control false-positive rate (reported as
+`healthy_false_positive_rate` in the formal metrics artifact)** answers a
+different question:
 
 ```text
-healthy FPR = healthy windows that raised any alarm / all healthy windows
+unchanged-control FPR = unchanged control windows that raised any alarm
+                        / all unchanged control windows
 ```
 
-For this calibrated result it is `1 / 11 = 0.091`: one of the eleven healthy
-segments raised an alarm.  It does **not** mean there is a 9.1% probability of
-a real vehicle fault.
+For this calibrated result it is `1 / 11 = 0.091`: one of the eleven unchanged
+baseline segments raised an alarm. It does **not** mean there is a 9.1%
+probability of a real vehicle fault.
 
 The macro F1 gives each of the three Model Layer fault types equal weight,
 regardless of how many synthetic cases each has:
@@ -142,21 +152,23 @@ Additional summaries at the calibrated line:
 
 - Micro F1: **0.541**
 - Exact hit rate: **0.390**
-- Healthy FPR: **0.091** (1 alarm in 11 healthy segments)
+- Unchanged-control FPR: **0.091** (1 alarm in 11 unchanged baseline segments)
 
 For comparison, the former `0.30` alarm line had macro F1 **0.533**, exact
-hit rate **0.455**, and healthy FPR **0.273** (3 alarms in 11 healthy
-segments).  Raising the line therefore reduced healthy alarms, but it also
-suppressed some weak pedal detections.  This is a stated trade-off, not a
+hit rate **0.455**, and unchanged-control FPR **0.273** (3 alarms in 11
+unchanged baseline segments). Raising the line therefore reduced
+unchanged-control alarms, but it also suppressed some weak pedal detections.
+This is a stated trade-off, not a
 claim of universal improvement.
 
 ## Calibration hold-out check
 
 Eight segments selected the alarm line and three segments were held out from
-that choice.  The selected line produced no healthy alarms in the calibration
-subset, but one of the three held-out healthy segments had `risk_score = 1.0`.
-Consequently, held-out healthy FPR was 1/3.  No threshold at or below 1.0 can
-remove that particular alarm without disabling every possible detection.
+that choice. The selected line produced no unchanged-control alarms in the
+calibration subset, but one held-out unchanged control segment had
+`risk_score = 1.0`. Consequently, held-out unchanged-control FPR was 1/3. No
+threshold at or below 1.0 can remove that particular alarm without disabling
+every possible detection.
 
 This reveals a remaining detector/scoring problem: changing only the
 Low/Medium/High line cannot eliminate all false positives.  The published
@@ -164,10 +176,18 @@ policy is therefore explicitly provisional.
 
 ## Failure-estimation method and demonstration
 
+The final runtime has two distinct history paths:
+
+- In final `--batch` operation, primary and `secondary_risk` entries form
+  independent component-specific histories from the windows in the current
+  sweep. Window scores are averaged per trip before one trend is fitted per
+  component.
+- In single-window mode, the persisted `--history-file` provides one history,
+  so primary and secondary outputs share that projection.
+
 `estimated_cycles_to_failure` is a **risk-threshold-crossing projection**, not
-a prediction of a physical component's remaining useful life. The estimator
-uses the accumulated `risk_history.csv` records across chronological trips.
-At least five different trips are required; otherwise both estimation fields
+a prediction of a physical component's remaining useful life. At least five
+different chronological trips are required; otherwise both estimation fields
 remain `null` and the output explains why.
 
 ### Method
@@ -197,6 +217,21 @@ estimated_cycles_to_failure = ceil((T_high - r_latest) / b)
 The estimator does not emit an implausibly distant result: no crossing within
 50 future trips is returned as `null`. A flat or decreasing trend (`b <= 0`)
 also has no projected crossing cycle.
+
+The output-field semantics are:
+
+- With fewer than five chronological trips,
+  `estimated_cycles_to_failure = null` and
+  `estimated_failure_probability = null`.
+- For a flat or falling trend, `estimated_cycles_to_failure = null`, while
+  `estimated_failure_probability` is still calculated by the 10-trip crossing
+  model.
+- For a projected crossing beyond 50 trips,
+  `estimated_cycles_to_failure = null`, while
+  `estimated_failure_probability` is still calculated by the 10-trip crossing
+  model.
+- If the current trip is already High, `estimated_cycles_to_failure = 0` and
+  `estimated_failure_probability = 1.0`.
 
 For uncertainty, the linear-model residuals provide a prediction standard
 error at a fixed horizon of 10 future trips. The reported probability is:
@@ -239,8 +274,8 @@ P(crossing High within 10 trips) = 1.0000
 The high probability is expected for this deliberately rising synthetic
 example. It must not be reported as “100% chance that a real car fails.” The
 formal result and the exact synthetic history are
-`failure_estimation_demo.{json,md}` and
-`tests/fixtures/risk_history_rising.csv`.
+`model_layer/ttm-related/outputs/failure_estimation_demo.{json,md}` and
+`model_layer/ttm-related/tests/fixtures/risk_history_rising.csv`.
 
 ## Limitations and responsible interpretation
 
@@ -251,10 +286,11 @@ formal result and the exact synthetic history are
 2. **KIT-specific calibration.** The data, feature transforms, and threshold
    experiment are based on the KIT vehicle dataset. They should not be treated
    as calibrated for other vehicles, sensor hardware, or operating conditions.
-3. **Incomplete Model Layer coverage.** This note evaluates only the three
-   anomaly types owned by the Model Layer. IAT/heat-soak and MAP-plausibility
-   decisions come directly from the Data Layer and are out of scope for TTM
-   scoring and these metrics.
+3. **Split scoring responsibility.** This note evaluates only the three
+   anomaly types scored by the Model Layer. `intake_air_temperature_sensor_fault`
+   and `map_load_signal_plausibility_fault` are Data-scored and Model-forwarded.
+   They are excluded from the three-type TTM metrics, but forwarding them is
+   implemented and is not future work.
 4. **MAF sensitivity is inadequate.** The present MAF-under-read injection
    design is rarely detected. Improving it requires changes to the evidence or
    risk-scoring logic, not merely a different alarm threshold.
@@ -268,23 +304,28 @@ formal result and the exact synthetic history are
 
 ## Reproduction
 
+Run from the `granite-lifeline` repository root.
+
 ```bash
 # Reproduce the threshold selection from the preserved raw results
-.venv/bin/python ttm-related/src/model/risk_threshold_calibration.py
+.venv/bin/python \
+  model_layer/ttm-related/src/model/risk_threshold_calibration.py
 
 # Recompute calibrated metrics without re-running TTM or overwriting baseline metrics
-.venv/bin/python ttm-related/src/model/synthetic_evaluation_metrics.py
+.venv/bin/python \
+  model_layer/ttm-related/src/model/synthetic_evaluation_metrics.py
 
 # Reproduce the synthetic rising-history failure-estimation demonstration
-.venv/bin/python ttm-related/src/model/failure_estimation.py \
-  ttm-related/tests/fixtures/risk_history_rising.csv \
-  --json-output ttm-related/outputs/failure_estimation_demo.json \
-  --markdown-output ttm-related/outputs/failure_estimation_demo.md
+.venv/bin/python \
+  model_layer/ttm-related/src/model/failure_estimation.py \
+  model_layer/ttm-related/tests/fixtures/risk_history_rising.csv \
+  --json-output model_layer/ttm-related/outputs/failure_estimation_demo.json \
+  --markdown-output model_layer/ttm-related/outputs/failure_estimation_demo.md
 ```
 
 Formal supporting files:
 
-- `risk_threshold_calibration_e5_lr5e-5.{json,md}`
-- `synthetic_eval_metrics_e5_lr5e-5_calibrated.{json,md}`
-- `synthetic_eval_results_e5_lr5e-5.json`
-- `failure_estimation_demo.{json,md}`
+- `model_layer/ttm-related/outputs/risk_threshold_calibration_e5_lr5e-5.{json,md}`
+- `model_layer/ttm-related/outputs/synthetic_eval_metrics_e5_lr5e-5_calibrated.{json,md}`
+- `model_layer/ttm-related/outputs/synthetic_eval_results_e5_lr5e-5.json`
+- `model_layer/ttm-related/outputs/failure_estimation_demo.{json,md}`
