@@ -1580,8 +1580,8 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .slide[data-slide="10"] .subtitle { margin-bottom:clamp(14px,2.2vh,24px); }
 .slide[data-slide="10"] .demo-wrap { margin-top:0; }
 .slide[data-slide="10"] .report-stage-label { margin-top:0; margin-bottom:clamp(12px,1.8vh,18px); }
-.demo-panel { position: absolute; inset: 0; box-sizing: border-box; display: flex; flex-direction: column; padding: 0 clamp(18px,2vw,30px); opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
-.slide.active .demo-panel.active { opacity: 1; pointer-events: auto; }
+.demo-panel { position: absolute; inset: 0; box-sizing: border-box; display: flex; flex-direction: column; padding: 0 clamp(18px,2vw,30px); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.4s ease, visibility 0s linear 0.4s; }
+.slide.active .demo-panel.active { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
 .local-run-panel { justify-content:center; }
 .local-run-panel .support-showcase { width:100%; max-width:1160px; margin:0 auto; }
 .local-run-panel .support-card { min-height:0; padding:16px 18px; }
@@ -2847,7 +2847,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
               </div>
               <div class="upload-demo-pick">Upload</div>
               <div class="upload-demo-meta">200MB per file &bull; CSV</div>
-              <button class="upload-run-button" type="button" onclick="event.stopPropagation(); setDemoStep(2)">Run Analysis</button>
+              <button class="upload-run-button" type="button" onclick="runDemoAnalysis(event)">Run Analysis</button>
             </div>
           </div>
         </div>
@@ -4896,6 +4896,11 @@ function setDemoStep(n) {
   const demoNextBtn = document.getElementById('demoNextBtn');
   if (demoBackBtn) demoBackBtn.disabled = demoStep === 0;
   if (demoNextBtn) demoNextBtn.textContent = demoStep === demoPanelCount - 1 ? '↻ Restart' : 'Next →';
+}
+function runDemoAnalysis(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  setDemoStep(2);
 }
 function nextDemoStep() { setDemoStep((demoStep + 1) % demoPanelCount); }
 function demoPrev() {

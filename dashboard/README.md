@@ -2,7 +2,7 @@
 
 **Owner:** Report Team  
 **Status:** Active Development  
-**Last Updated:** 2026-07-30
+**Last Updated:** 2026-08-29
 
 ---
 
@@ -40,7 +40,7 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | Team Footer | - | Team attribution footer |
 | Diagnostic Report Display | GL-41 | anomaly_description, possible_cause, recommended_action cards |
 | Key Signals Table | GL-41 | ABNORMAL/NORMAL signal rows with reference range |
-| Report Layer Integration | GL-41 | Loads ReportLayerOutput via data_loader.py; MOCK_DATA_FALLBACK retained |
+| Report Layer Integration | GL-41 | Loads ReportLayerOutput via data_loader.py; data_store.py retains the fallback demo data |
 | Failure Prediction Data Support | GL-198 | Loads estimated_failure_probability, estimated_cycles_to_failure, and notes from the current ReportLayerOutput contract |
 | Failure Prediction UI Display | GL-278/GL-280 | Shows failure probability card and Data Quality Notes on the detail page |
 | Five-Type Component Display Mapping | GL-273/GL-384 | Maps all 5 current anomaly types to owner-friendly display names; legacy cooling_system_stress alias retained |
@@ -108,12 +108,9 @@ dashboard/
 ├── anomaly_display.py      # Component/signal display name mappings
 ├── glossary.py             # Signal tooltip text (plain-language, sourced from Report Layer)
 ├── export_helper.py        # PDF / CSV export data and file helpers
-├── EXPORT_REPORT_PLAN.md   # GL-343 export entry and field checklist
 ├── pages/
 │   ├── overview.py         # Health overview + CSV upload entry point
 │   └── detail.py           # Component detail page
-├── assets/                 # Static assets
-├── DATA_INTEGRATION.md     # Data contract and field documentation
 ├── tests/
 │   └── ui_required_data.json   # Sample ReportLayerOutput-shaped data (mock fallback)
 └── README.md               # This file
@@ -236,18 +233,18 @@ System-inspired) with light/dark mode variants, defined as a token dict
 
 **Light Mode (Default)**
 
-- Background: `#f5f5f7`
+- Background: `#f4f4f4`
 - Surface (cards): `#ffffff`
-- Text: `#1d1d1f` / secondary `#6e6e73`
+- Text: `#161616` / secondary `#525252`
 - Accent: `#0f62fe`
 - Risk colors: High `#da1e28`, Medium `#ff832b`, Low `#24a148`
 
 **Dark Mode**
 
-- Background: `#1c1c1e`
-- Surface (cards): `#2c2c2e`
-- Text: `#f5f5f7` / secondary `#98989d`
-- Accent: `#4589ff`
+- Background: `#161616`
+- Surface (cards): `#262626`
+- Text: `#f4f4f4` / secondary `#c6c6c6`
+- Accent: `#78a9ff`
 - Risk colors: High `#fa4d56`, Medium `#ff832b`, Low `#42be65`
 
 Fonts: IBM Plex Sans (headings/body) and IBM Plex Mono (numeric values —
@@ -266,7 +263,8 @@ Theme state is stored in `st.session_state["dark_mode"]` and persists across pag
 ### Data Structure
 
 The dashboard loads `ReportLayerOutput` JSON via `data_loader.py`. A
-`MOCK_DATA_FALLBACK` dict is retained in `app.py` for offline development.
+fallback demo data dict is retained in `data_store.py` for offline
+development.
 
 **Live Data Schema (current `docs/INTERFACE.md` contract):**
 ```python
@@ -386,7 +384,7 @@ python -m pytest \
 
 ### Code Style
 
-- **Flake8 compliant**: All code passes `flake8 dashboard/app.py`
+- **Flake8 compliant**: All dashboard code passes `flake8 dashboard`
 - **PEP 8**: 79-character line limit, proper spacing
 - **Type hints**: Use where appropriate for clarity
 - **Docstrings**: Google-style for all functions
@@ -415,7 +413,7 @@ Before committing dashboard changes:
 - Verified responsive layout
 - Checked browser console for errors
 - Ran `python -m pytest tests/test_export_helper.py tests/test_failure_prediction_ui_states.py`
-- Ran `flake8 dashboard/app.py` (exit code 0)
+- Ran `flake8 dashboard` (exit code 0)
 - Verified no breaking changes to data contracts
 
 ---
