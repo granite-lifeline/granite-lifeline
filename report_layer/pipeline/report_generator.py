@@ -747,6 +747,36 @@ def _apply_evidence_relationship_check(
     return validation
 
 
+def _apply_action_relevance_check(
+    validation: ValidationResult,
+    value: Any,
+    model_output: ModelLayerOutput,
+) -> ValidationResult:
+    """Block escalation conditions copied from an unrelated component."""
+    if not isinstance(value, list):
+        return validation
+    stop_items = [
+        item.lower()
+        for item in value
+        if isinstance(item, str)
+        and item.strip().lower().startswith(
+            "stop driving and seek help if:"
+        )
+    ]
+    if (
+        model_output.anomaly_type != "accelerator_pedal_sensor"
+        and any(re.search(r"\bpedals?\b|\bpedal response\b", item)
+                for item in stop_items)
+    ):
+        validation.warnings.append(
+            "The stopping condition mentions pedal response, but the current "
+            "anomaly is not the accelerator pedal sensor"
+        )
+        validation.score = max(0.0, validation.score - 0.4)
+        validation.passed = False
+    return validation
+
+
 def _apply_controlled_baseline_check(
     validation: ValidationResult,
     layer_num: int,
@@ -867,6 +897,10 @@ def _correct_and_validate_layer(
         validation = _apply_evidence_relationship_check(
             validation, str(cleaned), model_output
         )
+    if layer_num == 3:
+        validation = _apply_action_relevance_check(
+            validation, cleaned, model_output
+        )
     validation = _apply_controlled_baseline_check(
         validation, layer_num, cleaned, original_prompt
     )
@@ -916,6 +950,10 @@ def _correct_and_validate_layer(
         if layer_num == 1:
             validation = _apply_evidence_relationship_check(
                 validation, str(corrected), model_output
+            )
+        if layer_num == 3:
+            validation = _apply_action_relevance_check(
+                validation, corrected, model_output
             )
         validation = _apply_controlled_baseline_check(
             validation, layer_num, corrected, original_prompt

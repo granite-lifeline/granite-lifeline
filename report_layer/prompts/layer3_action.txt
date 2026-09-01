@@ -42,6 +42,9 @@ Rules:
   Use conditions supported by the component and context, such as a red warning,
   overheating, loss of power, rough running or unsafe pedal response. Do not
   claim that one of these symptoms is already present unless the context says so.
+  The examples are not interchangeable: unsafe pedal response belongs only to
+  accelerator-pedal evidence, while overheating or steam belongs only to
+  cooling or temperature evidence.
 - "Tell the mechanic" converts relevant retrieved workshop evidence into a
   request for a qualified mechanic. It may name a diagnostic tool or technical
   check only as something the mechanic should perform.

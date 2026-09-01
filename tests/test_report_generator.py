@@ -12,6 +12,7 @@ from unittest.mock import patch, MagicMock
 import requests
 
 from report_layer.pipeline.report_generator import (
+    _apply_action_relevance_check,
     _apply_evidence_relationship_check,
     _apply_signal_direction_check,
     _clean_layer_value,
@@ -138,6 +139,22 @@ def test_owner_cleanup_expands_maf_and_pid_for_plain_language():
     assert "PID" not in actions[0]
     assert "mass airflow sensor data" in actions[0]
     assert "accumulated mass airflow reading" in actions[0]
+
+
+def test_action_relevance_blocks_pedal_condition_in_cooling_report():
+    result = _apply_action_relevance_check(
+        ValidationResult(layer=3, passed=True, warnings=[], score=1.0),
+        [
+            "Now: Watch the temperature gauge.",
+            "Service timing: Continue routine monitoring.",
+            "Stop driving and seek help if: The pedals respond unsafely.",
+            "Tell the mechanic: Verify the cooling evidence.",
+        ],
+        ModelLayerOutput(**VALID_MODEL_OUTPUT),
+    )
+
+    assert result.score < 0.8
+    assert any("not the accelerator pedal" in w for w in result.warnings)
 
 
 def test_validate_layer_value_dispatches_to_the_matching_layer():
