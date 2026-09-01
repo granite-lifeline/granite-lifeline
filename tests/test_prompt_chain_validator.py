@@ -113,6 +113,22 @@ class TestValidateLayer1:
             "confirmed fault language" in w for w in result.warnings
         )
 
+    def test_below_threshold_score_is_not_passed(self):
+        result = validate_layer1(
+            "The cooling system has failed and coolant_temp is high."
+        )
+
+        assert result.score < 0.8
+        assert result.passed is False
+
+    def test_threshold_score_is_passed(self):
+        text = " ".join(["reading"] * 19 + ["coolant_temp"])
+
+        result = validate_layer1(text)
+
+        assert result.score == 0.8
+        assert result.passed is True
+
     def test_negated_confirmed_language_is_not_flagged(self):
         text = (
             "The cooling system pattern is not confirmed as a fault, "

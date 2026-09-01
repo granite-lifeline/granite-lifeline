@@ -17,6 +17,8 @@ from typing import Any, List
 from report_layer import negation_constants as _negation
 
 
+VALIDATOR_SCORE_THRESHOLD = 0.8
+
 # Retain these public module attributes for evaluation/test compatibility.
 CLAUSE_BOUNDARY = _negation.CLAUSE_BOUNDARY
 NEGATION_WORDS = _negation.NEGATION_WORDS
@@ -244,6 +246,7 @@ def validate_layer1(output: str) -> ValidationResult:
 
     # Ensure score is within bounds
     score = max(0.0, min(1.0, score))
+    passed = score >= VALIDATOR_SCORE_THRESHOLD
 
     return ValidationResult(
         layer=1,
@@ -368,6 +371,7 @@ def validate_layer2(output: str, layer1_output: str) -> ValidationResult:
 
     # Ensure score is within bounds
     score = max(0.0, min(1.0, score))
+    passed = score >= VALIDATOR_SCORE_THRESHOLD
 
     return ValidationResult(
         layer=2,
@@ -519,6 +523,7 @@ def validate_layer3(output: Any, risk_level: str) -> ValidationResult:
 
     # Ensure score is within bounds
     score = max(0.0, min(1.0, score))
+    passed = score >= VALIDATOR_SCORE_THRESHOLD
 
     return ValidationResult(
         layer=3,

@@ -30,6 +30,7 @@ from report_layer.pipeline.context_injection import (  # noqa: E402
     build_context_with_rag,
 )
 from report_layer.pipeline.prompt_chain_validator import (  # noqa: E402
+    VALIDATOR_SCORE_THRESHOLD,
     ValidationResult,
     apply_high_risk_projection_consistency,
     format_validation_summary,
@@ -59,8 +60,6 @@ MAX_CORRECTION_ATTEMPTS = 1
 # therefore receives one different, feedback-driven correction prompt
 # instead of a blind retry. If that corrected result still fails, the
 # pipeline uses its existing empty-report fallback.
-VALIDATOR_SCORE_THRESHOLD = 0.8
-
 logger = logging.getLogger(__name__)
 
 DEFAULT_PROMPT_VALUES = {
