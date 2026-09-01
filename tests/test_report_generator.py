@@ -13,6 +13,7 @@ import requests
 
 from report_layer.pipeline.report_generator import (
     _apply_signal_direction_check,
+    _clean_layer_value,
     _validate_layer_value,
     call_ollama,
     generate_report,
@@ -95,6 +96,21 @@ def test_validate_layer_value_dispatches_to_the_matching_layer():
 
     assert not any("too long" in w for w in result.warnings)
     assert not any("too short" in w for w in result.warnings)
+
+
+def test_clean_layer_value_applies_possible_cause_cleanup():
+    """Layer 2 removes report-section restatements in production."""
+    model_output = ModelLayerOutput(**VALID_MODEL_OUTPUT)
+    text = (
+        "The risk level remains High. This pattern may indicate restricted "
+        "coolant flow. The component should be monitored."
+    )
+
+    cleaned = _clean_layer_value(2, text, model_output)
+
+    assert "risk level remains" not in cleaned.lower()
+    assert "should be monitored" not in cleaned.lower()
+    assert cleaned == "This pattern may indicate restricted coolant flow."
 
 
 # Realistic enough to pass prompt_chain_validator.validate_chain() at

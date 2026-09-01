@@ -590,7 +590,7 @@ def _clean_layer_value(
     model_output: ModelLayerOutput,
 ) -> Any:
     """Apply the production owner-facing cleanup for one layer."""
-    if layer_num in {1, 2}:
+    if layer_num == 1:
         return _clean_model_aware_text(str(value), model_output)
     if layer_num == 2:
         cleaned = _clean_model_aware_text(str(value), model_output)
