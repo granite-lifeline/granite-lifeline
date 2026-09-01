@@ -79,19 +79,19 @@ All fields in data-flow order. Pass-through fields originate in one layer and ar
 | 50d | dtc_candidate_label | string | Data Layer | Model Layer (internal only) | Confirmed |
 | 50e | dtc_emitted | boolean | Data Layer | Model Layer (internal only) | Confirmed |
 | 51 | anomaly_type | string (enum) | Model Layer | Report Layer | Confirmed |
-| 52 | risk_score | float (0–1) | Model Layer | Report Layer → Dashboard | Draft |
-| 53 | risk_level | string | Model Layer | Report Layer → Dashboard | TBD |
+| 52 | risk_score | float (0–1) | Model Layer | Report Layer → Dashboard | Confirmed |
+| 53 | risk_level | string | Model Layer | Report Layer → Dashboard | Confirmed — provisional calibration |
 | 54 | component | string | Model Layer | Report Layer → Dashboard | Confirmed (mirrors anomaly_type) |
-| 55 | prediction_confidence | float (0–1) | Model Layer | Report Layer → Dashboard | Draft |
+| 55 | prediction_confidence | float (0–1) | Model Layer | Report Layer → Dashboard | Confirmed |
 | 56 | key_signals | array of objects | Model Layer | Report Layer → Dashboard | Confirmed |
 | 57 | estimated_cycles_to_failure | int \| null | Model Layer | Report Layer → Dashboard | Draft — projected number of chronological driving cycles until the trip-level mean risk reaches the Model Layer High-risk threshold; `null` when fewer than five trips exist, the trend is non-rising, or the projection exceeds 50 cycles. This is not a physical remaining-useful-life estimate. |
 | 58 | estimated_failure_probability | float (0–1) \| null | Model Layer | Report Layer → Dashboard | Draft — model-based probability that the linear trip-risk projection crosses the High-risk threshold within the next 10 driving cycles; `null` when fewer than five trips exist. It is not an empirically calibrated probability of mechanical failure. |
 | 59 | notes | array of strings | Model Layer | Report Layer → Dashboard | Confirmed — added Story 3 |
 | 59a | secondary_risk | object \| null | Model Layer | Report Layer → Dashboard | Confirmed — v1.6; complete second-ranked component-risk object |
 | 60 | risk_history | array of objects | Report Layer | Dashboard | TBD |
-| 61 | anomaly_description | string | Report Layer | Dashboard | Draft |
-| 62 | possible_cause | string | Report Layer | Dashboard | Draft |
-| 63 | recommended_action | array of strings | Report Layer | Dashboard | Draft |
+| 61 | anomaly_description | string | Report Layer | Dashboard | Confirmed |
+| 62 | possible_cause | string | Report Layer | Dashboard | Confirmed |
+| 63 | recommended_action | array of strings | Report Layer | Dashboard | Confirmed |
 
 Rows 50a–50e are the decision-level fields of `proxy_decisions.csv` that the Model Layer reads when forwarding the two anomaly types it does not score itself. They are letter-suffixed because they belong to a separate decision-grain table rather than the row-level feature flow; the full 21-column schema is in §1.4.
 
@@ -302,14 +302,14 @@ Consumed by: **Report Layer** (and pass-through to Dashboard where noted)
 | Field Name | Type | Description | Example | Status |
 |---|---|---|---|---|
 | timestamp | string (ISO 8601) | Pass-through from Data Layer | `"2026-06-16T10:00:00Z"` | Draft |
-| anomaly_type | string (enum) | Fault/anomaly classification output by TTM. Five values defined — see Section 2.3. First 3 confirmed by Model Layer, remaining 2 from Data Layer. | `"cooling_degradation"` | Updated |
-| risk_score | float (0–1) | Probability / severity of detected anomaly, output by TTM | `0.82` | Draft |
-| risk_level | string | Risk classification derived from risk_score by Model Layer. Values: `Low` \| `Medium` \| `High`. Thresholds pending calibration. | `"Medium"` | TBD — thresholds pending calibration |
+| anomaly_type | string (enum) | Selected anomaly category. Five runtime values are defined in Section 2.3: three are scored in the Model Layer and two Data Layer verdicts are forwarded through it. | `"cooling_degradation"` | Confirmed |
+| risk_score | float (0–1) | Normalised anomaly-evidence score produced by the Model Layer. It is not a probability of mechanical failure. | `0.82` | Confirmed |
+| risk_level | string | Presentation category derived from `risk_score`: `Low` below 0.4129, `Medium` from 0.4129 to below 0.9, and `High` from 0.9. These thresholds are provisional and based on synthetic calibration. | `"Medium"` | Confirmed — provisional calibration |
 | component | string | Affected component. **Mirrors anomaly_type** — retained as a separate field for downstream compatibility (e.g., Dashboard component-based filtering), though currently redundant with anomaly_type. | `"cooling_degradation"` | Updated |
 | prediction_confidence | float (0–1) | Model confidence in risk_score, provided directly by Model Layer. | `0.84` | Draft |
 | key_signals | array of objects | Top signals contributing to risk prediction, in order of importance. Structure: `[{feature, value, unit, reference_range}]`. See Section 2.4. | See JSON above | Confirmed |
 | estimated_cycles_to_failure | int \| null | Estimated number of drive cycles (trips) remaining before the detected anomaly is projected to reach the Model Layer High-risk threshold, extrapolated from risk score history/trend. Uses the Data Layer `trip_id`/cycle index (Section 1.1). `null` when history is insufficient, flat/falling, or beyond the projection horizon. This is not a physical remaining-useful-life estimate. | `4` | Confirmed — Story 8 |
-| estimated_failure_probability | float (0–1) \| null | Model-based probability that the risk-score projection crosses the High-risk threshold within the fixed horizon. Together with the field above, supports the Report Layer phrase "72% probability of failure within the next X cycles". `null` when history is insufficient. This is not empirically calibrated against labelled mechanical failures. | `1.0` | Confirmed — Story 8 |
+| estimated_failure_probability | float (0–1) \| null | Model-based probability that the risk-score projection crosses the High-risk threshold within the fixed ten-cycle horizon. `null` when history is insufficient. This is not an empirically calibrated probability of mechanical failure. | `1.0` | Confirmed — Story 8 |
 | notes | array of strings | Degradation and fallback messages from Model Layer input validation and disabled detections (e.g. repaired implausible sensor values, pedal channels unavailable). Always present; empty array when nothing is degraded. | `["repaired 3 implausible coolant_temp value(s) outside [-40.0, 150.0]"]` | Confirmed — added Story 3 |
 | secondary_risk | object \| null | Complete second-ranked component-risk object using the same §2.1 fields, but without another nested `secondary_risk`. Must represent a different component and must not have a higher `risk_score` than the top-level primary risk. Optional so pre-v1.6 payloads remain valid. | See JSON above | Confirmed — v1.6 |
 
@@ -330,8 +330,8 @@ Consumed by: **Report Layer** (and pass-through to Dashboard where noted)
 | `cooling_degradation` | `cooling_degradation` | Confirmed - Model Layer supported |
 | `air_intake_maf_anomaly` | `air_intake_maf_anomaly` | Confirmed - Model Layer supported |
 | `accelerator_pedal_sensor` | `accelerator_pedal_sensor` | Confirmed - Model Layer supported (implemented Story 3: dual-channel delta rule, window mean scored 2–10pp; falls back to 0.0 score + note when pedal channels are absent) |
-| `intake_air_temperature_sensor_fault` | `intake_air_temperature_sensor_fault` | Pending - Data Layer defined, Model Layer TBD |
-| `map_load_signal_plausibility_fault` | `map_load_signal_plausibility_fault` | Pending - Data Layer defined, Model Layer TBD |
+| `intake_air_temperature_sensor_fault` | `intake_air_temperature_sensor_fault` | Integrated - Data Layer verdict forwarded through Model Layer |
+| `map_load_signal_plausibility_fault` | `map_load_signal_plausibility_fault` | Integrated - Data Layer verdict forwarded through Model Layer |
 
 ### 2.4 anomaly_type → key_signals Mapping
 
@@ -443,9 +443,9 @@ Generated by the three-layer Granite prompt chain.
 
 | Field Name | Type | Description | Example | Status |
 |---|---|---|---|---|
-| anomaly_description | string | Granite Layer 1: human-readable description of detected anomalous behaviour, including brief explanation of risk_level in practical terms | `"Coolant temperature is rising at 3.1°C/min, exceeding the normal range of 0–2°C/min. Medium risk means the issue is not immediately dangerous but should be addressed soon."` | Draft |
-| possible_cause | string | Granite Layer 2: likely root cause inferred from key_signals and anomaly_type | `"Rising coolant temperature under sustained load may indicate cooling system degradation."` | Draft |
-| recommended_action | array of strings | Granite Layer 3: suggested inspection or maintenance actions. Wording strength reflects prediction_confidence — high confidence gives specific actions, low confidence gives observational recommendations. | `["Check coolant level", "Inspect radiator"]` | Draft |
+| anomaly_description | string | Granite Layer 1: owner-facing summary of the supplied anomaly evidence and current risk category; it does not introduce causes or actions | `"The cooling readings show an unusual pattern that needs professional attention."` | Confirmed |
+| possible_cause | string | Granite Layer 2: conditional explanation based on the supplied signals and admitted description-and-cause knowledge; possible causes are not diagnoses | `"Restricted coolant flow may explain this pattern, but a mechanic must verify the cause."` | Confirmed |
+| recommended_action | array of strings | Granite Layer 3: four owner-facing strings covering what to do now, service timing, stopping conditions, and information for a mechanic | `["Now: Watch for a warning light.", "Service timing: Arrange an inspection.", "Stop driving and seek help if: A red warning appears.", "Tell the mechanic: Check the reported cooling evidence."]` | Confirmed |
 
 ---
 
