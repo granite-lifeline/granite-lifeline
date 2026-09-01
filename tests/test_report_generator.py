@@ -237,6 +237,10 @@ def test_medium_cause_cleanup_reduces_urgency_and_removes_confidence():
             "This result has 90% confidence and requires prompt professional "
             "verification."
         ),
+        (
+            "This high-risk condition (90% confidence) requires professional "
+            "verification."
+        ),
     )
 
     for text in examples:
@@ -246,6 +250,25 @@ def test_medium_cause_cleanup_reduces_urgency_and_removes_confidence():
         assert "confidence" not in cleaned.lower()
         assert "urgently" not in cleaned.lower()
         assert "prompt" not in cleaned.lower()
+
+
+def test_medium_urgency_check_respects_negated_immediate_wording():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["risk_level"] = "Medium"
+    model = ModelLayerOutput(**payload)
+    validation = ValidationResult(
+        layer=2, passed=True, warnings=[], score=1.0
+    )
+
+    result = _apply_signal_direction_check(
+        validation,
+        "This may justify a precautionary inspection without immediate "
+        "failure symptoms.",
+        model,
+    )
+
+    assert result.passed
+    assert result.score == 1.0
 
 
 def test_validate_layer_value_dispatches_to_the_matching_layer():

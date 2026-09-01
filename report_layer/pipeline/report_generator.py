@@ -41,6 +41,9 @@ from report_layer.pipeline.prompt_chain_validator import (  # noqa: E402
     validate_layer2,
     validate_layer3,
 )
+from report_layer.negation_constants import (  # noqa: E402
+    find_unnegated_phrases,
+)
 
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
 MODEL = "granite4.1:8b"
@@ -281,6 +284,12 @@ def _clean_model_aware_text(
     cleaned = re.sub(
         r"\b(?:this result\s+)?(?:has|had)\s+\d+(?:\.\d+)?%\s+"
         r"(?:prediction\s+)?confidence\b,?\s*(?:and\s+)?",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(
+        r"\s*\(\s*\d+(?:\.\d+)?%\s+(?:prediction\s+)?confidence\s*\)",
         "",
         cleaned,
         flags=re.IGNORECASE,
@@ -735,9 +744,10 @@ def _apply_signal_direction_check(
 ) -> ValidationResult:
     """Block a plain-language comparison that reverses supplied evidence."""
     lower = text.lower()
-    if model_output.risk_level == "Medium" and re.search(
-        r"\b(?:prompt|urgent|immediate)\b", lower
-    ):
+    urgent_terms = find_unnegated_phrases(
+        lower, ["prompt", "urgent", "immediate"]
+    )
+    if model_output.risk_level == "Medium" and urgent_terms:
         validation.warnings.append(
             "Overstates Medium risk urgency; say it should be checked soon, "
             "not promptly or urgently"
