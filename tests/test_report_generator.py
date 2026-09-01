@@ -200,6 +200,27 @@ class TestGenerateReportSuccess(unittest.TestCase):
         self.assertIsInstance(result["recommended_action"], list)
         self.assertGreater(len(result["recommended_action"]), 0)
 
+    @patch(
+        "report_layer.pipeline.report_generator.requests.post"
+    )
+    def test_invalid_risk_history_returns_safe_empty_history(
+        self, mock_post
+    ):
+        mock_post.side_effect = [
+            _make_mock_response(LAYER1_RESPONSE),
+            _make_mock_response(LAYER2_RESPONSE),
+            _make_mock_response(LAYER3_RESPONSE),
+        ]
+
+        result = generate_report(
+            VALID_MODEL_OUTPUT,
+            risk_history=[{"timestamp": "x", "risk_score": 1.5}],
+        )
+
+        self.assertIsNone(result["risk_history"])
+        self.assertEqual(result["anomaly_description"], "")
+        self.assertEqual(mock_post.call_count, 0)
+
 
 class TestOllamaRequestOptions(unittest.TestCase):
     """test_call_ollama_requests_json — request deterministic JSON."""

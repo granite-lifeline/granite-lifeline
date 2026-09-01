@@ -25,6 +25,8 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from shared.interface_models import (  # noqa: E402
     BatchModelLayerOutput,
     ModelLayerOutput,
+    ReportLayerOutput,
+    RiskHistoryEntry,
 )
 from report_layer.pipeline.context_injection import (  # noqa: E402
     build_context_with_rag,
@@ -851,6 +853,16 @@ def generate_report(
     try:
         if risk_history is None:
             risk_history = _extract_risk_history_payload(model_output)
+        if risk_history is not None:
+            try:
+                validated_history = [
+                    RiskHistoryEntry(**entry).model_dump()
+                    for entry in risk_history
+                ]
+            except Exception:
+                risk_history = None
+                raise
+            risk_history = validated_history
 
         # Step 0: Normalize and validate input
         try:
@@ -1018,7 +1030,7 @@ def generate_report(
             "possible_cause": possible_cause,
             "recommended_action": recommended_action,
         }
-        return result
+        return ReportLayerOutput(**result).model_dump()
 
     except Exception as exc:
         logger.error(

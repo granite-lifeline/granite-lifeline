@@ -24,6 +24,8 @@ AnomalyType = Literal[
     "map_load_signal_plausibility_fault"
 ]
 
+RiskLevel = Literal["Low", "Medium", "High"]
+
 
 class KeySignal(BaseModel):
     """Individual key signal contributing to risk prediction."""
@@ -142,7 +144,7 @@ class ComponentRiskOutput(BaseModel):
     timestamp: str
     anomaly_type: AnomalyType
     risk_score: float
-    risk_level: Optional[str] = None  # TBD - thresholds pending
+    risk_level: Optional[RiskLevel] = None
     component: AnomalyType  # Mirrors anomaly_type
     prediction_confidence: float
     key_signals: List[KeySignal]
@@ -218,7 +220,7 @@ class ReportLayerOutput(BaseModel):
     # Pass-through fields from Model Layer
     timestamp: str
     risk_score: float
-    risk_level: Optional[str] = None  # TBD
+    risk_level: Optional[RiskLevel] = None
     component: AnomalyType  # Mirrors anomaly_type from Model Layer
     prediction_confidence: float
     key_signals: List[KeySignal]
