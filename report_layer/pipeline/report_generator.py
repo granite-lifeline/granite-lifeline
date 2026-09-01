@@ -289,11 +289,30 @@ def _clean_recommended_actions(
         and _is_low_projection(model_output)
     )
     cleaned_actions = []
+    service_timing = {
+        "Low": (
+            "Service timing: Continue routine monitoring and arrange an "
+            "inspection if the pattern persists or worsens."
+        ),
+        "Medium": (
+            "Service timing: Arrange a professional inspection soon to "
+            "verify the reported pattern."
+        ),
+        "High": (
+            "Service timing: Arrange a prompt professional inspection to "
+            "verify the reported pattern."
+        ),
+    }
     for action in actions:
         if not isinstance(action, str):
             cleaned_actions.append(action)
             continue
         cleaned = _clean_owner_facing_text(action)
+        if cleaned.strip().lower().startswith("service timing:"):
+            cleaned_actions.append(
+                service_timing.get(model_output.risk_level, cleaned)
+            )
+            continue
         cleaned = re.sub(
             r"\bwithin (?:the )?(?:next )?(?:few|several|couple of) "
             r"(?:drive cycles|trips|days|weeks|months)\b",
@@ -709,6 +728,7 @@ def _enforce_controlled_baseline_boundary(
     layer_num: int,
     value: Any,
     original_prompt: str,
+    model_output: ModelLayerOutput,
 ) -> Any:
     """Prevent parametric model knowledge entering the no-RAG stimulus."""
     if layer_num == 2 and (
@@ -726,15 +746,30 @@ def _enforce_controlled_baseline_boundary(
         "No retrieved action guidance was supplied in this controlled "
         "condition." in original_prompt
     ):
-        cleaned = list(value)
-        for index, action in enumerate(cleaned):
-            if str(action).lower().startswith("tell the mechanic:"):
-                cleaned[index] = (
-                    "Tell the mechanic: Investigate the reported signal "
-                    "pattern and verify whether it reflects a real vehicle "
-                    "problem before recommending any work."
-                )
-        return cleaned
+        service_timing = {
+            "Low": (
+                "Service timing: Continue routine monitoring and arrange an "
+                "inspection if the pattern persists or worsens."
+            ),
+            "Medium": (
+                "Service timing: Arrange a professional inspection soon to "
+                "verify the reported pattern."
+            ),
+            "High": (
+                "Service timing: Arrange a prompt professional inspection "
+                "to verify the reported pattern."
+            ),
+        }
+        return [
+            "Now: Continue normal observation and note warning lights or "
+            "changes in vehicle behaviour.",
+            service_timing[model_output.risk_level or "Low"],
+            "Stop driving and seek help if: A warning indicates immediate "
+            "danger or the vehicle becomes unsafe to control.",
+            "Tell the mechanic: Investigate the reported signal pattern and "
+            "verify whether it reflects a real vehicle problem before "
+            "recommending any work.",
+        ]
     return value
 
 
@@ -749,7 +784,7 @@ def _correct_and_validate_layer(
     """Validate a layer and make one feedback-driven correction if needed."""
     cleaned = _clean_layer_value(layer_num, value, model_output)
     cleaned = _enforce_controlled_baseline_boundary(
-        layer_num, cleaned, original_prompt
+        layer_num, cleaned, original_prompt, model_output
     )
     validation = _validate_layer_value(
         layer_num,
@@ -795,7 +830,7 @@ def _correct_and_validate_layer(
             model_output,
         )
         corrected = _enforce_controlled_baseline_boundary(
-            layer_num, corrected, original_prompt
+            layer_num, corrected, original_prompt, model_output
         )
         validation = _validate_layer_value(
             layer_num,

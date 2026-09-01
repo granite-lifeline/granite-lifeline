@@ -14,6 +14,7 @@ import requests
 from report_layer.pipeline.report_generator import (
     _apply_signal_direction_check,
     _clean_layer_value,
+    _enforce_controlled_baseline_boundary,
     _validate_layer_value,
     call_ollama,
     generate_report,
@@ -134,6 +135,52 @@ def test_clean_layer_value_normalises_medium_risk_urgency_synonym():
         model_output,
     )
     assert validation.score == 1.0
+
+
+def test_clean_layer_value_replaces_invented_service_interval():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["risk_level"] = "Low"
+    model_output = ModelLayerOutput(**payload)
+    actions = [
+        "Now: Watch for changes in how the vehicle behaves while driving.",
+        "Service timing: Arrange service within the next few weeks.",
+        "Stop driving and seek help if: The vehicle becomes unsafe to drive.",
+        "Tell the mechanic: Verify the reported pattern before any repair.",
+    ]
+
+    cleaned = _clean_layer_value(3, actions, model_output)
+
+    assert cleaned[1] == (
+        "Service timing: Continue routine monitoring and arrange an "
+        "inspection if the pattern persists or worsens."
+    )
+    assert "weeks" not in " ".join(cleaned).lower()
+
+
+def test_controlled_no_action_condition_uses_neutral_actions():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["risk_level"] = "Medium"
+    model_output = ModelLayerOutput(**payload)
+    generated = [
+        "Now: Inspect the pedal sensor wiring and connector for damage.",
+        "Service timing: Arrange service within the next month.",
+        "Stop driving and seek help if: The vehicle loses power.",
+        "Tell the mechanic: Test the accelerator pedal sensor voltage.",
+    ]
+
+    controlled = _enforce_controlled_baseline_boundary(
+        3,
+        generated,
+        "No retrieved action guidance was supplied in this controlled "
+        "condition.",
+        model_output,
+    )
+
+    assert controlled[1].startswith(
+        "Service timing: Arrange a professional inspection soon"
+    )
+    assert "wiring" not in " ".join(controlled).lower()
+    assert "sensor" not in " ".join(controlled).lower()
 
 
 # Realistic enough to pass prompt_chain_validator.validate_chain() at
