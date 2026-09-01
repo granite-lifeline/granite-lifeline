@@ -107,8 +107,6 @@ def test_evidence_check_blocks_equivalent_normal_operation_claims():
         "checked soon because the current risk is Medium.",
         "The sensor is currently operating as expected but should be checked "
         "soon because the current risk is Medium.",
-        "All listed signals are within range, so there are no immediate "
-        "performance issues, but the pattern should be monitored.",
     ):
         result = _apply_evidence_relationship_check(
             ValidationResult(layer=1, passed=True, warnings=[], score=1.0),

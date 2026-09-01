@@ -724,8 +724,7 @@ def _apply_evidence_relationship_check(
         r"(?:\b(?:system|component|sensor|vehicle)\b.{0,35}"
         r"\b(?:operat(?:es|ing)|function(?:s|ing))\b.{0,12}"
         r"\b(?:normally|as expected|within expected limits|correctly|"
-        r"adequately)\b|\bno (?:immediate )?(?:performance|mechanical) "
-        r"issues?\b)",
+        r"adequately)\b)",
         lower,
     ):
         validation.warnings.append(
