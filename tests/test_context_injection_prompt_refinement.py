@@ -35,11 +35,11 @@ def test_build_context_suppresses_high_to_high_threshold_projection():
         _model_output(estimated_cycles_to_failure=4)
     )
 
-    assert "Failure probability: 0.31%" not in context
-    assert "Estimated cycles to failure: 4" not in context
+    assert "High-risk threshold probability: 0.31%" not in context
+    assert "Estimated cycles to the High-risk threshold: 4" not in context
     assert "already reached High risk" in context
     assert "Do not quote or describe either" in context
-    assert "Failure probability: 0%" not in context
+    assert "High-risk threshold probability: 0%" not in context
 
 
 def test_build_context_preserves_small_probability_below_high_risk():
@@ -47,7 +47,7 @@ def test_build_context_preserves_small_probability_below_high_risk():
         _model_output(risk_level="Medium", risk_score=0.56)
     )
 
-    assert "Failure probability: 0.31%" in context
+    assert "High-risk threshold probability: 0.31%" in context
     assert "not a calibrated probability of mechanical failure" in context
 
 
