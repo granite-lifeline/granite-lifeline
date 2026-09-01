@@ -237,6 +237,23 @@ def validate_layer1(output: str) -> ValidationResult:
         )
         score -= 0.4
 
+    if re.search(r"\b\d+(?:\.\d+)?\s*%\s*confidence\b", output.lower()):
+        warnings.append(
+            "Restates prediction confidence; keep the description focused "
+            "on the evidence and risk category"
+        )
+        score -= 0.4
+
+    if re.search(
+        r"\b(?:chance|probability)\b.{0,35}\b(?:immediate )?failure\b",
+        output.lower(),
+    ):
+        warnings.append(
+            "Treats a threshold-crossing estimate as mechanical failure "
+            "probability"
+        )
+        score -= 0.4
+
     if re.search(
         r"\bwithin (?:the )?(?:next )?(?:few|several|couple of) "
         r"(?:drive cycles|trips|days|weeks|months)\b",

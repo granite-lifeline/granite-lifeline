@@ -138,6 +138,10 @@ def _clean_owner_facing_text(text: str) -> str:
         "proxy_decisions.csv",
         "rule-based evidence",
     )
+    cleaned = cleaned.replace(
+        "rule-based proxy evidence",
+        "rule-based diagnostic evidence",
+    )
     cleaned = cleaned.replace("**", "")
     cleaned = cleaned.replace("*", "")
     cleaned = RAW_DTC_PATTERN.sub("a diagnostic flag", cleaned)
@@ -223,6 +227,14 @@ def _clean_model_aware_text(
         cleaned = re.sub(
             r"Because the current readings still look normal,?\s*",
             "Because at least one key signal is outside its normal range, ",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+    else:
+        cleaned = re.sub(
+            r"\ball (?:displayed )?(?:key )?signals(?: are)?(?: currently)? "
+            r"showing normal operation\b",
+            "all displayed key signals are within their reference ranges",
             cleaned,
             flags=re.IGNORECASE,
         )

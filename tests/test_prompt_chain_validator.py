@@ -241,6 +241,28 @@ class TestValidateLayer1:
         assert result.score < 0.8
         assert any("risk score" in w for w in result.warnings)
 
+    def test_prediction_confidence_percentage_is_blocked(self):
+        text = (
+            "A rule-based flag assigns High risk even though the displayed "
+            "temperature signals are within range. This result has 90% "
+            "confidence and requires professional verification."
+        )
+        result = validate_layer1(text)
+
+        assert result.score < 0.8
+        assert any("prediction confidence" in w for w in result.warnings)
+
+    def test_threshold_estimate_cannot_be_called_failure_probability(self):
+        text = (
+            "The cooling system shows a Low-risk pattern with a temperature "
+            "change outside its reference range. It has a very low chance "
+            "of immediate failure and should be monitored."
+        )
+        result = validate_layer1(text)
+
+        assert result.score < 0.8
+        assert any("mechanical failure" in w for w in result.warnings)
+
 
 class TestValidateLayer2:
     def test_negated_confirmed_language_is_not_flagged(self):

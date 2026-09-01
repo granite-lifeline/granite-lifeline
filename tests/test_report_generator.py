@@ -168,6 +168,25 @@ def test_owner_cleanup_expands_maf_and_pid_for_plain_language():
     assert "accumulated mass airflow reading" in actions[0]
 
 
+def test_owner_cleanup_rephrases_normal_signal_and_proxy_language():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["key_signals"] = [{
+        "feature": "accel_pedal_d",
+        "value": 12.0,
+        "unit": "%",
+        "reference_range": [0.0, 100.0],
+    }]
+    cleaned = _clean_layer_value(
+        1,
+        "All key signals are currently showing normal operation. The result "
+        "came from rule-based proxy evidence.",
+        ModelLayerOutput(**payload),
+    )
+
+    assert "within their reference ranges" in cleaned
+    assert "proxy" not in cleaned
+
+
 def test_action_relevance_blocks_pedal_condition_in_cooling_report():
     result = _apply_action_relevance_check(
         ValidationResult(layer=3, passed=True, warnings=[], score=1.0),
