@@ -721,9 +721,11 @@ def _apply_evidence_relationship_check(
     """Check claims that depend on signal status and detection provenance."""
     lower = text.lower()
     if _normal_key_signals(model_output) and re.search(
-        r"\b(?:system|component|sensor|vehicle)\b.{0,35}"
-        r"\b(?:(?:operat(?:es|ing)|function(?:s|ing)) normally|"
-        r"functioning within expected limits)\b",
+        r"(?:\b(?:system|component|sensor|vehicle)\b.{0,35}"
+        r"\b(?:operat(?:es|ing)|function(?:s|ing))\b.{0,12}"
+        r"\b(?:normally|as expected|within expected limits|correctly|"
+        r"adequately)\b|\bno (?:immediate )?(?:performance|mechanical) "
+        r"issues?\b)",
         lower,
     ):
         validation.warnings.append(

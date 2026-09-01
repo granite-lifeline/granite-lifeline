@@ -91,7 +91,7 @@ def test_evidence_check_blocks_normal_system_claim_from_normal_signals():
     assert any("listed signals are within range" in w for w in result.warnings)
 
 
-def test_evidence_check_blocks_functioning_within_limits_claim():
+def test_evidence_check_blocks_equivalent_normal_operation_claims():
     payload = dict(VALID_MODEL_OUTPUT)
     payload["anomaly_type"] = "accelerator_pedal_sensor"
     payload["component"] = "accelerator_pedal_sensor"
@@ -102,14 +102,21 @@ def test_evidence_check_blocks_functioning_within_limits_claim():
         "unit": "%",
         "reference_range": [0.0, 100.0],
     }]
-    result = _apply_evidence_relationship_check(
-        ValidationResult(layer=1, passed=True, warnings=[], score=1.0),
+    for text in (
         "The sensor is functioning within expected limits, but it should be "
         "checked soon because the current risk is Medium.",
-        ModelLayerOutput(**payload),
-    )
+        "The sensor is currently operating as expected but should be checked "
+        "soon because the current risk is Medium.",
+        "All listed signals are within range, so there are no immediate "
+        "performance issues, but the pattern should be monitored.",
+    ):
+        result = _apply_evidence_relationship_check(
+            ValidationResult(layer=1, passed=True, warnings=[], score=1.0),
+            text,
+            ModelLayerOutput(**payload),
+        )
 
-    assert result.score < 0.8
+        assert result.score < 0.8
 
 
 def test_evidence_check_blocks_proxy_fault_claim_with_normal_signals():
