@@ -240,6 +240,7 @@ supported anomaly types. All five reports were released, contained all four
 action roles, and contained no detected technical instruction addressed to the
 owner. The raw reports are stored in `owner_decision_smoke_raw.json` and the
 summary in `owner_decision_smoke_results.md`. The full automated suite completed
-with 701 tests passed and 19 environment-dependent tests skipped. Because the
+with 744 tests passed, 19 environment-dependent tests skipped and one
+model-download test deselected. Because the
 three-field output schema was preserved, no Dashboard or viva-slide migration
 was required.
