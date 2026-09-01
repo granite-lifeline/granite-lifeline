@@ -146,6 +146,31 @@ def _clean_owner_facing_text(text: str) -> str:
     )
     cleaned = re.sub(r"\bDTCs?\b", "diagnostic codes", cleaned)
     cleaned = re.sub(
+        r"\b(?:air intake\s+)?MAF sensor\b",
+        "mass airflow sensor",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(
+        r"\bMAF Integral Over 180 Seconds\b|"
+        r"\bmass airflow sensor integral\b",
+        "accumulated mass airflow reading",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(
+        r"\b(?:MAF sensor )?Parameter Identification Data \(PID\)",
+        "mass airflow sensor data",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(
+        r"\bPID\b",
+        "sensor data",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(
         r"\bSpeed-Density MAF Residual\b",
         "airflow consistency reading",
         cleaned,

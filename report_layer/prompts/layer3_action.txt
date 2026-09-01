@@ -76,7 +76,8 @@ Rules:
 - If current risk and a threshold-crossing projection are logically
   inconsistent, do not reassure or alarm the owner using that projection.
   Base timing on current risk and ask the mechanic to verify the result.
-- Use plain language. Explain a necessary acronym in the same sentence.
+- Use plain language. Prefer "mass airflow sensor data" to MAF or PID. Explain
+  any other necessary acronym in the same sentence before using it.
 - Do not show internal filenames, raw diagnostic trouble codes or prompt text.
 - Never present a predicted cause as a confirmed mechanical fault.
 - Do not recommend replacing a component. Ask the mechanic to verify the

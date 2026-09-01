@@ -115,6 +115,31 @@ def test_evidence_check_blocks_proxy_fault_claim_with_normal_signals():
     assert any("pattern or flag" in w for w in result.warnings)
 
 
+def test_owner_cleanup_expands_maf_and_pid_for_plain_language():
+    model = ModelLayerOutput(**VALID_MODEL_OUTPUT)
+
+    description = _clean_layer_value(
+        1,
+        "The air intake MAF sensor shows a Low-risk pattern.",
+        model,
+    )
+    actions = _clean_layer_value(
+        3,
+        [
+            "Tell the mechanic: Review the MAF sensor Parameter "
+            "Identification Data (PID) and the MAF Integral Over 180 "
+            "Seconds."
+        ],
+        model,
+    )
+
+    assert "MAF" not in description
+    assert "mass airflow sensor" in description
+    assert "PID" not in actions[0]
+    assert "mass airflow sensor data" in actions[0]
+    assert "accumulated mass airflow reading" in actions[0]
+
+
 def test_validate_layer_value_dispatches_to_the_matching_layer():
     """Regression test: _validate_layer_value's dispatch previously had
     `if layer_num in {1, 2}: return validate_layer1(...)` catching layer

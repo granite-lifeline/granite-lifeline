@@ -48,8 +48,9 @@ Rules:
 - Model Layer Notes are data-quality or provenance information, not mechanical
   causes. Do not copy them verbatim.
 - Do not show internal filenames, raw diagnostic trouble codes or raw fields.
-- Explain a necessary acronym in the same sentence, such as "mass airflow
-  (MAF) sensor". Do not repeatedly expand it after that.
+- Prefer the full plain-language name. If an acronym is necessary, explain it
+  in the same sentence, such as "mass airflow (MAF) sensor", and do not use
+  the acronym before that explanation.
 - For a dual-channel sensor, first explain that two internal sensors provide a
   safety comparison before naming channel labels.
 - Use clear, calm language. Preserve uncertainty and never claim that a real
