@@ -1,5 +1,20 @@
 # Final-pipeline RAG ablation audit
 
+## Reproduce the automated runs
+
+Run both commands from the repository root with local Ollama serving
+`granite4.1:8b` and the production RAG index available:
+
+```bash
+uv run python report_layer/evaluation/v5-rag-final-ablation/run_final_rag_ablation.py
+uv run python report_layer/evaluation/v5-rag-final-ablation/run_owner_decision_smoke.py
+```
+
+The first command regenerates the controlled 20-report comparison. The second
+regenerates one production report for each supported anomaly type. Generated
+scores and heuristic counts are screening evidence; the multidimensional
+manual review must be checked again whenever report text changes.
+
 ## Why the July comparison cannot evaluate the final pipeline
 
 The saved baseline and RAG reports in
