@@ -21,6 +21,7 @@ merged (a separate, bigger design decision not made here).
 """
 
 import re
+from typing import List
 
 NEGATION_WORDS = {"no", "not", "never", "without", "n't", "unconfirmed"}
 
@@ -35,3 +36,35 @@ CLAUSE_BOUNDARY = re.compile(r"[.,;:]|\bbut\b|\bhowever\b|\balthough\b")
 PSEUDO_NEGATIONS = (
     "no doubt", "without doubt", "without question", "no question"
 )
+
+
+def find_unnegated_phrases(text: str, phrases: List[str]) -> List[str]:
+    """Return candidate phrases that are not negated in their clause.
+
+    Negation cues are matched as complete tokens. Substring matching would
+    incorrectly treat words such as ``normal`` and ``notable`` as the cues
+    ``no`` and ``not``. English contractions ending in ``n't`` are handled
+    separately because they are single tokens rather than standalone words.
+    """
+    lower = text.lower()
+    for pseudo in PSEUDO_NEGATIONS:
+        lower = lower.replace(pseudo, " " * len(pseudo))
+
+    hits: List[str] = []
+    for phrase in phrases:
+        pattern = re.compile(r"\b" + re.escape(phrase) + r"\b")
+        for match in pattern.finditer(lower):
+            preceding = lower[:match.start()]
+            boundaries = list(CLAUSE_BOUNDARY.finditer(preceding))
+            clause_start = boundaries[-1].end() if boundaries else 0
+            clause_words = re.findall(
+                r"[a-z]+(?:['’][a-z]+)?", preceding[clause_start:]
+            )
+            negated = any(
+                word in NEGATION_WORDS or word.endswith("n't")
+                for word in clause_words
+            )
+            if not negated:
+                hits.append(phrase)
+                break
+    return hits

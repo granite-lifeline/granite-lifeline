@@ -60,3 +60,24 @@ def test_both_modules_agree_on_a_pseudo_negation_case():
         == evaluator_find_unnegated_phrases(text, ["confirmed"])
         == ["confirmed"]
     )
+
+
+def test_words_containing_negation_substrings_do_not_hide_claims():
+    cases = (
+        "Normal readings confirmed the fault.",
+        "The notable evidence confirmed the fault.",
+    )
+    for text in cases:
+        expected = ["confirmed"]
+        assert validator_find_unnegated_phrases(
+            text, ["confirmed"]
+        ) == expected
+        assert evaluator_find_unnegated_phrases(
+            text, ["confirmed"]
+        ) == expected
+
+
+def test_contracted_negation_suppresses_the_claim():
+    text = "The fault isn't confirmed by the available readings."
+    assert validator_find_unnegated_phrases(text, ["confirmed"]) == []
+    assert evaluator_find_unnegated_phrases(text, ["confirmed"]) == []

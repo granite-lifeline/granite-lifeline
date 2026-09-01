@@ -15,58 +15,14 @@ from pathlib import Path
 from statistics import mean
 from typing import List, Tuple
 
-from report_layer.negation_constants import (
-    CLAUSE_BOUNDARY,
-    NEGATION_WORDS,
-    PSEUDO_NEGATIONS,
-)
+from report_layer import negation_constants as _negation
 
 
-def _find_unnegated_phrases(text: str, phrases: List[str]) -> List[str]:
-    """
-    Return the phrases from `phrases` that appear in `text` without a
-    negation word earlier in the same clause.
-
-    A bare substring/word match on a phrase like "confirmed" flags
-    negated wording such as "not confirmed" or "no confirmed fault
-    yet" as if it were an unhedged claim, which is the opposite of
-    what it means. A fixed word-count window before the match is not
-    reliable for this: real sentences such as "no specific fault has
-    been confirmed yet" put four words between the negation and the
-    phrase (NegEx's own tuned scope is a 0-5 token window — this
-    scans back to the current clause instead, so it isn't sensitive
-    to exact word count at all). Word-boundary matching also means a
-    phrase embedded in a larger word (e.g. "confirmed" inside
-    "unconfirmed") is not matched at all. Pseudo-negation phrases
-    (PSEUDO_NEGATIONS) are masked out first, so "no doubt this is
-    confirmed" is correctly read as an unhedged claim rather than a
-    negated one.
-    """
-    lower = text.lower()
-    for pseudo in PSEUDO_NEGATIONS:
-        lower = lower.replace(pseudo, " " * len(pseudo))
-    hits: List[str] = []
-    for phrase in phrases:
-        pattern = re.compile(r"\b" + re.escape(phrase) + r"\b")
-        found_unnegated = False
-        for match in pattern.finditer(lower):
-            preceding = lower[:match.start()]
-            boundaries = list(CLAUSE_BOUNDARY.finditer(preceding))
-            clause_start = boundaries[-1].end() if boundaries else 0
-            clause_words = re.findall(
-                r"[a-z']+", preceding[clause_start:]
-            )
-            negated = any(
-                neg in word
-                for word in clause_words
-                for neg in NEGATION_WORDS
-            )
-            if not negated:
-                found_unnegated = True
-                break
-        if found_unnegated:
-            hits.append(phrase)
-    return hits
+# Retain these public module attributes for evaluation/test compatibility.
+CLAUSE_BOUNDARY = _negation.CLAUSE_BOUNDARY
+NEGATION_WORDS = _negation.NEGATION_WORDS
+PSEUDO_NEGATIONS = _negation.PSEUDO_NEGATIONS
+_find_unnegated_phrases = _negation.find_unnegated_phrases
 
 
 @dataclass
