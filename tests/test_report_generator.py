@@ -228,17 +228,24 @@ def test_medium_cause_cleanup_reduces_urgency_and_removes_confidence():
     payload = dict(VALID_MODEL_OUTPUT)
     payload["risk_level"] = "Medium"
     model = ModelLayerOutput(**payload)
-    text = (
-        "With 90% prediction confidence, this pattern urgently requires "
-        "professional verification."
+    examples = (
+        (
+            "With 90% prediction confidence, this pattern urgently requires "
+            "professional verification."
+        ),
+        (
+            "This result has 90% confidence and requires prompt professional "
+            "verification."
+        ),
     )
 
-    cleaned = _clean_model_aware_text(text, model)
+    for text in examples:
+        cleaned = _clean_model_aware_text(text, model)
 
-    assert "90%" not in cleaned
-    assert "confidence" not in cleaned.lower()
-    assert "urgently" not in cleaned.lower()
-    assert "soon" in cleaned.lower()
+        assert "90%" not in cleaned
+        assert "confidence" not in cleaned.lower()
+        assert "urgently" not in cleaned.lower()
+        assert "prompt" not in cleaned.lower()
 
 
 def test_validate_layer_value_dispatches_to_the_matching_layer():

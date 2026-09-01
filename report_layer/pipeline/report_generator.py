@@ -253,6 +253,12 @@ def _clean_model_aware_text(
             flags=re.IGNORECASE,
         )
         cleaned = re.sub(
+            r"\bprompt\b",
+            "timely",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+        cleaned = re.sub(
             r"\b(?:promptly|urgently|immediately)\b",
             "soon",
             cleaned,
@@ -268,6 +274,13 @@ def _clean_model_aware_text(
     cleaned = re.sub(
         r"\b(?:prediction\s+)?confidence\s+(?:of|is|was)\s+"
         r"\d+(?:\.\d+)?%\b,?\s*",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(
+        r"\b(?:this result\s+)?(?:has|had)\s+\d+(?:\.\d+)?%\s+"
+        r"(?:prediction\s+)?confidence\b,?\s*(?:and\s+)?",
         "",
         cleaned,
         flags=re.IGNORECASE,
