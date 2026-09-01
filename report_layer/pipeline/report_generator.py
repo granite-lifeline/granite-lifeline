@@ -141,9 +141,11 @@ def _clean_owner_facing_text(text: str) -> str:
         "proxy_decisions.csv",
         "rule-based evidence",
     )
-    cleaned = cleaned.replace(
-        "rule-based proxy evidence",
+    cleaned = re.sub(
+        r"rule[-\u2010-\u2015]based proxy evidence",
         "rule-based diagnostic evidence",
+        cleaned,
+        flags=re.IGNORECASE,
     )
     cleaned = cleaned.replace("**", "")
     cleaned = cleaned.replace("*", "")
@@ -238,6 +240,14 @@ def _clean_model_aware_text(
             r"\ball (?:displayed )?(?:key )?signals(?: are)?(?: currently)? "
             r"showing normal operation\b",
             "all displayed key signals are within their reference ranges",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+        cleaned = re.sub(
+            r"\bdespite all displayed key signals are within their "
+            r"reference ranges\b",
+            "although all displayed key signals are within their reference "
+            "ranges",
             cleaned,
             flags=re.IGNORECASE,
         )

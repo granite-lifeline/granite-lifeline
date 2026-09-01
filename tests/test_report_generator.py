@@ -170,6 +170,42 @@ def test_owner_cleanup_expands_maf_and_pid_for_plain_language():
     assert "accumulated mass airflow reading" in actions[0]
 
 
+def test_owner_cleanup_handles_unicode_hyphen_in_proxy_phrase():
+    model = ModelLayerOutput(**VALID_MODEL_OUTPUT)
+
+    cleaned = _clean_layer_value(
+        2,
+        "The detection is based on rule‑based proxy evidence.",
+        model,
+    )
+
+    assert "proxy evidence" not in cleaned.lower()
+    assert "rule-based diagnostic evidence" in cleaned.lower()
+
+
+def test_normal_signal_cleanup_preserves_although_grammar():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["anomaly_type"] = "accelerator_pedal_sensor"
+    payload["component"] = "accelerator_pedal_sensor"
+    payload["key_signals"] = [{
+        "feature": "accel_pedal_d",
+        "value": 12.0,
+        "unit": "%",
+        "reference_range": [0.0, 100.0],
+    }]
+    model = ModelLayerOutput(**payload)
+
+    cleaned = _clean_layer_value(
+        1,
+        "The sensor should be checked, despite all key signals currently "
+        "showing normal operation.",
+        model,
+    )
+
+    assert "despite all displayed key signals are" not in cleaned.lower()
+    assert "although all displayed key signals are" in cleaned.lower()
+
+
 def test_owner_cleanup_rephrases_normal_signal_and_proxy_language():
     payload = dict(VALID_MODEL_OUTPUT)
     payload["key_signals"] = [{
