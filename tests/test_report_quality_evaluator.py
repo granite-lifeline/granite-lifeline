@@ -119,15 +119,43 @@ class TestEvaluateHedgingAppropriateness:
 
 
 class TestEvaluateFactualGrounding:
-    def test_report_with_no_numbers_is_penalised(self):
+    def test_report_with_no_numbers_is_not_penalised(self):
         context = "Coolant temperature: 98 degrees (reference: 90-95)"
         report = {
             "anomaly_description": "The engine seems to be running warm.",
-            "possible_cause": "This could relate to the cooling system.",
+            "possible_cause": (
+                "This could relate to the temperature readings from the "
+                "cooling system."
+            ),
             "recommended_action": ["Check the cooling system soon."],
         }
         score, notes = evaluate_factual_grounding(report, context)
-        assert any("does not reference" in n for n in notes)
+        assert score == 1.0
+        assert any("qualitative summary" in n for n in notes)
+
+    def test_number_from_context_is_accepted(self):
+        context = "Coolant temperature: 98 degrees (reference: 90-95)"
+        report = {
+            "anomaly_description": "The temperature reading reached 98.",
+            "possible_cause": "This may relate to the temperature reading.",
+        }
+
+        score, notes = evaluate_factual_grounding(report, context)
+
+        assert score == 1.0
+        assert any("present in context" in n for n in notes)
+
+    def test_number_absent_from_context_is_penalised(self):
+        context = "Coolant temperature: 98 degrees (reference: 90-95)"
+        report = {
+            "anomaly_description": "The temperature reading reached 105.",
+            "possible_cause": "This may relate to the temperature reading.",
+        }
+
+        score, notes = evaluate_factual_grounding(report, context)
+
+        assert score == 0.6
+        assert any("absent from context" in n for n in notes)
 
 
 class TestEvaluateReadability:
