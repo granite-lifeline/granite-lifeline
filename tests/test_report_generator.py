@@ -113,6 +113,29 @@ def test_clean_layer_value_applies_possible_cause_cleanup():
     assert cleaned == "This pattern may indicate restricted coolant flow."
 
 
+def test_clean_layer_value_normalises_medium_risk_urgency_synonym():
+    """Medium-risk synonyms are aligned with the prompt's risk wording."""
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["risk_level"] = "Medium"
+    model_output = ModelLayerOutput(**payload)
+
+    cleaned = _clean_layer_value(
+        1,
+        "This pattern warrants prompt professional verification.",
+        model_output,
+    )
+
+    assert cleaned == (
+        "This pattern should be checked soon by a professional."
+    )
+    validation = _apply_signal_direction_check(
+        ValidationResult(layer=1, passed=True, warnings=[], score=1.0),
+        cleaned,
+        model_output,
+    )
+    assert validation.score == 1.0
+
+
 # Realistic enough to pass prompt_chain_validator.validate_chain() at
 # VALIDATOR_SCORE_THRESHOLD — word-count minimums, hedging language,
 # High-risk urgency wording. Placeholder-length text (e.g. "Visit a

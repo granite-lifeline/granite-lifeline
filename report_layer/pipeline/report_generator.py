@@ -201,7 +201,8 @@ def _clean_model_aware_text(
         )
     if model_output.risk_level == "Medium":
         cleaned = re.sub(
-            r"\b(?:warrants?|requires?) prompt professional inspection\b",
+            r"\b(?:warrants?|requires?|needs?) prompt professional "
+            r"(?:inspection|verification|attention)\b",
             "should be checked soon by a professional",
             cleaned,
             flags=re.IGNORECASE,
