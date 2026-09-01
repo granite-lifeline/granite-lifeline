@@ -91,6 +91,27 @@ def test_evidence_check_blocks_normal_system_claim_from_normal_signals():
     assert any("listed signals are within range" in w for w in result.warnings)
 
 
+def test_evidence_check_blocks_functioning_within_limits_claim():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["anomaly_type"] = "accelerator_pedal_sensor"
+    payload["component"] = "accelerator_pedal_sensor"
+    payload["risk_level"] = "Medium"
+    payload["key_signals"] = [{
+        "feature": "accel_pedal_d",
+        "value": 12.0,
+        "unit": "%",
+        "reference_range": [0.0, 100.0],
+    }]
+    result = _apply_evidence_relationship_check(
+        ValidationResult(layer=1, passed=True, warnings=[], score=1.0),
+        "The sensor is functioning within expected limits, but it should be "
+        "checked soon because the current risk is Medium.",
+        ModelLayerOutput(**payload),
+    )
+
+    assert result.score < 0.8
+
+
 def test_evidence_check_blocks_proxy_fault_claim_with_normal_signals():
     payload = dict(VALID_MODEL_OUTPUT)
     payload["anomaly_type"] = "intake_air_temperature_sensor_fault"
@@ -138,6 +159,7 @@ def test_owner_cleanup_expands_maf_and_pid_for_plain_language():
     assert "mass airflow sensor" in description
     assert "PID" not in actions[0]
     assert "mass airflow sensor data" in actions[0]
+    assert "sensor mass airflow sensor" not in actions[0]
     assert "accumulated mass airflow reading" in actions[0]
 
 

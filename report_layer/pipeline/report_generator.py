@@ -159,7 +159,8 @@ def _clean_owner_facing_text(text: str) -> str:
         flags=re.IGNORECASE,
     )
     cleaned = re.sub(
-        r"\b(?:MAF sensor )?Parameter Identification Data \(PID\)",
+        r"\b(?:MAF sensor |mass airflow sensor )?"
+        r"Parameter Identification Data \(PID\)",
         "mass airflow sensor data",
         cleaned,
         flags=re.IGNORECASE,
@@ -167,6 +168,13 @@ def _clean_owner_facing_text(text: str) -> str:
     cleaned = re.sub(
         r"\bPID\b",
         "sensor data",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(
+        r"\bmass airflow \(MAF\) sensor mass airflow sensor data\b|"
+        r"\bmass airflow sensor \(MAF\) data\b",
+        "mass airflow sensor data",
         cleaned,
         flags=re.IGNORECASE,
     )
@@ -714,7 +722,8 @@ def _apply_evidence_relationship_check(
     lower = text.lower()
     if _normal_key_signals(model_output) and re.search(
         r"\b(?:system|component|sensor|vehicle)\b.{0,35}"
-        r"\b(?:operat(?:es|ing)|function(?:s|ing)) normally\b",
+        r"\b(?:(?:operat(?:es|ing)|function(?:s|ing)) normally|"
+        r"functioning within expected limits)\b",
         lower,
     ):
         validation.warnings.append(

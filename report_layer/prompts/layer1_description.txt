@@ -29,7 +29,8 @@ Rules:
   "higher than expected" or "changing unusually quickly".
 - When all displayed signals are NORMAL but the upstream result still assigns
   a risk category, state both facts. Do not broaden normal displayed signals
-  into a claim that the component, system or vehicle is operating normally.
+  into a claim that the component, system or vehicle is operating normally or
+  functioning within expected limits.
 - For an anomaly forwarded from rule-based evidence, describe the reported
   pattern or flag and ask for verification. Do not call it a mechanical fault
   or say that it strongly suggests a sensor fault when the displayed signals

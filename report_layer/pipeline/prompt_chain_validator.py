@@ -228,7 +228,8 @@ def validate_layer1(output: str) -> ValidationResult:
         )
         score -= 0.2
     if re.search(
-        r"\b(?:risk score|% score)\b|\brisk\s*\(\s*\d+(?:\.\d+)?\s*%\s*\)",
+        r"\b(?:risk score|% score)\b|"
+        r"\brisk(?: level)?\s*\(\s*\d+(?:\.\d+)?\s*%\s*\)",
         output.lower(),
     ):
         warnings.append(

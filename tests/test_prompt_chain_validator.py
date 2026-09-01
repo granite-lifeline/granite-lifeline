@@ -230,6 +230,17 @@ class TestValidateLayer1:
         assert result.score < 0.8
         assert any("risk score" in w for w in result.warnings)
 
+    def test_parenthesised_percentage_after_risk_level_is_blocked(self):
+        text = (
+            "The accelerator pedal sensor shows a Medium risk level (56%). "
+            "The listed signals are within range, but the reported pattern "
+            "should be checked soon by a professional."
+        )
+        result = validate_layer1(text)
+
+        assert result.score < 0.8
+        assert any("risk score" in w for w in result.warnings)
+
 
 class TestValidateLayer2:
     def test_negated_confirmed_language_is_not_flagged(self):
