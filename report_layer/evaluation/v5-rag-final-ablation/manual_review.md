@@ -1,86 +1,64 @@
-# Manual review of final-pipeline RAG ablation
+# Manual review of the regenerated RAG ablation
 
-> **Review status (2026-09-01): requires re-review.** The 20 reports were
-> regenerated after Validator, cleanup and action-governance changes. The
-> observations below apply to the previous saved outputs and must not be quoted
-> as findings about `final_rag_ablation_raw.json` until each new report has been
-> checked again.
-
-This review applies the separated measures defined in `README.md`. It is a
-case audit, not a statistically representative estimate: each anomaly type is
-represented by one fixture.
+This review covers the 20 reports regenerated on 1 September 2026. Each report
+was checked against its saved input context, retrieved knowledge, Validator
+result and automatic audit. The full labels and case-specific evidence are in
+`final_rag_multidimensional_review.json`.
 
 ## Cooling degradation — Low risk
 
-- The baseline invented plausible causes from model knowledge, including fan
-  behaviour and sensor drift, but those causes were not traceable to supplied
-  evidence.
-- Cause RAG made the explanation more component-specific, but the retrieved
-  passage was excessively broad and dominated by overheating faults that did
-  not match the low-temperature pattern. The production prompt's explicit
-  cooling caution prevented most of this irrelevant material from entering
-  the report.
-- Current full RAG converted useful retrieved actions into a safe coolant-level
-  check and delegated infrared measurement to a mechanic.
-- Owner-safe RAG retained simple observation and explicitly warned against
-  touching hot components. In this case it was safer but not clearly more
-  informative than the current full condition.
+The controlled report preserved the low-temperature evidence and did not name
+a cause. The relevance gate correctly withheld overheating material from the
+three retrieval conditions. Current full RAG produced suitable Low-risk owner
+and mechanic actions. Owner-safe RAG remained safe, but added an unrelated
+pedal-response stopping condition and exposed the mass-airflow integral in the
+mechanic request without explaining why it mattered.
 
 ## Air-intake MAF anomaly — Low risk
 
-- All input readings were within their stated ranges, so the anomaly label and
-  otherwise normal evidence required cautious interpretation.
-- Cause RAG explained the mass airflow sensor and supplied traceable candidate
-  causes such as contamination and connector problems.
-- Current full RAG directly asked the owner to connect a scan tool, inspect a
-  connector and use contact cleaner. These are technically specific but do not
-  match the assumed non-technical audience.
-- Owner-safe RAG redirected scanning and wiring checks to a mechanic. It also
-  introduced a duplicated “or or”, showing that audience safety and language
-  quality must remain separate checks.
+Retrieved knowledge added plausible contamination, connector and degradation
+possibilities while retaining uncertainty. Both action conditions assigned
+scan-tool work to a mechanic. All four descriptions nevertheless used `MAF`
+without expanding it for the intended non-technical reader; the action
+conditions also retained dense `PID` and rpm terminology in the mechanic item.
 
 ## Accelerator-pedal sensor — Medium risk
 
-- All listed signals were within range despite the Medium risk score. Each
-  report acknowledged that immediate failure was not established.
-- Cause RAG supplied component-specific alternatives such as early wear or a
-  connector issue. The legacy evaluator penalised “could indicate” because its
-  hedge list did not contain that phrase; this is a scoring defect rather than
-  an unsafe certainty claim.
-- Current full RAG asked the owner to inspect a harness connector. Owner-safe
-  RAG instead assigned that check and diagnostic scanning to a mechanic while
-  asking the owner only to observe warnings and pedal response.
+All four reports preserved Medium-risk service timing and used safe owner
+actions. The shared description said that the system was operating normally,
+although the input only established that the listed signals were within their
+ranges. Retrieved heat, wiring and connector causes were category-relevant,
+but the cause-only output connected heat near the firewall and possible
+limp-home behaviour only weakly to the current evidence.
 
 ## Intake-air-temperature sensor fault — High risk
 
-- The input combines a High current risk with a 0.31% probability of crossing
-  the High-risk threshold in the next ten trips. All four reports repeated both
-  fields but failed to explain that they conflict. This is the clearest failure
-  of relationship-level faithfulness in the run.
-- Retrieved cause knowledge was relevant, but current action knowledge offered
-  only replacement of the MAF sensor or ECM. The model did not copy those
-  unsupported replacement instructions, which was desirable.
-- The legacy evaluator incorrectly penalised “before treating it as a confirmed
-  fault”. Owner-safe RAG improved the action role boundary by sending sensor,
-  harness and scan-tool checks to a qualified mechanic.
+The regenerated reports no longer describe a future crossing into High risk.
+All action conditions assign technical checks to a mechanic. However, the
+shared description calls the result a high-risk fault and strongly suggests a
+sensor issue even though all displayed signals are normal and the detection
+came from rule-based evidence. Retrieved circuit and connector causes fit the
+category but cannot be distinguished by the displayed signals. The retrieved
+conditions also expose `rule-based proxy evidence`, which is not suitable
+owner-facing language.
 
 ## MAP load-signal plausibility fault — High risk
 
-- Cause RAG explained the MAP sensor and added plausible, traceable checks for
-  wiring, connectors and vacuum leaks.
-- The current action passage was conditional on turbo engines and poorly
-  matched to the available vehicle context. The report relied mainly on cause
-  knowledge instead of copying this passage.
-- Current full RAG still told the owner to check vacuum hoses. Owner-safe RAG
-  assigned sensor, hose and wiring verification to a mechanic.
-- As in the IAT case, all conditions failed to address the High-risk/current-
-  threshold contradiction.
+All four reports preserved the abnormal manifold-pressure range, current High
+risk and the need for professional verification without exposing a future
+High-threshold projection. Cause knowledge was relevant, although the
+cause-only report listed several generic alternatives that the available
+evidence could not distinguish. Both action conditions kept observation with
+the owner and assigned sensor, electrical and intake-leak checks to a mechanic.
 
-## Decision supported by this run
+## Decision supported by the review
 
-RAG should not be accepted or rejected as one indivisible feature. The evidence
-supports keeping retrieval for component descriptions and possible causes,
-subject to relevance filtering. It does not support passing workshop actions
-directly into a prompt for non-technical owners. Action knowledge should be
-structured by audience role before generation, and inconsistent upstream risk
-fields should block release or trigger an explicit limitation statement.
+The regenerated reports support the production owner/mechanic action boundary:
+all 20 released outputs kept technical work with a professional. Retrieved
+knowledge improved specificity, but did not by itself ensure that every cause
+was strongly connected to the current signal direction or that every term was
+plain enough for the intended reader. The remaining priorities are therefore
+to revise the shared IAT and Accelerator Pedal descriptions, expand MAF and
+PID, and prevent unrelated stopping conditions from entering a component
+report. Mechanical accuracy remains outside this review because the fixtures
+do not contain technician-verified faults or repair outcomes.

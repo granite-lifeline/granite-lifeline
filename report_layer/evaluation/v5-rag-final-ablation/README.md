@@ -135,7 +135,7 @@ The legacy four-dimension evaluator produced the following means:
 | Owner-safe RAG | 0.935 |
 
 These numbers do **not** establish a general ranking of the four conditions.
-The earlier manual audit found several lexical false positives. For example, the evaluator
+Review of the evaluator records found several lexical false positives. For example, the evaluator
 treated the explained terms “mass airflow (MAF) sensor” and “intake manifold
 pressure sensor (MAP sensor)” as unexplained raw fields. It also treated
 “before treating it as a confirmed fault” as a confirmed-fault claim and did
@@ -146,30 +146,27 @@ quality.
 
 ## Manual review against the separated measures
 
-The detailed manual labels below describe the earlier 14 August outputs. They
-remain as an audit trail but require case-by-case re-review against the
-regenerated reports before they can be reported as current findings.
+The regenerated 1 September outputs were reviewed case by case. All 20 kept
+technical work with a mechanic, supporting the production owner/mechanic
+action boundary. Retrieved knowledge improved the specificity of several
+reports, but did not by itself ensure that each possible cause was strongly
+connected to the current signal direction or that every term was suitable for
+a non-technical reader.
 
-| Measure | Finding |
-|---|---|
-| Input faithfulness | Values and risk fields were generally preserved in all conditions. However, both High-risk fixtures also carried a 0.31% probability of *crossing* the High-risk threshold. None of the four conditions explicitly resolved this upstream inconsistency. |
-| Retrieval relevance | MAF, accelerator-pedal, IAT and MAP fault knowledge was relevant to the named component. Cooling retrieval was over-broad: it mixed the low-temperature fixture with a long list dominated by overheating and workshop fault possibilities. |
-| Knowledge utilisation | Cause RAG added component function and source-backed candidate causes. Current full RAG used retrieved action material most clearly for cooling, MAF and accelerator-pedal cases, but appropriately ignored the IAT knowledge base's unsupported replacement-only actions. |
-| Audience suitability | Cause knowledge often improved explanation, although it also introduced acronyms. Current action RAG sometimes addressed workshop steps directly to the owner, including scan-tool use and connector or harness inspection. |
-| Action safety | No output instructed dismantling in this run. Nevertheless, the current condition blurred owner and technician roles in several reports. The owner-safe condition consistently redirected technical diagnosis to a qualified mechanic while retaining observation and stopping advice for the owner. |
-| Uncertainty handling | The reports generally avoided presenting a predicted mechanical cause as certain. The main unresolved issue was the contradiction between a current High risk and a low probability of later crossing the High-risk threshold. |
-| Release outcome | 20/20 reports reached release without fallback. This demonstrates pipeline completion for these fixtures, not diagnostic validity or deployment readiness. |
+Three shared output issues remain visible. The Accelerator Pedal description
+broadened normal listed signals into a statement that the system was operating
+normally. The IAT description used strong fault wording despite normal
+displayed signals and rule-based provenance. The Air Intake reports retained
+unexplained MAF and PID terminology. One Cooling owner-safe action also added
+an unrelated pedal-response stopping condition.
 
-The most defensible conclusion is therefore conditional rather than a single
-ranking. Retrieved **cause knowledge** improved traceability and component-
-specific explanation in several cases, but the current retrieval corpus was
-not uniformly relevant. Retrieved **action knowledge** could make advice more
-specific, but workshop procedures require an explicit audience transformation.
-The owner-safe condition corrected that role boundary, especially in the IAT
-case, but did not solve irrelevant retrieval or contradictory upstream risk
-fields. The next design change should therefore combine risk-aware retrieval,
-separate `owner_action` and `technician_request` fields, and a validator rule
-that stops or clearly discloses inconsistent risk statements.
+The High-risk projection rule worked in the regenerated reports: neither IAT
+nor MAP described a future crossing into High risk. The remaining IAT problem
+is explaining how normal displayed signals relate to the High rule-based
+result without overstating a mechanical fault. Full labels and evidence are in
+`final_rag_multidimensional_review.json`; aggregate counts and interpretation
+are in `final_rag_multidimensional_summary.md`. These findings assess report
+behaviour, not mechanical accuracy or generalisation.
 
 ## Proposed RAG redesign: decision support rather than self-repair
 
