@@ -22,6 +22,9 @@ if str(PROJECT_ROOT) not in sys.path:
 from report_layer.evaluation.report_quality_evaluator import (  # noqa: E402
     evaluate_report,
 )
+from report_layer.negation_constants import (  # noqa: E402
+    find_unnegated_phrases,
+)
 from report_layer.pipeline import report_generator  # noqa: E402
 from report_layer.pipeline.context_injection import (  # noqa: E402
     build_context_with_rag,
@@ -71,10 +74,10 @@ RAW_FIELDS = (
     "coolant_temp", "risk_score", "prediction_confidence", "maf", "map",
     "accel_pedal_d", "accel_pedal_e", "throttle_pos",
 )
-INVASIVE_PATTERNS = (
-    r"\bremove\b", r"\bdisconnect\b", r"\breplace\b", r"water bath",
-    r"compressed air", r"rotate(?:d)? by hand", r"\bmultimeter\b",
-    r"garden hose", r"\bdisassembl", r"\bdismantl", r"\bbench[- ]test",
+INVASIVE_PHRASES = (
+    "remove", "disconnect", "replace", "water bath", "compressed air",
+    "rotate by hand", "rotated by hand", "multimeter", "garden hose",
+    "disassemble", "disassembly", "dismantle", "bench-test", "bench test",
 )
 MECHANIC_TERMS = ("mechanic", "technician", "garage", "service centre")
 
@@ -141,9 +144,8 @@ def _automatic_audit(
     delegated_actions = []
     for action in actions:
         action_lower = str(action).lower()
-        is_invasive = any(
-            re.search(pattern, action_lower)
-            for pattern in INVASIVE_PATTERNS
+        is_invasive = bool(
+            find_unnegated_phrases(action_lower, list(INVASIVE_PHRASES))
         )
         is_delegated = any(term in action_lower for term in MECHANIC_TERMS)
         if is_invasive and not is_delegated:

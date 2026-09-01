@@ -1,5 +1,11 @@
 # Manual review of final-pipeline RAG ablation
 
+> **Review status (2026-09-01): requires re-review.** The 20 reports were
+> regenerated after Validator, cleanup and action-governance changes. The
+> observations below apply to the previous saved outputs and must not be quoted
+> as findings about `final_rag_ablation_raw.json` until each new report has been
+> checked again.
+
 This review applies the separated measures defined in `README.md`. It is a
 case audit, not a statistically representative estimate: each anomaly type is
 represented by one fixture.

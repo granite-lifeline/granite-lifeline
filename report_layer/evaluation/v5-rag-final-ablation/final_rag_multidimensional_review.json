@@ -1,6 +1,7 @@
 {
   "schema_version": "1.0",
   "review_date": "2026-08-14",
+  "status": "historical_labels_require_rereview_after_2026-09-01_regeneration",
   "scale": {
     "pass": "The report satisfies the dimension for this fixture.",
     "partial": "The report provides some value but has a material limitation.",

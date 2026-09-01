@@ -1,5 +1,10 @@
 # Multidimensional review data
 
+> **Status (2026-09-01): historical labels awaiting re-review.** The records
+> below were assigned to an earlier set of generated reports. The production
+> outputs were regenerated after Report Layer rule changes, so these counts
+> must not be combined with the current automated ablation results.
+
 The table below aggregates the 20 auditable case labels in
 `final_rag_multidimensional_review.json`. Counts are reported instead of a
 weighted total because the dimensions answer different questions. Retrieval

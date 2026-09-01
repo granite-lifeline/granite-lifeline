@@ -108,7 +108,7 @@ ranking of the final baseline and RAG pipelines. No claim that RAG is
 better or worse should be made until the controlled final-pipeline
 comparison above has been run.
 
-## Final-pipeline run completed on 14 August 2026
+## Final-pipeline automated run regenerated on 1 September 2026
 
 The controlled comparison was run on one saved real-pipeline fixture for
 each of the five supported anomaly types. This produced 20 reports (five
@@ -129,13 +129,13 @@ The legacy four-dimension evaluator produced the following means:
 
 | Condition | Mean legacy score |
 |---|---:|
-| Controlled baseline | 0.950 |
-| Cause-only RAG | 0.915 |
-| Current full RAG | 0.915 |
-| Owner-safe RAG | 0.930 |
+| Controlled baseline | 0.870 |
+| Cause-only RAG | 0.935 |
+| Current full RAG | 0.935 |
+| Owner-safe RAG | 0.935 |
 
-These numbers do **not** establish that the baseline was better. Direct
-inspection found several lexical false positives. For example, the evaluator
+These numbers do **not** establish a general ranking of the four conditions.
+The earlier manual audit found several lexical false positives. For example, the evaluator
 treated the explained terms “mass airflow (MAF) sensor” and “intake manifold
 pressure sensor (MAP sensor)” as unexplained raw fields. It also treated
 “before treating it as a confirmed fault” as a confirmed-fault claim and did
@@ -145,6 +145,10 @@ output of the evaluated implementation, not as the final judgement of RAG
 quality.
 
 ## Manual review against the separated measures
+
+The detailed manual labels below describe the earlier 14 August outputs. They
+remain as an audit trail but require case-by-case re-review against the
+regenerated reports before they can be reported as current findings.
 
 | Measure | Finding |
 |---|---|
