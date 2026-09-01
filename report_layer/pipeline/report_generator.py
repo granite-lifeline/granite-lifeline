@@ -680,6 +680,48 @@ def _apply_signal_direction_check(
     return validation
 
 
+def _apply_evidence_relationship_check(
+    validation: ValidationResult,
+    text: str,
+    model_output: ModelLayerOutput,
+) -> ValidationResult:
+    """Check claims that depend on signal status and detection provenance."""
+    lower = text.lower()
+    if _normal_key_signals(model_output) and re.search(
+        r"\b(?:system|component|sensor|vehicle)\b.{0,35}"
+        r"\b(?:operat(?:es|ing)|function(?:s|ing)) normally\b",
+        lower,
+    ):
+        validation.warnings.append(
+            "Normal displayed signals do not establish that the whole "
+            "system or component is operating normally; state that the "
+            "listed signals are within range"
+        )
+        validation.score = max(0.0, validation.score - 0.4)
+        validation.passed = False
+
+    if (
+        _has_proxy_provenance(model_output)
+        and _normal_key_signals(model_output)
+        and (
+            re.search(r"\b(?:high-risk\s+)?fault\b", lower)
+            or re.search(
+                r"\bstrongly suggest(?:s|ing)?\b.{0,45}"
+                r"\b(?:sensor|mechanical)\b",
+                lower,
+            )
+        )
+    ):
+        validation.warnings.append(
+            "Rule-based evidence with normal displayed signals must be "
+            "described as a pattern or flag requiring verification, not as "
+            "a fault or strong evidence of a sensor fault"
+        )
+        validation.score = max(0.0, validation.score - 0.4)
+        validation.passed = False
+    return validation
+
+
 def _apply_controlled_baseline_check(
     validation: ValidationResult,
     layer_num: int,
@@ -796,6 +838,10 @@ def _correct_and_validate_layer(
         validation = _apply_signal_direction_check(
             validation, str(cleaned), model_output
         )
+    if layer_num == 1:
+        validation = _apply_evidence_relationship_check(
+            validation, str(cleaned), model_output
+        )
     validation = _apply_controlled_baseline_check(
         validation, layer_num, cleaned, original_prompt
     )
@@ -840,6 +886,10 @@ def _correct_and_validate_layer(
         )
         if layer_num in {1, 2}:
             validation = _apply_signal_direction_check(
+                validation, str(corrected), model_output
+            )
+        if layer_num == 1:
+            validation = _apply_evidence_relationship_check(
                 validation, str(corrected), model_output
             )
         validation = _apply_controlled_baseline_check(

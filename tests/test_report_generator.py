@@ -12,6 +12,7 @@ from unittest.mock import patch, MagicMock
 import requests
 
 from report_layer.pipeline.report_generator import (
+    _apply_evidence_relationship_check,
     _apply_signal_direction_check,
     _clean_layer_value,
     _enforce_controlled_baseline_boundary,
@@ -65,6 +66,53 @@ def test_signal_direction_check_blocks_reversed_coolant_comparison():
 
     assert result.score < 0.8
     assert any("below, not above" in item for item in result.warnings)
+
+
+def test_evidence_check_blocks_normal_system_claim_from_normal_signals():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["anomaly_type"] = "accelerator_pedal_sensor"
+    payload["component"] = "accelerator_pedal_sensor"
+    payload["risk_level"] = "Medium"
+    payload["key_signals"] = [{
+        "feature": "accel_pedal_d",
+        "value": 12.0,
+        "unit": "%",
+        "reference_range": [0.0, 100.0],
+    }]
+    result = _apply_evidence_relationship_check(
+        ValidationResult(layer=1, passed=True, warnings=[], score=1.0),
+        "The accelerator pedal sensor is at Medium risk, but the system is "
+        "currently operating normally and should be checked soon.",
+        ModelLayerOutput(**payload),
+    )
+
+    assert result.score < 0.8
+    assert any("listed signals are within range" in w for w in result.warnings)
+
+
+def test_evidence_check_blocks_proxy_fault_claim_with_normal_signals():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["anomaly_type"] = "intake_air_temperature_sensor_fault"
+    payload["component"] = "intake_air_temperature_sensor_fault"
+    payload["notes"] = [
+        "intake_air_temperature_sensor_fault forwarded from Data Layer "
+        "proxy_decisions.csv"
+    ]
+    payload["key_signals"] = [{
+        "feature": "intake_air_temp",
+        "value": 19.0,
+        "unit": "°C",
+        "reference_range": [-3.0, 41.0],
+    }]
+    result = _apply_evidence_relationship_check(
+        ValidationResult(layer=1, passed=True, warnings=[], score=1.0),
+        "The intake air temperature sensor shows a high-risk fault, strongly "
+        "suggesting a sensor issue despite normal readings.",
+        ModelLayerOutput(**payload),
+    )
+
+    assert result.score < 0.8
+    assert any("pattern or flag" in w for w in result.warnings)
 
 
 def test_validate_layer_value_dispatches_to_the_matching_layer():
