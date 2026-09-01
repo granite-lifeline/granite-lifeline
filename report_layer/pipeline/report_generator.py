@@ -252,6 +252,27 @@ def _clean_model_aware_text(
             cleaned,
             flags=re.IGNORECASE,
         )
+        cleaned = re.sub(
+            r"\b(?:promptly|urgently|immediately)\b",
+            "soon",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+    cleaned = re.sub(
+        r"\b(?:with|at)\s+\d+(?:\.\d+)?%\s+(?:prediction\s+)?"
+        r"confidence\b,?\s*",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(
+        r"\b(?:prediction\s+)?confidence\s+(?:of|is|was)\s+"
+        r"\d+(?:\.\d+)?%\b,?\s*",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = cleaned[:1].upper() + cleaned[1:] if cleaned else cleaned
     return cleaned
 
 
@@ -365,6 +386,18 @@ def _clean_recommended_actions(
             cleaned,
             flags=re.IGNORECASE,
         )
+        if (
+            model_output.anomaly_type != "accelerator_pedal_sensor"
+            and cleaned.strip().lower().startswith(
+                "stop driving and seek help if:"
+            )
+            and re.search(r"\bpedals?\b|\bpedal response\b", cleaned,
+                          flags=re.IGNORECASE)
+        ):
+            cleaned = (
+                "Stop driving and seek help if: A warning indicates "
+                "immediate danger or the vehicle becomes unsafe to control."
+            )
         if proxy_normal_low_projection:
             cleaned = re.sub(
                 r"\boutside (?:of )?its normal range\b",

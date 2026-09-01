@@ -16,6 +16,8 @@ from report_layer.pipeline.report_generator import (
     _apply_evidence_relationship_check,
     _apply_signal_direction_check,
     _clean_layer_value,
+    _clean_model_aware_text,
+    _clean_recommended_actions,
     _enforce_controlled_baseline_boundary,
     _validate_layer_value,
     call_ollama,
@@ -201,6 +203,42 @@ def test_action_relevance_blocks_pedal_condition_in_cooling_report():
 
     assert result.score < 0.8
     assert any("not the accelerator pedal" in w for w in result.warnings)
+
+
+def test_action_cleanup_replaces_pedal_condition_for_other_component():
+    payload = dict(VALID_MODEL_OUTPUT)
+    model = ModelLayerOutput(**payload)
+    actions = [
+        "Now: Watch the temperature gauge.",
+        "Service timing: Arrange an inspection soon.",
+        (
+            "Stop driving and seek help if: The accelerator pedal response "
+            "becomes unsafe."
+        ),
+        "Tell the mechanic: Check the cooling evidence.",
+    ]
+
+    cleaned = _clean_recommended_actions(actions, model)
+
+    assert "pedal" not in cleaned[2].lower()
+    assert "vehicle becomes unsafe to control" in cleaned[2].lower()
+
+
+def test_medium_cause_cleanup_reduces_urgency_and_removes_confidence():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["risk_level"] = "Medium"
+    model = ModelLayerOutput(**payload)
+    text = (
+        "With 90% prediction confidence, this pattern urgently requires "
+        "professional verification."
+    )
+
+    cleaned = _clean_model_aware_text(text, model)
+
+    assert "90%" not in cleaned
+    assert "confidence" not in cleaned.lower()
+    assert "urgently" not in cleaned.lower()
+    assert "soon" in cleaned.lower()
 
 
 def test_validate_layer_value_dispatches_to_the_matching_layer():
