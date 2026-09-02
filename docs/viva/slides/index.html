@@ -227,6 +227,14 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .owner-question { padding:14px 18px; border-left:3px solid #78a9ff; background:rgba(120,169,255,.075); font-size:clamp(15px,1.35vw,19px); font-weight:600; }
 .reactive-stamp { font-family:var(--font-body); color:#fff; border:1px solid rgba(120,169,255,.42); background:rgba(15,98,254,.13); padding:12px 16px; border-radius:10px; text-align:center; font-size:clamp(13px,1.25vw,17px); font-weight:600; }
 .story-scene[data-story-step="3"] { gap:22px; }
+.owner-choice-grid { width:100%; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px; align-items:center; }
+.owner-choice-card { position:relative; min-width:0; height:272px; overflow:hidden; border:1px solid rgba(255,255,255,.16); border-radius:16px; background:#121821; box-shadow:0 18px 38px rgba(0,0,0,.28); }
+.owner-choice-card img { width:100%; height:100%; display:block; object-fit:cover; }
+.owner-choice-card::after { content:""; position:absolute; inset:42% 0 0; background:linear-gradient(transparent,rgba(5,8,13,.94)); }
+.owner-choice-copy { position:absolute; z-index:2; left:20px; right:20px; bottom:18px; }
+.owner-choice-copy strong { display:block; color:#fff; font-size:clamp(18px,1.8vw,25px); line-height:1.12; }
+.owner-choice-copy span { display:block; margin-top:7px; color:#ffb784; font:700 11.5px/1.3 var(--font-mono); letter-spacing:.045em; text-transform:uppercase; }
+.owner-choice-source { margin-top:8px; color:rgba(255,255,255,.45); font:8px/1.3 var(--font-mono); text-align:center; }
 .reactive-flow { width:100%; display:grid; grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr) 34px minmax(0,1fr); align-items:stretch; gap:13px; }
 .reactive-step { height:128px; min-width:0; padding:16px; border:1px solid rgba(166,200,255,.32); border-radius:14px; background:rgba(255,255,255,.075); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
 .reactive-step-num { font:600 10px/1 var(--font-mono); color:#78a9ff; letter-spacing:.1em; }
@@ -294,14 +302,14 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .oxmaint-data-flow { display:flex; align-items:center; justify-content:center; gap:9px; padding:12px 0; font:600 10px/1 var(--font-mono); color:#d8e2ff; letter-spacing:.04em; }
 .oxmaint-data-flow b { padding:7px 9px; border-radius:7px; background:rgba(255,255,255,.11); color:#fff; }
 .oxmaint-data-flow i { color:#ffc66d; font-style:normal; font-size:17px; }
-.oxmaint-alerts { display:grid; gap:12px; margin-top:18px; }
-.oxmaint-alert { display:grid; grid-template-columns:78px minmax(0,1fr) auto; gap:15px; align-items:center; padding:15px 16px; border-radius:12px; background:#fff; color:var(--text); }
-.oxmaint-alert-level { font:700 9px/1 var(--font-mono); color:#fff; background:#da1e28; border-radius:12px; padding:6px 8px; text-align:center; }
+.oxmaint-alerts { display:grid; gap:16px; margin-top:22px; }
+.oxmaint-alert { display:grid; grid-template-columns:88px minmax(0,1fr) minmax(130px,.72fr); gap:18px; align-items:center; padding:21px 18px; border-radius:12px; background:#fff; color:var(--text); }
+.oxmaint-alert-level { font:700 10.5px/1 var(--font-mono); color:#fff; background:#da1e28; border-radius:12px; padding:7px 9px; text-align:center; }
 .oxmaint-alert:nth-child(2) .oxmaint-alert-level { background:#d97400; }
 .oxmaint-alert:nth-child(3) .oxmaint-alert-level { background:#0f62fe; }
-.oxmaint-alert strong { display:block; font-size:15px; line-height:1.2; }
-.oxmaint-alert span { display:block; margin-top:4px; font:10px/1.3 var(--font-mono); color:var(--text-dim); }
-.oxmaint-action { font:600 10.5px/1.3 var(--font-mono); color:var(--accent-blue); text-align:right; max-width:150px; }
+.oxmaint-alert strong { display:block; font-size:18px; line-height:1.2; }
+.oxmaint-alert span { display:block; margin-top:5px; font:11.5px/1.3 var(--font-mono); color:var(--text-dim); }
+.oxmaint-action { font:650 13px/1.35 var(--font-mono); color:var(--accent-blue); text-align:right; }
 .oxmaint-source { margin-top:auto; padding-top:10px; font:8px/1.3 var(--font-mono); color:rgba(255,255,255,.6); text-align:right; }
 .owner-impact { font-family:var(--font-body); color:#fff; border:1px solid rgba(255,131,43,.48); background:rgba(255,131,43,.14); padding:12px 16px; border-radius:10px; text-align:center; font-size:clamp(13px,1.25vw,17px); font-weight:600; }
 .owner-impact span { color:#ffb784; }
@@ -1196,6 +1204,86 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .correction-package { margin-top:16px; color:var(--accent-blue); font:800 11px/1.4 var(--font-mono); text-transform:uppercase; }
 .validator-release { align-self:stretch; justify-content:center; margin-top:22px; padding:10px 15px; border-radius:18px; color:#fff; background:var(--accent-green); font:900 14px/1 var(--font-mono); text-align:center; }
 
+.report-question-grid { width:100%; max-width:1340px; display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+.report-question-card { min-height:340px; padding:30px; border-radius:19px; background:#fff; box-shadow:0 18px 46px rgba(20,50,100,.08); display:flex; flex-direction:column; }
+.report-question-card h3 { margin:15px 0 18px; font-size:clamp(25px,1.9vw,32px); line-height:1.15; }
+.report-question-card p { margin:0; color:var(--text-muted); font-size:clamp(20px,1.45vw,23px); line-height:1.38; }
+.report-question-input { margin-top:auto; padding:17px 18px; border-radius:10px; background:rgba(15,98,254,.06); color:var(--accent-blue); font:800 15px/1.4 var(--font-mono); }
+.report-question-input.no-rag { background:rgba(80,91,112,.07); color:var(--text-dim); }
+.report-question-input b { display:block; margin-bottom:6px; font-size:12px; letter-spacing:.05em; text-transform:uppercase; }
+.report-eval-grid { width:100%; max-width:1340px; display:grid; grid-template-columns:1fr 74px 1fr; gap:20px; align-items:stretch; }
+.report-eval-card { min-height:340px; padding:30px 32px; border-radius:19px; background:#fff; box-shadow:0 18px 46px rgba(20,50,100,.08); }
+.report-eval-card h3 { margin:12px 0 22px; font-size:clamp(26px,1.9vw,33px); }
+.release-metrics { display:grid; grid-template-columns:repeat(2,1fr); gap:13px; }
+.release-metric { min-height:105px; padding:17px; border-radius:12px; background:rgba(36,161,72,.07); display:flex; flex-direction:column; justify-content:center; text-align:center; }
+.release-metric strong { color:#176c35; font:900 clamp(27px,2.3vw,38px)/1 var(--font-mono); }
+.release-metric span { margin-top:8px; color:var(--text-muted); font-size:15px; line-height:1.25; }
+.manual-bars { display:grid; gap:18px; }
+.manual-bar-head { display:flex; justify-content:space-between; gap:18px; margin-bottom:7px; color:var(--text); font-size:17px; font-weight:780; }
+.manual-bar-head span:last-child { color:var(--accent-blue); font-family:var(--font-mono); font-size:15px; }
+.manual-bar-track { height:13px; display:flex; overflow:hidden; border-radius:8px; background:#edf1f7; }
+.manual-bar-pass { background:var(--accent-blue); }
+.manual-bar-partial { background:#f0a34a; }
+.manual-review-note { margin-top:20px; padding:14px 16px; border-left:4px solid #f0a34a; background:rgba(240,163,74,.08); color:var(--text-muted); font-size:16px; line-height:1.38; }
+.eval-check-list { display:grid; gap:14px; }
+.eval-check-item { min-height:58px; padding:15px 18px; border-radius:11px; background:rgba(15,98,254,.06); color:var(--text); font-size:clamp(19px,1.4vw,23px); line-height:1.25; font-weight:760; display:flex; align-items:center; gap:13px; }
+.eval-check-item::before { content:'✓'; width:27px; height:27px; flex:0 0 27px; border-radius:50%; background:var(--accent-blue); color:#fff; font:900 15px/27px var(--font-mono); text-align:center; }
+.report-eval-card.manual .eval-check-item { background:rgba(240,163,74,.09); }
+.report-eval-card.manual .eval-check-item::before { background:#d47b13; }
+.report-eval-card { position:relative; overflow:hidden; border-top:5px solid var(--accent-blue); }
+.report-eval-card.manual { border-top-color:#d47b13; }
+.report-eval-stage-number { position:absolute; top:19px; right:24px; color:rgba(15,98,254,.1); font:900 64px/1 var(--font-mono); }
+.report-eval-card.manual .report-eval-stage-number { color:rgba(212,123,19,.12); }
+.report-eval-arrow { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:12px; color:var(--accent-blue); }
+.report-eval-arrow span { font:900 31px/1 var(--font-mono); }
+.report-eval-arrow b { writing-mode:vertical-rl; transform:rotate(180deg); color:var(--text-muted); font:800 11px/1 var(--font-mono); letter-spacing:.12em; }
+.prompt-anatomy.three-part { grid-template-columns:repeat(3,1fr); max-width:1240px; gap:26px; }
+.prompt-anatomy.three-part .prompt-part { min-height:330px; padding:32px 30px; }
+.prompt-anatomy.three-part .prompt-part h3 { font-size:clamp(28px,2vw,34px); }
+.prompt-anatomy.three-part .prompt-part p { font-size:clamp(19px,1.4vw,22px); }
+.prompt-anatomy.three-part .prompt-example { font-size:14px; }
+.prompt-output-example { margin-top:18px; padding:18px 20px; border-left:5px solid var(--accent-blue); border-radius:9px; background:rgba(15,98,254,.065); color:var(--accent-blue); font-size:clamp(19px,1.45vw,23px); line-height:1.38; font-weight:760; }
+.rag-start-flow { width:100%; max-width:1310px; display:grid; grid-template-columns:1fr 92px 1.18fr; gap:25px; align-items:stretch; }
+.rag-start-card { min-height:340px; padding:34px 36px; border-radius:20px; background:#fff; box-shadow:0 18px 46px rgba(20,50,100,.08); display:flex; flex-direction:column; justify-content:center; }
+.rag-start-card.granite { color:#fff; background:linear-gradient(145deg,#10203c,#164f91); }
+.rag-start-card h3 { margin:13px 0 17px; font-size:clamp(31px,2.4vw,41px); }
+.rag-start-card p { margin:0; color:var(--text-muted); font-size:clamp(20px,1.45vw,23px); line-height:1.4; }
+.rag-start-card.granite p { color:#dce9ff; }
+.rag-start-card.granite .method-num { color:#a9c9ff; }
+.granite-visual { position:relative; min-height:340px; margin:0; padding:42px 48px; border-radius:20px; overflow:hidden; background:linear-gradient(155deg,#f4f7fa 0%,#f7f7fa 43%,#f3d4ea 68%,#ffb04d 84%,#ff265d 100%); box-shadow:0 18px 46px rgba(20,50,100,.08); display:flex; flex-direction:column; justify-content:center; }
+.granite-visual::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at 2% 100%,rgba(66,149,255,.88),transparent 38%),linear-gradient(135deg,transparent 0 13%,rgba(111,124,139,.12) 13% 15%,transparent 15% 18%,rgba(111,124,139,.1) 18% 20%,transparent 20%); pointer-events:none; }
+.granite-brand,.granite-title,.granite-release { position:relative; z-index:1; }
+.granite-brand { display:flex; align-items:center; gap:13px; color:#15171b; font-size:20px; font-weight:760; }
+.granite-ibm { font:900 27px/1 var(--font-mono); letter-spacing:-.08em; }
+.granite-title { margin-top:21px; color:#111318; font-size:clamp(39px,3vw,51px); line-height:1.04; font-weight:900; letter-spacing:-.035em; }
+.granite-release { margin-top:64px; color:#17191e; font-size:16px; line-height:1.3; }
+.granite-release b { font-weight:880; }
+.rag-start-arrow { display:grid; place-items:center; color:var(--accent-blue); font:900 37px/1 var(--font-mono); }
+.rag-definition { margin-top:24px; padding:18px 20px; border-left:5px solid var(--accent-blue); border-radius:10px; background:rgba(15,98,254,.065); color:var(--text); font-size:clamp(18px,1.3vw,21px); line-height:1.38; }
+.rag-definition b { color:var(--accent-blue); }
+.rag-mini-flow { margin-top:25px; display:grid; grid-template-columns:1fr auto 1fr auto 1fr; gap:10px; align-items:center; }
+.rag-mini-flow span { padding:12px 10px; border-radius:9px; background:#eef4ff; color:var(--accent-blue); font:800 12px/1.25 var(--font-mono); text-align:center; }
+.rag-mini-flow i { color:var(--accent-blue); font:900 19px/1 var(--font-mono); font-style:normal; }
+.prompt-compact-grid { width:100%; max-width:1260px; display:grid; grid-template-columns:repeat(6,1fr); gap:17px; }
+.prompt-compact-card { min-height:176px; padding:26px 28px; border-radius:17px; background:#fff; box-shadow:0 14px 36px rgba(20,50,100,.08); display:flex; flex-direction:column; }
+.prompt-compact-card:nth-child(-n+3) { grid-column:span 2; }
+.prompt-compact-card:nth-child(n+4) { grid-column:span 3; }
+.prompt-compact-card.warning { border:1px solid rgba(245,124,0,.3); background:#fffaf3; }
+.prompt-compact-head { display:flex; align-items:baseline; gap:12px; }
+.prompt-compact-head span { color:var(--accent-blue); font:850 14px/1 var(--font-mono); }
+.prompt-compact-head h3 { margin:0; font-size:clamp(26px,1.95vw,33px); }
+.prompt-compact-card p { margin:14px 0 0; color:var(--text-muted); font-size:clamp(18px,1.32vw,21px); line-height:1.34; }
+.prompt-compact-quote { margin-top:auto; padding-top:15px; color:var(--accent-blue); font-size:clamp(17px,1.22vw,20px); line-height:1.32; font-weight:800; }
+.prompt-compact-card.warning .prompt-compact-quote { color:#a75a00; }
+#reportStepper .method-num { font-size:15px; }
+#reportStepper .report-stage-label { font-size:18px; }
+#reportStepper .prompt-call-label { font-size:17px; padding:13px 18px; }
+#reportStepper .validator-score-title { font-size:13px; }
+#reportStepper .score-ledger { font-size:15px; }
+#reportStepper .correction-package { font-size:13px; }
+#reportStepper .validator-warning-list span { font-size:14px; }
+#reportStepper .report-definition { font-size:17px; }
+
 .slide-map-toggle { position:fixed; top:18px; left:154px; z-index:120; min-height:34px; padding:7px 12px; border:1px solid var(--border); border-radius:8px; background:rgba(255,255,255,.86); box-shadow:0 5px 18px rgba(15,35,80,.07); color:var(--text-dim); font:700 11px/1 var(--font-mono); cursor:pointer; backdrop-filter:blur(10px); }
 .slide-map-toggle:hover { color:var(--accent-blue); border-color:var(--accent-blue); }
 .slide-map-overlay { position:fixed; inset:0; z-index:18000; display:grid; place-items:center; padding:52px; background:rgba(237,241,249,.94); backdrop-filter:blur(15px); opacity:0; pointer-events:none; transition:opacity .18s ease; }
@@ -1860,7 +1948,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .backup-layer-link:hover,.backup-layer-link:focus-visible { color:var(--accent-blue); border-color:rgba(15,98,254,.35); background:rgba(15,98,254,.055); outline:none; }
 .backup-layer-link:active { transform:translateY(1px); }
 .backup-layer-link.primary { background:#11161d; border-color:#11161d; color:#fff; }
-.backup-body { scroll-behavior:smooth; padding:0; background:radial-gradient(circle at 20% 0%,rgba(15,98,254,.055),transparent 28%),var(--bg); }
+.backup-body { scroll-behavior:auto; padding:0; background:radial-gradient(circle at 20% 0%,rgba(15,98,254,.055),transparent 28%),var(--bg); }
 .backup-document { width:min(1180px,calc(100% - 40px)); margin:0 auto; padding:42px 0 100px; }
 .backup-overview { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr); gap:28px; align-items:end; padding:0 0 38px; border-bottom:1px solid var(--border); }
 .backup-overview-kicker { color:var(--accent-blue); font:750 11px/1.2 var(--font-mono); letter-spacing:.11em; }
@@ -1925,6 +2013,37 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .pipeline-detail { padding:0 2px 16px; color:var(--text-muted); font-size:13px; line-height:1.6; }
 .pipeline-detail ul { padding-left:18px; }
 .pipeline-detail li { margin:6px 0; }
+.report-backup .pipeline-node { padding:34px 36px 36px; }
+.report-backup .pipeline-node h4 { font-size:clamp(27px,2.45vw,36px); }
+.report-backup .pipeline-node-purpose { max-width:980px; font-size:18px; line-height:1.48; }
+.report-backup .pipeline-node-id { font-size:15px; }
+.report-backup .pipeline-status { padding:8px 10px; font-size:12px; }
+.report-backup .pipeline-flow { gap:12px; margin-top:28px; }
+.report-backup .pipeline-flow-step { min-height:112px; padding:18px 16px; }
+.report-backup .pipeline-flow-step b { font-size:17px; line-height:1.25; }
+.report-backup .pipeline-flow-step span { margin-top:8px; font-size:15px; line-height:1.4; }
+.report-backup .pipeline-block-label { font-size:13px; }
+.report-backup .pipeline-block p,
+.report-backup .pipeline-block li { font-size:17px; line-height:1.52; }
+.report-backup .pipeline-block li { margin:8px 0; }
+.report-backup .pipeline-disclosure summary { padding:16px 2px; font-size:16px; }
+.report-backup .pipeline-detail { font-size:16px; line-height:1.55; }
+.report-backup .pipeline-detail li { margin:8px 0; }
+.report-backup .report-six-step { grid-template-columns:repeat(6,minmax(0,1fr)); }
+.report-backup .report-six-step .pipeline-flow-step { min-height:124px; }
+.report-backup .report-call-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-top:26px; }
+.report-backup .report-call { padding:22px 20px; border:1px solid color-mix(in srgb,var(--layer-color) 24%,#d8dce4); border-top:5px solid var(--layer-color); border-radius:12px; background:#f7faff; }
+.report-backup .report-call b { display:block; font-size:20px; }
+.report-backup .report-call strong { display:block; margin-top:10px; font-size:18px; }
+.report-backup .report-call p { margin-top:8px; color:var(--text-muted); font-size:16px; line-height:1.45; }
+.report-backup .report-score { display:grid; grid-template-columns:1fr auto; gap:10px 20px; align-items:center; padding:20px 22px; border-radius:12px; background:#f7faff; }
+.report-backup .report-score span { font-size:17px; }
+.report-backup .report-score b { color:var(--layer-color); font:800 22px/1 var(--font-mono); }
+.report-backup .report-boundary { padding:18px 20px; border-left:5px solid var(--layer-color); background:#eef5ff; font-size:18px; line-height:1.5; }
+@media (max-width:1100px) {
+  .report-backup .report-six-step { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .report-backup .pipeline-flow-step:nth-child(3)::after { display:none; }
+}
 .evolution-rail { display:flex; gap:8px; align-items:stretch; min-width:0; }
 .evolution-step { flex:1 1 0; min-width:0; padding:13px; background:#f4f6f9; border-top:3px solid var(--layer-color); }
 .evolution-step b { display:block; color:var(--layer-color); font:750 10px/1 var(--font-mono); }
@@ -2015,22 +2134,28 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
       <div class="story-visual" id="storyFlow">
         <div class="story-scene" data-story-step="0">
           <img class="story-photo" src="assets/check-engine-dashboard-v1.png" alt="Car dashboard with the amber check-engine warning light illuminated">
+          <div class="story-photo-note"><strong>CHECK ENGINE · ON</strong><span>Source · John Hughes, 2025</span></div>
         </div>
         <div class="story-scene" data-story-step="1">
           <img class="story-photo" src="assets/bluedriver-scanner-v1.png" alt="Car owner holding a BlueDriver OBD-II scanner and its phone app">
+          <div class="story-photo-note"><strong>CONSUMER OBD-II SCANNER</strong><span>Source · BlueDriver</span></div>
         </div>
         <div class="story-scene" data-story-step="2">
           <div class="story-code-crop"><img src="assets/obd-consumer-tool-crop-v1.png" alt="EOBD Facile trouble-code screen showing P0670 and P0401 descriptions"></div>
+          <div class="story-photo-note"><span>Source · EOBD Facile, Google Play product listing · accessed July 2026</span></div>
         </div>
         <div class="story-scene" data-story-step="3">
-          <div class="reactive-flow">
-            <div class="reactive-step"><strong>Vehicle data changes</strong></div>
-            <div class="reactive-arrow">&rarr;</div>
-            <div class="reactive-step is-late"><strong>Fault occurs</strong></div>
-            <div class="reactive-arrow">&rarr;</div>
-            <div class="reactive-step"><strong>Warning appears</strong></div>
+          <div class="owner-choice-grid">
+            <article class="owner-choice-card">
+              <img src="assets/choice-repair-workshop.png" alt="A mechanic inspecting a vehicle in a repair workshop">
+              <div class="owner-choice-copy"><strong>Visit a repair workshop</strong><span>Time and cost</span></div>
+            </article>
+            <article class="owner-choice-card">
+              <img src="assets/choice-continue-driving.png" alt="A driver continuing their journey to work">
+              <div class="owner-choice-copy"><strong>Continue driving to work</strong><span>Uncertain risk</span></div>
+            </article>
           </div>
-          <div class="owner-impact">Late warning means <span>breakdown risk · repair cost · lost time.</span></div>
+          <div class="owner-choice-source">Images: Acorn Tyres Aylesbury · Fleet News</div>
         </div>
       </div>
     </div>
@@ -2048,18 +2173,24 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
     <div class="story-knowledge" id="storyKnowledge">
       <strong>
         <span><span class="highlight-blue">OBD-II — On-Board Diagnostics, Second Generation:</span></span>
-        <span>provides standardised access to real-time vehicle performance data and diagnostic trouble codes.</span>
+        <span>provides standardised access to real-time vehicle performance data and Diagnostic Trouble Codes (DTCs).</span>
+      </strong>
+    </div>
+    <div class="story-knowledge" id="storyDtcKnowledge">
+      <strong>
+        <span><span class="highlight-blue">DTCs — Diagnostic Trouble Codes:</span></span>
+        <span>standard codes used by technicians to identify where a vehicle detected a problem.</span>
       </strong>
     </div>
     <script type="application/json" class="slide-notes">
-    {"title":"Storyboard","script":"For a private owner, diagnosis usually starts when the warning light appears. They connect an OBD-II reader and receive live engine and emissions data together with diagnostic trouble codes. But the consumer tool still does not explain the likely problem, urgency or next action clearly. By the time the code appears, the owner may already face breakdown risk, repair cost and lost time. Could the same data warn the owner earlier?","notes":["Beat 1: warning light appears","Beat 2: OBD-II is the standardised vehicle interface used to access live engine and emissions data plus diagnostic trouble codes","Beat 3: the consumer tool returns codes and readings, but not a clear decision","Beat 4: late warning leaves the owner exposed to breakdown risk, cost and disruption","Transition: ask whether the same data could support an earlier warning"]}
+    {"title":"Storyboard","script":"For a private owner, diagnosis usually starts when the warning light appears. The OBD-II port provides access to engine readings and Diagnostic Trouble Codes, or DTCs. These standard codes help technicians identify where the vehicle detected a problem. A consumer scanner displays the DTCs and graphs, but it does not explain what they mean for the owner. The owner must then decide whether to visit a repair workshop or continue driving to work without knowing the risk. Could the same data identify unusual behaviour earlier and provide clearer guidance?","notes":["Beat 1: warning light appears","Beat 2: OBD-II provides access to engine readings and DTCs","Beat 3: DTCs help technicians locate the affected system but do not explain the decision to the owner","Beat 4: the owner must choose between immediate cost and uncertain risk","Transition: ask whether the same data could identify unusual behaviour earlier and provide clearer guidance"]}
     </script>
   </div>
 
   <!-- ===== 3 / MOTIVATION ===== -->
   <div class="slide" data-slide="2">
     <p class="slide-tag anim-1" data-edit-id="s2-tag">Our Motivation</p>
-    <h2 class="anim-2">For professional fleets, <span class="highlight-blue">it already does.</span></h2>
+    <h2 class="anim-2">Fleet operators use vehicle data to <span class="highlight-blue">plan maintenance earlier.</span></h2>
     <div class="motivation-stage">
       <div class="motivation-copy anim-3">
         <div class="pdm-logic">
@@ -2074,7 +2205,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
       </div>
       <div class="oxmaint-evidence anim-4" aria-label="Oxmaint vendor dashboard example showing live fleet fault alerts with recommended actions">
         <div class="oxmaint-head">
-          <strong>Live Fault Alerts</strong>
+          <strong>Live Fault Alerts Dashboard</strong>
         </div>
         <div class="oxmaint-alerts">
           <div class="oxmaint-alert">
@@ -2087,19 +2218,15 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
             <div><strong>Brake pressure degradation</strong><span>braking system</span></div>
             <div class="oxmaint-action">Schedule within 3 days</div>
           </div>
-          <div class="oxmaint-alert">
-            <div class="oxmaint-alert-level">MONITOR</div>
-            <div><strong>Fluid temperature trending high</strong><span>transmission</span></div>
-            <div class="oxmaint-action">Flag for next PM</div>
-          </div>
         </div>
+        <div class="oxmaint-source">Adapted from the OxMaint fleet-maintenance software website · accessed July 2026</div>
       </div>
     </div>
     <div class="owner-bridge anim-5">
-      <strong>Bring the same capability to private owners—without expert help.</strong>
+      <strong>For private owners: an earlier warning, a clear explanation, and guidance on what to do next.</strong>
     </div>
     <script type="application/json" class="slide-notes">
-    {"title":"Motivation","script":"Could a car warn its owner earlier? For professional fleets, it already does. Fleets continuously monitor OBD-II data so that changing vehicle behaviour can become early evidence and a maintenance action. This Oxmaint vendor example shows the kind of problem, urgency and recommendation a fleet operator can see. Our goal is to bring the same capability to private owners without requiring expert help. To build it, we began with the data.","notes":["Answer the storyboard question immediately: professional fleets already use continuous vehicle data for predictive maintenance","The vendor dashboard illustrates the capability; it is not independent performance validation","Point to problem, urgency and action","Transition: To build the same capability for a private owner, we began with the data."]}
+    {"title":"Motivation","script":"Fleet operators already use continuous vehicle data to monitor their vehicles and plan maintenance earlier. The Oxmaint example shows the detected problem, its urgency and a recommended action on one Dashboard. That is what we want to provide for private car owners: an earlier and understandable warning, together with guidance on what to do next, without expecting them to interpret the raw readings or DTCs themselves. To build this system, we began with the vehicle data.","notes":["Describe the vendor dashboard as an example of the capability, not independent performance validation","Point to the problem, urgency and action","State the private-owner goal directly","Transition: To build this system, we began with the vehicle data"]}
     </script>
   </div>
 
@@ -2672,44 +2799,39 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
     <h2 class="anim-2">How can we turn technical evidence into clear, reliable guidance for vehicle owners?</h2>
     <p class="subtitle anim-2">Charlotte Yu &middot; Jintong He</p>
     <div class="report-stepper anim-3" id="reportStepper">
-      <div class="report-stage-label" id="reportStageLabel">Choose a traceable starting design</div>
+      <div class="report-stage-label" id="reportStageLabel">Use knowledge only where the report needs it</div>
       <div class="report-stage-wrap" id="reportStageWrap">
         <div class="report-stage" data-report-stage="0">
-          <div class="report-choice-flow">
-            <article class="choice-card">
-              <div class="method-num">Workshop knowledge</div>
-              <h3>Reviewed sources</h3>
-              <p>Traceable information written for technicians.</p>
-              <div class="choice-tags"><span>TRACEABLE</span><span>TECHNICAL</span></div>
-            </article>
-            <div class="choice-operator">+</div>
-            <article class="choice-card">
-              <div class="method-num">Granite LLM</div>
-              <h3>Owner-readable</h3>
-              <p>Natural language adapted to the current case.</p>
-              <div class="choice-tags"><span>CLEAR</span><span>CASE-SPECIFIC</span></div>
-            </article>
-            <div class="choice-operator combine">STARTING<br>HYPOTHESIS<br>→</div>
-            <article class="choice-card selected">
-              <div class="method-num">RAG + Granite</div>
-              <h3>Reviewed knowledge → clear report</h3>
-              <p>Granite explains selected knowledge alongside Model evidence.</p>
-              <div class="choice-tags"><span>OUR STARTING DESIGN</span></div>
+          <div class="rag-start-flow">
+            <div class="granite-visual" role="img" aria-label="IBM Granite 4.1 release graphic">
+              <div class="granite-brand"><span class="granite-ibm">IBM</span><span>ibm/granite 4.1</span></div>
+              <div class="granite-title">IBM · Granite 4.1</div>
+              <div class="granite-release">⚡ Released on <b>Apr 30, 2026</b> · <b>30K</b> context</div>
+            </div>
+            <div class="rag-start-arrow">+</div>
+            <article class="rag-start-card">
+              <div class="method-num">Our design choice</div>
+              <h3>Selective RAG</h3>
+              <div class="rag-definition"><b>RAG · Retrieval-Augmented Generation</b><br>Relevant information is retrieved first and supplied to the LLM as additional context.</div>
             </article>
           </div>
         </div>
 
         <div class="report-stage" data-report-stage="1">
-          <div class="prompt-build-flow">
-            <div class="prompt-build-row"><div class="prompt-build-step">01 · Role</div><div class="prompt-build-example">“Vehicle-maintenance decision-support assistant”</div><div class="prompt-build-reason">Keeps the response focused on a <strong>non-technical owner</strong>.</div></div>
-            <div class="prompt-build-row"><div class="prompt-build-step">02 · Task</div><div class="action-contract"><span>NOW</span><span>SERVICE TIMING</span><span>STOP DRIVING AND SEEK HELP IF</span><span>TELL THE MECHANIC</span></div><div class="prompt-build-reason">Turns one broad question into <strong>four clear decisions</strong>.</div></div>
+          <div class="report-question-grid">
+            <article class="report-question-card"><div class="method-num">Call 1</div><h3>What happened?</h3><p>Describe the unusual pattern found in the uploaded journey.</p><div class="report-question-input no-rag"><b>Input</b>Model evidence only · no RAG</div></article>
+            <article class="report-question-card"><div class="method-num">Call 2</div><h3>What might it mean?</h3><p>Explain possible causes while keeping uncertainty visible.</p><div class="report-question-input"><b>Input</b>Model evidence + reviewed cause knowledge</div></article>
+            <article class="report-question-card"><div class="method-num">Call 3</div><h3>What should I do next?</h3><p>Give practical guidance suited to the current component and risk level.</p><div class="report-question-input"><b>Input</b>Model evidence + reviewed action knowledge</div></article>
           </div>
         </div>
 
         <div class="report-stage" data-report-stage="2">
-          <div class="prompt-build-flow">
-            <div class="prompt-build-row"><div class="prompt-build-step">03 · Constraints</div><div class="prompt-build-example">“Plain language · current risk · supported facts”</div><div class="prompt-build-reason">Controls <strong>wording, urgency and factual scope</strong>.</div></div>
-            <div class="prompt-build-row has-edge-example"><div class="prompt-build-step">04 · Edge cases + examples</div><div class="prompt-build-example">“If knowledge conflicts, ask a mechanic to verify the evidence.”</div><div class="edge-example-pair"><span class="edge-bad">AVOID · Replace the mass airflow sensor.</span><span class="edge-good">USE · Verify the intake-temperature evidence first.</span></div><div class="prompt-build-reason">The rule defines the response; examples make its <strong>boundary concrete</strong>.</div></div>
+          <div class="prompt-compact-grid">
+            <article class="prompt-compact-card"><div class="prompt-compact-head"><span>01</span><h3>Role</h3></div><p>Define who Granite is helping.</p><div class="prompt-compact-quote">“Write for a vehicle owner without automotive training.”</div></article>
+            <article class="prompt-compact-card"><div class="prompt-compact-head"><span>02</span><h3>Task</h3></div><p>Ask one question in this call.</p><div class="prompt-compact-quote">“What should I do next?”</div></article>
+            <article class="prompt-compact-card"><div class="prompt-compact-head"><span>03</span><h3>Evidence</h3></div><p>Limit which facts may be used.</p><div class="prompt-compact-quote">“Use the current risk state and matched action knowledge.”</div></article>
+            <article class="prompt-compact-card warning"><div class="prompt-compact-head"><span>04</span><h3>Boundaries</h3></div><p>Keep technical work with a qualified mechanic.</p><div class="prompt-compact-quote">“Do not instruct the owner to test wiring or replace a part.”</div></article>
+            <article class="prompt-compact-card"><div class="prompt-compact-head"><span>05</span><h3>Fixed output</h3></div><p>Return the same four decision fields in JSON.</p><div class="prompt-compact-quote">“Now · Service timing · Stop driving and seek help if · Tell the mechanic”</div></article>
           </div>
         </div>
 
@@ -2717,30 +2839,33 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
           <div class="validator-score-flow">
             <article class="validator-output-card"><div class="method-num">First output</div><blockquote>“coolant_temp is high and the cooling fan has failed.”</blockquote><div class="validator-warning-list"><span>RAW FIELD · coolant_temp</span><span>CONFIRMED CLAIM · has failed</span><span>INCOMPLETE EXPLANATION</span></div></article>
             <article class="validator-score-card"><div class="validator-score-title">Rule-based quality score</div><div class="score-ledger"><div class="score-start"><span>Start</span><span>1.00</span></div><div><span>Raw field</span><span>−0.20</span></div><div><span>“has failed”</span><span>−0.20</span></div><div><span>Too short</span><span>−0.20</span></div><div class="score-total"><span>Blocked</span><span>0.40</span></div></div></article>
-            <article class="validator-corrected-card"><div class="method-num">One targeted correction</div><div class="correction-package">Original task + failed output + exact warnings</div><blockquote>“The engine's coolant temperature is running higher than normal. This abnormal reading may need prompt attention to prevent overheating.”</blockquote><div class="validator-release">1.00 · RELEASE</div></article>
+            <article class="validator-corrected-card"><div class="method-num">One targeted correction</div><div class="correction-package">Original task + failed output + exact warnings</div><blockquote>“The cooling system shows a high-risk pattern because the coolant temperature is higher than expected. This pattern needs prompt professional attention.”</blockquote><div class="validator-release">1.00 · RELEASE</div></article>
           </div>
-          <div class="report-definition"><b>Release threshold: 0.80.</b> Only the failed section is regenerated.</div>
+          <div class="report-definition"><b>Below 0.80 · block and correct once.</b> Only the failed section is regenerated.</div>
         </div>
 
         <div class="report-stage" data-report-stage="4">
-          <div class="evidence-boundary-flow">
-            <section class="assurance-path">
-              <div class="method-num">What the implemented design provides</div>
-              <h3>Three controlled boundaries</h3>
-              <div class="assurance-steps">
-                <div class="assurance-step-box" data-step="01"><b>Relevant retrieval</b></div>
-                <div class="assurance-step-arrow">→</div>
-                <div class="assurance-step-box" data-step="02"><b>Separated prompts</b></div>
-                <div class="assurance-step-arrow">→</div>
-                <div class="assurance-step-box" data-step="03"><b>Validator</b></div>
+          <div class="report-eval-grid">
+            <section class="report-eval-card">
+              <div class="report-eval-stage-number">01</div>
+              <h3>Automated technical checks</h3>
+              <div class="eval-check-list">
+                <div class="eval-check-item">Required JSON structure</div>
+                <div class="eval-check-item">Use of supplied evidence</div>
+                <div class="eval-check-item">No confirmed-fault wording</div>
+                <div class="eval-check-item">Technical actions kept with a mechanic</div>
               </div>
             </section>
-            <div class="evidence-boundary-arrow">≠</div>
-            <section class="boundary-card">
-              <div class="method-num">What is not established</div>
-              <h3>A confirmed diagnosis</h3>
-              <div class="boundary-list"><div>Mechanical accuracy</div><div>Every semantic contradiction</div><div>Cross-vehicle generalisation</div></div>
-              <div class="boundary-next"><small>Next</small><strong>Technician review with confirmed-fault cases</strong></div>
+            <div class="report-eval-arrow"><span>→</span><b>THEN</b></div>
+            <section class="report-eval-card manual">
+              <div class="report-eval-stage-number">02</div>
+              <h3>Manual report review</h3>
+              <div class="eval-check-list">
+                <div class="eval-check-item">Relevance of retrieved knowledge</div>
+                <div class="eval-check-item">Connection to the displayed signals</div>
+                <div class="eval-check-item">Clarity for a vehicle owner</div>
+                <div class="eval-check-item">Appropriate level of certainty</div>
+              </div>
             </section>
           </div>
         </div>
@@ -4143,7 +4268,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
 
         </section>
 
-        <section class="pipeline-layer" id="backupReport" data-layer="report">
+        <section class="pipeline-layer" id="backupReportLegacy" data-layer="report" hidden>
           <header class="pipeline-layer-head"><div><div class="pipeline-layer-label">03 · REPORT LAYER</div><h3>Risk evidence → grounded explanation</h3></div><div class="pipeline-layer-owner">REPORT LAYER TEAM</div></header>
           <article class="pipeline-node" id="reportR0">
             <details class="pipeline-node-shell">
@@ -4211,6 +4336,145 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
             </div></details>
           </article>
 
+        </section>
+
+        <section class="pipeline-layer report-backup" id="backupReport" data-layer="report">
+          <header class="pipeline-layer-head">
+            <div><div class="pipeline-layer-label">03 · REPORT LAYER</div><h3>Model evidence → an owner-readable report</h3></div>
+            <div class="pipeline-layer-owner">FINAL PIPELINE · VIVA BACKUP</div>
+          </header>
+
+          <article class="pipeline-node" id="reportB0">
+            <details class="pipeline-node-shell" open>
+              <summary class="pipeline-node-head"><span class="pipeline-node-id">R0</span><div><h4>The complete Report Layer in six steps</h4><p class="pipeline-node-purpose">Use this page first. It shows where the Model output enters, where reviewed knowledge is added, and why generated text is checked before the Dashboard receives it.</p></div><span class="pipeline-status">ONE END-TO-END VIEW</span></summary>
+              <div class="pipeline-node-body">
+                <div class="pipeline-flow report-six-step">
+                  <div class="pipeline-flow-step"><b>1 · Receive</b><span>Validate the Model Layer JSON and select the current component result.</span></div>
+                  <div class="pipeline-flow-step"><b>2 · Prepare</b><span>Turn technical fields into a structured evidence summary for Granite.</span></div>
+                  <div class="pipeline-flow-step"><b>3 · Retrieve</b><span>Select reviewed knowledge for the same anomaly, section and risk level.</span></div>
+                  <div class="pipeline-flow-step"><b>4 · Generate</b><span>Run three focused calls: what happened, why it may matter, and what to do.</span></div>
+                  <div class="pipeline-flow-step"><b>5 · Validate</b><span>Score each section; correct one failed section once.</span></div>
+                  <div class="pipeline-flow-step"><b>6 · Deliver</b><span>Return Model evidence and the three accepted report sections to the Dashboard.</span></div>
+                </div>
+                <div class="pipeline-disclosure">
+                  <details><summary>What is fixed and what is generated?</summary><div class="pipeline-detail"><ul><li><strong>Fixed upstream evidence:</strong> component, risk score, risk level, confidence, signals, projections and notes.</li><li><strong>Generated language:</strong> anomaly description, possible cause and recommended actions.</li><li>The Report Layer does not recalculate the Model result.</li></ul></div></details>
+                  <details><summary>Where this path begins in the code</summary><div class="pipeline-detail"><ul><li><code>report_layer/pipeline/report_generator.py::generate_report()</code> coordinates the complete process.</li><li>Input and output structures are defined in <code>shared/interface_models.py</code>.</li></ul></div></details>
+                </div>
+              </div>
+            </details>
+          </article>
+
+          <article class="pipeline-node" id="reportB1">
+            <details class="pipeline-node-shell">
+              <summary class="pipeline-node-head"><span class="pipeline-node-id">R1</span><div><h4>Prepare the Model evidence before Granite sees it</h4><p class="pipeline-node-purpose">The Model JSON is valid for software, but its field names and numbers need context before they can support a clear report.</p></div><span class="pipeline-status">PREPARE</span></summary>
+              <div class="pipeline-node-body">
+                <div class="pipeline-columns">
+                  <div class="pipeline-block"><div class="pipeline-block-label">EXAMPLE · COOLING RESULT</div><ul><li><code>coolant_temp</code> becomes <strong>coolant temperature</strong>.</li><li>The value is compared with its supplied reference range and labelled Normal or Abnormal.</li><li><code>coolant_temp</code> and <code>ect_rate_180s</code> can activate the predefined <strong>thermal pattern</strong> relationship.</li><li>This is a designed signal combination, not a statistical correlation discovered by Granite.</li></ul></div>
+                  <div class="pipeline-block"><div class="pipeline-block-label">BOUNDARIES ADDED TO THE CONTEXT</div><ul><li>Model notes remain data-quality or provenance notes; they are not treated as mechanical causes.</li><li>Risk score, confidence and projected threshold crossing keep separate meanings.</li><li>If the component is already High risk, future wording about “reaching High” is withheld from the prompt.</li><li>Missing projection values remain unavailable; Granite cannot invent replacements.</li></ul></div>
+                </div>
+                <div class="report-boundary"><strong>Why keep projection fields in the final JSON?</strong> The Dashboard uses them as Model outputs. The Report Layer passes them through unchanged, while controlling whether they are safe to mention in generated text.</div>
+                <div class="pipeline-disclosure">
+                  <details><summary>Projection meanings</summary><div class="pipeline-detail"><ul><li><code>estimated_cycles_to_failure</code> estimates how many further trips the risk trend may take to reach the High-risk threshold. It is not physical remaining useful life.</li><li><code>estimated_failure_probability</code> is the probability of crossing that threshold within the fixed next ten trips. It is independent of the cycle estimate.</li></ul></div></details>
+                  <details><summary>Code evidence</summary><div class="pipeline-detail"><ul><li><code>report_layer/pipeline/context_injection.py</code> prepares display names, ranges, signal relationships and prompt context.</li></ul></div></details>
+                </div>
+              </div>
+            </details>
+          </article>
+
+          <article class="pipeline-node" id="reportB2">
+            <details class="pipeline-node-shell">
+              <summary class="pipeline-node-head"><span class="pipeline-node-id">R2</span><div><h4>Selective RAG: retrieve the right knowledge record</h4><p class="pipeline-node-purpose">RAG means Retrieval-Augmented Generation: reviewed information is selected first and then supplied to Granite with the current vehicle evidence.</p></div><span class="pipeline-status">RETRIEVE</span></summary>
+              <div class="pipeline-node-body">
+                <div class="pipeline-flow">
+                  <div class="pipeline-flow-step"><b>Reviewed YAML</b><span>Five supported anomaly types with possible causes and risk-specific actions.</span></div>
+                  <div class="pipeline-flow-step"><b>Rebuild index</b><span>Five types × four records: one cause record and Low, Medium, High action records.</span></div>
+                  <div class="pipeline-flow-step"><b>Match metadata</b><span>Use the known anomaly type, report section and current risk level.</span></div>
+                  <div class="pipeline-flow-step"><b>Check relevance</b><span>Cooling also checks whether the signal direction fits overheating knowledge.</span></div>
+                </div>
+                <div class="pipeline-columns">
+                  <div class="pipeline-block"><div class="pipeline-block-label">WHY EXACT METADATA?</div><ul><li>The Model already provides the anomaly identity.</li><li>Exact matching prevents knowledge for another component or risk level entering the prompt.</li><li>It is deterministic and easier to inspect than semantic similarity for this interface.</li></ul></div>
+                  <div class="pipeline-block"><div class="pipeline-block-label">CURRENT LIMIT</div><ul><li>Matching the category does not prove that every sentence fits the current signal direction.</li><li>Cooling has an additional direction check because its source mainly describes overheating.</li><li>The other four anomaly types currently rely on metadata matching.</li></ul></div>
+                </div>
+                <div class="pipeline-disclosure">
+                  <details><summary>What happens to workshop procedures?</summary><div class="pipeline-detail"><ul><li>Owner-safe guidance covers observation, service timing and warning signs.</li><li>Scan-tool diagnosis, wiring checks, calibration and replacement are assigned to a qualified mechanic.</li></ul></div></details>
+                  <details><summary>Code evidence</summary><div class="pipeline-detail"><ul><li><code>report_layer/rag/knowledge_indexer.py</code> recreates the 20-record ChromaDB collection.</li><li><code>report_layer/rag/rag_retriever.py</code> applies exact metadata filters.</li></ul></div></details>
+                </div>
+              </div>
+            </details>
+          </article>
+
+          <article class="pipeline-node" id="reportB3">
+            <details class="pipeline-node-shell">
+              <summary class="pipeline-node-head"><span class="pipeline-node-id">R3</span><div><h4>Three calls answer three different questions</h4><p class="pipeline-node-purpose">The report is generated in order. Each call receives only the evidence required for its question, making a failed section easier to identify and correct.</p></div><span class="pipeline-status">GENERATE</span></summary>
+              <div class="pipeline-node-body">
+                <div class="report-call-grid">
+                  <div class="report-call"><b>CALL 1 · WHAT HAPPENED?</b><strong>Input</strong><p>Prepared Model evidence only.</p><strong>Output</strong><p>Observed pattern, relevant signals and current risk meaning.</p></div>
+                  <div class="report-call"><b>CALL 2 · WHY MIGHT IT MATTER?</b><strong>Input</strong><p>Model evidence, accepted Call 1 and admitted cause knowledge.</p><strong>Output</strong><p>Possible explanations expressed with uncertainty.</p></div>
+                  <div class="report-call"><b>CALL 3 · WHAT SHOULD I DO?</b><strong>Input</strong><p>Model evidence, accepted earlier sections and risk-specific action knowledge.</p><strong>Output</strong><p>Now · Service timing · Stop if · Tell the mechanic.</p></div>
+                </div>
+                <div class="report-boundary"><strong>Dependency:</strong> Call 2 starts only after Call 1 passes. Call 3 starts only after both earlier sections pass.</div>
+                <div class="pipeline-disclosure">
+                  <details><summary>Why three calls instead of one long prompt?</summary><div class="pipeline-detail"><ul><li>Observation, possible cause and action have different evidence permissions.</li><li>Only Calls 2 and 3 receive retrieved knowledge.</li><li>A failed call can be corrected without regenerating accepted sections.</li><li>The cost is three local inference calls and higher latency.</li></ul></div></details>
+                </div>
+              </div>
+            </details>
+          </article>
+
+          <article class="pipeline-node" id="reportB4">
+            <details class="pipeline-node-shell">
+              <summary class="pipeline-node-head"><span class="pipeline-node-id">R4</span><div><h4>Inside Call 3: turn knowledge into safe owner guidance</h4><p class="pipeline-node-purpose">This example shows how one production prompt narrows Granite's job without allowing technical workshop procedures to become instructions for the owner.</p></div><span class="pipeline-status">PROMPT ANATOMY</span></summary>
+              <div class="pipeline-node-body">
+                <div class="pipeline-flow">
+                  <div class="pipeline-flow-step"><b>Role</b><span>Vehicle-maintenance decision-support assistant writing for a non-specialist owner.</span></div>
+                  <div class="pipeline-flow-step"><b>Task + evidence</b><span>Write actions using the current risk, signals and admitted action knowledge.</span></div>
+                  <div class="pipeline-flow-step"><b>Rules + edge cases</b><span>No invented values, repairs or failure dates; unavailable knowledge triggers general verification.</span></div>
+                  <div class="pipeline-flow-step"><b>Fixed JSON</b><span>Exactly four strings: Now, Service timing, Stop if, Tell the mechanic.</span></div>
+                </div>
+                <div class="pipeline-columns">
+                  <div class="pipeline-block"><div class="pipeline-block-label">UNSAFE DRAFT</div><p>“Replace the cooling fan.”</p></div>
+                  <div class="pipeline-block"><div class="pipeline-block-label">OWNER-SAFE FORM</div><p>“Tell the mechanic that the cooling evidence should be checked, including fan operation.”</p></div>
+                </div>
+                <div class="pipeline-disclosure">
+                  <details><summary>How the prompt rules evolved</summary><div class="pipeline-detail"><ul><li>Early positive and negative examples helped define desired behaviour.</li><li>When details from a specific example appeared in an unrelated report, those examples were removed from production prompts.</li><li>The useful distinctions became direct rules and regression cases, so a new report can use only values from its current Model input.</li></ul></div></details>
+                  <details><summary>Production prompt files</summary><div class="pipeline-detail"><ul><li><code>report_layer/prompt_chain/prompts/layer1_description.txt</code></li><li><code>report_layer/prompt_chain/prompts/layer2_cause.txt</code></li><li><code>report_layer/prompt_chain/prompts/layer3_action.txt</code></li></ul></div></details>
+                </div>
+              </div>
+            </details>
+          </article>
+
+          <article class="pipeline-node" id="reportB5">
+            <details class="pipeline-node-shell">
+              <summary class="pipeline-node-head"><span class="pipeline-node-id">R5</span><div><h4>Validate, explain the failure, then correct once</h4><p class="pipeline-node-purpose">Granite may return valid JSON and still break a report rule. The Validator checks the meaning and structure of each section before release.</p></div><span class="pipeline-status">VALIDATE</span></summary>
+              <div class="pipeline-node-body">
+                <div class="pipeline-columns">
+                  <div class="pipeline-block"><div class="pipeline-block-label">RELEASE FLOW</div><ul><li>Generate one report section.</li><li>Apply the rules for that section.</li><li><strong>Score below 0.80:</strong> block and return the rejected JSON with specific warnings.</li><li>Granite corrects that section once; the same Validator checks it again.</li><li><strong>Score at least 0.80:</strong> release to the next call or final output.</li></ul></div>
+                  <div class="pipeline-block"><div class="pipeline-block-label">EXAMPLE SCORE</div><div class="report-score"><span>Starting score</span><b>1.00</b><span>Unexplained raw field: <code>coolant_temp</code></span><b>−0.20</b><span>Confirmed-fault wording: “has failed”</span><b>−0.20</b><span>Explanation too short</span><b>−0.20</b><span>Blocked result</span><b>0.40</b></div></div>
+                </div>
+                <div class="pipeline-disclosure">
+                  <details><summary>What the Validator checks</summary><div class="pipeline-detail"><ul><li>Unsupported numbers, raw field names, excessive certainty and missing uncertainty wording.</li><li>Owner/technician action boundaries, urgency mismatches and required action fields.</li><li>Cross-section repetition and several contradictions between the text and Model evidence.</li><li>Negation is checked within the current clause, so “no fault has been confirmed” is not treated as a confirmed-fault claim.</li></ul></div></details>
+                  <details><summary>Two failure paths</summary><div class="pipeline-detail"><ul><li><strong>Technical failure:</strong> request error, timeout or malformed JSON receives up to three attempts.</li><li><strong>Content failure:</strong> a parsed section below 0.80 receives one targeted correction.</li><li>A second content failure returns the report fallback.</li></ul></div></details>
+                  <details><summary>Code evidence</summary><div class="pipeline-detail"><ul><li><code>report_layer/prompt_chain_validator.py</code> contains the release checks and penalties.</li><li><code>report_layer/pipeline/report_generator.py</code> coordinates retry, correction and fallback.</li></ul></div></details>
+                </div>
+              </div>
+            </details>
+          </article>
+
+          <article class="pipeline-node" id="reportB6">
+            <details class="pipeline-node-shell">
+              <summary class="pipeline-node-head"><span class="pipeline-node-id">R6</span><div><h4>Deliver one contract to the Dashboard</h4><p class="pipeline-node-purpose">The final object keeps the Model result traceable and adds only the three report sections that passed the release process.</p></div><span class="pipeline-status">DELIVER</span></summary>
+              <div class="pipeline-node-body">
+                <div class="pipeline-columns">
+                  <div class="pipeline-block"><div class="pipeline-block-label">MODEL FIELDS · PASSED THROUGH</div><ul><li>Timestamp, component, risk score and risk level</li><li>Prediction confidence and supporting signals</li><li>Two optional projection fields and Model notes</li><li>Request-local risk history for the trend chart</li></ul></div>
+                  <div class="pipeline-block"><div class="pipeline-block-label">REPORT FIELDS · ADDED</div><ul><li><strong>What’s Happening:</strong> <code>anomaly_description</code></li><li><strong>Why This Matters:</strong> <code>possible_cause</code></li><li><strong>What You Should Do:</strong> <code>recommended_action</code></li><li>PDF export formats this same object; it does not generate a second report.</li></ul></div>
+                </div>
+                <div class="report-boundary"><strong>If report generation fails:</strong> Model evidence is preserved, the three generated fields are empty, and the Dashboard shows that report generation is unavailable.</div>
+                <div class="pipeline-disclosure">
+                  <details><summary>Current partial-failure limitation</summary><div class="pipeline-detail"><ul><li>If every affected component has empty report text, the Dashboard shows an unavailable state.</li><li>If one component succeeds and another fails, the successful result can still open the results view while the failed component shows pending text.</li><li>A future interface should include an explicit generation status for each component.</li></ul></div></details>
+                  <details><summary>What this output can support</summary><div class="pipeline-detail"><ul><li>The pipeline can show which unusual pattern was detected, the supporting readings, possible explanations and owner-safe next steps.</li><li>It cannot confirm a mechanical fault without technician-verified cases and repair outcomes.</li></ul></div></details>
+                </div>
+              </div>
+            </details>
+          </article>
         </section>
 
         <section class="pipeline-layer" id="backupDashboard" data-layer="dashboard">
@@ -4682,7 +4946,7 @@ const storyCopy = [
   'Why has my Check Engine light come on?',
   'What data can OBD-II reveal?',
   'What does this code actually mean?',
-  'Could my car warn me earlier?'
+  'What should I do now?'
 ];
 
 function renderStory() {
@@ -4691,6 +4955,7 @@ function renderStory() {
   const nextBtn = document.getElementById('storyNextBtn');
   const backBtn = document.getElementById('storyBackBtn');
   const knowledge = document.getElementById('storyKnowledge');
+  const dtcKnowledge = document.getElementById('storyDtcKnowledge');
   if (!steps.length) return;
 
   const visibleStep = storyCurrent;
@@ -4701,6 +4966,7 @@ function renderStory() {
   });
   document.getElementById('storyHeadline').textContent = storyCopy[visibleStep];
   if (knowledge) knowledge.classList.toggle('visible', visibleStep === 1);
+  if (dtcKnowledge) dtcKnowledge.classList.toggle('visible', visibleStep === 2);
   if (backBtn) backBtn.disabled = storyCurrent === 0;
 
   if (storyCurrent >= storyTotal - 1) {
@@ -4839,11 +5105,11 @@ function resetModel() {
 let reportCurrent = 0;
 const reportTotal = 5;
 const reportLabels = [
-  'Combine Granite with traceable knowledge',
-  'Define the audience and decisions (Call 3 · What should I do next?)',
-  'Control the language and edge cases (Call 3 · What should I do next?)',
+  'Add reviewed knowledge where Granite needs it',
+  'Use knowledge only where each report call needs it',
+  'CALL 3 · WHAT SHOULD I DO NEXT?',
   'Correct a failed section before release',
-  'State the evidence boundary'
+  'Evaluate the report in two stages'
 ];
 
 function renderReport() {
@@ -4921,7 +5187,7 @@ function toggleBackup() {
 function scrollBackupTo(id) {
   const target = document.getElementById(id);
   if (!target) return;
-  target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  target.scrollIntoView({ behavior: 'auto', block: 'start' });
 }
 document.addEventListener('keydown', (e) => {
   const editing = document.activeElement && document.activeElement.isContentEditable;
@@ -4965,7 +5231,9 @@ if (previewParams.has('slide')) {
 if (previewParams.has('backup')) {
   toggleBackup();
   const backupTarget = previewParams.get('backup');
-  if (backupTarget && backupTarget !== '1') scrollBackupTo(backupTarget);
+  if (backupTarget && backupTarget !== '1') {
+    window.setTimeout(() => scrollBackupTo(backupTarget), 120);
+  }
 }
 </script>
 </body>
