@@ -63,10 +63,12 @@ evaluation/
 │   ├── model_comparison.md             # Comparison across 4 Granite models
 │   └── model_comparison.py             # Model comparison script
 │
-└── v3-rag-comparison/                  # V3: RAG vs Baseline comparison
-    ├── rag_evaluation_criteria.md      # Evaluation framework
-    ├── scenario_comparison_baseline.md # Baseline reports (no RAG)
-    └── scenario_comparison_rag.md      # RAG-enhanced reports
+├── v3-rag-baseline-comparison/         # V3: historical RAG/baseline comparison
+│   ├── rag_evaluation_criteria.md      # Evaluation framework
+│   ├── scenario_comparison_baseline.md # Baseline reports (no RAG)
+│   └── scenario_comparison_rag.md      # RAG-enhanced reports
+├── v4-meta-semantic-comparison/        # Historical retrieval comparison
+└── v5-rag-final-ablation/              # Current controlled evidence
 ```
 
 ---
@@ -80,18 +82,19 @@ evaluation/
 - **Mode**: No RAG (pre-RAG implementation)
 - **Scenarios**: 3 cooling stress scenarios (typical, atypical, contradictory)
 - **Objective**: Validate Story 2 AC3 requirement (distinguish typical from atypical faults)
-- **Result**: Model successfully distinguishes scenarios with appropriate language adaptation
+- **Result**: Historical exploratory output retained for design provenance;
+  it is not current release evidence
 
 ### V2: Model Selection Evaluation (June 2026)
 **Location**: `v2-model-selection/`
 
-- **Models Compared**: granite3.1:8b, granite3.1:2b, granite4.1:8b, granite4.1:3b
+- **Models Compared**: granite3.3:2b, granite3.3:8b, granite4.1:3b, granite4.1:8b
 - **Evaluation Dimensions**: Factual grounding, readability, hedging, actionability
 - **Selected Model**: granite4.1:8b for the production Report Layer
 - **Script**: `model_comparison.py` - Automated model comparison tool
 
 ### V3: RAG vs Baseline Evaluation (July 2026)
-**Location**: `v3-rag-comparison/`
+**Location**: `v3-rag-baseline-comparison/`
 
 #### Evaluation Framework
 **File**: `rag_evaluation_criteria.md`
@@ -167,27 +170,19 @@ print(f"Overall Score: {score.overall_score:.2f}")
 
 ---
 
-## Running Evaluations
+## Running the current evaluation
 
-### Generate Baseline Reports
+The V1--V4 commands and outputs are retained for historical investigation.
+Use V5 for claims about the current Report Layer:
+
 ```bash
-python report_layer/pipeline/scenario_evaluation.py --mode baseline
+uv run python report_layer/evaluation/v5-rag-final-ablation/run_final_rag_ablation.py
+uv run python report_layer/evaluation/v5-rag-final-ablation/run_owner_decision_smoke.py
 ```
 
-### Generate RAG-Enhanced Reports
-```bash
-python report_layer/pipeline/scenario_evaluation.py --mode rag
-```
-
-### Run Quality Evaluator
-```bash
-python report_layer/evaluation/report_quality_evaluator.py
-```
-
-### Run Model Comparison
-```bash
-python report_layer/evaluation/v2-model-selection/model_comparison.py
-```
+The standalone quality-evaluator and model-comparison scripts belong to the
+historical evaluation stages. Their committed outputs preserve those earlier
+decisions; they are not the commands used to produce current release evidence.
 
 ---
 

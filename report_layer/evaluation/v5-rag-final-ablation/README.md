@@ -47,7 +47,7 @@ water pump by hand. The Layer 3 prompt says both that retrieved action
 guidance should be the main source and that actions must be safe and
 practical for a non-technical owner. Those instructions can conflict.
 
-The final design should distinguish at least two action roles:
+The subsequent production design distinguishes two action roles:
 
 - `owner_action`: safe observation, stopping conditions and simple
   checks that need no dismantling or specialist tools;
@@ -57,7 +57,7 @@ The final design should distinguish at least two action roles:
 Technical workshop steps should not be copied or paraphrased as actions
 for the owner.
 
-## Required controlled comparison
+## Controlled comparison design
 
 All conditions must use the same final model, prompt templates, input
 context, confidence guidance, temperature and validator. Only the stated
@@ -70,10 +70,8 @@ knowledge field should change.
 | C: current action RAG | retrieved description and causes | current risk-filtered workshop actions | Measure the current design and expose audience-safety failures |
 | D: owner-safe RAG | retrieved description and causes | actions separated into owner actions and technician requests | Test the proposed correction |
 
-At minimum, the comparison should cover all five current anomaly types.
-Where feasible, each type should include Low, Medium and High risk, plus
-one inconsistent-evidence case. Saved prompts, retrieved passages and
-raw outputs must be retained for every condition.
+The implemented comparison covers all five current anomaly types. Saved
+prompts, retrieved passages and raw outputs are retained for every condition.
 
 ## Measures
 
@@ -167,7 +165,7 @@ the intended reader. Full labels and evidence are in
 are in `final_rag_multidimensional_summary.md`. These findings assess report
 behaviour, not mechanical accuracy or generalisation.
 
-## Proposed RAG redesign: decision support rather than self-repair
+## RAG redesign: decision support rather than self-repair
 
 The intended user outcome is not for an owner to repair the vehicle alone.
 The report should reduce avoidable uncertainty by explaining what the system
@@ -176,8 +174,7 @@ inspection should be arranged. The owner needs a small set of safe decisions:
 continue normal observation, book routine service, arrange prompt inspection,
 or stop driving and seek assistance.
 
-The next RAG design should therefore use two separately governed knowledge
-collections:
+The design separates knowledge into two governed roles:
 
 1. `diagnostic_evidence`: component purpose, signal interpretation, plausible
    causes and what evidence a technician could use to distinguish them;
@@ -236,7 +233,7 @@ supported anomaly types. All five reports were released, contained all four
 action roles, and contained no detected technical instruction addressed to the
 owner. The raw reports are stored in `owner_decision_smoke_raw.json` and the
 summary in `owner_decision_smoke_results.md`. The full automated suite completed
-with 744 tests passed, 19 environment-dependent tests skipped and one
-model-download test deselected. Because the
-three-field output schema was preserved, no Dashboard or viva-slide migration
-was required.
+with 758 tests passed, 19 environment-dependent tests skipped and one
+model-download test deselected. Because the three generated report fields and
+the wider `ReportLayerOutput` schema were preserved, no Dashboard or
+viva-slide migration was required.

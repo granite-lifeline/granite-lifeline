@@ -12,8 +12,8 @@ Use real pipeline outputs to evaluate whether Report Layer prompts:
 - stay grounded in the Model Layer JSON;
 - explain risk in owner-friendly language;
 - calibrate wording to `risk_level` and `prediction_confidence`;
-- describe Story 8 failure projections as model projections, not guaranteed
-  mechanical failure;
+- describe the two projection fields as modelled threshold estimates, not
+  guaranteed mechanical failure;
 - avoid inventing projection values when
   `estimated_cycles_to_failure` or `estimated_failure_probability` is `null`;
 - preserve provenance for proxy-forwarded detections.
@@ -174,7 +174,7 @@ Ollama running, then rerun the regression checks.
 After discovery, choose a compact set covering:
 
 - highest available `risk_score`;
-- one non-null Story 8 projection;
+- one non-null threshold projection;
 - one `null` projection;
 - one low-confidence report;
 - one report with Model Layer `notes`;
