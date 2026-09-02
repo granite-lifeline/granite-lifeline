@@ -709,7 +709,6 @@ def run_calibration_audit(
 
     manifest = AuditManifest(str(registry_path), run_dir.name)
 
-
     print("\n--- Phase A: Shared constants ---")
     verify_shared_constants(manifest, registry, df)
 
