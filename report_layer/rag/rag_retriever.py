@@ -9,6 +9,7 @@ Project: Granite Lifeline MSc Project, University of Bristol (IBM-sponsored)
 """
 
 import logging
+import time
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -28,7 +29,8 @@ FALLBACK_ACTIONS = "No specific action guidance found for this risk level."
 
 _client: Optional[chromadb.PersistentClient] = None
 _collection = None
-_collection_unavailable = False
+_collection_retry_after = 0.0
+COLLECTION_RETRY_SECONDS = 5.0
 
 
 def _get_collection():
@@ -40,19 +42,23 @@ def _get_collection():
     happen lazily and degrade to fallback retrieval text instead of failing at
     import time.
     """
-    global _client, _collection, _collection_unavailable
+    global _client, _collection, _collection_retry_after
 
     if _collection is not None:
         return _collection
-    if _collection_unavailable:
+    if time.monotonic() < _collection_retry_after:
         return None
 
     try:
         _client = chromadb.PersistentClient(path=str(CHROMA_DB_PATH))
         _collection = _client.get_collection(name=COLLECTION_NAME)
+        _collection_retry_after = 0.0
         return _collection
     except Exception as exc:
-        _collection_unavailable = True
+        _client = None
+        _collection_retry_after = (
+            time.monotonic() + COLLECTION_RETRY_SECONDS
+        )
         logger.warning(
             "ChromaDB collection %r is unavailable at %s: %s",
             COLLECTION_NAME,

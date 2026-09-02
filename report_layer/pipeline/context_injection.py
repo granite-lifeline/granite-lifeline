@@ -502,10 +502,10 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
                 "projection field in the owner-facing report."
             )
         else:
-            context_lines.append("Failure Projection:")
+            context_lines.append("Risk Projection:")
             if failure_prob is not None:
                 context_lines.append(
-                    f"- Failure probability: "
+                    f"- High-risk threshold probability: "
                     f"{_format_probability(failure_prob)}"
                 )
                 context_lines.append(
@@ -516,13 +516,13 @@ def build_context(ttm_output: ModelLayerOutput) -> str:
                 )
             if cycles_to_failure is not None:
                 context_lines.append(
-                    f"- Estimated cycles to failure: "
+                    f"- Estimated cycles to the High-risk threshold: "
                     f"{cycles_to_failure} drive cycles"
                 )
             else:
                 context_lines.append(
-                    "- Estimated cycles to failure: unavailable for this "
-                    "window."
+                    "- Estimated cycles to the High-risk threshold: "
+                    "unavailable for this window."
                 )
 
     has_proxy_provenance = any(

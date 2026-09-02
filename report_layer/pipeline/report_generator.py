@@ -10,7 +10,6 @@ ReportLayerOutput-compatible dict.
 
 import json
 import logging
-import re
 import sys
 import time
 from pathlib import Path
@@ -25,18 +24,31 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from shared.interface_models import (  # noqa: E402
     BatchModelLayerOutput,
     ModelLayerOutput,
+    ReportLayerOutput,
+    RiskHistoryEntry,
 )
 from report_layer.pipeline.context_injection import (  # noqa: E402
     build_context_with_rag,
 )
 from report_layer.pipeline.prompt_chain_validator import (  # noqa: E402
+    VALIDATOR_SCORE_THRESHOLD,
     ValidationResult,
-    apply_high_risk_projection_consistency,
     format_validation_summary,
     validate_chain,
-    validate_layer1,
-    validate_layer2,
-    validate_layer3,
+)
+from report_layer.pipeline.owner_facing_cleanup import (  # noqa: E402
+    _clean_model_aware_text,
+    _clean_notes_for_dashboard,
+    _clean_possible_cause_text,
+    _clean_recommended_actions,
+)
+from report_layer.pipeline.report_validation_policy import (  # noqa: E402
+    _apply_action_relevance_check,
+    _apply_controlled_baseline_check,
+    _apply_evidence_relationship_check,
+    _apply_signal_direction_check,
+    _enforce_controlled_baseline_boundary,
+    _validate_layer_value,
 )
 
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
@@ -59,8 +71,6 @@ MAX_CORRECTION_ATTEMPTS = 1
 # therefore receives one different, feedback-driven correction prompt
 # instead of a blind retry. If that corrected result still fails, the
 # pipeline uses its existing empty-report fallback.
-VALIDATOR_SCORE_THRESHOLD = 0.8
-
 logger = logging.getLogger(__name__)
 
 DEFAULT_PROMPT_VALUES = {
@@ -76,263 +86,10 @@ DEFAULT_PROMPT_VALUES = {
     ),
 }
 
-RAW_DTC_PATTERN = re.compile(r"\b(?:DTC\s*)?P\d{4}(?:-\d+)?\b", re.IGNORECASE)
-INTERNAL_RULE_PATTERN = re.compile(r"\b\d+-S\d+\b", re.IGNORECASE)
-
-OWNER_FACING_COMPONENT_REPLACEMENTS = {
-    "cooling_degradation": "cooling system pattern",
-    "air_intake_maf_anomaly": "mass airflow sensor pattern",
-    "accelerator_pedal_sensor": "accelerator pedal sensor",
-    "intake_air_temperature_sensor_fault": (
-        "intake air temperature sensor issue"
-    ),
-    "map_load_signal_plausibility_fault": (
-        "manifold pressure sensor plausibility issue"
-    ),
-}
-
-
-def _normal_key_signals(model_output: ModelLayerOutput) -> bool:
-    """Return true when every displayed key signal is within range."""
-    for signal in model_output.key_signals:
-        ref_lower = signal.reference_range[0]
-        ref_upper = signal.reference_range[1]
-        if signal.value < ref_lower or signal.value > ref_upper:
-            return False
-    return True
-
-
-def _has_proxy_provenance(model_output: ModelLayerOutput) -> bool:
-    """Return true when Model Layer notes identify proxy forwarding."""
-    return any(
-        "proxy_decisions.csv" in note or "Data Layer proxy decision" in note
-        for note in model_output.notes
-    )
-
-
-def _is_low_projection(model_output: ModelLayerOutput) -> bool:
-    """Return true when the model projection is very low."""
-    probability = model_output.estimated_failure_probability
-    return probability is not None and probability < 0.01
-
-
-def _format_example_phrase(match: re.Match[str]) -> str:
-    """Convert parenthetical e.g. phrases into natural wording."""
-    phrase = match.group(1).strip()
-    parts = [part.strip() for part in phrase.split(",") if part.strip()]
-    if len(parts) == 0:
-        return ""
-    if len(parts) == 1:
-        return f" such as {parts[0]}"
-    return f" such as {', '.join(parts[:-1])} or {parts[-1]}"
-
-
-def _clean_owner_facing_text(text: str) -> str:
-    """Remove owner-facing prompt artifacts that Granite may copy through."""
-    cleaned = text.replace(
-        "Data Layer proxy_decisions.csv",
-        "Data Layer rule-based evidence",
-    )
-    cleaned = cleaned.replace(
-        "proxy_decisions.csv",
-        "rule-based evidence",
-    )
-    cleaned = cleaned.replace("**", "")
-    cleaned = cleaned.replace("*", "")
-    cleaned = RAW_DTC_PATTERN.sub("a diagnostic flag", cleaned)
-    cleaned = INTERNAL_RULE_PATTERN.sub(
-        "a rule-based diagnostic flag", cleaned
-    )
-    cleaned = re.sub(r"\bDTCs?\b", "diagnostic codes", cleaned)
-    cleaned = re.sub(
-        r"\bSpeed-Density MAF Residual\b",
-        "airflow consistency reading",
-        cleaned,
-        flags=re.IGNORECASE,
-    )
-    cleaned = re.sub(
-        r"\s*\(e\.g\.,?\s*([^)]+)\)",
-        _format_example_phrase,
-        cleaned,
-        flags=re.IGNORECASE,
-    )
-    cleaned = re.sub(r"\bi\.e\.,?\s*", "that is, ", cleaned)
-    cleaned = cleaned.replace("this window", "this short driving period")
-    cleaned = cleaned.replace(
-        "in the near future",
-        "within the stated prediction horizon",
-    )
-    cleaned = cleaned.replace(
-        "near future",
-        "stated prediction horizon",
-    )
-    cleaned = cleaned.replace("IAT sensor", "intake air temperature sensor")
-    for raw_name, display_name in OWNER_FACING_COMPONENT_REPLACEMENTS.items():
-        cleaned = cleaned.replace(raw_name, display_name)
-    return cleaned
-
-
-def _clean_model_aware_text(
-    text: str,
-    model_output: ModelLayerOutput,
-) -> str:
-    """Clean generated text using the current signal-status context."""
-    cleaned = _clean_owner_facing_text(text)
-    cleaned = re.sub(
-        r"\bwithin (?:the )?(?:next )?(?:few|several|couple of) "
-        r"(?:drive cycles|trips|days|weeks|months)\b",
-        "soon",
-        cleaned,
-        flags=re.IGNORECASE,
-    )
-    if not _normal_key_signals(model_output):
-        cleaned = re.sub(
-            r"Because the current readings still look normal,?\s*",
-            "Because at least one key signal is outside its normal range, ",
-            cleaned,
-            flags=re.IGNORECASE,
-        )
-        cleaned = re.sub(
-            r"Although current readings [^,.]*normal,?\s*",
-            "Because at least one key signal is outside its normal range, ",
-            cleaned,
-            flags=re.IGNORECASE,
-        )
-    if model_output.risk_level == "Medium":
-        cleaned = re.sub(
-            r"\b(?:warrants?|requires?) prompt professional inspection\b",
-            "should be checked soon by a professional",
-            cleaned,
-            flags=re.IGNORECASE,
-        )
-    return cleaned
-
-
-def _split_sentences(text: str) -> List[str]:
-    """Split owner-facing prose into sentences for conservative cleanup."""
-    return [
-        sentence.strip()
-        for sentence in re.split(r"(?<=[.!?])\s+", text)
-        if sentence.strip()
-    ]
-
-
-def _clean_possible_cause_text(text: str) -> str:
-    """Keep possible_cause distinct from the description/projection."""
-    sentences = _split_sentences(text)
-    filtered = []
-    dropped: List[str] = []
-    # Numeric-restatement markers: only drop the sentence when it also
-    # contains a digit. "risk score" in particular is also used for
-    # legitimate qualitative clarification the prompts explicitly ask
-    # for (e.g. "risk_score indicates severity, not a failure
-    # probability") — stripping every mention of it regardless of
-    # content silently deleted that clarification.
-    numeric_projection_markers = (
-        "failure probability",
-        "probability of crossing",
-        "high-risk threshold within",
-        "within the next",
-        "cycles to failure",
-        "risk score",
-    )
-    # Risk-level restatement markers: dropped regardless of digits,
-    # since these restate the categorical risk_level in words rather
-    # than a number ("do not reclassify risk in this section").
-    risk_level_markers = (
-        "risk level is",
-        "risk level remains",
-        "overall risk level",
-    )
-    monitoring_markers = (
-        "warrants monitoring",
-        "monitoring is advisable",
-        "should be monitored",
-        "monitor to ensure",
-    )
-    has_digit = re.compile(r"\d")
-    for sentence in sentences:
-        lower = sentence.lower()
-        if any(
-            marker in lower for marker in numeric_projection_markers
-        ) and has_digit.search(sentence):
-            dropped.append(sentence)
-            continue
-        if any(marker in lower for marker in risk_level_markers):
-            dropped.append(sentence)
-            continue
-        if any(marker in lower for marker in monitoring_markers):
-            dropped.append(sentence)
-            continue
-        filtered.append(sentence)
-    if dropped:
-        logger.debug(
-            "possible_cause: dropped %d redundant sentence(s): %s",
-            len(dropped), dropped,
-        )
-    return " ".join(filtered) if filtered else text
-
-
-def _clean_recommended_actions(
-    actions: Any,
-    model_output: ModelLayerOutput,
-) -> Any:
-    """Clean generated action items without changing the report schema."""
-    if not isinstance(actions, list):
-        return actions
-
-    proxy_normal_low_projection = (
-        _has_proxy_provenance(model_output)
-        and _normal_key_signals(model_output)
-        and _is_low_projection(model_output)
-    )
-    cleaned_actions = []
-    for action in actions:
-        if not isinstance(action, str):
-            cleaned_actions.append(action)
-            continue
-        cleaned = _clean_owner_facing_text(action)
-        cleaned = re.sub(
-            r"\bwithin (?:the )?(?:next )?(?:few|several|couple of) "
-            r"(?:drive cycles|trips|days|weeks|months)\b",
-            "soon",
-            cleaned,
-            flags=re.IGNORECASE,
-        )
-        if proxy_normal_low_projection:
-            cleaned = re.sub(
-                r"\boutside (?:of )?its normal range\b",
-                "needing verification against live sensor readings",
-                cleaned,
-                flags=re.IGNORECASE,
-            )
-            if re.match(
-                r"^\s*Avoid (?:heavy|long-distance|prolonged|sustained|"
-                r"towing|high-speed)",
-                cleaned,
-                flags=re.IGNORECASE,
-            ):
-                cleaned = (
-                    "Drive normally while watching for warning lights or "
-                    "unusual engine behavior until the sensor is verified."
-                )
-        cleaned_actions.append(cleaned)
-    return cleaned_actions
-
-
-def _clean_notes_for_dashboard(notes: Any) -> Any:
-    """Clean dashboard-visible Model Layer notes while preserving shape."""
-    if not isinstance(notes, list):
-        return notes
-    return [
-        _clean_owner_facing_text(note) if isinstance(note, str) else note
-        for note in notes
-    ]
-
-
 # ---------------------------------------------------------------------------
 # Helper functions (self-contained copies from scenario_evaluation.py)
 # ---------------------------------------------------------------------------
+
 
 def render_prompt(
     template: str, values: Dict[str, Any]
@@ -590,150 +347,12 @@ def _clean_layer_value(
     model_output: ModelLayerOutput,
 ) -> Any:
     """Apply the production owner-facing cleanup for one layer."""
-    if layer_num in {1, 2}:
+    if layer_num == 1:
         return _clean_model_aware_text(str(value), model_output)
     if layer_num == 2:
         cleaned = _clean_model_aware_text(str(value), model_output)
         return _clean_possible_cause_text(cleaned)
     return _clean_recommended_actions(value, model_output)
-
-
-def _validate_layer_value(
-    layer_num: int,
-    value: Any,
-    layer1_output: str,
-    risk_level: str,
-) -> ValidationResult:
-    """Run the relevant live quality checks for one generated layer."""
-    if layer_num == 1:
-        validation = validate_layer1(str(value))
-    elif layer_num == 2:
-        validation = validate_layer2(str(value), layer1_output)
-    else:
-        validation = validate_layer3(value, risk_level)
-    return apply_high_risk_projection_consistency(
-        validation, value, risk_level
-    )
-
-
-def _apply_signal_direction_check(
-    validation: ValidationResult,
-    text: str,
-    model_output: ModelLayerOutput,
-) -> ValidationResult:
-    """Block a plain-language comparison that reverses supplied evidence."""
-    lower = text.lower()
-    if model_output.risk_level == "Medium" and re.search(
-        r"\b(?:prompt|urgent|immediate)\b", lower
-    ):
-        validation.warnings.append(
-            "Overstates Medium risk urgency; say it should be checked soon, "
-            "not promptly or urgently"
-        )
-        validation.score = max(0.0, validation.score - 0.4)
-        validation.passed = False
-    for signal in model_output.key_signals:
-        if signal.feature != "coolant_temp":
-            continue
-        low, high = signal.reference_range
-        if signal.value < low and re.search(
-            r"(?:coolant temperature.{0,45}(?:higher|above|elevated)|"
-            r"(?:high|elevated) coolant temperature)",
-            lower,
-        ):
-            validation.warnings.append(
-                "Reverses the supplied evidence: coolant temperature is "
-                "below, not above, its reference range"
-            )
-            validation.score = max(0.0, validation.score - 0.4)
-            validation.passed = False
-        elif signal.value > high and re.search(
-            r"coolant temperature.{0,45}(?:lower|below)", lower
-        ):
-            validation.warnings.append(
-                "Reverses the supplied evidence: coolant temperature is "
-                "above, not below, its reference range"
-            )
-            validation.score = max(0.0, validation.score - 0.4)
-            validation.passed = False
-    return validation
-
-
-def _apply_controlled_baseline_check(
-    validation: ValidationResult,
-    layer_num: int,
-    value: Any,
-    original_prompt: str,
-) -> ValidationResult:
-    """Enforce the evidence-only boundary in the no-retrieval condition."""
-    text = " ".join(value) if isinstance(value, list) else str(value)
-    lower = text.lower()
-    if layer_num == 2 and (
-        "No retrieved fault knowledge was supplied in this controlled "
-        "condition." in original_prompt
-    ):
-        has_boundary = re.search(
-            r"\b(?:cannot|can't|not enough|insufficient|unable to)\b.{0,45}"
-            r"\b(?:identify|determine|evidence|specific cause)\b",
-            lower,
-        )
-        if not has_boundary:
-            validation.warnings.append(
-                "Controlled no-retrieval output must state that the supplied "
-                "evidence cannot identify a specific cause"
-            )
-            validation.score = max(0.0, validation.score - 0.4)
-            validation.passed = False
-    if layer_num == 3 and (
-        "No retrieved action guidance was supplied in this controlled "
-        "condition." in original_prompt
-    ):
-        specialist_terms = re.search(
-            r"\b(?:scan tool|diagnostic scan|thermostat|radiator|cooling fan|"
-            r"wiring|connector|air filter|calibrat(?:e|ion)|replace)\b",
-            lower,
-        )
-        if specialist_terms:
-            validation.warnings.append(
-                "Controlled no-retrieval output invents a component test or "
-                "repair target"
-            )
-            validation.score = max(0.0, validation.score - 0.4)
-            validation.passed = False
-    return validation
-
-
-def _enforce_controlled_baseline_boundary(
-    layer_num: int,
-    value: Any,
-    original_prompt: str,
-) -> Any:
-    """Prevent parametric model knowledge entering the no-RAG stimulus."""
-    if layer_num == 2 and (
-        "No retrieved fault knowledge was supplied in this controlled "
-        "condition." in original_prompt
-    ):
-        return (
-            "The supplied driving data shows an unusual pattern, but it "
-            "cannot identify a specific mechanical cause. A qualified "
-            "mechanic would need to compare the readings with the vehicle's "
-            "actual condition before deciding what, if anything, requires "
-            "work."
-        )
-    if layer_num == 3 and isinstance(value, list) and (
-        "No retrieved action guidance was supplied in this controlled "
-        "condition." in original_prompt
-    ):
-        cleaned = list(value)
-        for index, action in enumerate(cleaned):
-            if str(action).lower().startswith("tell the mechanic:"):
-                cleaned[index] = (
-                    "Tell the mechanic: Investigate the reported signal "
-                    "pattern and verify whether it reflects a real vehicle "
-                    "problem before recommending any work."
-                )
-        return cleaned
-    return value
 
 
 def _correct_and_validate_layer(
@@ -747,7 +366,7 @@ def _correct_and_validate_layer(
     """Validate a layer and make one feedback-driven correction if needed."""
     cleaned = _clean_layer_value(layer_num, value, model_output)
     cleaned = _enforce_controlled_baseline_boundary(
-        layer_num, cleaned, original_prompt
+        layer_num, cleaned, original_prompt, model_output
     )
     validation = _validate_layer_value(
         layer_num,
@@ -758,6 +377,14 @@ def _correct_and_validate_layer(
     if layer_num in {1, 2}:
         validation = _apply_signal_direction_check(
             validation, str(cleaned), model_output
+        )
+    if layer_num == 1:
+        validation = _apply_evidence_relationship_check(
+            validation, str(cleaned), model_output
+        )
+    if layer_num == 3:
+        validation = _apply_action_relevance_check(
+            validation, cleaned, model_output
         )
     validation = _apply_controlled_baseline_check(
         validation, layer_num, cleaned, original_prompt
@@ -793,7 +420,7 @@ def _correct_and_validate_layer(
             model_output,
         )
         corrected = _enforce_controlled_baseline_boundary(
-            layer_num, corrected, original_prompt
+            layer_num, corrected, original_prompt, model_output
         )
         validation = _validate_layer_value(
             layer_num,
@@ -804,6 +431,14 @@ def _correct_and_validate_layer(
         if layer_num in {1, 2}:
             validation = _apply_signal_direction_check(
                 validation, str(corrected), model_output
+            )
+        if layer_num == 1:
+            validation = _apply_evidence_relationship_check(
+                validation, str(corrected), model_output
+            )
+        if layer_num == 3:
+            validation = _apply_action_relevance_check(
+                validation, corrected, model_output
             )
         validation = _apply_controlled_baseline_check(
             validation, layer_num, corrected, original_prompt
@@ -852,6 +487,16 @@ def generate_report(
     try:
         if risk_history is None:
             risk_history = _extract_risk_history_payload(model_output)
+        if risk_history is not None:
+            try:
+                validated_history = [
+                    RiskHistoryEntry(**entry).model_dump()
+                    for entry in risk_history
+                ]
+            except Exception:
+                risk_history = None
+                raise
+            risk_history = validated_history
 
         # Step 0: Normalize and validate input
         try:
@@ -1019,7 +664,7 @@ def generate_report(
             "possible_cause": possible_cause,
             "recommended_action": recommended_action,
         }
-        return result
+        return ReportLayerOutput(**result).model_dump()
 
     except Exception as exc:
         logger.error(

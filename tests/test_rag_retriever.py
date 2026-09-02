@@ -150,3 +150,40 @@ def test_retrieve_all_falls_back_when_collection_is_missing(monkeypatch):
         "description_causes": FALLBACK_DESCRIPTION,
         "actions": FALLBACK_ACTIONS,
     }
+
+
+def test_collection_lookup_recovers_after_retry_interval(monkeypatch):
+    collection = FakeCollection()
+
+    class FakeClient:
+        def get_collection(self, name):
+            assert name == rag_retriever.COLLECTION_NAME
+            return collection
+
+    clients = [RuntimeError("index not ready"), FakeClient()]
+
+    def persistent_client(path):
+        assert path == str(rag_retriever.CHROMA_DB_PATH)
+        client = clients.pop(0)
+        if isinstance(client, Exception):
+            raise client
+        return client
+
+    clock = iter([10.0, 10.0, 12.0, 16.0])
+    monkeypatch.setattr(
+        rag_retriever.chromadb,
+        "PersistentClient",
+        persistent_client,
+    )
+    monkeypatch.setattr(
+        rag_retriever.time,
+        "monotonic",
+        lambda: next(clock),
+    )
+    monkeypatch.setattr(rag_retriever, "_client", None)
+    monkeypatch.setattr(rag_retriever, "_collection", None)
+    monkeypatch.setattr(rag_retriever, "_collection_retry_after", 0.0)
+
+    assert rag_retriever._get_collection() is None
+    assert rag_retriever._get_collection() is None
+    assert rag_retriever._get_collection() is collection

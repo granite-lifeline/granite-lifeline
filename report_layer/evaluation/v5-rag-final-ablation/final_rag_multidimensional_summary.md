@@ -1,36 +1,40 @@
-# Multidimensional review data
+# Multidimensional review of the regenerated reports
 
-The table below aggregates the 20 auditable case labels in
-`final_rag_multidimensional_review.json`. Counts are reported instead of a
-weighted total because the dimensions answer different questions. Retrieval
-columns are not applicable to the controlled baseline.
+The 20 reports regenerated on 1 September 2026 were manually compared with
+their saved Model Layer context, retrieved knowledge, Validator result and
+automatic audit. A `partial` result records a material limitation in one
+dimension; it does not mean that the complete report failed release. Retrieval
+dimensions do not apply to the controlled baseline.
 
-| Condition | Input faithfulness P/F | Retrieval relevance P/Partial | Knowledge utilisation P/Partial | Audience P/Partial | Action safety P/Partial | Uncertainty P/F | Released |
+| Condition | Input faithfulness pass/partial | Retrieval relevance pass/partial | Knowledge use pass/partial | Audience pass/partial | Action safety pass/partial | Uncertainty pass/partial | Released |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| Controlled baseline | 3/2 | N/A | N/A | 5/0 | 5/0 | 3/2 | 5/5 |
-| Cause RAG | 3/2 | 4/1 | 4/1 | 4/1 | 4/1 | 3/2 | 5/5 |
-| Current full RAG | 3/2 | 2/3 | 3/2 | 1/4 | 1/4 | 3/2 | 5/5 |
-| Owner-safe RAG | 3/2 | 2/3 | 3/2 | 5/0 | 5/0 | 3/2 | 5/5 |
+| Controlled baseline | 5/0 | N/A | N/A | 5/0 | 5/0 | 5/0 | 5/5 |
+| Cause RAG | 5/0 | 4/1 | 1/4 | 3/2 | 5/0 | 5/0 | 5/5 |
+| Current full RAG | 5/0 | 4/1 | 1/4 | 3/2 | 5/0 | 5/0 | 5/5 |
+| Owner-safe RAG | 5/0 | 4/1 | 1/4 | 3/2 | 5/0 | 5/0 | 5/5 |
 
-## What this data shows
+## Findings
 
-- Cause RAG achieved relevant retrieval and useful knowledge use in four of
-  five cases. Cooling was partial because its retrieved fault list poorly
-  matched the Low-risk, lower-temperature pattern.
-- Adding current workshop actions reduced audience suitability and action-role
-  safety to one clear pass out of five. This does not mean four reports were
-  immediately dangerous; it means technical work was addressed directly to
-  the assumed non-technical owner.
-- The owner-safe transformation restored five of five audience and action-
-  safety passes, while leaving retrieval relevance unchanged. Prompt-level
-  role transformation can therefore control who receives an action, but cannot
-  make an irrelevant passage relevant.
-- All conditions failed relationship-level input faithfulness and uncertainty
-  handling for the same two High-risk fixtures. This shared failure came from
-  an unresolved combination of current High risk and a low probability of
-  later crossing the High-risk threshold, rather than from retrieval alone.
-- All 20 reports were released, demonstrating that the present validator does
-  not detect the relationship-level contradiction.
+- All 20 reports were released without fallback. They retained the upstream
+  risk category and evidence boundary, and all technical work remained with a
+  mechanic.
+- The four issues found in the earlier manual review were removed. The final
+  outputs no longer use unrelated pedal stopping conditions, unexplained MAF
+  or PID terms, whole-system normal-operation claims, or strong IAT fault
+  wording based only on rule evidence.
+- Retrieved knowledge made possible causes and mechanic requests more
+  specific. In four of the five cases, however, the displayed signals could
+  not distinguish among all category-relevant causes. These cases therefore
+  remain `partial` for knowledge use.
+- Intake-air-temperature retrieval remains `partial` for relevance because
+  all displayed temperatures are within range. The report states this
+  limitation and requests professional verification, but the saved evidence
+  cannot select between the retrieved circuit and connector possibilities.
+- Air-intake and intake-temperature RAG explanations remain relatively dense
+  for a non-technical reader, so their audience rating remains `partial` even
+  though internal acronyms and provenance language were cleaned.
 
-These are manual, evidence-linked labels. They should not be presented as an
-automatically validated diagnostic accuracy score or averaged into one number.
+The review supports the current release controls and the owner/mechanic action
+boundary. It does not measure mechanical accuracy or generalisation; those
+claims require technician-verified faults, repair outcomes and data from more
+vehicles.

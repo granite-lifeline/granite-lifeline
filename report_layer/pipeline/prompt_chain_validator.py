@@ -14,58 +14,16 @@ import re
 from dataclasses import dataclass
 from typing import Any, List
 
-from report_layer.negation_constants import (
-    CLAUSE_BOUNDARY,
-    NEGATION_WORDS,
-    PSEUDO_NEGATIONS,
-)
+from report_layer import negation_constants as _negation
 
 
-def _find_unnegated_phrases(text: str, phrases: List[str]) -> List[str]:
-    """
-    Return the phrases from `phrases` that appear in `text` without a
-    negation word earlier in the same clause.
+VALIDATOR_SCORE_THRESHOLD = 0.8
 
-    A bare substring/word match on a phrase like "confirmed" flags
-    negated wording such as "not confirmed" or "no confirmed fault
-    yet" as if it were an unhedged claim, which is the opposite of
-    what it means. A fixed word-count window before the match is not
-    reliable for this: real sentences such as "no specific fault has
-    been confirmed yet" put four words between the negation and the
-    phrase (NegEx's own tuned scope is a 0-5 token window — this
-    scans back to the current clause instead, so it isn't sensitive
-    to exact word count at all). Word-boundary matching also means a
-    phrase embedded in a larger word (e.g. "confirmed" inside
-    "unconfirmed") is not matched at all. Pseudo-negation phrases
-    (PSEUDO_NEGATIONS) are masked out first, so "no doubt this is
-    confirmed" is correctly read as an unhedged claim rather than a
-    negated one.
-    """
-    lower = text.lower()
-    for pseudo in PSEUDO_NEGATIONS:
-        lower = lower.replace(pseudo, " " * len(pseudo))
-    hits: List[str] = []
-    for phrase in phrases:
-        pattern = re.compile(r"\b" + re.escape(phrase) + r"\b")
-        found_unnegated = False
-        for match in pattern.finditer(lower):
-            preceding = lower[:match.start()]
-            boundaries = list(CLAUSE_BOUNDARY.finditer(preceding))
-            clause_start = boundaries[-1].end() if boundaries else 0
-            clause_words = re.findall(
-                r"[a-z']+", preceding[clause_start:]
-            )
-            negated = any(
-                neg in word
-                for word in clause_words
-                for neg in NEGATION_WORDS
-            )
-            if not negated:
-                found_unnegated = True
-                break
-        if found_unnegated:
-            hits.append(phrase)
-    return hits
+# Retain these public module attributes for evaluation/test compatibility.
+CLAUSE_BOUNDARY = _negation.CLAUSE_BOUNDARY
+NEGATION_WORDS = _negation.NEGATION_WORDS
+PSEUDO_NEGATIONS = _negation.PSEUDO_NEGATIONS
+_find_unnegated_phrases = _negation.find_unnegated_phrases
 
 
 def _has_substantial_cross_layer_repetition(
@@ -270,11 +228,29 @@ def validate_layer1(output: str) -> ValidationResult:
         )
         score -= 0.2
     if re.search(
-        r"\b(?:risk score|% score)\b|\brisk\s*\(\s*\d+(?:\.\d+)?\s*%\s*\)",
+        r"\b(?:risk score|% score)\b|"
+        r"\brisk(?: level)?\s*\(\s*\d+(?:\.\d+)?\s*%\s*\)",
         output.lower(),
     ):
         warnings.append(
             "Restates the internal risk score; use the risk category instead"
+        )
+        score -= 0.4
+
+    if re.search(r"\b\d+(?:\.\d+)?\s*%\s*confidence\b", output.lower()):
+        warnings.append(
+            "Restates prediction confidence; keep the description focused "
+            "on the evidence and risk category"
+        )
+        score -= 0.4
+
+    if re.search(
+        r"\b(?:chance|probability)\b.{0,35}\b(?:immediate )?failure\b",
+        output.lower(),
+    ):
+        warnings.append(
+            "Treats a threshold-crossing estimate as mechanical failure "
+            "probability"
         )
         score -= 0.4
 
@@ -288,6 +264,7 @@ def validate_layer1(output: str) -> ValidationResult:
 
     # Ensure score is within bounds
     score = max(0.0, min(1.0, score))
+    passed = score >= VALIDATOR_SCORE_THRESHOLD
 
     return ValidationResult(
         layer=1,
@@ -412,6 +389,7 @@ def validate_layer2(output: str, layer1_output: str) -> ValidationResult:
 
     # Ensure score is within bounds
     score = max(0.0, min(1.0, score))
+    passed = score >= VALIDATOR_SCORE_THRESHOLD
 
     return ValidationResult(
         layer=2,
@@ -563,6 +541,7 @@ def validate_layer3(output: Any, risk_level: str) -> ValidationResult:
 
     # Ensure score is within bounds
     score = max(0.0, min(1.0, score))
+    passed = score >= VALIDATOR_SCORE_THRESHOLD
 
     return ValidationResult(
         layer=3,

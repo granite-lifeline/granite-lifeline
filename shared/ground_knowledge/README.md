@@ -4,23 +4,23 @@
 
 This directory stores grounded domain knowledge used by the project.
 
-The purpose is to document assumptions, feature definitions, proxy failure logic, and supporting references in a structured and traceable way.
+The purpose is to document assumptions, feature definitions, rule-based
+anomaly evidence and supporting references in a structured and traceable way.
 
 This knowledge is intended to support:
 
 * data cleaning and preprocessing
 * feature engineering
-* proxy failure definition
+* rule-based anomaly definition
 * model input preparation
 * report generation and explanation
 
 
 ## Structure
 
-Describe the responsibility of each file.
-
 * `grounded_knowledge.yaml`
-  Structured knowledge definitions for signals, features, proxy failures, and thresholds.
+  Structured knowledge definitions for signals, features, rule-based anomaly
+  evidence and thresholds.
 
 * `reference.md`
   Supporting rationale, exploratory findings, engineering explanation, and literature references.
@@ -31,11 +31,9 @@ Describe the responsibility of each file.
 
 ## Ownership
 
-Document which group is responsible for maintaining each type of knowledge.
-
 * Data Layer owns signal definitions and feature grounding.
 * Model Layer consumes features and proxy definitions.
-* Report Layer consumes structured outputs and explanations.
+* Report Layer consumes the reviewed explanatory and action material.
 
 Cross-layer changes should be synchronised before merging.
 
@@ -51,13 +49,11 @@ When adding or modifying content:
 5. Avoid storing duplicated values across files.
 
 
-## Version Notes
+## Status
 
-Record major changes to knowledge definitions.
-
-* v0.1 → basic frame
-* v0.2 → initial signal and feature grounding
-* v0.3 → proxy failure definitions aligned
-
+`grounded_knowledge.yaml` is shared research documentation. The production
+Report Layer index is built from its `report_layer` entries by
+`report_layer/rag/knowledge_indexer.py`. Runtime anomaly names and interfaces
+remain authoritative in `shared/anomaly_mapping.py` and `docs/INTERFACE.md`.
 
 

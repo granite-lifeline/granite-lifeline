@@ -10,18 +10,31 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 import time
 from pathlib import Path
 from typing import Any, Dict
 
-from report_layer.evaluation.report_quality_evaluator import evaluate_report
-from report_layer.pipeline import report_generator
-from report_layer.pipeline.context_injection import build_context_with_rag
-from report_layer.pipeline.prompt_chain_validator import validate_chain
-from shared.interface_models import ModelLayerOutput
-
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from report_layer.evaluation.report_quality_evaluator import (  # noqa: E402
+    evaluate_report,
+)
+from report_layer.negation_constants import (  # noqa: E402
+    find_unnegated_phrases,
+)
+from report_layer.pipeline import report_generator  # noqa: E402
+from report_layer.pipeline.context_injection import (  # noqa: E402
+    build_context_with_rag,
+)
+from report_layer.pipeline.prompt_chain_validator import (  # noqa: E402
+    validate_chain,
+)
+from shared.interface_models import ModelLayerOutput  # noqa: E402
+
+
 FIXTURE_DIR = (
     PROJECT_ROOT / "report_layer" / "evaluation" / "prompt_refinement"
     / "fault_injection_candidates" / "selected_window_model_outputs"
@@ -61,10 +74,10 @@ RAW_FIELDS = (
     "coolant_temp", "risk_score", "prediction_confidence", "maf", "map",
     "accel_pedal_d", "accel_pedal_e", "throttle_pos",
 )
-INVASIVE_PATTERNS = (
-    r"\bremove\b", r"\bdisconnect\b", r"\breplace\b", r"water bath",
-    r"compressed air", r"rotate(?:d)? by hand", r"\bmultimeter\b",
-    r"garden hose", r"\bdisassembl", r"\bdismantl", r"\bbench[- ]test",
+INVASIVE_PHRASES = (
+    "remove", "disconnect", "replace", "water bath", "compressed air",
+    "rotate by hand", "rotated by hand", "multimeter", "garden hose",
+    "disassemble", "disassembly", "dismantle", "bench-test", "bench test",
 )
 MECHANIC_TERMS = ("mechanic", "technician", "garage", "service centre")
 
@@ -131,9 +144,8 @@ def _automatic_audit(
     delegated_actions = []
     for action in actions:
         action_lower = str(action).lower()
-        is_invasive = any(
-            re.search(pattern, action_lower)
-            for pattern in INVASIVE_PATTERNS
+        is_invasive = bool(
+            find_unnegated_phrases(action_lower, list(INVASIVE_PHRASES))
         )
         is_delegated = any(term in action_lower for term in MECHANIC_TERMS)
         if is_invasive and not is_delegated:
@@ -280,6 +292,10 @@ def _write_summary(rows: list[Dict[str, Any]]) -> None:
         "",
         "All conditions use the final production prompts, identical certainty "
         "guidance, temperature, validator and correction loop.",
+        "",
+        "> The legacy quality score and heuristic counts below are screening "
+        "outputs. Manual review is required for relevance, mechanical "
+        "accuracy and action safety.",
         "",
         "| Condition | Reports | Fallbacks | Mean legacy quality | "
         "Unsupported numbers | Unsafe owner actions | Raw fields |",
