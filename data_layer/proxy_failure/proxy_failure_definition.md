@@ -1,10 +1,15 @@
 # Proxy Failure Definitions
 
+**Status:** Completed — frozen `calibration.v1` executable contract
+**Last updated:** 2026-09-02
+**Calibration impact:** Documentation synchronization only; no numeric
+threshold, guard, decision-role, or routing change.
+
 ## Purpose and Scope
 
-This is the authoritative, implementation-facing definition of the executable proxy failures for the current freeze cycle (**2026-07-19 contract revision**). It contains only the component, consumed support signals, proxy definition, final decision rules, required guards, coverage, key calibration evidence, and known limitations.
+This is the authoritative, implementation-facing definition of the executable proxy failures in the frozen `calibration.v1` contract. The rule freeze was registered on 2026-07-19; this revision synchronizes the narrative with the implemented stages and recorded validation artifacts. It contains the component, consumed support signals, proxy definition, final decision rules, required guards, coverage, key calibration evidence, and known limitations.
 
-Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap details, rejected branches, superseded forms, and the open fault-injection program are maintained in [`proxy_support.md`](proxy_support.md). Each proxy below links to its corresponding audit section.
+Research derivations, candidate grids, sensitivity analyses, LOTO/bootstrap details, rejected branches, superseded forms, and the completed synthetic fault-injection record are maintained in [`proxy_support.md`](proxy_support.md). The recorded campaign summary is [`fault_injection_summary_20260724T205415Z.json`](../fault_injection/outputs/fault_injection_summary_20260724T205415Z.json). Each proxy below links to its corresponding audit section.
 
 ## Shared Conventions
 
@@ -14,6 +19,7 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 - Duration-gated checks record `decision_margin`; at 1 Hz with integer-quantized signals, margins within approximately ±5 s are resolution-borderline.
 - Only frozen or explicitly executable rules produce runtime rows. `pending` precursors, support, and arbitration evidence may execute but do not independently emit a DTC. Downgraded, descriptive, removed, and documented-infeasible designs produce no runtime rows; `not_evaluable` must not be used to represent a design that is not executed.
 - Frozen calibration values are applied from the calibration registry. They are not re-fitted on user-uploaded data.
+- Stage-4 results describe response to registered synthetic target-signal perturbations. They do not measure real-failure prevalence, field sensitivity, component-isolation accuracy, or vehicle safety.
 
 ## 1. cooling_degradation
 
@@ -34,7 +40,7 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 - Eligibility: observed within-continuity-block RPM off→on start; `ect_start ≤ 50°C` and below target; `aat_start ≥ −7°C`; ECT, ambient, and MAF present and quality-valid. At expiry, the trapezoidal `maf_integral_180s` over 181 valid 1 Hz endpoints / 180 intervals must satisfy the frozen raw registry comparison `> 2800.6549999999997 g` (display value approximately 2800 g).
 - Sensor-trust/asymmetry wiring: if 1-S4 is `pass`, 1-S1 may return its normal three states. If 1-S4 support is `triggered`, 1-S1 returns `not_evaluable` with `decision_reason = ect_plausibility`. If 1-S4 is `not_evaluable` solely because cold-soak/predecessor evidence is unavailable, 1-S1 may `triggered` or return `not_evaluable` but may never `pass`. Any failure of 1-S1's own required-signal, quality, guard, or calibration-domain conditions always returns `not_evaluable`, regardless of 1-S4.
 - Right-censor guard: if ECT has not reached 79°C and the continuous observation ends before the assigned budget expires, return `not_evaluable`; record the censor flag and available follow-up duration rather than treating the truncated episode as a failure.
-- Coverage and key evidence: 20/51 qualified starts reached a decision point (39.2%); healthy in-sample false positives 0/20. The threshold/reference level was stable across the recorded validation; synthetic smoke tests are calibration evidence only, not real-fault recall evidence.
+- Coverage and key evidence: 20/51 qualified starts reached a decision point (39.2%); healthy in-sample false positives 0/20. The threshold/reference level was stable across the recorded calibration audit. In the recorded Stage-4 campaign, caps at 78°C, 72°C, and 65°C each produced 3/3 scoped detections; this is synthetic contract evidence, not real-fault recall evidence.
 - Limitations: provisional research-grade candidate; real-fault recall is unknown; thermostat failure is indicated, not isolated. Short logs and the heat-input guard materially limit coverage.
 
 #### 1-S2 — Overheating (frozen; P0217)
@@ -43,13 +49,13 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 - Guards: engine on; `thermal_state == post_warmup`; ECT and ambient present; ambient at window start >25°C is outside calibration and returns `not_evaluable`.
 - `pass` requires at least 180 s of evaluable post-warm-up time with no trigger; otherwise `not_evaluable`.
 - Coverage and key evidence: 57/66 trips evaluable (86%); healthy maximum 101°C in the fixed cohort; longest healthy ≥100°C episode 87 s, leaving 93 s persistence headroom.
-- Limitations: thresholds lie above the observed healthy envelope, so zero healthy false positives are constructive; detection capability awaits fault injection. Report “overtemperature condition indicated; sensor fault not excluded.”
+- Limitations: thresholds lie above the observed healthy envelope, so the zero healthy false-positive result is constructive. The recorded synthetic campaign produced 0/3 detections at 104°C and 3/3 at both 105°C and 110°C; real-failure sensitivity remains unknown. Report “overtemperature condition indicated; sensor fault not excluded.”
 
 #### 1-S3 — Rising without plateau (frozen pending precursor; no independent DTC)
 
 - With `decision_role = pending_precursor`, a qualified post-warm-up window with 180-s ECT rate ≥0.5°C/min while `coolant_temp ≥ 100°C`, sustained ≥180 s, returns `pending` only. P0217 is confirmed only by 1-S2. Minimum evaluable window: 360 s.
 - Coverage and key evidence: 54/66 trips (81.8%); zero healthy precursor triggers; nearest healthy episode 87 s, leaving 93 s headroom.
-- Limitations: slope alone cannot separate regulation loss from legitimate map-thermostat mode changes. Real lead time and short-injection behavior remain unverified.
+- Limitations: slope alone cannot separate regulation loss from legitimate map-thermostat mode changes. The recorded synthetic campaign produced 0/3 below-boundary responses and 3/3 `pending`, non-emitting responses at both the boundary and strong points. Real lead time and physical progression remain unknown.
 
 #### 1-S4 — Cold-start ECT plausibility (executable v1; low-confidence P0116 support)
 
@@ -74,12 +80,12 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 
 - Under `post_warmup__high_load`, high confidence, and valid quality, `speed_density_maf_residual < −18.495 g/s` at every consecutive 1 Hz sample for ≥10 s is `triggered`.
 - Coverage and key evidence: 52/66 trips (78.8%); zero healthy episodes; longest healthy run 3 s, leaving 7 s headroom; the healthy high-load residual median was positive as required.
-- Limitation: persistence margin is thin. A concurrent abnormal 5-S1 or 5-S3 reroutes attribution to MAP.
+- Limitation: persistence margin is thin. The recorded synthetic campaign detected 0/3 at MAF gains 0.80 and 0.60 and 3/3 at 0.35, so it does not support a claim of reliable mild or moderate under-read detection. A concurrent abnormal 5-S1 or 5-S3 reroutes attribution to MAP.
 
 #### 2-S3b — Zero MAF while firing (frozen; low-direction P0102)
 
 - `maf == 0.0` for ≥10 consecutive valid seconds while `rpm ≥ 500` is `triggered`.
-- Key evidence: longest healthy qualifying zero run 3 s, leaving 7 s headroom; zero healthy triggers.
+- Key evidence: longest healthy qualifying zero run 3 s, leaving 7 s headroom; zero healthy triggers. Recorded 5 s, 10 s, and 12 s synthetic runs produced 0/3, 3/3, and 3/3 detections respectively.
 - Guard/limitation: missing or invalid signal returns `not_evaluable`; the 500-rpm floor excludes cranking ambiguity. Cleaning-related isolated zero samples make persistence mandatory.
 
 #### Routing
@@ -109,13 +115,13 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 - A same-side residual below `−1.8350 pp` or above `+1.3777 pp` continuously for ≥30 s is `triggered`.
 - `pass` requires a qualifying 30-s masked opportunity with no trigger; otherwise `not_evaluable`.
 - Coverage and key evidence: 66/66 trips; zero healthy triggers; longest healthy low/high episodes 18/9 s, giving 12/21 s margins. Samples above 16 pp represent 18.19% of the masked population across 66/66 trips, supporting offset-and-gain scope.
-- Limitation: 1 Hz asynchronous channel sampling necessitates the low-motion mask.
+- Limitation: 1 Hz asynchronous channel sampling necessitates the low-motion mask. Recorded E-channel offsets of 1, 2, and 5 pp produced 0/3, 2/3, and 3/3 detections; boundary response depends on the original signed residual.
 
 #### 3-S1b — Extreme disagreement (provisionally frozen; specificity-only P2138 high tier)
 
 - Unmasked `accel_pedal_channel_delta ≥ 65 pp` for 2 consecutive valid seconds is `triggered`.
 - Key evidence: healthy maximum 60 pp; artifact guard passed; zero healthy triggers.
-- Limitation: the threshold is above the healthy maximum and proves specificity only. Detection capability depends on one-channel offset/gain injection.
+- Limitation: the threshold is above the healthy maximum and the calibration evidence establishes specificity only. Recorded forced D/E deltas of 60, 65, and 70 pp produced 0/3, 3/3, and 3/3 detections, confirming the registered boundary under synthetic injection but not real-failure sensitivity.
 
 ## 4. intake_air_temperature_sensor_fault
 
@@ -134,18 +140,18 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 - Require engine on and valid, non-imputed, non-suspicious IAT/speed/MAF/RPM. Material change in a 120-s context window is `speed_std ≥ 12.4 km/h` OR `maf_std ≥ 8.5 g/s`; both thresholds are trip-equal weighted q50 values over valid 120-s endpoints from the fixed 66-trip cohort, with each trip contributing total weight one.
 - Under that gate, `intake_temp_stability ≤ 0.1°C` sustained for ≥120 s is `triggered`. Minimum evaluable window: 240 s. `pass` requires at least one eligible context-change opportunity without a trigger; otherwise `not_evaluable`.
 - Coverage and key evidence: context opportunities in 66/66 trips; zero healthy triggers; longest healthy flat episode under material context 29 s, leaving 91 s headroom. The result remained trigger-free at a 0.25°C sensitivity check.
-- Limitations: detects hard-stuck/no-response only, not slow drift or mild skew. Detection capability awaits frozen-IAT injection. IAT is 1°C-quantized, so the context gate is mandatory.
+- Limitations: detects hard-stuck/no-response only, not slow drift or mild skew. Recorded frozen-IAT injections of 180 s, 240 s, and 300 s each produced 3/3 scoped detections; this does not extend the rule to drift or skew. IAT is 1°C-quantized, so the context gate is mandatory.
 
 #### 4-S2 — Cold-start IAT plausibility (executable v1; low-confidence P0111 support)
 
 - With `decision_role = support`, evaluate ECT/IAT/AAT at the canonical segment first row. Require `segment_gap ≥ 6 h`, first-row RPM <50 followed by an observed off→on transition in the same segment and continuity block, valid non-imputed/non-suspicious ECT/IAT/AAT, and ECT witness `|ECT − AAT| ≤ 15°C`. Otherwise return `not_evaluable` with a reason.
 - `|IAT − AAT| > 7°C` returns support `result_state = triggered`, `dtc_candidate_label = P0111`, and `dtc_emitted = false`; ≤7°C returns `pass`.
 - Coverage and key evidence: 18 strict observed-start events; healthy maxima 5°C (`|IAT−AAT|`) and 11°C (`|ECT−AAT|`), with zero healthy candidates.
-- Limitations: confidence modifier only, never a standalone P0111 DTC; both sensors far from AAT make the mirrored checks `not_evaluable`. When activated at the qualified observed start, its confidence cap applies prospectively from that start through the end of the current continuity segment and never retroactively. A later episode in the same segment cannot clear the cap; a continuity break clears it. The cap affects only IAT-dependent residual evidence in 2-S2 and 5-S2, without changing 2-S3b, 5-S1, or 5-S3.
+- Limitations: confidence modifier only, never a standalone P0111 DTC; both sensors far from AAT make the mirrored checks `not_evaluable`. Recorded offsets of AAT+7°C, AAT+8°C, and AAT+20°C produced 0/3, 3/3, and 3/3 support detections, with no DTC emission. When activated at the qualified observed start, its confidence cap applies prospectively from that start through the end of the current continuity segment and never retroactively. A later episode in the same segment cannot clear the cap; a continuity break clears it. The cap affects only IAT-dependent residual evidence in 2-S2 and 5-S2, without changing 2-S3b, 5-S1, or 5-S3.
 
 #### 4-S3 — Physical range (closed rule; P0112/P0113)
 
-- Any valid `intake_temp` outside −40…215°C is `triggered`: low → P0112; high → P0113 [13]. Missing signal returns `not_evaluable`.
+- Any valid `intake_temp` outside −40…215°C is `triggered`: low → P0112; high → P0113 [13]. Missing signal returns `not_evaluable`. Recorded values of −40°C, −41°C, and +216°C produced 0/3, 3/3, and 3/3 detections, preserving the strict outside-range comparison.
 
 ## 5. map_load_signal_plausibility_fault
 
@@ -165,21 +171,21 @@ Research derivations, candidate grids, sensitivity analyses, LOTO/Bootstrap deta
 - Response is the maximum `|map − map(t0−1)|` over t0…t0+2. No-response thresholds by state × magnitude bin are: idle 8.0/4.0 kPa; steady-driving high bin 3.0; acceleration 4.0/9.0; high-load 13.4/1.0. Steady-driving low-bin events are non-separable and `not_evaluable`.
 - At least 3 no-responses among the trip's most recent 4 valid events is `triggered`; `decision_margin = count − 3`.
 - Coverage and key evidence: 56/66 trips (84.8%); zero healthy 3-of-4 triggers; 942 valid events from 1176 detected; event-weighted no-response rate 0.955%, only 0.045 percentage points below the registered 1% criterion.
-- Limitations: hard no-response only. Idle-bin thresholds are statistically fragile (29/23 events); the high-load high-bin 1.0-kPa threshold is at signal resolution and near-vacuous. Graded response degradation is not observable at 1 Hz.
+- Limitations: hard no-response only. Idle-bin thresholds are statistically fragile (29/23 events); the high-load high-bin 1.0-kPa threshold is at signal resolution and near-vacuous. Recorded suppression of 2, 3, and 4 valid events produced 0/3, 3/3, and 3/3 detections, but does not establish sensitivity to attenuated response at 1 Hz.
 
 #### 5-S2 — Steady-state residual (partial freeze; shared arbitration evidence)
 
 - With `decision_role = arbitration_evidence`, require `pedal_slope == 0` and `|rpm_slope| ≤ 9 rpm/s` for ≥10 s. Only in post-warm-up `steady_driving`, a same-side `speed_density_maf_residual` outside [`−4.04`, `+16.71`] g/s for ≥30 s returns `result_state = triggered` shared evidence with `dtc_emitted = false`.
 - Idle, acceleration, and high-load are `not_evaluable`. The evidence produces no code by itself and follows section 2 routing.
 - Coverage and key evidence: 44/66 trips; zero healthy 30-s episodes; low/high persistence margins 19/12 s.
-- Limitation: the pedal gate degenerates to exact flatness; disclosed and frozen without post-result repair.
+- Limitation: the pedal gate degenerates to exact flatness; disclosed and frozen without post-result repair. Recorded MAF gains of 1.5, 2.0, and 3.0 produced 0/3, 1/3, and 3/3 evidence detections, showing that response depends on baseline context; all active rows remained non-emitting arbitration evidence.
 
 #### 5-S3 — Stuck MAP (frozen; P0106)
 
 - Require engine on and valid, non-imputed/non-suspicious MAP/RPM/speed/pedal channels. Material 120-s context is `rpm_std ≥ 241` OR `speed_std ≥ 12.4 km/h` OR `pedal_std ≥ 9.9%`.
 - `map_range_60s == 0` sustained for ≥120 s under material context is `triggered`. Minimum evaluable window: 240 s. `pass` requires at least one context opportunity without a trigger; otherwise `not_evaluable`.
 - Coverage and key evidence: context and temporal coverage 66/66; zero healthy triggers; longest healthy joint episode 31 s, leaving 89 s headroom.
-- Limitation: research-grade stuck candidate; detection capability awaits frozen-value injection.
+- Limitation: research-grade stuck candidate. Recorded frozen-MAP intervals of 180 s, 240 s, and 300 s each produced 3/3 scoped detections in selected material-context windows; real-failure sensitivity remains unknown.
 
 #### Routing and data-quality guard
 

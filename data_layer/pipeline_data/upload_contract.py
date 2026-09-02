@@ -58,6 +58,7 @@ _VALID_REJECT_CODES = frozenset(
         "too_few_rows",
         "unreadable_csv",
         "no_usable_segment",
+        "duplicate_upload_filenames",
     }
 )
 
@@ -76,6 +77,9 @@ class UploadRejected(RuntimeError):
     - ``no_usable_segment``: raised after the pipeline has run, when
       no contiguous cleaned segment reaches
       :data:`MIN_UPLOAD_ROWS` rows (e.g. a fragmented recording).
+    - ``duplicate_upload_filenames``: a multi-file upload history
+      contains two files with the same KIT file name, which would
+      silently collide in staging.
     """
 
     def __init__(self, code: str, message: str) -> None:
