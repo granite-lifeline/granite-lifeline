@@ -1,64 +1,55 @@
 # Manual review of the regenerated RAG ablation
 
-This review covers the 20 reports regenerated on 1 September 2026. Each report
-was checked against its saved input context, retrieved knowledge, Validator
-result and automatic audit. The full labels and case-specific evidence are in
+This review covers the 20 reports regenerated on 1 September 2026 after the
+GL-446 Report Layer fixes. Each report was checked against its saved input
+context, retrieved knowledge, Validator result and automatic audit. The full
+labels and case-specific evidence are in
 `final_rag_multidimensional_review.json`.
 
 ## Cooling degradation — Low risk
 
-The controlled report preserved the low-temperature evidence and did not name
-a cause. The relevance gate correctly withheld overheating material from the
-three retrieval conditions. Current full RAG produced suitable Low-risk owner
-and mechanic actions. Owner-safe RAG remained safe, but added an unrelated
-pedal-response stopping condition and exposed the mass-airflow integral in the
-mechanic request without explaining why it mattered.
+All four reports retained the low-temperature evidence and Low-risk timing.
+The controlled report did not invent a cause. The relevance gate withheld
+overheating material, and the two action conditions kept technical checks with
+a mechanic. The earlier unrelated pedal stopping condition is absent.
 
-## Air-intake MAF anomaly — Low risk
+## Air-intake mass-airflow anomaly — Low risk
 
-Retrieved knowledge added plausible contamination, connector and degradation
-possibilities while retaining uncertainty. Both action conditions assigned
-scan-tool work to a mechanic. All four descriptions nevertheless used `MAF`
-without expanding it for the intended non-technical reader; the action
-conditions also retained dense `PID` and rpm terminology in the mechanic item.
+The reports expand mass airflow (MAF) on first use and do not expose PID as an
+unexplained field. Retrieved knowledge adds contamination and calibration
+possibilities with uncertainty. These explanations remain relatively long,
+and the normal displayed signals cannot distinguish among the possible causes.
 
 ## Accelerator-pedal sensor — Medium risk
 
-All four reports preserved Medium-risk service timing and used safe owner
-actions. The shared description said that the system was operating normally,
-although the input only established that the listed signals were within their
-ranges. Retrieved heat, wiring and connector causes were category-relevant,
-but the cause-only output connected heat near the firewall and possible
-limp-home behaviour only weakly to the current evidence.
+The reports state that the displayed signals are within their reference ranges
+without claiming that the whole sensor or system operates normally. Retrieved
+heat, wiring and connector causes remain possible rather than confirmed.
+Owner observations and stopping conditions are specific to pedal response,
+while wiring and voltage checks are assigned to a mechanic.
 
-## Intake-air-temperature sensor fault — High risk
+## Intake-air-temperature sensor flag — High risk
 
-The regenerated reports no longer describe a future crossing into High risk.
-All action conditions assign technical checks to a mechanic. However, the
-shared description calls the result a high-risk fault and strongly suggests a
-sensor issue even though all displayed signals are normal and the detection
-came from rule-based evidence. Retrieved circuit and connector causes fit the
-category but cannot be distinguished by the displayed signals. The retrieved
-conditions also expose `rule-based proxy evidence`, which is not suitable
-owner-facing language.
+The reports describe a rule-based diagnostic flag and explicitly state that
+the displayed temperature signals are normal. They do not expose the internal
+confidence percentage or describe the flag as a confirmed fault. Retrieved
+circuit and connector possibilities are category-relevant but cannot be
+distinguished from the current displayed signals, so professional verification
+remains necessary.
 
-## MAP load-signal plausibility fault — High risk
+## MAP load-signal plausibility flag — High risk
 
-All four reports preserved the abnormal manifold-pressure range, current High
-risk and the need for professional verification without exposing a future
-High-threshold projection. Cause knowledge was relevant, although the
-cause-only report listed several generic alternatives that the available
-evidence could not distinguish. Both action conditions kept observation with
-the owner and assigned sensor, electrical and intake-leak checks to a mechanic.
+All four reports preserve current High risk without describing a future
+crossing into High risk. Retrieved contamination, electrical and physical
+possibilities remain uncertain. Owner actions are observational, while MAP
+signal and component checks are assigned to a mechanic. Internal proxy
+provenance is converted into owner-facing diagnostic wording.
 
 ## Decision supported by the review
 
-The regenerated reports support the production owner/mechanic action boundary:
-all 20 released outputs kept technical work with a professional. Retrieved
-knowledge improved specificity, but did not by itself ensure that every cause
-was strongly connected to the current signal direction or that every term was
-plain enough for the intended reader. The remaining priorities are therefore
-to revise the shared IAT and Accelerator Pedal descriptions, expand MAF and
-PID, and prevent unrelated stopping conditions from entering a component
-report. Mechanical accuracy remains outside this review because the fixtures
-do not contain technician-verified faults or repair outcomes.
+All 20 outputs were released without fallback and retained the owner/mechanic
+action boundary. The earlier four manual-review defects are no longer present.
+The review also shows why release compliance and mechanical accuracy must stay
+separate: several retrieved causes are relevant to the anomaly category but
+cannot be selected from the displayed signals alone. Technician-verified fault
+and repair cases remain necessary for mechanical evaluation.

@@ -129,10 +129,10 @@ The legacy four-dimension evaluator produced the following means:
 
 | Condition | Mean legacy score |
 |---|---:|
-| Controlled baseline | 0.870 |
-| Cause-only RAG | 0.935 |
-| Current full RAG | 0.935 |
-| Owner-safe RAG | 0.935 |
+| Controlled baseline | 0.860 |
+| Cause-only RAG | 0.930 |
+| Current full RAG | 0.930 |
+| Owner-safe RAG | 0.930 |
 
 These numbers do **not** establish a general ranking of the four conditions.
 Review of the evaluator records found several lexical false positives. For example, the evaluator
@@ -153,17 +153,16 @@ reports, but did not by itself ensure that each possible cause was strongly
 connected to the current signal direction or that every term was suitable for
 a non-technical reader.
 
-Three shared output issues remain visible. The Accelerator Pedal description
-broadened normal listed signals into a statement that the system was operating
-normally. The IAT description used strong fault wording despite normal
-displayed signals and rule-based provenance. The Air Intake reports retained
-unexplained MAF and PID terminology. One Cooling owner-safe action also added
-an unrelated pedal-response stopping condition.
+The final regeneration removed the four issues found in the earlier manual
+review: unrelated pedal stopping conditions, unexplained MAF or PID terms,
+whole-system normal-operation claims, and strong IAT fault wording based only
+on rule evidence. Neither IAT nor MAP described a future crossing into High
+risk.
 
-The High-risk projection rule worked in the regenerated reports: neither IAT
-nor MAP described a future crossing into High risk. The remaining IAT problem
-is explaining how normal displayed signals relate to the High rule-based
-result without overstating a mechanical fault. Full labels and evidence are in
+The remaining limitations concern the strength of the available evidence.
+Several retrieved causes fit the anomaly category but cannot be distinguished
+by the displayed signals, and two RAG explanations remain relatively dense for
+the intended reader. Full labels and evidence are in
 `final_rag_multidimensional_review.json`; aggregate counts and interpretation
 are in `final_rag_multidimensional_summary.md`. These findings assess report
 behaviour, not mechanical accuracy or generalisation.
