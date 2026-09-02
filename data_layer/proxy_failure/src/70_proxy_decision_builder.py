@@ -296,6 +296,8 @@ def _duration_rule_decision(
     best_direction = None
     triggered = False
     trigger_frame = None
+    trigger_direction = None
+    trigger_margin = None
     evidence_count = 0
     for kind, direction, _override in condition_kinds:
         runs = trips.episodes(trip_id, rule_id, kind)
@@ -311,7 +313,8 @@ def _duration_rule_decision(
         if not meeting.empty and not triggered:
             triggered = True
             trigger_frame = meeting
-            best_direction = direction
+            trigger_direction = direction
+            trigger_margin = meeting["margin_seconds"].max()
 
     start, end = trips.span_of(eligible)
     segment_id = (
@@ -324,10 +327,10 @@ def _duration_rule_decision(
             proxy_id=proxy_id, sub_check_id=sub_check,
             unit_scope="trip", trip_id=trip_id, segment_id=segment_id,
             evidence_start_timestamp=start, evidence_end_timestamp=end,
-            direction=best_direction, decision_role=decision_role,
+            direction=trigger_direction, decision_role=decision_role,
             result_state=active_state,
             decision_reason="condition_persistence_met",
-            decision_margin=float(best_margin),
+            decision_margin=float(trigger_margin),
             dtc_candidate_label=dtc_candidate_label,
             dtc_emitted=False, confidence=confidence,
             confidence_capped_low=False,
