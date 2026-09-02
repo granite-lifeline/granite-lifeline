@@ -2442,21 +2442,21 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
         <div class="model-stage" data-model-stage="0">
           <div class="model-contrast">
             <div class="contrast-card conventional">
-              <span class="model-kicker">Conventional fault classifier</span>
+              <span class="model-kicker">Supervised fault classifier</span>
               <h3>Learns from verified examples</h3>
               <p class="classifier-definition">A classifier learns labelled examples, then places new data into one of those known categories.</p>
               <div class="contrast-list">
-                <div class="contrast-row"><b>TRAIN WITH</b><span>healthy + faulty vehicles</span></div>
+                <div class="contrast-row"><b>TRAIN WITH</b><span>verified normal + faulty examples</span></div>
                 <div class="contrast-row"><b>TEST WITH</b><span>independently verified faults</span></div>
               </div>
             </div>
             <div class="model-arrow-long">≠</div>
             <div class="contrast-card ours">
               <span class="model-kicker">Our dataset</span>
-              <h3>Contains no real fault examples</h3>
+              <h3>Contains no verified fault outcomes</h3>
               <div class="contrast-list">
-                <div class="contrast-row"><b>WE HAVE</b><span>baseline driving without verified fault labels</span></div>
-                <div class="contrast-row"><b>WE DO NOT HAVE</b><span>verified mechanical failures</span></div>
+                <div class="contrast-row"><b>WE HAVE</b><span>ordinary driving without verified fault outcomes</span></div>
+                <div class="contrast-row"><b>WE DO NOT HAVE</b><span>confirmed faults or repair outcomes</span></div>
               </div>
             </div>
           </div>
@@ -2479,7 +2479,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
                 <i>→</i>
                 <div><strong>TTM</strong><span>fine-tuned forecast</span></div>
                 <i>→</i>
-                <div><strong>96 s future</strong><span>what should happen next</span></div>
+                <div><strong>96 s future</strong><span>what the model predicts next</span></div>
               </div>
               <div class="pre-model-gate">
                 <strong>Before TTM</strong>
@@ -2515,7 +2515,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
             </div>
           </div>
           <div class="pred-legend" style="font-size:12px;"><span><i style="background:var(--accent-blue);"></i>predicted</span><span><i style="background:var(--accent-red);"></i>actual</span></div>
-          <p class="model-takeaway">The prediction gap becomes evidence of unexpected behaviour.</p>
+          <p class="model-takeaway">The mean prediction gap across 96 seconds is one source of unexpected-behaviour evidence.</p>
         </div>
 
         <div class="model-stage" data-model-stage="3">
@@ -2526,7 +2526,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
             <div class="normalise-visual">
               <span class="model-kicker">Make different signals comparable</span>
               <h3>Convert each gap to the same 0-1 scale</h3>
-              <p>Compare the gap with that signal's normal reference width.</p>
+              <p>Compare the gap with that signal's baseline reference width.</p>
               <div class="unit-examples">
                 <div class="unit-example"><strong>2°C ÷ 5°C</strong><span>0.40</span></div>
                 <div class="unit-example"><strong>200 RPM ÷ 3682</strong><span>0.05</span></div>
@@ -2534,54 +2534,51 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
             </div>
             <div class="model-arrow-long">→</div>
             <div class="repeat-visual">
-              <span class="model-kicker">Repeat across the drive</span>
-              <h3>See whether the change continues</h3>
-              <p>One window can be noise. Several rising windows show a persistent pattern.</p>
-              <div class="repeat-journey"><div>LOW</div><div>LOW</div><div>RISING</div><div>HIGH</div></div>
+              <span class="model-kicker">Repeat across eligible windows</span>
+              <h3>Retain change over time</h3>
+              <p>Each window is scored retrospectively. Trip averages form the longer-term risk history.</p>
+              <div class="repeat-journey"><div>WINDOW 1</div><div>WINDOW 2</div><div>TRIP MEAN</div><div>HISTORY</div></div>
             </div>
           </div>
-          <p class="model-takeaway">Normalisation makes gaps comparable. Repetition reveals persistence.</p>
+          <p class="model-takeaway">Normalisation makes gaps comparable. Repetition builds history; it does not confirm persistence.</p>
         </div>
 
         <div class="model-stage" data-model-stage="4">
           <div class="model-attribution">
             <div class="attribution-evidence">
-              <span class="model-kicker">How the likely cause is selected</span>
+              <span class="model-kicker">How the highest-scoring system risk is selected</span>
               <div class="score-funnel">
-                <div class="score-row"><div><strong>Cooling</strong><span>coolant below reference and warming rate above range</span></div><span>→</span><b>0.5021</b></div>
-                <div class="score-row"><div><strong>Air intake</strong><span>airflow and pressure stay close to expected</span></div><span>→</span><b>lower</b></div>
-                <div class="score-row"><div><strong>Accelerator pedal</strong><span>both pedal sensors still agree</span></div><span>→</span><b>lower</b></div>
+                <div class="score-row"><div><strong>Cooling</strong><span>coolant forecast gap + thermal features</span></div><span>→</span><b>0.5021</b></div>
+                <div class="score-row"><div><strong>Air intake</strong><span>airflow and pressure evidence</span></div><span>→</span><b>lower</b></div>
+                <div class="score-row"><div><strong>Accelerator pedal</strong><span>pedal-channel disagreement</span></div><span>→</span><b>lower</b></div>
               </div>
-              <div class="score-result">The strongest explanation is cooling degradation</div>
+              <div class="score-result">Highest proxy-anomaly score: cooling degradation</div>
             </div>
             <div class="model-arrow-long">→</div>
             <div class="json-artifact">
-              <span class="model-kicker">JavaScript Object Notation (JSON) · structured machine-readable output</span>
+              <span class="model-kicker">JSON excerpt · structured machine-readable output</span>
               <pre>{
   <span class="json-key">"timestamp"</span>: <span class="json-value">"2017-07-28T06:46:23Z"</span>,
   <span class="json-key">"anomaly_type"</span>: <span class="json-value">"cooling_degradation"</span>,
   <span class="json-key">"risk_score"</span>: <span class="json-value">0.5021</span>,
   <span class="json-key">"risk_level"</span>: <span class="json-value">"Medium"</span>,
-  <span class="json-key">"component"</span>: <span class="json-value">"cooling_degradation"</span>,
   <span class="json-key">"prediction_confidence"</span>: <span class="json-value">0.842</span>,
   <span class="json-key">"key_signals"</span>: [
     { <span class="json-key">"feature"</span>: <span class="json-value">"coolant_temp"</span>, <span class="json-key">"value"</span>: <span class="json-value">85.0</span>, <span class="json-key">"unit"</span>: <span class="json-value">"°C"</span> },
     { <span class="json-key">"feature"</span>: <span class="json-value">"ect_rate_180s"</span>, <span class="json-key">"value"</span>: <span class="json-value">5.0486</span>, <span class="json-key">"unit"</span>: <span class="json-value">"°C/min"</span> }
-  ],
-  <span class="json-key">"estimated_cycles_to_failure"</span>: <span class="json-value">5</span>,
-  <span class="json-key">"estimated_failure_probability"</span>: <span class="json-value">0.7502</span>
+  ]
 }</pre>
             </div>
           </div>
-          <p class="model-takeaway">TTM supplies forecast residuals; the Model Layer combines them with physical evidence to rank systems.</p>
+          <p class="model-takeaway">For each system, the strongest available forecast or physical evidence sets its score.</p>
         </div>
 
         <div class="model-stage" data-model-stage="5">
-          <div class="validation-boundary">Limitation: both tests use baseline driving or synthetic changes. They do not prove detection of real vehicle breakdowns.</div>
+          <div class="validation-boundary">Limits: 1 / 11 unchanged controls still alarmed. Baseline and synthetic tests do not prove real-breakdown detection.</div>
           <div class="validation-detail">
             <div class="injection-test">
               <h3 class="test-question">1. Does it identify a known change?</h3>
-              <p class="test-purpose">154 controlled cases across 11 held-out baseline segments.</p>
+              <p class="test-purpose">154 controlled cases across 11 validation segments.</p>
               <div class="test-flow">
                 <div class="test-node"><strong>Baseline segment</strong><span>preserve real driving context</span></div>
                 <div class="monitor-arrow">→</div>
@@ -2590,14 +2587,14 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
                 <div class="test-node"><strong>Expected answer</strong><span>name the change we planted</span></div>
               </div>
               <div class="metric-placeholders">
-                <div><strong>1.00 / 1.00</strong><span>cooling P / R</span></div>
-                <div><strong>1.00 / 0.325</strong><span>pedal P / R</span></div>
-                <div><strong>0.20 / 0.045</strong><span>air-intake P / R</span></div>
+                <div><strong>1.00 / 1.00</strong><span>synthetic cooling P / R</span></div>
+                <div><strong>1.00 / 0.325</strong><span>synthetic pedal P / R</span></div>
+                <div><strong>0.20 / 0.045</strong><span>synthetic air-intake P / R</span></div>
               </div>
             </div>
             <div class="finetune-test">
               <h3 class="test-question">2. Does extra training improve the forecast?</h3>
-              <p class="test-purpose">Compare both models on 250 held-out windows from 12 validation segments.</p>
+              <p class="test-purpose">Compare both models on 250 validation windows from 12 trip-disjoint segments.</p>
               <div class="compare-bars">
                 <div class="compare-bar"><span>Zero-shot</span><i style="--bar:100%;"></i><b>58.00</b></div>
                 <div class="compare-bar"><span>Fine-tuned</span><i style="--bar:94.8%;"></i><b>54.97</b></div>
@@ -2625,14 +2622,14 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
       </div>
     </div>
     <script type="application/json" class="slide-notes">
-    {"title":"Challenge 2: Detecting Change Without Fault Examples","script":"A classifier needs verified normal-operation and faulty examples, but this dataset has no mechanically verified fault or repair labels. Reusing the Data Layer's stand-in rules as both the answer and the test would be marking our own homework. We therefore use Granite Tiny Time Mixers to forecast baseline behaviour. For every eligible 608-second window, TTM reads 512 seconds and forecasts the next 96 seconds. We compare forecast with reality and use that gap as independent evidence of change. Planted-fault testing showed sharply different limits: cooling achieved perfect precision and recall, pedal alarms were precise but missed smaller faults, and gradual air-intake under-read was rarely caught. Across the three types, macro F1 was 0.521 and the baseline alarm rate was 0.091. Quality-gated fine-tuning reduced held-out forecast error from 58.00 to 54.97, or 5.23 percent, with five of six signals improving. The final detector and formal evaluation use the same epoch-five fine-tuned artefact. Story 8 also projects threshold crossing from rising risk history. These are synthetic-detection and forecasting results, not proof of real mechanical-failure recall.","notes":["Medium risk starts at 0.4129 and High at 0.9 under provisional synthetic-only calibration","Cooling P/R 1.000/1.000; pedal 1.000/0.325; MAF 0.200/0.045","Failure projection is a linear risk-history projection, not a calibrated remaining-useful-life model","Five problem types are exposed: three scored here and two forwarded from Data Layer proxy decisions","Zero-shot is retained as the forecasting comparison baseline; runtime inference uses the selected epoch-five fine-tuned artefact"]}
+    {"title":"Challenge 2: Detecting Change Without Fault Examples","script":"I’m Lucca. Ray and I will explain how we use TTM to detect anomalies. A supervised fault classifier learns from verified normal and faulty examples. Our 81 trips record ordinary driving without verified fault outcomes. The only targets were the Data team’s stand-in rules, so using them as both answer and test would be marking our own homework. We therefore learned ordinary continuation. IBM’s pre-trained Tiny Time Mixer, fine-tuned on quality-gated baseline trips, reads 512 seconds of six signals and forecasts the next 96. Impossible readings are repaired or rejected; unusual but possible values remain. Ray will show how the forecast becomes evidence. When prediction and reality separate, the mean gap across 96 seconds provides evidence of unexpected behaviour. It is only one source: predictable faults can leave small gaps. We divide each signal’s mean gap by its baseline reference width, making degrees and RPM comparable. We repeat this across eligible windows and aggregate by trip for longer-term history. For each system, the strongest forecast or physical evidence sets its score. Cooling ranks highest here, then the type, score, level, confidence and supporting readings leave as structured JSON. We tested detection and forecasting separately. Across 154 synthetic changes, cooling was always caught, pedal alarms missed smaller changes, and airflow under-read was rarely caught. One of eleven unchanged controls also alarmed. Fine-tuning reduced validation forecast error by 5.23 percent. None of this proves detection of real faults.","notes":["Lucca presents stages 0–1; Ray presents stages 2–5","Medium risk starts at 0.4129 and High at 0.9 under provisional synthetic-only calibration","Synthetic P/R: cooling 1.000/1.000; pedal 1.000/0.325; MAF 0.200/0.045","Five problem types are exposed: three scored here and two forwarded from Data Layer proxy decisions","Zero-shot is the forecasting comparison baseline; runtime uses the epoch-five fine-tuned artefact"]}
     </script>
   </div>
 
   <!-- ===== 8 / PIPELINE STATE 2: REPORT NEXT ===== -->
   <div class="slide" data-slide="7">
     <p class="slide-tag anim-1">Building the architecture · 03</p>
-    <h2 class="anim-2">We can now see <span class="highlight-blue">what changed, how serious it may be, and which system is most likely involved.</span></h2>
+    <h2 class="anim-2">We can now see <span class="highlight-blue">what changed, how strong the evidence is, and which system ranks highest.</span></h2>
     <div class="pipeline-shell anim-3">
       <div class="pipeline-track">
         <div class="pipe-stage is-on"><div class="pipe-num">01 · COMPLETE</div><div class="pipe-title">Data</div><div class="pipe-sub">Contextual features</div></div>
@@ -2648,6 +2645,8 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
           <div class="artifact-label"><span>Challenge 2 input</span><span>Data output</span></div>
           <div class="artifact-file">production_features.csv</div>
           <div class="artifact-code"><b>46-column feature contract</b><br>context + cleaned signals<br>engineered behaviour<br>schema + calibration provenance</div>
+          <div class="artifact-file" style="margin-top:8px;">proxy_decisions.csv</div>
+          <div class="artifact-code">Data-scored verdicts for two forwarded types</div>
         </div>
         <div class="artifact-transform"><span>→</span><strong>GRANITE<br>TTM</strong></div>
         <div class="artifact-card light handoff-output">
@@ -2662,7 +2661,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
       <div class="pipeline-question">How can we turn technical evidence into clear, reliable guidance for vehicle owners?</div>
     </div>
     <script type="application/json" class="slide-notes">
-    {"title":"Pipeline — Evidence Ready for Explanation","script":"Here, cooling degradation is Medium risk. Coolant is eighty-five degrees—below its ninety-to-ninety-five reference—but rising at five degrees per minute, above the zero-to-two range. This structured evidence now passes to the Report Layer. Charlotte will explain how it becomes useful to a vehicle owner.","notes":["All values come from report_layer/evaluation/viva_real_case","The source history contains 22 Model windows from six chronological Seat Leon trips","Five trips and 75.02 percent describe projected High-risk threshold crossing, not mechanical-failure probability","Do not reveal the generated report before Challenge 3"]}
+    {"title":"Pipeline — Evidence Ready for Explanation","script":"Here, cooling-degradation evidence is Medium risk. Coolant is 85 degrees—below its 90-to-95 reference—but rising at 5.05 degrees per minute, above the zero-to-two range. This becomes the Report Layer’s input. Charlotte will show how it becomes useful to an owner.","notes":["All values come from report_layer/evaluation/viva_real_case","The source history contains 22 Model windows from six chronological Seat Leon trips","Five trips and 75.02 percent describe projected High-risk threshold crossing, not mechanical-failure probability","Do not reveal the generated report before Challenge 3"]}
     </script>
   </div>
 
@@ -4795,8 +4794,8 @@ const modelLabels = [
   'Why a fault classifier would not work',
   'How TTM reads one analysis window',
   'Prediction becomes anomaly evidence',
-  'Why we normalise and monitor continuously',
-  'From unexpected behaviour to likely cause',
+  'Why we normalise and repeat the analysis',
+  'From unexpected behaviour to system-level risk',
   'What we validated, and what we did not'
 ];
 
