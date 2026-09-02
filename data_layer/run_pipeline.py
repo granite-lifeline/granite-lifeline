@@ -28,7 +28,7 @@ from data_layer.pipeline_data.manifests import (
     verify_manifest_artifacts,
     write_json_atomic,
 )
-from data_layer.pipeline_data.paths import RunLayout, repo_relative_posix
+from data_layer.pipeline_data.paths import REPO_ROOT, RunLayout, repo_relative_posix
 from data_layer.pipeline_data.upload_contract import (
     UploadRejected,
     validate_upload_csv,
@@ -44,7 +44,6 @@ __all__ = [
     "run_data_pipeline_for_uploads",
 ]
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = (
     REPO_ROOT / "data_layer/data_cleaning/src/cleaning_config.yaml"
 )

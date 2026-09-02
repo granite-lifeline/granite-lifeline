@@ -352,7 +352,6 @@ def select_warmup_windows(
         if (
             pd.isna(first["ect_start"])
             or float(first["ect_start"]) > 50
-            or float(first["ect_start"]) >= 79
             or pd.isna(first["aat_start"])
             or float(first["aat_start"]) < -7
         ):
