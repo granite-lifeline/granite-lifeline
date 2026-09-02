@@ -5,7 +5,7 @@ Phase 2 — Grid scans: candidate sensitivity (--grid-scans).
 Phase 3 — Bootstrap: confidence intervals (--bootstrap).
 
 Disabled by default (use --grid-scans, --bootstrap).
-Output: research_diagnostics/ under the run dir.
+Output: data_layer/research_diagnostics/ (repo-level shared dir).
 Never writes to production_features.csv or modifies the calibration registry.
 """
 
@@ -67,7 +67,7 @@ def _write_manifest(
             continue
         if path.is_file():
             outputs.append({
-                "path": path.relative_to(run_dir).as_posix(),
+                "path": path.relative_to(output_dir).as_posix(),
                 "sha256": _sha256_file(path),
                 "size_bytes": path.stat().st_size,
             })

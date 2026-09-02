@@ -495,3 +495,37 @@ def test_determinism() -> None:
     second = build(**kwargs)
 
     pd.testing.assert_frame_equal(first, second)
+
+
+def test_range_violation_below_triggers_low_p0112() -> None:
+    rule_state = make_rule_state()
+    rule_state["s4s3_evaluable"] = True
+    rule_state.loc[2, "s4s3_below_range"] = True
+    rule_state.loc[2, "intake_temp"] = -50.0
+    decisions = build(rule_state=rule_state)
+
+    row = pick(decisions, "4-S3")
+    assert row["result_state"] == "triggered"
+    assert row["direction"] == "low"
+    assert row["decision_reason"] == "range_violation"
+    assert row["decision_margin"] == 10.0  # bound(-40) - temp(-50)
+    assert row["dtc_candidate_label"] == "P0112"
+    assert row["dtc_emitted"]
+    assert row["routed_dtc"] == "P0112"
+
+
+def test_range_violation_above_triggers_high_p0113() -> None:
+    rule_state = make_rule_state()
+    rule_state["s4s3_evaluable"] = True
+    rule_state.loc[3, "s4s3_above_range"] = True
+    rule_state.loc[3, "intake_temp"] = 225.0
+    decisions = build(rule_state=rule_state)
+
+    row = pick(decisions, "4-S3")
+    assert row["result_state"] == "triggered"
+    assert row["direction"] == "high"
+    assert row["decision_reason"] == "range_violation"
+    assert row["decision_margin"] == 10.0  # temp(225) - bound(215)
+    assert row["dtc_candidate_label"] == "P0113"
+    assert row["dtc_emitted"]
+    assert row["routed_dtc"] == "P0113"
