@@ -1,6 +1,47 @@
 # Report Layer Evaluation Directory
 
-This directory contains evaluation reports, test scenarios, and quality assessment tools for the Granite Lifeline diagnostic report generation system.
+This directory contains current release evidence and historical experiments for
+the Granite Lifeline Report Layer. Historical scores describe the code and
+prompts used at that time; they must not be quoted as results from the current
+pipeline.
+
+## Current evidence
+
+The current production evidence is in
+[`v5-rag-final-ablation/`](v5-rag-final-ablation/README.md). It uses
+`granite4.1:8b`, the production prompts, the current Validator and the targeted
+correction path. The final controlled run contains five anomaly types under
+four knowledge conditions (20 reports), with no fallback.
+
+Use these files for current claims:
+
+| Evidence | File |
+|---|---|
+| Machine-readable inputs, prompts and outputs | `v5-rag-final-ablation/final_rag_ablation_raw.json` |
+| Automated screening summary | `v5-rag-final-ablation/final_rag_ablation_results.md` |
+| Case-level manual labels | `v5-rag-final-ablation/final_rag_multidimensional_review.json` |
+| Manual review summary | `v5-rag-final-ablation/final_rag_multidimensional_summary.md` |
+
+The automated score checks implemented report rules. It does not establish
+mechanical accuracy, because the fixtures do not contain technician-verified
+faults or repair outcomes.
+
+## Historical experiments
+
+The directories below are retained to show how the design developed. They are
+not current release evidence.
+
+| Directory | Purpose | Status |
+|---|---|---|
+| `v1-initial-evaluation/` | Early pre-RAG scenario exploration | Historical |
+| `v2-model-selection/` | Four-model comparison used during model selection | Historical decision evidence |
+| `v3-rag-baseline-comparison/` | Early baseline/RAG comparison | Historical; predates current prompts and Validator |
+| `v4-meta-semantic-comparison/` | Retrieval-strategy comparison | Historical; predates final retrieval design |
+| `prompt_refinement/` | Failure discovery and regression fixtures | Supporting development evidence |
+| `qa_cross_validation/` | Evaluator/Validator and stability investigations | Supporting development evidence |
+| `perturbation_regression/` | Wording and negation regression checks | Current regression support |
+| `user_testing_ab/` | User-testing stimulus preparation | Historical study preparation |
+| `viva_real_case/` | Saved demonstration case | Demonstration evidence, not the final evaluation |
 
 ## Directory Structure
 
@@ -46,7 +87,7 @@ evaluation/
 
 - **Models Compared**: granite3.1:8b, granite3.1:2b, granite4.1:8b, granite4.1:3b
 - **Evaluation Dimensions**: Factual grounding, readability, hedging, actionability
-- **Selected Model**: granite3.1:8b (best balance of quality and speed)
+- **Selected Model**: granite4.1:8b for the production Report Layer
 - **Script**: `model_comparison.py` - Automated model comparison tool
 
 ### V3: RAG vs Baseline Evaluation (July 2026)
@@ -150,5 +191,5 @@ python report_layer/evaluation/v2-model-selection/model_comparison.py
 
 ---
 
-**Last Updated**: July 2026  
+**Last Updated**: September 2026
 **Project**: Granite Lifeline MSc Project, University of Bristol (IBM-sponsored)
