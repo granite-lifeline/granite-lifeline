@@ -28,7 +28,9 @@ from data_layer.pipeline_data.manifests import (
     verify_manifest_artifacts,
     write_json_atomic,
 )
-from data_layer.pipeline_data.paths import REPO_ROOT, RunLayout, repo_relative_posix
+from data_layer.pipeline_data.paths import (
+    REPO_ROOT, RunLayout, repo_relative_posix
+)
 from data_layer.pipeline_data.upload_contract import (
     UploadRejected,
     validate_upload_csv,
