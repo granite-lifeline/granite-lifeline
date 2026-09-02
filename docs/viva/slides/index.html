@@ -3591,13 +3591,13 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
               </div></div></details>
               <details><summary>Why offline fitting and online application must be separate</summary><div class="pipeline-detail"><ul>
                 <li><strong>Offline:</strong> approved cohort, documented weighting, model fitting, diagnostics and manual review may change a future versioned registry.</li>
-                <li><strong>Audit:</strong> Script 90 independently reproduces expected coefficients, bounds, registry metadata and evidence checksums; it stops on mismatch.</li>
+                <li><strong>Audit:</strong> Script 90 independently reproduces expected coefficients, bounds and proxy parameters from the evidence; it stops on mismatch.</li>
                 <li><strong>Online:</strong> Script 40 only loads frozen values, clips inputs to approved domains and calculates outputs.</li>
                 <li>This prevents target leakage, upload-specific baselines and non-reproducible production behaviour.</li>
               </ul></div></details>
               <details><summary>What 48/48 PASS proves—and what it does not</summary><div class="pipeline-detail"><ul>
                 <li>The audit manifest records 48 checks, all PASS, zero failed, with overall verdict PASS for data run <code>recalibrate_20260723</code>.</li>
-                <li>Checks cover release integrity, static/regulatory constants, transformation reproduction, proxy parameters, bounds and provenance.</li>
+                <li>Checks cover static/regulatory constants, transformation reproduction, proxy parameters, bounds and provenance; release-bundle integrity is enforced at runtime by Script 40.</li>
                 <li>It proves the frozen release can be reproduced from its declared evidence within the accepted tolerances.</li>
                 <li>It does <strong>not</strong> prove the calibration generalises to every make, engine or sensor package; broader external-vehicle validation remains future work.</li>
               </ul></div></details>
@@ -3611,7 +3611,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
               <details><summary>Code and artefact evidence</summary><div class="pipeline-detail"><ul>
                 <li><code>data_layer/calibration/calibration_registry.v1.json</code>: immutable approved parameters and <code>online_policy.fit_allowed=false</code>.</li>
                 <li><code>calibration_registry.v1.manifest.json</code>: frozen v1.2.0 release and embedded SHA-256 identities.</li>
-                <li><code>90_calibration_registry_builder.py</code>: <code>run_calibration_audit()</code> and release/parameter reproduction checks.</li>
+                <li><code>90_calibration_registry_builder.py</code>: <code>run_calibration_audit()</code> — parameter and transform reproduction (48 checks).</li>
                 <li><code>40_calibrated_feature_builder.py</code>: <code>_validate_release_bundle()</code>, <code>load_calibrated_inputs()</code>, <code>build_calibrated_features()</code>.</li>
                 <li><code>calibration_audit_manifest.json</code>: exact 48 PASS / 0 FAIL evidence and overall PASS verdict.</li>
               </ul></div></details>
