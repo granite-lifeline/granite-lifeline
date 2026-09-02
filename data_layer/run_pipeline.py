@@ -445,6 +445,19 @@ def run_data_pipeline_for_uploads(
 
     sources = [Path(path).expanduser().resolve(strict=False)
                for path in csv_paths]
+    seen: set[str] = set()
+    duplicate_names: list[str] = []
+    for source in sources:
+        if source.name in seen and source.name not in duplicate_names:
+            duplicate_names.append(source.name)
+        seen.add(source.name)
+    if duplicate_names:
+        raise UploadRejected(
+            "duplicate_upload_filenames",
+            "Uploaded trip history contains duplicate KIT file name(s): "
+            f"{', '.join(sorted(duplicate_names))}. Each recording must "
+            "have a unique file name.",
+        )
     config = load_config(Path(config_path).expanduser().resolve())
     for source in sources:
         validate_upload_csv(source, config)
