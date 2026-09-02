@@ -5,14 +5,20 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import time
 from pathlib import Path
 from typing import Any
 
-from report_layer.pipeline.report_generator import generate_report
-
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from report_layer.pipeline.report_generator import (  # noqa: E402
+    generate_report,
+)
+
+
 FIXTURE_DIR = (
     PROJECT_ROOT / "report_layer" / "evaluation" / "prompt_refinement"
     / "fault_injection_candidates" / "selected_window_model_outputs"

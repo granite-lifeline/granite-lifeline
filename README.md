@@ -1,9 +1,10 @@
 # Granite Lifeline
 
-An end-to-end predictive maintenance system for engine
-components, using OBD-II time-series data, IBM Granite TTM
-for anomaly detection, and IBM Granite LLM for natural
-language diagnostic report generation.
+A local decision-support prototype that analyses logged OBD-II journeys,
+uses IBM Granite TTM and rule-based evidence to identify unusual component
+behaviour, and uses an IBM Granite LLM to explain the result to a vehicle
+owner. Its outputs describe anomaly risk and require professional confirmation;
+they are not confirmed mechanical diagnoses.
 
 ## Dashboard Demo
 
@@ -188,7 +189,7 @@ on your laptop.
 ### CSV accepted by the live uploader
 
 Use an original KIT OBD-II CSV, for example:
-`2019-05-06_Seat_Leon_Karlsruhe_Stuttgart_Normal.csv`.
+`2018-03-01_Seat_Leon_RT_S_Normal.csv`.
 
 The upload must:
 

@@ -1,12 +1,16 @@
-"""
-Symptom Knowledge Indexer for GL-156.
+"""Historical seven-anomaly indexer retained for the V4 experiment.
+
+Do not import this module into the production pipeline. The current indexer is
+``report_layer/rag/symptom_knowledge_indexer.py`` and supports the five runtime
+anomaly types. This snapshot is retained only to reproduce the original V4
+retrieval comparison.
 
 This module creates a ChromaDB collection with document-level chunking
 strategy. Each of the 7 anomaly types is stored as a single merged
 document containing description, causes, and all actions.
 
-Part of GL-118 (RAG vs Baseline Evaluation) in the Granite Lifeline
-MSc project at the University of Bristol, sponsored by IBM.
+Part of GL-118 (RAG vs Baseline Evaluation) in the Granite Lifeline MSc
+project at the University of Bristol, sponsored by IBM.
 """
 
 from pathlib import Path
@@ -29,8 +33,8 @@ EXPECTED_ANOMALY_TYPES = [
 
 # ChromaDB configuration
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-CHROMA_DB_PATH = PROJECT_ROOT / "report_layer" / "rag" / "chroma_db"
-COLLECTION_NAME = "symptom_knowledge"
+CHROMA_DB_PATH = Path(__file__).parent / "historical_chroma_db"
+COLLECTION_NAME = "historical_v4_symptom_knowledge"
 
 # Knowledge source path
 KNOWLEDGE_SOURCE = (

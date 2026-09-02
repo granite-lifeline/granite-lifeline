@@ -15,58 +15,14 @@ from pathlib import Path
 from statistics import mean
 from typing import List, Tuple
 
-from report_layer.negation_constants import (
-    CLAUSE_BOUNDARY,
-    NEGATION_WORDS,
-    PSEUDO_NEGATIONS,
-)
+from report_layer import negation_constants as _negation
 
 
-def _find_unnegated_phrases(text: str, phrases: List[str]) -> List[str]:
-    """
-    Return the phrases from `phrases` that appear in `text` without a
-    negation word earlier in the same clause.
-
-    A bare substring/word match on a phrase like "confirmed" flags
-    negated wording such as "not confirmed" or "no confirmed fault
-    yet" as if it were an unhedged claim, which is the opposite of
-    what it means. A fixed word-count window before the match is not
-    reliable for this: real sentences such as "no specific fault has
-    been confirmed yet" put four words between the negation and the
-    phrase (NegEx's own tuned scope is a 0-5 token window — this
-    scans back to the current clause instead, so it isn't sensitive
-    to exact word count at all). Word-boundary matching also means a
-    phrase embedded in a larger word (e.g. "confirmed" inside
-    "unconfirmed") is not matched at all. Pseudo-negation phrases
-    (PSEUDO_NEGATIONS) are masked out first, so "no doubt this is
-    confirmed" is correctly read as an unhedged claim rather than a
-    negated one.
-    """
-    lower = text.lower()
-    for pseudo in PSEUDO_NEGATIONS:
-        lower = lower.replace(pseudo, " " * len(pseudo))
-    hits: List[str] = []
-    for phrase in phrases:
-        pattern = re.compile(r"\b" + re.escape(phrase) + r"\b")
-        found_unnegated = False
-        for match in pattern.finditer(lower):
-            preceding = lower[:match.start()]
-            boundaries = list(CLAUSE_BOUNDARY.finditer(preceding))
-            clause_start = boundaries[-1].end() if boundaries else 0
-            clause_words = re.findall(
-                r"[a-z']+", preceding[clause_start:]
-            )
-            negated = any(
-                neg in word
-                for word in clause_words
-                for neg in NEGATION_WORDS
-            )
-            if not negated:
-                found_unnegated = True
-                break
-        if found_unnegated:
-            hits.append(phrase)
-    return hits
+# Retain these public module attributes for evaluation/test compatibility.
+CLAUSE_BOUNDARY = _negation.CLAUSE_BOUNDARY
+NEGATION_WORDS = _negation.NEGATION_WORDS
+PSEUDO_NEGATIONS = _negation.PSEUDO_NEGATIONS
+_find_unnegated_phrases = _negation.find_unnegated_phrases
 
 
 @dataclass
@@ -91,24 +47,12 @@ def evaluate_factual_grounding(
     Evaluate whether report is grounded in the input context.
 
     Checks:
-    - anomaly_description references specific signal values
-    - possible_cause connects to signals in context
-    - recommended_action is consistent with risk_level
+    - Any number used in anomaly_description exists in the input context
+    - possible_cause connects its explanation to readings or signals
 
-    Score boundaries (only the extremes are described in detail here,
-    following Yamauchi et al.'s finding that precisely defining the
-    top and bottom of a rubric matters far more than describing every
-    intermediate point):
-    - Highest (1.0): anomaly_description quotes a number that also
-      appears in the input context, possible_cause uses at least one
-      signal-related word (signal/reading/sensor/temperature/
-      pressure/value/measurement), and recommended_action contains at
-      least one risk-appropriate urgency word for any risk level.
-    - Lowest (0.2, the floor given the three -0.3/-0.3/-0.2
-      deductions below — this function cannot return 0.0):
-      anomaly_description has no digits at all, possible_cause has
-      none of the signal-related words, and recommended_action has no
-      urgency wording at all.
+    A plain-language description does not have to repeat measurements that
+    the Dashboard already presents. Grounding is reduced only when generated
+    prose introduces a number absent from the supplied evidence.
 
     Args:
         report: Report dict with anomaly_description, possible_cause,
@@ -121,21 +65,24 @@ def evaluate_factual_grounding(
     score = 1.0
     notes = []
 
-    # Extract numbers from context (likely signal values)
-    context_numbers = re.findall(r'\d+\.?\d*', context)
-
-    # Check if anomaly_description references signal values
+    context_numbers = set(re.findall(r"-?\d+(?:\.\d+)?", context))
     desc = report.get("anomaly_description", "")
-    desc_numbers = re.findall(r'\d+\.?\d*', desc)
-    if not desc_numbers:
-        score -= 0.3
+    desc_numbers = set(re.findall(r"-?\d+(?:\.\d+)?", desc))
+    unsupported_numbers = sorted(desc_numbers - context_numbers)
+    if unsupported_numbers:
+        score -= 0.4
         notes.append(
-            "anomaly_description does not reference specific signal values"
+            "anomaly_description introduces numbers absent from context: "
+            + ", ".join(unsupported_numbers)
         )
-    elif any(num in context_numbers for num in desc_numbers):
+    elif desc_numbers:
         notes.append(
-            "anomaly_description references specific signal values from "
-            "context"
+            "All numbers in anomaly_description are present in context"
+        )
+    else:
+        notes.append(
+            "anomaly_description uses a qualitative summary without adding "
+            "unsupported numbers"
         )
 
     # Check if possible_cause connects to signals
@@ -148,32 +95,6 @@ def evaluate_factual_grounding(
         score -= 0.3
         notes.append(
             "possible_cause does not clearly connect to signal readings"
-        )
-
-    # Check if recommended_action mentions risk level appropriately
-    actions = report.get("recommended_action", [])
-    if isinstance(actions, list):
-        actions_text = " ".join(actions).lower()
-    else:
-        actions_text = str(actions).lower()
-
-    risk_keywords = {
-        "high": ["prompt", "soon", "immediately", "urgent", "avoid"],
-        "medium": ["soon", "check", "inspect", "schedule"],
-        "low": ["monitor", "next service", "when convenient", "observe"]
-    }
-
-    # This check requires risk_level to be passed separately
-    # For now, we check if any urgency language is present
-    has_urgency = any(
-        keyword in actions_text
-        for keywords in risk_keywords.values()
-        for keyword in keywords
-    )
-    if not has_urgency:
-        score -= 0.2
-        notes.append(
-            "recommended_action lacks risk-appropriate urgency language"
         )
 
     return max(0.0, score), notes
