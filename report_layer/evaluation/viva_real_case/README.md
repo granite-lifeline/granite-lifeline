@@ -32,8 +32,9 @@ presented as one.
 
 `baseline_report.json` and `rag_report.json` were produced locally with the
 repository's three-stage report pipeline and `granite4.1:8b`. The validation
-artifact records the current evaluator output. The evaluator emits warnings
-and scores; it is not yet a blocking production gate.
+artifact records the separate quality evaluator output. That evaluator is an
+analysis tool; production release is controlled by the prompt-chain Validator
+and its input-aware policies.
 
 ## Dashboard-ready file
 

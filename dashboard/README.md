@@ -1,8 +1,8 @@
 # Dashboard
 
 **Owner:** Report Team  
-**Status:** Active Development  
-**Last Updated:** 2026-08-29
+**Status:** Final implementation reviewed
+**Last Updated:** 2026-09-02
 
 ---
 
@@ -16,14 +16,15 @@ Data Layer → Model Layer → Report Layer → Dashboard
 
 ### Key Features
 
-- **Health Overview**: At-a-glance view of all monitored components with risk-based prioritization
+- **Health Overview**: Prioritised view of components with detected risk; a
+  separate empty state is shown when no component requires attention
 - **Component Details**: Drill-down pages with metrics and interactive trend charts
 - **CSV Upload & Live Analysis**: Upload a real KIT OBD-II CSV and run it through the full Data Layer → Model Layer → Report Layer pipeline for a live diagnostic report (requires local Ollama + Python ML dependencies — see Setup in the project root README)
 - **Signal Tooltips**: Plain-language glossary tooltips for technical signal names, sourced from the Report Layer's `SIGNAL_DISPLAY_NAMES`
 - **Risk Score Trends**: Plotly-powered visualizations showing risk progression over time
 - **Theme Support**: Light/dark mode toggle with an IBM Carbon-inspired "Pro" design
 - **PDF / CSV Export**: Downloads filtered component reports and key signal data from the overview page
-- **Responsive Design**: Optimized for desktop viewing (mobile optimization planned)
+- **Desktop-first layout**: Designed for the laptop/desktop evaluation setting
 
 ---
 
@@ -42,7 +43,7 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | Key Signals Table | GL-41 | ABNORMAL/NORMAL signal rows with reference range |
 | Report Layer Integration | GL-41 | Loads ReportLayerOutput via data_loader.py; data_store.py retains the fallback demo data |
 | Failure Prediction Data Support | GL-198 | Loads estimated_failure_probability, estimated_cycles_to_failure, and notes from the current ReportLayerOutput contract |
-| Failure Prediction UI Display | GL-278/GL-280 | Shows failure probability card and Data Quality Notes on the detail page |
+| Projection UI Display | GL-278/GL-280 | Shows the Model Layer's threshold-projection summary on the detail page |
 | Five-Type Component Display Mapping | GL-273/GL-384 | Maps all 5 current anomaly types to owner-friendly display names; legacy cooling_system_stress alias retained |
 | PDF / CSV Export | GL-343 to GL-348 | Overview-page export panel with component filters, PDF section filters, CSV column filters, ZIP downloads, local PDF template, and tests |
 | Module Split | GL-255 | `app.py` (2581 lines) split into `theme.py`, `ui_components.py`, `data_store.py`, and `pages/{overview,detail}.py` |
@@ -52,12 +53,11 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | Signal Tooltips | — | `glossary.py`; plain-language tooltips for technical signal names |
 | Demo Readiness Check | GL-384 | Final dashboard/report demo checklist, expected outputs, known limitations, and regression command set |
 
-### [PLANNED]
+### Further work
 
-| Feature | Priority | Description |
-|---------|----------|-------------|
-| Mobile Optimization | P1 | Responsive design for mobile devices |
-| 3D Component Visualization | P3 | Interactive 3D car model with component highlighting |
+- mobile and accessibility evaluation;
+- hosted inference for live analysis without local setup;
+- testing with technician-verified faults and additional vehicles.
 
 ---
 
@@ -172,7 +172,8 @@ streamlit run dashboard/app.py --server.runOnSave true
 
 ### Overview Page
 
-**Purpose:** Provide at-a-glance vehicle health status across all monitored components.
+**Purpose:** Show the components with detected risk and prioritise those that
+require the most attention.
 
 **Features:**
 - **Health Summary Banner**: Alert if any component requires urgent attention
@@ -202,14 +203,14 @@ streamlit run dashboard/app.py --server.runOnSave true
 
 **Features:**
 - **Back Navigation**: Return to overview
-- **Component Tabs**: Switch between all monitored components without
+- **Component Tabs**: Switch between the affected components without
   leaving the detail view (risk-colored emoji + name per tab)
 - **Component Header**: Name + risk level badge, centered
 - **Risk Gauge**: Plotly gauge showing current risk score with a
   delta arrow vs. the previous reading
 - **Trend Chart**: Interactive Plotly line chart showing:
-  - Last 5 risk score readings (or fewer if less data available)
-  - Time labels (T-4, T-3, T-2, T-1, Now)
+  - All risk-history entries supplied for the current analysis
+  - Recorded timestamps, with relative labels only when a timestamp is absent
   - Area fill for visual emphasis
   - Hover tooltips with exact values
   - Theme-aware colors
@@ -256,7 +257,7 @@ icon (`COMPONENT_ICONS`) colored by risk level, so risk is perceptible before
 reading any text. Decorative icons (heading icons, theme toggle, alert
 banner) are inline Lucide-style SVGs rendered via `lucide_icon()`, colored
 from the active theme token so they recolor automatically between
-light/dark — a placeholder icon set pending a final sourced icon set.
+light/dark.
 
 Theme state is stored in `st.session_state["dark_mode"]` and persists across page navigation.
 
@@ -309,7 +310,7 @@ Simple session-state-based routing:
 **Features:**
 - Dynamic time labels based on data length
 - Y-axis: 0-100% range with percentage formatting
-- X-axis: Time labels (T-4 to Now)
+- X-axis: Recorded timestamps, with relative labels as a fallback
 - Line: 3px width, 8px markers, teal color (#19c8b9)
 - Fill: 20% opacity area to zero
 - Hover: Custom template showing time and risk percentage
@@ -318,7 +319,7 @@ Simple session-state-based routing:
 **Data Requirements:**
 - Minimum 2 data points to render chart
 - Shows warning if insufficient data
-- Handles up to 5 data points (T-4 to Now)
+- Handles the risk-history entries supplied for the current analysis
 
 ### Export Report Implementation
 
@@ -360,7 +361,7 @@ than implementation details. The current demo path is documented in
 
 - Hosted/demo-data launch path
 - Overview page risk prioritization and component navigation
-- Detail page failure prediction, notes, trend, key signals, and report text
+- Detail page projection summary, trend, key signals, and report text
 - PDF / CSV export flow
 - CSV analysis loading state with a percentage progress ring
 - Empty/error states for CSV upload and missing data
@@ -450,7 +451,7 @@ has been verified end-to-end with a real KIT CSV producing a real report.
 - `anomaly_description`, `possible_cause`, `recommended_action`
 - `risk_history` (trend chart)
 - `estimated_failure_probability`, `estimated_cycles_to_failure`
-- `notes`
+- `notes` (retained in the interface data but not displayed as owner guidance)
 
 See `docs/INTERFACE.md` Section 3 for complete field definitions.
 
@@ -461,7 +462,7 @@ See `docs/INTERFACE.md` Section 3 for complete field definitions.
 ### Current Limitations
 
 1. **Only 3 of 5 anomaly types have native TTM detection logic** (`cooling_degradation`, `air_intake_maf_anomaly`, `accelerator_pedal_sensor`); the other 2 are supplied by Data Layer `proxy_decisions.csv` forwarding when live uploads include `proxy_decisions_path`.
-2. **Failure estimates are projected by the Model Layer, not calibrated mechanical-failure labels** — `estimated_cycles_to_failure` / `estimated_failure_probability` may still be `null` when history is insufficient or non-rising, but the current real sample already contains non-null projected values.
+2. **The two estimate fields describe Model Layer projections to the High-risk threshold, not calibrated mechanical-failure labels.** They may be `null` when the available history cannot support the relevant projection.
 3. **Desktop-First**: Mobile experience needs optimization.
 4. **No cross-session persistence**: in live mode, `risk_history` is synthesized per request from the Model Layer's batch envelope (every analysed window in the uploaded file), not stored across separate uploads or sessions — this is a deliberate simplification, not an oversight, and is sufficient for "trend within this one upload."
 5. **No hosted/zero-install mode**: live analysis requires local Ollama + Model Layer Python dependencies; there is no paid hosted inference (see Integration with Report Layer above).

@@ -1,5 +1,20 @@
 # Final-pipeline RAG ablation audit
 
+## Reproduce the automated runs
+
+Run both commands from the repository root with local Ollama serving
+`granite4.1:8b` and the production RAG index available:
+
+```bash
+uv run python report_layer/evaluation/v5-rag-final-ablation/run_final_rag_ablation.py
+uv run python report_layer/evaluation/v5-rag-final-ablation/run_owner_decision_smoke.py
+```
+
+The first command regenerates the controlled 20-report comparison. The second
+regenerates one production report for each supported anomaly type. Generated
+scores and heuristic counts are screening evidence; the multidimensional
+manual review must be checked again whenever report text changes.
+
 ## Why the July comparison cannot evaluate the final pipeline
 
 The saved baseline and RAG reports in
@@ -32,7 +47,7 @@ water pump by hand. The Layer 3 prompt says both that retrieved action
 guidance should be the main source and that actions must be safe and
 practical for a non-technical owner. Those instructions can conflict.
 
-The final design should distinguish at least two action roles:
+The subsequent production design distinguishes two action roles:
 
 - `owner_action`: safe observation, stopping conditions and simple
   checks that need no dismantling or specialist tools;
@@ -42,7 +57,7 @@ The final design should distinguish at least two action roles:
 Technical workshop steps should not be copied or paraphrased as actions
 for the owner.
 
-## Required controlled comparison
+## Controlled comparison design
 
 All conditions must use the same final model, prompt templates, input
 context, confidence guidance, temperature and validator. Only the stated
@@ -55,10 +70,8 @@ knowledge field should change.
 | C: current action RAG | retrieved description and causes | current risk-filtered workshop actions | Measure the current design and expose audience-safety failures |
 | D: owner-safe RAG | retrieved description and causes | actions separated into owner actions and technician requests | Test the proposed correction |
 
-At minimum, the comparison should cover all five current anomaly types.
-Where feasible, each type should include Low, Medium and High risk, plus
-one inconsistent-evidence case. Saved prompts, retrieved passages and
-raw outputs must be retained for every condition.
+The implemented comparison covers all five current anomaly types. Saved
+prompts, retrieved passages and raw outputs are retained for every condition.
 
 ## Measures
 
@@ -93,7 +106,7 @@ ranking of the final baseline and RAG pipelines. No claim that RAG is
 better or worse should be made until the controlled final-pipeline
 comparison above has been run.
 
-## Final-pipeline run completed on 14 August 2026
+## Final-pipeline automated run regenerated on 1 September 2026
 
 The controlled comparison was run on one saved real-pipeline fixture for
 each of the five supported anomaly types. This produced 20 reports (five
@@ -114,13 +127,13 @@ The legacy four-dimension evaluator produced the following means:
 
 | Condition | Mean legacy score |
 |---|---:|
-| Controlled baseline | 0.950 |
-| Cause-only RAG | 0.915 |
-| Current full RAG | 0.915 |
+| Controlled baseline | 0.860 |
+| Cause-only RAG | 0.930 |
+| Current full RAG | 0.930 |
 | Owner-safe RAG | 0.930 |
 
-These numbers do **not** establish that the baseline was better. Direct
-inspection found several lexical false positives. For example, the evaluator
+These numbers do **not** establish a general ranking of the four conditions.
+Review of the evaluator records found several lexical false positives. For example, the evaluator
 treated the explained terms “mass airflow (MAF) sensor” and “intake manifold
 pressure sensor (MAP sensor)” as unexplained raw fields. It also treated
 “before treating it as a confirmed fault” as a confirmed-fault claim and did
@@ -131,28 +144,28 @@ quality.
 
 ## Manual review against the separated measures
 
-| Measure | Finding |
-|---|---|
-| Input faithfulness | Values and risk fields were generally preserved in all conditions. However, both High-risk fixtures also carried a 0.31% probability of *crossing* the High-risk threshold. None of the four conditions explicitly resolved this upstream inconsistency. |
-| Retrieval relevance | MAF, accelerator-pedal, IAT and MAP fault knowledge was relevant to the named component. Cooling retrieval was over-broad: it mixed the low-temperature fixture with a long list dominated by overheating and workshop fault possibilities. |
-| Knowledge utilisation | Cause RAG added component function and source-backed candidate causes. Current full RAG used retrieved action material most clearly for cooling, MAF and accelerator-pedal cases, but appropriately ignored the IAT knowledge base's unsupported replacement-only actions. |
-| Audience suitability | Cause knowledge often improved explanation, although it also introduced acronyms. Current action RAG sometimes addressed workshop steps directly to the owner, including scan-tool use and connector or harness inspection. |
-| Action safety | No output instructed dismantling in this run. Nevertheless, the current condition blurred owner and technician roles in several reports. The owner-safe condition consistently redirected technical diagnosis to a qualified mechanic while retaining observation and stopping advice for the owner. |
-| Uncertainty handling | The reports generally avoided presenting a predicted mechanical cause as certain. The main unresolved issue was the contradiction between a current High risk and a low probability of later crossing the High-risk threshold. |
-| Release outcome | 20/20 reports reached release without fallback. This demonstrates pipeline completion for these fixtures, not diagnostic validity or deployment readiness. |
+The regenerated 1 September outputs were reviewed case by case. All 20 kept
+technical work with a mechanic, supporting the production owner/mechanic
+action boundary. Retrieved knowledge improved the specificity of several
+reports, but did not by itself ensure that each possible cause was strongly
+connected to the current signal direction or that every term was suitable for
+a non-technical reader.
 
-The most defensible conclusion is therefore conditional rather than a single
-ranking. Retrieved **cause knowledge** improved traceability and component-
-specific explanation in several cases, but the current retrieval corpus was
-not uniformly relevant. Retrieved **action knowledge** could make advice more
-specific, but workshop procedures require an explicit audience transformation.
-The owner-safe condition corrected that role boundary, especially in the IAT
-case, but did not solve irrelevant retrieval or contradictory upstream risk
-fields. The next design change should therefore combine risk-aware retrieval,
-separate `owner_action` and `technician_request` fields, and a validator rule
-that stops or clearly discloses inconsistent risk statements.
+The final regeneration removed the four issues found in the earlier manual
+review: unrelated pedal stopping conditions, unexplained MAF or PID terms,
+whole-system normal-operation claims, and strong IAT fault wording based only
+on rule evidence. Neither IAT nor MAP described a future crossing into High
+risk.
 
-## Proposed RAG redesign: decision support rather than self-repair
+The remaining limitations concern the strength of the available evidence.
+Several retrieved causes fit the anomaly category but cannot be distinguished
+by the displayed signals, and two RAG explanations remain relatively dense for
+the intended reader. Full labels and evidence are in
+`final_rag_multidimensional_review.json`; aggregate counts and interpretation
+are in `final_rag_multidimensional_summary.md`. These findings assess report
+behaviour, not mechanical accuracy or generalisation.
+
+## RAG redesign: decision support rather than self-repair
 
 The intended user outcome is not for an owner to repair the vehicle alone.
 The report should reduce avoidable uncertainty by explaining what the system
@@ -161,8 +174,7 @@ inspection should be arranged. The owner needs a small set of safe decisions:
 continue normal observation, book routine service, arrange prompt inspection,
 or stop driving and seek assistance.
 
-The next RAG design should therefore use two separately governed knowledge
-collections:
+The design separates knowledge into two governed roles:
 
 1. `diagnostic_evidence`: component purpose, signal interpretation, plausible
    causes and what evidence a technician could use to distinguish them;
@@ -221,6 +233,7 @@ supported anomaly types. All five reports were released, contained all four
 action roles, and contained no detected technical instruction addressed to the
 owner. The raw reports are stored in `owner_decision_smoke_raw.json` and the
 summary in `owner_decision_smoke_results.md`. The full automated suite completed
-with 701 tests passed and 19 environment-dependent tests skipped. Because the
-three-field output schema was preserved, no Dashboard or viva-slide migration
-was required.
+with 758 tests passed, 19 environment-dependent tests skipped and one
+model-download test deselected. Because the three generated report fields and
+the wider `ReportLayerOutput` schema were preserved, no Dashboard or
+viva-slide migration was required.

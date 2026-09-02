@@ -16,6 +16,7 @@ from shared.interface_models import (
     ModelLayerOutput,
     ReportLayerOutput,
     RiskHistoryEntry,
+    RiskLevel,
 )
 
 
@@ -37,6 +38,10 @@ class TestAnomalyType:
         assert actual_types == expected_types
         assert "electronic_throttle_tracking_fault" not in actual_types
         assert "idle_speed_control_or_surge_degradation" not in actual_types
+
+
+def test_risk_level_has_three_interface_values():
+    assert set(RiskLevel.__args__) == {"Low", "Medium", "High"}
 
 
 class TestDataLayerOutput:
@@ -402,6 +407,22 @@ class TestModelLayerOutput:
         }
         output = ModelLayerOutput(**data)
         assert output.risk_level is None
+
+    def test_model_layer_output_rejects_unknown_risk_level(self):
+        data = {
+            "timestamp": "2026-06-16T10:00:00Z",
+            "anomaly_type": "cooling_degradation",
+            "risk_score": 0.82,
+            "risk_level": "Critical",
+            "component": "cooling_degradation",
+            "prediction_confidence": 0.84,
+            "key_signals": [],
+            "estimated_cycles_to_failure": None,
+            "estimated_failure_probability": None,
+        }
+
+        with pytest.raises(ValidationError):
+            ModelLayerOutput(**data)
 
     def test_model_layer_output_accepts_second_ranked_component(self):
         primary = {

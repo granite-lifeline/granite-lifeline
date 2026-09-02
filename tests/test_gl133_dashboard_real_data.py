@@ -13,11 +13,11 @@ Covers:
 - Schema compliance: all required ReportLayerOutput fields present for
   every component returned by load_dashboard_data().
 
-NOTE: cooling_degradation uses the real pipeline
-(report_layer.pipeline.report_generator + Ollama).  If Ollama is
-unreachable the real pipeline falls back to an empty report dict — the
-test marks the Ollama-dependent assertion as xfail in that case so the
-suite can always be run offline.
+NOTE: cooling_degradation loads a committed Model Layer output through the
+real Report Layer entry point. Ollama may return an empty fallback report, so
+these tests establish interface compatibility but do not prove successful
+live report generation. Use scripts/smoke_test_local_pipeline.py for that
+local integration check.
 """
 
 import json

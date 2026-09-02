@@ -1,59 +1,44 @@
-# Viva Presentation — Collaboration Guide
+# Viva presentation
 
-## Overview
+## Purpose
 
-Format: 10-minute presentation +
-10-15 minutes Q&A on Microsoft Teams
-in September. All 6 members must present.
+This directory contains the evidence notes and final interactive presentation
+for the Granite Lifeline viva. The presentation is designed for a ten-minute
+team delivery followed by questions.
 
-## Narrative Structure
+The narrative begins with the vehicle-owner problem, introduces the four-layer
+architecture, and then explains three connected challenges:
 
-The presentation follows the user journey,
-not the layer structure. We do not
-introduce team groups by name. Instead,
-we tell the story of how we solved each
-challenge in sequence:
+1. working with OBD-II journeys that have no verified fault labels;
+2. using TTM and rule-based evidence to identify unusual behaviour;
+3. turning that evidence into an understandable report without presenting an
+   anomaly as a confirmed mechanical fault.
 
-Storyboard (user problem)
-→ Challenge 1: no fault labels in the data
-→ Challenge 2: making anomaly detection
-  work without ground truth
-→ Challenge 3: turning predictions into
-  language a car owner can understand
-→ How we verified our results
-→ Live Demo
-
-Each section transitions naturally into
-the next. The speaker for each section
-closes by introducing the next challenge.
+Evaluation, the live Dashboard demonstration, conclusions and future work
+follow these challenges. Speaker handovers connect the Data, Model, Report and
+Dashboard contributions without repeating the architecture explanation.
 
 ## Files
 
-- outline.md — overall slide structure
-  and timing
-- data_challenge.md — Challenge 1
-  (Lei Pei, Qiuting Fu)
-- model_challenge.md — Challenge 2
-  (Ray Wang, Lucca Zhou)
-- report_challenge.md — Challenge 3
-  (Charlotte Yu, Jintong He)
+- `outline.md` records the planned narrative, speakers and timing.
+- `data_challenge.md`, `model_challenge.md` and `report_challenge.md` retain the
+  supporting technical notes for the three challenge sections.
+- `slides/index.html` is the interactive presentation used for delivery.
+- `slides/assets/` contains the presentation images and screenshots.
+- `evidence/` contains saved inputs and outputs used by slide examples.
 
-## How to contribute
+The slide deck is the delivery source of truth. The challenge Markdown files
+contain supporting material and may include earlier drafting notes that do not
+appear in the final presentation.
 
-1. Open your challenge markdown file
-2. Fill in all sections marked TODO
-3. For visuals: describe what diagram
-   or image you want, or attach a
-   draft sketch
-4. Write your transition sentence
-   to hand off to the next section
-5. Raise questions in Discord
+## Running locally
 
-## Timeline
+From `docs/viva/slides/`, serve the files over HTTP and open the local address
+in a browser. For example:
 
-| Sprint   | Target                                                                         |
-| -------- | ------------------------------------------------------------------------------- |
-| Sprint 4 | Each group drafts their challenge file. MVP slide deck assembled by Charlotte. |
-| Sprint 5 | First dry run with all members.                                                |
-| Sprint 6 | Refined deck, second dry run with timing.                                     |
-| Sprint 7 | Final polish, full dry run.                                                    |
+```bash
+python3 -m http.server 8765
+```
+
+Then open `http://127.0.0.1:8765`. The presentation supports direct slide
+navigation through its on-screen controls and keyboard input.

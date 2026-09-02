@@ -19,7 +19,7 @@ Four candidate models were evaluated using a typical cooling system stress scena
 - **granite4.1:3b** - Granite 4.1 series, 3 billion parameters
 - **granite4.1:8b** - Granite 4.1 series, 8 billion parameters
 
-All models are IBM Granite instruct variants available via Ollama for local development and IBM watsonx.ai for production deployment.
+All four candidates were run locally through Ollama. Hosted deployment was considered as future work but was not implemented or evaluated in this project.
 
 ## Decision
 
@@ -89,7 +89,7 @@ granite4.1:8b achieved the highest weighted score (4.85/5.00) across all five ev
 ### Positive
 
 - **High-quality reports**: granite4.1:8b produces the most actionable and specific diagnostic reports for non-technical vehicle owners
-- **Pipeline reliability**: 100% JSON parsing success ensures stable three-layer prompt chain execution
+- **Pipeline reliability in the comparison case**: all three outputs from `granite4.1:8b` parsed successfully
 - **Future-proof**: Latest Granite version (4.1) provides foundation for future enhancements
 - **Reusable methodology**: Weighted evaluation framework can be applied to future model selection decisions
 
@@ -102,7 +102,7 @@ granite4.1:8b achieved the highest weighted score (4.85/5.00) across all five ev
 ### Mitigation Strategies
 
 - granite4.1:3b is documented as a viable fallback if inference speed or hardware constraints become critical
-- Production deployment via IBM watsonx.ai provides managed infrastructure with optimized inference
+- A future hosted deployment could reduce the local setup and memory requirements, subject to access, cost and a new evaluation of the hosted model
 - Future optimization work can explore quantization or distillation if performance becomes a bottleneck
 
 ## Implementation
@@ -112,14 +112,14 @@ granite4.1:8b achieved the highest weighted score (4.85/5.00) across all five ev
 - API endpoint: `http://localhost:11434/api/generate`
 - Configuration: `stream=False` for synchronous responses
 
-### Production Environment
-- Model: IBM Granite 4.1 8B instruct via IBM watsonx.ai
-- A try/except pattern will be implemented in a future sprint to support switching between Ollama (development) and watsonx.ai (production) without code changes
+### Deployment Boundary
+- The implemented and evaluated Report Layer calls local Ollama.
+- A hosted Granite service would require a new adapter, access controls, failure handling and evaluation; it is future work.
 
 ### Code Location
-- Primary implementation: `report_layer/pipeline/report_generator.py` (to be implemented)
-- Model comparison script: `report_layer/pipeline/model_comparison.py`
-- Evaluation results: `report_layer/evaluation/model_comparison.md`
+- Primary implementation: `report_layer/pipeline/report_generator.py`
+- Model comparison script: `report_layer/evaluation/v2-model-selection/model_comparison.py`
+- Evaluation results: `report_layer/evaluation/v2-model-selection/model_comparison.md`
 
 ## Related Decisions
 

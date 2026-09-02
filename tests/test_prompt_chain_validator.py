@@ -113,6 +113,22 @@ class TestValidateLayer1:
             "confirmed fault language" in w for w in result.warnings
         )
 
+    def test_below_threshold_score_is_not_passed(self):
+        result = validate_layer1(
+            "The cooling system has failed and coolant_temp is high."
+        )
+
+        assert result.score < 0.8
+        assert result.passed is False
+
+    def test_threshold_score_is_passed(self):
+        text = " ".join(["reading"] * 19 + ["coolant_temp"])
+
+        result = validate_layer1(text)
+
+        assert result.score == 0.8
+        assert result.passed is True
+
     def test_negated_confirmed_language_is_not_flagged(self):
         text = (
             "The cooling system pattern is not confirmed as a fault, "
@@ -213,6 +229,39 @@ class TestValidateLayer1:
         result = validate_layer1(text)
         assert result.score < 0.8
         assert any("risk score" in w for w in result.warnings)
+
+    def test_parenthesised_percentage_after_risk_level_is_blocked(self):
+        text = (
+            "The accelerator pedal sensor shows a Medium risk level (56%). "
+            "The listed signals are within range, but the reported pattern "
+            "should be checked soon by a professional."
+        )
+        result = validate_layer1(text)
+
+        assert result.score < 0.8
+        assert any("risk score" in w for w in result.warnings)
+
+    def test_prediction_confidence_percentage_is_blocked(self):
+        text = (
+            "A rule-based flag assigns High risk even though the displayed "
+            "temperature signals are within range. This result has 90% "
+            "confidence and requires professional verification."
+        )
+        result = validate_layer1(text)
+
+        assert result.score < 0.8
+        assert any("prediction confidence" in w for w in result.warnings)
+
+    def test_threshold_estimate_cannot_be_called_failure_probability(self):
+        text = (
+            "The cooling system shows a Low-risk pattern with a temperature "
+            "change outside its reference range. It has a very low chance "
+            "of immediate failure and should be monitored."
+        )
+        result = validate_layer1(text)
+
+        assert result.score < 0.8
+        assert any("mechanical failure" in w for w in result.warnings)
 
 
 class TestValidateLayer2:
