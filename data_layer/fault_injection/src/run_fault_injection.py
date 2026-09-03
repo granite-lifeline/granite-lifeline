@@ -110,6 +110,35 @@ def json_default(value: Any) -> Any:
     )
 
 
+def parse_bool(value: Any, *, field: str, null_value: bool = False) -> bool:
+    """Parse a persisted boolean without treating non-empty text as true."""
+
+    if pd.isna(value):
+        return null_value
+    if isinstance(value, (bool, np.bool_)):
+        return bool(value)
+    if isinstance(
+        value, (int, float, np.integer, np.floating)
+    ) and value in (0, 1):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1"}:
+            return True
+        if normalized in {"false", "0"}:
+            return False
+    raise FaultInjectionError(
+        f"Invalid boolean value for {field}: {value!r}"
+    )
+
+
+def load_calibration_registry() -> dict[str, Any]:
+    """Load the same frozen registry consumed by the proxy stages."""
+
+    path = REPO_ROOT / "data_layer/calibration/calibration_registry.v1.json"
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def load_cases(config_path: Path) -> list[dict[str, Any]]:
     config = json.loads(config_path.read_text(encoding="utf-8"))
     cases = config.get("cases", [])
