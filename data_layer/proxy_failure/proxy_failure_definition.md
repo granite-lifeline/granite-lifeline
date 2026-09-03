@@ -9,7 +9,7 @@ threshold, guard, decision-role, or routing change.
 
 This is the authoritative, implementation-facing definition of the executable proxy failures in the frozen `calibration.v1` contract. The rule freeze was registered on 2026-07-19; this revision synchronizes the narrative with the implemented stages and recorded validation artifacts. It contains the component, consumed support signals, proxy definition, final decision rules, required guards, coverage, key calibration evidence, and known limitations.
 
-Research derivations, candidate grids, sensitivity analyses, LOTO/bootstrap details, rejected branches, superseded forms, and the completed synthetic fault-injection record are maintained in [`proxy_support.md`](proxy_support.md). The recorded campaign summary is [`fault_injection_summary_20260724T205415Z.json`](../fault_injection/outputs/fault_injection_summary_20260724T205415Z.json). Each proxy below links to its corresponding audit section.
+Research derivations, candidate grids, sensitivity analyses, LOTO/bootstrap details, rejected branches, superseded forms, and the completed synthetic fault-injection record are maintained in [`proxy_support.md`](proxy_support.md). The recorded campaign summary is [`fault_injection_summary_20260903T051231Z.json`](../fault_injection/outputs/fault_injection_summary_20260903T051231Z.json). Each proxy below links to its corresponding audit section.
 
 ## Shared Conventions
 

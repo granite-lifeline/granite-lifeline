@@ -166,7 +166,7 @@ data_layer/
 ├── fault_injection/
 │   ├── fault_injection_methodology.md
 │   ├── configs/fault_injection_cases.v1.json
-│   ├── outputs/fault_injection_summary_20260724T205415Z.{csv,json}
+│   ├── outputs/fault_injection_summary_20260903T051231Z.{csv,json}
 │   └── src/run_fault_injection.py
 ├── research_diagnostics/                   # Recorded LOTO, grid, and bootstrap outputs
 ├── pipeline_data/                          # Paths, manifests, continuity, lint, upload contract
