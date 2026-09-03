@@ -8,7 +8,7 @@
 
 **All Model Layer user stories 1–8 are complete** (Story 9 is the group-report chapters, still in progress — the completeness claim here is about the pipeline, not the write-up). Evaluation numbers below are measured figures from the committed artefacts. The separate Story 8 contract sample uses a synthetic rising history; the viva handoff instead uses 22 committed Model windows from six real Seat Leon trips. Neither supplies labelled degradation-to-failure evidence.
 
-**Last verified on 2026-08-24** against Model repo HEAD `a1fc299`, live main-repo contract v1.6, `gl-406-viva-slides-polish-0-1` tip `e26e064`, and report tip `59ea88e`. The recorded full-suite Model test evidence remains **209 passed, 16 skipped, three warnings** from 2026-08-10; this review also reran 41 targeted batch, ranking, history, and estimator tests. If the pipeline changes again, re-check the Evaluation, ranked-output, estimator, and TTM-configuration sections first.
+**Last verified on 2026-09-04** against main-repo tip `e4ba9b1` (branch `viva-refine-charlotte-report-pipeline`, contract v1.6), the viva deck's Model backup nodes M0–M6, and report tip `403f5fc`. Fresh full-suite Model test evidence: **217 passed, 18 skipped, 235 collected**; the input-validation, model-input-contract and batch-mode suites alone are 73/73. Every number in the Q&A bank below appears identically in the deck's backup nodes. If the pipeline changes again, re-check the Evaluation, ranked-output, estimator, and TTM-configuration sections first.
 
 **Suggested speaker split:** Lucca — "why specific" + the data-checking half of the solution (input validation is her work); Ray — the model half of the solution + "why better" + evaluation (TTM and scoring are his work).
 
@@ -140,6 +140,7 @@ Use the plain phrase first; add the technical word only if the marker asks.
 | verdict forwarding | "passing on the data team's own decision without redoing it ourselves" |
 | batch envelope | "one file covering every window of a trip, plus the worst one called out at the top" |
 | speed-density residual | "measured airflow versus what the pressure and engine speed say it should be" |
+| channel mixing | "letting one signal's forecast borrow information from the other signals" |
 
 ---
 
@@ -197,7 +198,7 @@ The Data Layer's verdicts are *computed, not discovered*: its rules turn physica
 
 ### Q4. Why fine-tune only on baseline data?
 
-The model's job is to learn ordinary continuation. Training on known faulty trajectories could teach it to forecast the fault and shrink the gap. Our corpus contains ordinary driving without mechanically verified outcomes, and the split also removes low-quality segments. Measured on 250 windows from 12 held-out validation segments, extra training cut forecast error by 5.23%; whether faults stand out is assessed separately by the synthetic detector evaluation. *[quality-gated fine-tuning, Story 6; 49 training segments across 47 trips / 12 validation segments and trips; trip-disjoint split]*
+The model's job is to learn ordinary continuation. Training on known faulty trajectories could teach it to forecast the fault and shrink the gap. Our corpus contains ordinary driving without mechanically verified outcomes, and the split also removes low-quality segments. Measured on 250 windows from 12 held-out validation segments, extra training cut forecast error by 5.23%; whether faults stand out is assessed separately by the synthetic detector evaluation. **Caveats to volunteer if pushed:** one data split, one random seed, no conventional external time-series baseline, and the overall error is scale-dominated by engine speed, which is why we also report every signal. *[quality-gated fine-tuning, Story 6; 49 training segments across 47 trips / 12 validation segments and trips; trip-disjoint split; 5 epochs, lr 5e-5, batch 8, seed 42, stride 96]*
 
 ### Q5. Why 8.5 minutes in, 1.5 minutes out?
 
@@ -208,6 +209,8 @@ The model's built-in window lengths — at one reading per second, 512 in and 96
 For each component, we average the windows where it appears in either the primary or secondary position, so one noisy window cannot swing a whole trip. We fit a separate straight line through each component's chronological trip averages. If it is rising, the number of trips left is how far the latest score sits below the High line, divided by the per-trip rise: `ceil((0.9 − latest) / slope)`. The probability is the chance that fitted line has crossed 0.9 ten trips from now, under a normal error model around the fit.
 
 It refuses to invent a cycle estimate: with fewer than five trips, both fields are `null`; if the latest risk is already at least 0.9, the result is zero cycles and probability 1.0. A flat or falling trend, or a projected crossing more than 50 trips away, makes only the cycle estimate `null`—the ten-trip threshold-crossing probability is still returned.
+
+**Two paths, if asked which history is used:** batch mode fits an independent trend per component from the windows in the current sweep. A single-window run has one persisted history file, so the primary and the second-ranked component share that projection. That single-window path was fixed on 27 August 2026 (the secondary used to stay `null`) and has a regression test. *[`18a69f8`; M5 backup node]*
 
 **Say this plainly if asked about the viva case:** the slide uses 22 real Model windows from six chronological Seat Leon trips. Their trip-level mean risks happen to produce a rising fitted line, but all source trips are ordinary driving and there is no validated failure event. Five trips and `0.7502` project *our risk score* crossing 0.9; they are not remaining useful life or a calibrated probability that the car breaks. The separate committed contract sample uses a hand-built rising history and returns four trips / `1.0`; it is not shown as the viva case. *[Story 8; `failure_estimation.py`; High threshold 0.9]*
 
@@ -223,7 +226,7 @@ Two were, both on evidence, both recorded as documented scope decisions rather t
 
 We measure baseline forecast error and trigger only clearly above it, and the boundary is picked by a written rule, not by taste: sweep candidate alarm lines, keep the one that detects the most, subject to no more than one alarm in ten baseline controls. That gave 0.41 for the alarm line and 0.9 for High. Calibration and the final detector use the same official epoch-five fine-tuned artefact.
 
-The measured effect: false alarms on healthy driving fell from three-in-eleven to one-in-eleven, while overall detection quality barely moved. **Say the cost too:** it did that partly by suppressing weak pedal detections, so it's a trade-off, not a free win. **And the honest one:** one held-out healthy stretch still scores maximum risk, and no threshold at or below 1.0 removes it without switching detection off entirely. That's why the policy is published as provisional. *[thresholds 0.4129 / 0.9, `risk_level_calibration.v1.json`, status `provisional_synthetic_only`; Story 7]*
+The measured effect: false alarms on healthy driving fell from three-in-eleven to one-in-eleven, while overall detection quality barely moved. **Say the cost too:** it did that partly by suppressing weak pedal detections, so it's a trade-off, not a free win. **And the honest one:** one held-out healthy stretch still scores maximum risk, and no threshold at or below 1.0 removes it without switching detection off entirely. That's why the policy is published as provisional. **And concede the design limit:** eight of the eleven usable stretches chose the line and were then included in the aggregate metrics, so the campaign is not an independent final test split. We deliberately did not tune further on the same synthetic cases. *[thresholds 0.4129 / 0.9, `risk_level_calibration.v1.json`, status `provisional_synthetic_only`; Story 7]*
 
 ### Q10. Hardest cross-team problem?
 
@@ -263,12 +266,40 @@ Because the fault we planted is a *proportional* under-read — airflow reads 90
 
 **Not in the official configuration.** The final runtime and formal evaluation use the same epoch-five common-channel model: the same weights are reused across signals, but each signal is forecast independently. MAP--MAF consistency and pedal-channel agreement are added later through engineered physical features; do not say the backbone learned those correlations.
 
-We tested TTM's optional forecast-channel mixer as a development ablation. It did make the airflow forecast respond when another channel changed, proving cross-signal dependence entered the path. But on the same 250 held-out windows it worsened overall MAE from 54.9666 to 55.6532, worsened every signal relative to the official fine-tuned model, and increased mean correlation error from 0.4366 to 0.5311. We therefore kept the common-channel model and did not rerun calibration or synthetic detection on the rejected mixer. These exact ablation values are retained in the main repository as an experiment record; no separate mixer output artifact was committed. *[`model_layer/ttm-related/src/model/finetune_ttm.py`; `model_layer/ttm-related/src/model/compare_finetune_residuals.py`; main-repo sync commit `4b72a57`]*
+We tested TTM's optional forecast-channel mixer as a development ablation. It did make the airflow forecast respond when another channel changed, proving cross-signal dependence entered the path. But on the same 250 held-out windows it worsened overall MAE from 54.9666 to 55.6532, worsened every signal relative to the official fine-tuned model, and increased mean correlation error from 0.4366 to 0.5311. We therefore kept the common-channel model and did not rerun calibration or synthetic detection on the rejected mixer. **If asked why it got worse:** our working hypothesis is that the mixer adds learnable parameters while the training set holds only 47 trips, so generalisable cross-signal relationships are hard to estimate. We did not isolate that experimentally; the result applies only to the tested configuration. These exact ablation values are retained in the main repository as an experiment record; no separate mixer output artifact was committed. *[`model_layer/ttm-related/src/model/finetune_ttm.py`; `model_layer/ttm-related/src/model/compare_finetune_residuals.py`; main-repo sync commit `4b72a57`]*
+
+### Q17. Why did MAP get worse after fine-tuning when everything else improved?
+
+**Direct answer:** it barely moved—21.63 to 21.66, a 0.15% worsening—but it is the one signal that did not improve. Our explanation is that intake pressure has stronger physical relationships with the other signals than the rest do, and the official model forecasts each signal from its own history only, so extra training on this car could not exploit those links. That reading is consistent with the design but was not tested on its own. The channel-mixing ablation (Q16) was the attempt to test it, and it made every signal worse. *[MAP −0.1507%; common-channel configuration]*
+
+### Q18. How is the confidence number calculated?
+
+**Direct answer:** for a Model-scored result it measures how *evenly* the six forecast gaps are spread: confidence is one minus the spread of the six normalised gap scores, clipped to between 0.35 and 0.95. A single signal pulling away gives a high spread and therefore lower confidence; the three largest gaps become the key signals. The pedal rule score is left out of that calculation because the forecast did not create it. For a forwarded verdict we use the data team's own confidence instead—high 0.9, provisional 0.6, low 0.35—and where several of their rows support one verdict we report the weakest. It is a stability measure of the evidence, not a probability the diagnosis is right. *[`1 − std(scores)` clipped 0.35–0.95; M2 backup node]*
+
+### Q19. How does a forwarded verdict become a number on your scale?
+
+**Direct answer:** by a fixed mapping, not by re-scoring. An emitted diagnostic-code verdict maps to 0.9, a triggered verdict to 0.6, triggered supporting or arbitration evidence to 0.5, and anything else to 0. We first validate their 21-column decision file and match on trip, plus segment where they scoped it that way. **Limitation to say:** their decisions can be trip- or episode-scoped while ours are per 96-second window, so a trip-level verdict is applied to every window in that trip; we cannot localise it more finely. Every forwarded result carries a note naming its source so the Report Layer never mistakes it for forecast evidence. *[`proxy_decision_forwarding.py`; M2 backup node]*
+
+### Q20. Why do you require 700 rows when a window is only 608?
+
+**Direct answer:** one window consumes 512 seconds of history plus 96 seconds of future, and the extra rows are operational margin so an eligible stretch is never exactly at the limit. The rule is checked on a single unbroken stretch, not the total file, because a window must never span a recording break. In batch mode windows do not overlap, so each second contributes to at most one evaluated window. The fine-tuning workflow uses its own stride and does not change that. *[≥700 contiguous 1 Hz rows per `segment_id`; M0 backup node]*
+
+### Q21. Why normalise each window before forecasting?
+
+**Direct answer:** because engine speed is in the thousands while temperature moves by a few degrees; fed raw, the big signals would dominate. Each of the six signals is centred and scaled within the current window, forecast, then converted back to its real units before the gap is measured, so evidence comes back in RPM, km/h, °C, kPa, g/s and percent. A signal that barely varies in a window is protected from division by zero. **Limitation:** window-local scaling is why the gap still needs the separate reference-range step before signals are comparable as risk. *[per-window mean/std; M1 backup node]*
+
+### Q22. Which diagnostic codes belong to which problem type?
+
+Cooling: P0128 and P0217. Air intake/airflow: P0101 and P0102. Accelerator pedal: P2138. Intake-air temperature sensor: P0111 to P0113, decided by the data team. Intake-pressure plausibility: P0106, decided by the data team. The codes appear in our notes for context; we do not emit them as diagnoses. *[report Table 3; M2 backup node]*
+
+### Q23. Is your threshold evaluation independent?
+
+**Direct answer:** not fully, and we say so. Eight of the eleven usable stretches chose the alarm line and were then included in the headline metrics; only three were held out, and one of those still scores maximum risk. Only one injection point and one future window were tested per stretch. We chose not to tune further on the same synthetic cases to avoid overfitting a tiny set. So the numbers describe this detector's response to these planted changes; they are not a general accuracy claim. *[8 calibration / 3 held-out segments; M4 backup node]*
 
 ### Questions to be careful with
 
 - **"What's your detection accuracy?"** — Don't give one number; there isn't an honest one. Give it per fault type — overheating perfect, pedal precise but insensitive to small faults, airflow near zero — and immediately scope all of it: measured on planted faults, not real breakdowns.
 - **"Deployable to a real car?"** — No; the brief explicitly rules out real-time vehicle integration. Offline pipeline over recorded trips.
 - **"Did it predict any real failures?"** — No; none of the 81 ordinary-driving trips has a mechanically verified fault, repair outcome, or observed failure event. Keep everything framed as proxy definitions and planted-fault testing.
-- **"How many tests pass?"** — The fresh 2026-08-10 Model run is 209 passed, 16 skipped, three warnings across 225 collected tests. The viva backup nodes now use the same result.
+- **"How many tests pass?"** — The fresh 2026-09-04 Model run is 217 passed, 18 skipped, across 235 collected tests. The deck's M6 node shows the same result; M0 shows 73/73 for the input, contract and batch suites.
 - **"Does 75.02% mean the car will fail?"** — No. The viva case uses 22 real Model windows from six ordinary Seat Leon trips. Five trips is the fitted point where their risk-score trend reaches 0.9; `0.7502` is the fitted probability of crossing that score within ten trips. It is not a probability of mechanical failure. If asked about the separate committed contract sample, its four trips / `1.0` values come from a deliberately rising synthetic history and have the same threshold-only meaning.
