@@ -8,6 +8,7 @@
       "expected_sub_check_id": "1-S1",
       "expected_dtc_candidate_label": "P0128",
       "expected_dtc_emitted": true,
+      "expected_routed_dtc": "P0128",
       "target_signal": "coolant_temp",
       "selector": "warmup_episode",
       "minimum_followup_seconds": 1800,
@@ -62,6 +63,7 @@
       "expected_sub_check_id": "1-S4",
       "expected_dtc_candidate_label": "P0116",
       "expected_dtc_emitted": false,
+      "expected_routed_dtc": null,
       "target_signal": "coolant_temp",
       "selector": "cold_start_ect",
       "duration_seconds": 1,
@@ -89,7 +91,7 @@
       "severity_grid": [
         {"severity_id": "mild", "parameters": {"factor": 0.8}},
         {"severity_id": "moderate", "parameters": {"factor": 0.6}},
-        {"severity_id": "strong", "parameters": {"factor": 0.35}}
+        {"severity_id": "strong", "parameters": {"factor": 0.35, "expected_dtc_candidate_label": "P0101", "expected_dtc_emitted": true, "expected_routed_dtc": "P0101"}}
       ],
       "expected_result_state": "triggered"
     },
@@ -166,6 +168,7 @@
       "expected_sub_check_id": "4-S2",
       "expected_dtc_candidate_label": "P0111",
       "expected_dtc_emitted": false,
+      "expected_routed_dtc": null,
       "target_signal": "intake_temp",
       "selector": "cold_start_iat",
       "duration_seconds": 1,
@@ -192,8 +195,8 @@
       "value": -41.0,
       "severity_grid": [
         {"severity_id": "inside_range", "parameters": {"value": -40.0}},
-        {"severity_id": "low_fault", "parameters": {"value": -41.0, "expected_dtc_candidate_label": "P0112"}},
-        {"severity_id": "high_fault", "parameters": {"value": 216.0, "expected_dtc_candidate_label": "P0113"}}
+        {"severity_id": "low_fault", "parameters": {"value": -41.0, "expected_dtc_candidate_label": "P0112", "expected_dtc_emitted": true, "expected_routed_dtc": "P0112"}},
+        {"severity_id": "high_fault", "parameters": {"value": 216.0, "expected_dtc_candidate_label": "P0113", "expected_dtc_emitted": true, "expected_routed_dtc": "P0113"}}
       ],
       "expected_result_state": "triggered"
     },
