@@ -1082,7 +1082,10 @@ def write_summary(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--base-run-id", default="recalibrate_20260723")
+    parser.add_argument(
+        "--base-run-id",
+        help="Existing healthy run used as the injection baseline.",
+    )
     parser.add_argument("--config", default=str(DEFAULT_CONFIG))
     parser.add_argument("--max-cases", type=int)
     parser.add_argument("--only-case")
@@ -1115,6 +1118,8 @@ def main() -> int:
             for case in cases
         ], ensure_ascii=False, indent=2))
         return 0
+    if not args.base_run_id:
+        raise FaultInjectionError("--base-run-id is required.")
 
     cases = expand_cases(cases)
     stamp = utc_stamp()
@@ -1134,7 +1139,10 @@ def main() -> int:
         case_copy = copy.deepcopy(case)
         suffix = f"{case_copy['case_id']}__{case_copy['_severity_id']}"
         run_id = f"{prefix}__{suffix}"
-        print(f"[Stage4] Running {suffix} -> {run_id}")
+        print(
+            f"[Stage4] Running {suffix} -> {run_id}",
+            file=sys.stderr,
+        )
         rows.extend(
             run_batch_case(
                 base_layout=base_layout,
@@ -1151,5 +1159,8 @@ if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except FaultInjectionError as exc:
-        print(json.dumps({"error": str(exc)}, ensure_ascii=False, indent=2))
+        print(
+            json.dumps({"error": str(exc)}, ensure_ascii=False, indent=2),
+            file=sys.stderr,
+        )
         raise SystemExit(1)
