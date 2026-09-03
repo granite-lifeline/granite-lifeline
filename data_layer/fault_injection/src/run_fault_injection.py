@@ -519,22 +519,6 @@ def select_pedal_step_windows(
         f"No pedal-step window found for {case['case_id']}.")
 
 
-def select_window(frame: pd.DataFrame, case: dict[str, Any]) -> Window:
-    if case["selector"] == "pedal_step_events":
-        windows = select_pedal_step_windows(frame, case)
-    elif case["selector"] == "warmup_episode":
-        windows = select_warmup_windows(frame, case)
-    else:
-        windows = select_basic_windows(frame, case)
-    ordinal = int(case.get("_window_ordinal", 0))
-    if ordinal >= len(windows):
-        raise FaultInjectionError(
-            f"{case['case_id']} requested window {ordinal}, but only "
-            f"{len(windows)} independent trip windows are available."
-        )
-    return windows[ordinal]
-
-
 def select_windows(
     frame: pd.DataFrame,
     case: dict[str, Any],
