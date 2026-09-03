@@ -779,11 +779,27 @@ def evaluate_case(
         or str(actual_dtc) == str(expected_dtc)
     )
     expected_emitted = case.get("expected_dtc_emitted")
-    emitted_bool = bool(emitted) if pd.notna(emitted) else False
+    emitted_bool = parse_bool(emitted, field="dtc_emitted")
     emission_matches = (
         expected_emitted is None
-        or emitted_bool is bool(expected_emitted)
+        or emitted_bool == parse_bool(
+            expected_emitted, field="expected_dtc_emitted"
+        )
     )
+    actual_routed_dtc = chosen.get("routed_dtc")
+    if "expected_routed_dtc" in case:
+        expected_routed_dtc = case["expected_routed_dtc"]
+        routed_dtc_matches = (
+            pd.isna(actual_routed_dtc)
+            if expected_routed_dtc is None
+            else str(actual_routed_dtc) == str(expected_routed_dtc)
+        )
+    elif expected_emitted is not None and not parse_bool(
+        expected_emitted, field="expected_dtc_emitted"
+    ):
+        routed_dtc_matches = pd.isna(actual_routed_dtc)
+    else:
+        routed_dtc_matches = True
     return {
         "actual_result_state": chosen.get("result_state"),
         "baseline_result_state": baseline_state,
@@ -794,62 +810,15 @@ def evaluate_case(
         "dtc_matches_expected": dtc_matches,
         "dtc_emitted": emitted_bool,
         "emission_matches_expected": emission_matches,
-        "routed_dtc": chosen.get("routed_dtc"),
+        "routed_dtc": actual_routed_dtc,
+        "routed_dtc_matches_expected": routed_dtc_matches,
         "confidence": chosen.get("confidence"),
         "passed": bool(
             not hits.empty
             and not baseline_already_positive
             and dtc_matches
             and emission_matches
-        ),
-    }
-
-
-def run_case(
-    *,
-    base_layout: RunLayout,
-    case: dict[str, Any],
-    run_id: str,
-    creation_time_utc: str,
-) -> dict[str, Any]:
-    target_layout = RunLayout.for_run_id(run_id, repo_root=REPO_ROOT)
-    copy_minimal_run(base_layout, target_layout)
-
-    frame = pd.read_csv(target_layout.production_features, low_memory=False)
-    window = select_window(frame, case)
-    inject_case(frame, case, window)
-    recompute_dependent_features(frame)
-    frame.to_csv(
-        target_layout.production_features,
-        index=False,
-        float_format="%.15g",
-        lineterminator="\n",
-    )
-    update_production_manifest(target_layout, case)
-    run_proxy_stages(target_layout, creation_time_utc)
-    result = evaluate_case(
-        target_layout, case, window, baseline_layout=base_layout
-    )
-    return {
-        "case_id": case["case_id"],
-        "run_id": run_id,
-        "proxy_id": case["proxy_id"],
-        "expected_sub_check_id": case["expected_sub_check_id"],
-        "expected_result_state": case.get(
-            "expected_result_state", "triggered"
-        ),
-        "target_signal": case["target_signal"],
-        "selector": case["selector"],
-        "severity_id": case.get("_severity_id", "single"),
-        "severity_rank": case.get("_severity_rank", 0),
-        "replicate": case.get("_window_ordinal", 0) + 1,
-        "trip_id": window.trip_id,
-        "segment_id": window.segment_id,
-        "injection_start_timestamp": window.start_timestamp,
-        "injection_end_timestamp": window.end_timestamp,
-        **result,
-        "decisions_path": target_layout.run_relative_posix(
-            target_layout.proxy_decisions
+            and routed_dtc_matches
         ),
     }
 
