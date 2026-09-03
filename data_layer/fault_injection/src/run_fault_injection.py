@@ -644,7 +644,19 @@ def recompute_dependent_features(
         )
     )
 
-    hidden = frame["rpm"] * frame["map"] / (frame["intake_temp"] + 273.15)
+    absolute_temperature = frame["intake_temp"] + 273.15
+    invalid_temperature = frame["intake_temp"].notna() & (
+        ~np.isfinite(frame["intake_temp"])
+        | ~np.isfinite(absolute_temperature)
+        | absolute_temperature.le(0)
+    )
+    if invalid_temperature.any():
+        indices = frame.index[invalid_temperature].tolist()[:5]
+        raise FaultInjectionError(
+            "intake_temp must be finite and above absolute zero before "
+            f"speed-density recomputation; invalid rows: {indices}"
+        )
+    hidden = frame["rpm"] * frame["map"] / absolute_temperature
     bounds = speed_density["prediction_clipping_bounds"]
     model_inputs = {
         "map_derived_air_load_raw": hidden.clip(
