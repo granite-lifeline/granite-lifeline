@@ -11,7 +11,20 @@ from unittest.mock import patch, MagicMock
 
 import requests
 
-from report_layer.pipeline.report_generator import generate_report
+from report_layer.pipeline.report_generator import (
+    _apply_action_relevance_check,
+    _apply_evidence_relationship_check,
+    _apply_signal_direction_check,
+    _clean_layer_value,
+    _clean_model_aware_text,
+    _clean_recommended_actions,
+    _enforce_controlled_baseline_boundary,
+    _validate_layer_value,
+    call_ollama,
+    generate_report,
+)
+from report_layer.pipeline.prompt_chain_validator import ValidationResult
+from shared.interface_models import ModelLayerOutput
 
 
 # ---------------------------------------------------------------------------
@@ -38,14 +51,416 @@ VALID_MODEL_OUTPUT = {
     "notes": [],
 }
 
+
+def test_signal_direction_check_blocks_reversed_coolant_comparison():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["key_signals"] = [{
+        "feature": "coolant_temp",
+        "value": 84.0,
+        "unit": "°C",
+        "reference_range": [90.0, 95.0],
+    }]
+    result = _apply_signal_direction_check(
+        ValidationResult(layer=1, passed=True, warnings=[], score=1.0),
+        "The coolant temperature is higher than expected, so this pattern "
+        "requires professional verification soon.",
+        ModelLayerOutput(**payload),
+    )
+
+    assert result.score < 0.8
+    assert any("below, not above" in item for item in result.warnings)
+
+
+def test_evidence_check_blocks_normal_system_claim_from_normal_signals():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["anomaly_type"] = "accelerator_pedal_sensor"
+    payload["component"] = "accelerator_pedal_sensor"
+    payload["risk_level"] = "Medium"
+    payload["key_signals"] = [{
+        "feature": "accel_pedal_d",
+        "value": 12.0,
+        "unit": "%",
+        "reference_range": [0.0, 100.0],
+    }]
+    result = _apply_evidence_relationship_check(
+        ValidationResult(layer=1, passed=True, warnings=[], score=1.0),
+        "The accelerator pedal sensor is at Medium risk, but the system is "
+        "currently operating normally and should be checked soon.",
+        ModelLayerOutput(**payload),
+    )
+
+    assert result.score < 0.8
+    assert any("listed signals are within range" in w for w in result.warnings)
+
+
+def test_evidence_check_blocks_equivalent_normal_operation_claims():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["anomaly_type"] = "accelerator_pedal_sensor"
+    payload["component"] = "accelerator_pedal_sensor"
+    payload["risk_level"] = "Medium"
+    payload["key_signals"] = [{
+        "feature": "accel_pedal_d",
+        "value": 12.0,
+        "unit": "%",
+        "reference_range": [0.0, 100.0],
+    }]
+    for text in (
+        "The sensor is functioning within expected limits, but it should be "
+        "checked soon because the current risk is Medium.",
+        "The sensor is currently operating as expected but should be checked "
+        "soon because the current risk is Medium.",
+    ):
+        result = _apply_evidence_relationship_check(
+            ValidationResult(layer=1, passed=True, warnings=[], score=1.0),
+            text,
+            ModelLayerOutput(**payload),
+        )
+
+        assert result.score < 0.8
+
+
+def test_evidence_check_blocks_proxy_fault_claim_with_normal_signals():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["anomaly_type"] = "intake_air_temperature_sensor_fault"
+    payload["component"] = "intake_air_temperature_sensor_fault"
+    payload["notes"] = [
+        "intake_air_temperature_sensor_fault forwarded from Data Layer "
+        "proxy_decisions.csv"
+    ]
+    payload["key_signals"] = [{
+        "feature": "intake_air_temp",
+        "value": 19.0,
+        "unit": "°C",
+        "reference_range": [-3.0, 41.0],
+    }]
+    result = _apply_evidence_relationship_check(
+        ValidationResult(layer=1, passed=True, warnings=[], score=1.0),
+        "The intake air temperature sensor shows a high-risk fault, strongly "
+        "suggesting a sensor issue despite normal readings.",
+        ModelLayerOutput(**payload),
+    )
+
+    assert result.score < 0.8
+    assert any("pattern or flag" in w for w in result.warnings)
+
+
+def test_owner_cleanup_expands_maf_and_pid_for_plain_language():
+    model = ModelLayerOutput(**VALID_MODEL_OUTPUT)
+
+    description = _clean_layer_value(
+        1,
+        "The air intake MAF sensor shows a Low-risk pattern.",
+        model,
+    )
+    actions = _clean_layer_value(
+        3,
+        [
+            "Tell the mechanic: Review the MAF sensor Parameter "
+            "Identification Data (PID) and the MAF Integral Over 180 "
+            "Seconds."
+        ],
+        model,
+    )
+
+    assert "MAF" not in description
+    assert "mass airflow sensor" in description
+    assert "PID" not in actions[0]
+    assert "mass airflow sensor data" in actions[0]
+    assert "sensor mass airflow sensor" not in actions[0]
+    assert "accumulated mass airflow reading" in actions[0]
+
+
+def test_owner_cleanup_handles_unicode_hyphen_in_proxy_phrase():
+    model = ModelLayerOutput(**VALID_MODEL_OUTPUT)
+
+    cleaned = _clean_layer_value(
+        2,
+        "The detection is based on rule‑based proxy evidence.",
+        model,
+    )
+
+    assert "proxy evidence" not in cleaned.lower()
+    assert "rule-based diagnostic evidence" in cleaned.lower()
+
+
+def test_normal_signal_cleanup_preserves_although_grammar():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["anomaly_type"] = "accelerator_pedal_sensor"
+    payload["component"] = "accelerator_pedal_sensor"
+    payload["key_signals"] = [{
+        "feature": "accel_pedal_d",
+        "value": 12.0,
+        "unit": "%",
+        "reference_range": [0.0, 100.0],
+    }]
+    model = ModelLayerOutput(**payload)
+
+    cleaned = _clean_layer_value(
+        1,
+        "The sensor should be checked, despite all key signals currently "
+        "showing normal operation.",
+        model,
+    )
+
+    assert "despite all displayed key signals are" not in cleaned.lower()
+    assert "although all displayed key signals are" in cleaned.lower()
+
+
+def test_owner_cleanup_rephrases_normal_signal_and_proxy_language():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["key_signals"] = [{
+        "feature": "accel_pedal_d",
+        "value": 12.0,
+        "unit": "%",
+        "reference_range": [0.0, 100.0],
+    }]
+    cleaned = _clean_layer_value(
+        1,
+        "All key signals are currently showing normal operation. The result "
+        "came from rule-based proxy evidence.",
+        ModelLayerOutput(**payload),
+    )
+
+    assert "within their reference ranges" in cleaned
+    assert "proxy" not in cleaned
+
+
+def test_action_relevance_blocks_pedal_condition_in_cooling_report():
+    result = _apply_action_relevance_check(
+        ValidationResult(layer=3, passed=True, warnings=[], score=1.0),
+        [
+            "Now: Watch the temperature gauge.",
+            "Service timing: Continue routine monitoring.",
+            "Stop driving and seek help if: The pedals respond unsafely.",
+            "Tell the mechanic: Verify the cooling evidence.",
+        ],
+        ModelLayerOutput(**VALID_MODEL_OUTPUT),
+    )
+
+    assert result.score < 0.8
+    assert any("not the accelerator pedal" in w for w in result.warnings)
+
+
+def test_action_cleanup_replaces_pedal_condition_for_other_component():
+    payload = dict(VALID_MODEL_OUTPUT)
+    model = ModelLayerOutput(**payload)
+    actions = [
+        "Now: Watch the temperature gauge.",
+        "Service timing: Arrange an inspection soon.",
+        (
+            "Stop driving and seek help if: The accelerator pedal response "
+            "becomes unsafe."
+        ),
+        "Tell the mechanic: Check the cooling evidence.",
+    ]
+
+    cleaned = _clean_recommended_actions(actions, model)
+
+    assert "pedal" not in cleaned[2].lower()
+    assert "vehicle becomes unsafe to control" in cleaned[2].lower()
+
+
+def test_medium_cause_cleanup_reduces_urgency_and_removes_confidence():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["risk_level"] = "Medium"
+    model = ModelLayerOutput(**payload)
+    examples = (
+        (
+            "With 90% prediction confidence, this pattern urgently requires "
+            "professional verification."
+        ),
+        (
+            "This result has 90% confidence and requires prompt professional "
+            "verification."
+        ),
+        (
+            "This high-risk condition (90% confidence) requires professional "
+            "verification."
+        ),
+    )
+
+    for text in examples:
+        cleaned = _clean_model_aware_text(text, model)
+
+        assert "90%" not in cleaned
+        assert "confidence" not in cleaned.lower()
+        assert "urgently" not in cleaned.lower()
+        assert "prompt" not in cleaned.lower()
+
+
+def test_medium_urgency_check_respects_negated_immediate_wording():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["risk_level"] = "Medium"
+    model = ModelLayerOutput(**payload)
+    validation = ValidationResult(
+        layer=2, passed=True, warnings=[], score=1.0
+    )
+
+    result = _apply_signal_direction_check(
+        validation,
+        "This may justify a precautionary inspection without immediate "
+        "failure symptoms.",
+        model,
+    )
+
+    assert result.passed
+    assert result.score == 1.0
+
+
+def test_validate_layer_value_dispatches_to_the_matching_layer():
+    """Regression test: _validate_layer_value's dispatch previously had
+    `if layer_num in {1, 2}: return validate_layer1(...)` catching layer
+    2 before the `if layer_num == 2` branch could ever run — so
+    possible_cause was silently checked against anomaly_description's
+    rules (no hedging requirement, and the wrong 20-60 word range
+    instead of layer 2's real range) for as long as that code existed.
+
+    This text is valid for layer 2 (has hedging, 61 words — inside
+    layer 2's 130-word cap but over layer 1's 60-word cap) and invalid
+    for layer 1 (no hedging is fine for layer 1, but 61 words trips
+    layer 1's real cap). If dispatch is broken again, this comes back
+    as a length warning that shouldn't exist at layer 2.
+    """
+    text = (
+        "This may indicate a partially blocked radiator, a thermostat "
+        "that is not fully opening, or a failing water pump — each "
+        "could reduce how effectively the engine sheds heat given the "
+        "current signal pattern. Because the coolant temperature is "
+        "below its reference range while rising abnormally quickly, "
+        "these remain possibilities rather than a confirmed cause "
+        "until a mechanic verifies which component is responsible for "
+        "the drop in cooling performance observed here today."
+    )
+    assert 60 < len(text.split()) <= 130
+
+    result = _validate_layer_value(2, text, "", "High")
+
+    assert not any("too long" in w for w in result.warnings)
+    assert not any("too short" in w for w in result.warnings)
+
+
+def test_clean_layer_value_applies_possible_cause_cleanup():
+    """Layer 2 removes report-section restatements in production."""
+    model_output = ModelLayerOutput(**VALID_MODEL_OUTPUT)
+    text = (
+        "The risk level remains High. This pattern may indicate restricted "
+        "coolant flow. The component should be monitored."
+    )
+
+    cleaned = _clean_layer_value(2, text, model_output)
+
+    assert "risk level remains" not in cleaned.lower()
+    assert "should be monitored" not in cleaned.lower()
+    assert cleaned == "This pattern may indicate restricted coolant flow."
+
+
+def test_clean_layer_value_normalises_medium_risk_urgency_synonym():
+    """Medium-risk synonyms are aligned with the prompt's risk wording."""
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["risk_level"] = "Medium"
+    model_output = ModelLayerOutput(**payload)
+
+    cleaned = _clean_layer_value(
+        1,
+        "This pattern warrants prompt professional verification.",
+        model_output,
+    )
+
+    assert cleaned == (
+        "This pattern should be checked soon by a professional."
+    )
+    validation = _apply_signal_direction_check(
+        ValidationResult(layer=1, passed=True, warnings=[], score=1.0),
+        cleaned,
+        model_output,
+    )
+    assert validation.score == 1.0
+
+
+def test_clean_layer_value_replaces_invented_service_interval():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["risk_level"] = "Low"
+    model_output = ModelLayerOutput(**payload)
+    actions = [
+        "Now: Watch for changes in how the vehicle behaves while driving.",
+        "Service timing: Arrange service within the next few weeks.",
+        "Stop driving and seek help if: The vehicle becomes unsafe to drive.",
+        "Tell the mechanic: Verify the reported pattern before any repair.",
+    ]
+
+    cleaned = _clean_layer_value(3, actions, model_output)
+
+    assert cleaned[1] == (
+        "Service timing: Continue routine monitoring and arrange an "
+        "inspection if the pattern persists or worsens."
+    )
+    assert "weeks" not in " ".join(cleaned).lower()
+
+
+def test_controlled_no_action_condition_uses_neutral_actions():
+    payload = dict(VALID_MODEL_OUTPUT)
+    payload["risk_level"] = "Medium"
+    model_output = ModelLayerOutput(**payload)
+    generated = [
+        "Now: Inspect the pedal sensor wiring and connector for damage.",
+        "Service timing: Arrange service within the next month.",
+        "Stop driving and seek help if: The vehicle loses power.",
+        "Tell the mechanic: Test the accelerator pedal sensor voltage.",
+    ]
+
+    controlled = _enforce_controlled_baseline_boundary(
+        3,
+        generated,
+        "No retrieved action guidance was supplied in this controlled "
+        "condition.",
+        model_output,
+    )
+
+    assert controlled[1].startswith(
+        "Service timing: Arrange a professional inspection soon"
+    )
+    assert "wiring" not in " ".join(controlled).lower()
+    assert "sensor" not in " ".join(controlled).lower()
+
+
+# Realistic enough to pass prompt_chain_validator.validate_chain() at
+# VALIDATOR_SCORE_THRESHOLD — word-count minimums, hedging language,
+# High-risk urgency wording. Placeholder-length text (e.g. "Visit a
+# mechanic") now correctly gets blocked by the live validation gate,
+# which is exactly the behavior the gate exists to test elsewhere; this
+# fixture instead represents a realistic passing generation.
 LAYER1_RESPONSE = json.dumps(
-    {"anomaly_description": "Engine coolant temperature is elevated."}
+    {
+        "anomaly_description": (
+            "Your engine's coolant temperature is running higher than "
+            "normal. The current reading is 102 degrees Celsius, while "
+            "the expected range is 90 to 95 degrees. Because the risk "
+            "level is High, this may need prompt attention soon to "
+            "avoid further strain on the cooling system."
+        )
+    }
 )
 LAYER2_RESPONSE = json.dumps(
-    {"possible_cause": "Possible thermostat or coolant system issue."}
+    {
+        "possible_cause": (
+            "This pattern may indicate a partially blocked radiator or "
+            "a thermostat that is not fully opening, which could "
+            "reduce how effectively the engine sheds heat."
+        )
+    }
 )
 LAYER3_RESPONSE = json.dumps(
-    {"recommended_action": ["Visit a mechanic", "Monitor temperature"]}
+    {
+        "recommended_action": [
+            "Now: Watch the temperature gauge and avoid unusual vehicle "
+            "load while arranging an inspection.",
+            "Service timing: Arrange a prompt professional inspection.",
+            "Stop driving and seek help if: A red temperature warning "
+            "appears, the engine overheats, or power drops.",
+            "Tell the mechanic: Ask them to inspect the radiator, "
+            "thermostat and coolant flow with suitable equipment.",
+        ]
+    }
 )
 
 PASS_THROUGH_FIELDS = [
@@ -94,6 +509,45 @@ class TestGenerateReportSuccess(unittest.TestCase):
         self.assertTrue(len(result["possible_cause"]) > 0)
         self.assertIsInstance(result["recommended_action"], list)
         self.assertGreater(len(result["recommended_action"]), 0)
+
+    @patch(
+        "report_layer.pipeline.report_generator.requests.post"
+    )
+    def test_invalid_risk_history_returns_safe_empty_history(
+        self, mock_post
+    ):
+        mock_post.side_effect = [
+            _make_mock_response(LAYER1_RESPONSE),
+            _make_mock_response(LAYER2_RESPONSE),
+            _make_mock_response(LAYER3_RESPONSE),
+        ]
+
+        result = generate_report(
+            VALID_MODEL_OUTPUT,
+            risk_history=[{"timestamp": "x", "risk_score": 1.5}],
+        )
+
+        self.assertIsNone(result["risk_history"])
+        self.assertEqual(result["anomaly_description"], "")
+        self.assertEqual(mock_post.call_count, 0)
+
+
+class TestOllamaRequestOptions(unittest.TestCase):
+    """test_call_ollama_requests_json — request deterministic JSON."""
+
+    @patch(
+        "report_layer.pipeline.report_generator.requests.post"
+    )
+    def test_call_ollama_requests_json_mode(self, mock_post):
+        mock_post.return_value = _make_mock_response("{}")
+
+        response = call_ollama("Return JSON")
+
+        self.assertEqual(response, "{}")
+        _, kwargs = mock_post.call_args
+        self.assertEqual(kwargs["json"]["format"], "json")
+        self.assertEqual(kwargs["json"]["options"]["temperature"], 0)
+        self.assertFalse(kwargs["json"]["stream"])
 
 
 class TestGenerateReportOllamaTimeout(unittest.TestCase):
@@ -145,6 +599,232 @@ class TestGenerateReportJsonParseFailure(unittest.TestCase):
         self.assertEqual(result["anomaly_description"], "")
         self.assertEqual(result["possible_cause"], "")
         self.assertEqual(result["recommended_action"], [])
+
+
+class TestGenerateReportValidationGate(unittest.TestCase):
+    """Live validation corrects bad layers or falls back safely."""
+
+    @patch(
+        "report_layer.pipeline.report_generator.time.sleep"
+    )
+    @patch(
+        "report_layer.pipeline.report_generator.requests.post"
+    )
+    def test_low_quality_layer_is_corrected_before_next_layer(
+        self, mock_post, mock_sleep
+    ):
+        low_quality_layer1 = json.dumps(
+            {
+                "anomaly_description": (
+                    "coolant_temp is high and the cooling fan has failed."
+                )
+            }
+        )
+        corrected_layer1 = json.dumps(
+            {
+                "anomaly_description": (
+                    "The engine coolant reading is higher than its expected "
+                    "range during this driving period. This is evidence of "
+                    "unusual cooling-system behaviour, but it does not "
+                    "confirm that a specific component has failed. The High "
+                    "risk level means the pattern needs prompt attention."
+                )
+            }
+        )
+        mock_post.side_effect = [
+            _make_mock_response(low_quality_layer1),
+            _make_mock_response(corrected_layer1),
+            _make_mock_response(LAYER2_RESPONSE),
+            _make_mock_response(LAYER3_RESPONSE),
+        ]
+
+        result = generate_report(VALID_MODEL_OUTPUT)
+
+        self.assertIn(
+            "does not confirm",
+            result["anomaly_description"],
+        )
+        self.assertEqual(mock_post.call_count, 4)
+        correction_prompt = mock_post.call_args_list[1].kwargs["json"][
+            "prompt"
+        ]
+        self.assertIn("VALIDATOR FEEDBACK", correction_prompt)
+        self.assertIn("unexplained raw field name", correction_prompt)
+        self.assertNotIn(
+            "coolant_temp",
+            mock_post.call_args_list[2].kwargs["json"]["prompt"],
+        )
+
+    @patch(
+        "report_layer.pipeline.report_generator.time.sleep"
+    )
+    @patch(
+        "report_layer.pipeline.report_generator.requests.post"
+    )
+    def test_layer2_correction_is_used_by_layer3(
+        self, mock_post, mock_sleep
+    ):
+        unsafe_layer2 = json.dumps(
+            {"possible_cause": "The thermostat is broken."}
+        )
+        corrected_layer2 = json.dumps(
+            {
+                "possible_cause": (
+                    "This pattern could suggest restricted coolant flow or "
+                    "a thermostat that is not opening fully. These remain "
+                    "possible explanations rather than a confirmed fault."
+                )
+            }
+        )
+        mock_post.side_effect = [
+            _make_mock_response(LAYER1_RESPONSE),
+            _make_mock_response(unsafe_layer2),
+            _make_mock_response(corrected_layer2),
+            _make_mock_response(LAYER3_RESPONSE),
+        ]
+
+        result = generate_report(VALID_MODEL_OUTPUT)
+
+        self.assertIn("could suggest", result["possible_cause"])
+        layer3_prompt = mock_post.call_args_list[3].kwargs["json"]["prompt"]
+        self.assertIn("could suggest", layer3_prompt)
+        self.assertNotIn("The thermostat is broken", layer3_prompt)
+        self.assertEqual(mock_post.call_count, 4)
+
+    @patch(
+        "report_layer.pipeline.report_generator.time.sleep"
+    )
+    @patch(
+        "report_layer.pipeline.report_generator.requests.post"
+    )
+    def test_layer3_actions_are_corrected_before_delivery(
+        self, mock_post, mock_sleep
+    ):
+        unsafe_layer3 = json.dumps(
+            {"recommended_action": ["Check it", "Keep driving"]}
+        )
+        corrected_layer3 = json.dumps(
+            {
+                "recommended_action": [
+                    "Now: Watch the temperature gauge and avoid unusual "
+                    "vehicle load while arranging an inspection.",
+                    "Service timing: Arrange a prompt cooling-system "
+                    "inspection.",
+                    "Stop driving and seek help if: A red temperature "
+                    "warning appears, the engine overheats, or power drops.",
+                    "Tell the mechanic: Ask them to inspect the radiator, "
+                    "thermostat and coolant flow with suitable equipment.",
+                ]
+            }
+        )
+        mock_post.side_effect = [
+            _make_mock_response(LAYER1_RESPONSE),
+            _make_mock_response(LAYER2_RESPONSE),
+            _make_mock_response(unsafe_layer3),
+            _make_mock_response(corrected_layer3),
+        ]
+
+        result = generate_report(VALID_MODEL_OUTPUT)
+
+        self.assertEqual(len(result["recommended_action"]), 4)
+        self.assertTrue(result["recommended_action"][0].startswith("Now:"))
+        self.assertEqual(mock_post.call_count, 4)
+
+    @patch(
+        "report_layer.pipeline.report_generator.time.sleep"
+    )
+    @patch(
+        "report_layer.pipeline.report_generator.requests.post"
+    )
+    def test_low_quality_output_falls_back(
+        self, mock_post, mock_sleep
+    ):
+        # A semantic correction is attempted once. If the corrected value
+        # still scores below the threshold, the report must fall back before
+        # any downstream layer is generated.
+        low_quality_layer1 = json.dumps(
+            {
+                "anomaly_description": (
+                    "coolant_temp is high and the cooling fan has failed."
+                )
+            }
+        )
+        mock_post.side_effect = [
+            _make_mock_response(low_quality_layer1),
+            _make_mock_response(low_quality_layer1),
+        ]
+
+        result = generate_report(VALID_MODEL_OUTPUT)
+
+        self.assertIsInstance(result, dict)
+        self.assertNotIn("report_generation_success", result)
+        self.assertEqual(result["anomaly_description"], "")
+        self.assertEqual(result["possible_cause"], "")
+        self.assertEqual(result["recommended_action"], [])
+        self.assertEqual(mock_post.call_count, 2)
+
+    @patch(
+        "report_layer.pipeline.report_generator.time.sleep"
+    )
+    @patch(
+        "report_layer.pipeline.report_generator.requests.post"
+    )
+    def test_score_exactly_at_threshold_is_not_blocked(
+        self, mock_post, mock_sleep
+    ):
+        # A score of exactly VALIDATOR_SCORE_THRESHOLD (0.8) is the
+        # single most common real case — 20-40% of real generated
+        # reports land here (one flagged issue on one layer). The gate
+        # must use a strict "<" comparison, not "<=": this is the
+        # boundary an off-by-one change would silently break, blocking
+        # a large share of otherwise-normal reports.
+        at_threshold_layer1 = json.dumps(
+            {
+                "anomaly_description": (
+                    "Your engine coolant_temp reading is running higher "
+                    "than normal. The current reading is 102 degrees "
+                    "Celsius, while the expected range is 90 to 95 "
+                    "degrees. Because the risk level is High, this may "
+                    "need prompt attention soon to avoid further strain "
+                    "on the cooling system."
+                )
+            }
+        )
+        mock_post.side_effect = [
+            _make_mock_response(at_threshold_layer1),
+            _make_mock_response(LAYER2_RESPONSE),
+            _make_mock_response(LAYER3_RESPONSE),
+        ]
+
+        result = generate_report(VALID_MODEL_OUTPUT)
+
+        self.assertTrue(len(result["anomaly_description"]) > 0)
+        self.assertTrue(len(result["possible_cause"]) > 0)
+        self.assertGreater(len(result["recommended_action"]), 0)
+        self.assertEqual(mock_post.call_count, 3)
+
+    @patch(
+        "report_layer.pipeline.report_generator.time.sleep"
+    )
+    @patch(
+        "report_layer.pipeline.report_generator.requests.post"
+    )
+    def test_passing_quality_output_is_not_blocked(
+        self, mock_post, mock_sleep
+    ):
+        # Sanity check in the other direction: realistic text at or
+        # above the threshold must reach the owner, not be discarded.
+        mock_post.side_effect = [
+            _make_mock_response(LAYER1_RESPONSE),
+            _make_mock_response(LAYER2_RESPONSE),
+            _make_mock_response(LAYER3_RESPONSE),
+        ]
+
+        result = generate_report(VALID_MODEL_OUTPUT)
+
+        self.assertTrue(len(result["anomaly_description"]) > 0)
+        self.assertTrue(len(result["possible_cause"]) > 0)
+        self.assertGreater(len(result["recommended_action"]), 0)
 
 
 class TestGenerateReportInvalidInput(unittest.TestCase):

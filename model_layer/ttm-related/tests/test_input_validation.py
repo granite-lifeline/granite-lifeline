@@ -148,6 +148,21 @@ def make_residual_summary(mean=0.1, maximum=0.2):
 
 
 class TestPedalDetection:
+    def test_two_high_component_risks_are_both_ranked(self):
+        from model.kit_residual_detector import calculate_ranked_risks
+
+        future = make_future_df(pedal_delta=0.5)
+        future["coolant_temp"] = 110.0
+        future["speed_density_maf_residual"] = 35.0
+        ranked, _, _ = calculate_ranked_risks(
+            make_residual_summary(), future
+        )
+
+        assert [risk[:2] for risk in ranked] == [
+            ("cooling_degradation", 1.0),
+            ("air_intake_maf_anomaly", 1.0),
+        ]
+
     def test_sustained_disagreement_selects_pedal_anomaly(self):
         from model.kit_residual_detector import calculate_risk
 

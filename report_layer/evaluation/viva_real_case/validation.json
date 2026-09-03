@@ -1,0 +1,46 @@
+{
+  "baseline": {
+    "description": {
+      "layer": 1,
+      "passed": true,
+      "warnings": [],
+      "score": 1.0
+    },
+    "cause": {
+      "layer": 2,
+      "passed": true,
+      "warnings": [
+        "Contains confirmed fault language: 'confirmed'"
+      ],
+      "score": 0.8
+    },
+    "action": {
+      "layer": 3,
+      "passed": true,
+      "warnings": [],
+      "score": 1.0
+    }
+  },
+  "rag": {
+    "description": {
+      "layer": 1,
+      "passed": true,
+      "warnings": [],
+      "score": 1.0
+    },
+    "cause": {
+      "layer": 2,
+      "passed": true,
+      "warnings": [
+        "Missing hedging language (may indicate, could suggest, etc.)"
+      ],
+      "score": 0.8
+    },
+    "action": {
+      "layer": 3,
+      "passed": true,
+      "warnings": [],
+      "score": 1.0
+    }
+  }
+}

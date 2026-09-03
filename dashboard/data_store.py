@@ -15,13 +15,11 @@ import streamlit as st
 try:
     from data_loader import load_static_dashboard_data
     from anomaly_display import (
-        GROUND_KNOWLEDGE_ANOMALY_TYPES,
         LEGACY_COMPONENT_ALIASES,
     )
 except ImportError:  # package import during tests
     from dashboard.data_loader import load_static_dashboard_data
     from dashboard.anomaly_display import (
-        GROUND_KNOWLEDGE_ANOMALY_TYPES,
         LEGACY_COMPONENT_ALIASES,
     )
 
@@ -60,6 +58,9 @@ def _build_data_views() -> tuple[dict, dict]:
         return {}, {}
     ds = dict(raw.get("_data_source", {}))
     data = {k: v for k, v in raw.items() if k != "_data_source"}
+    source_override = os.getenv("DASHBOARD_STATIC_DATA_SOURCE", "").strip()
+    if source_override:
+        ds = {key: source_override for key in data}
     return data, ds
 
 
@@ -252,7 +253,7 @@ def make_overview_placeholder(component_key: str) -> dict:
 
 
 def get_overview_components() -> list[tuple[str, dict, bool]]:
-    """Return sorted (key, data, is_placeholder) tuples for the overview."""
+    """Return only Medium/High-risk components for the overview."""
     mock_data = get_mock_data()
     real_components: dict[str, dict] = {}
 
@@ -265,12 +266,11 @@ def get_overview_components() -> list[tuple[str, dict, bool]]:
         entry["component"] = canonical_key
         real_components[canonical_key] = entry
 
-    result: list[tuple[str, dict, bool]] = []
-    for key in GROUND_KNOWLEDGE_ANOMALY_TYPES:
-        if key in real_components:
-            result.append((key, real_components[key], False))
-        else:
-            result.append((key, make_overview_placeholder(key), True))
+    result: list[tuple[str, dict, bool]] = [
+        (key, entry, False)
+        for key, entry in real_components.items()
+        if entry.get("risk_level") in {"Medium", "High"}
+    ]
 
     return sorted(
         result,

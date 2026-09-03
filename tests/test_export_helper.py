@@ -1,10 +1,20 @@
 """Tests for dashboard export data helpers."""
 
+import io
+import sys
+import zipfile
+from pathlib import Path
+
+import pytest
+
 from dashboard.export_helper import (
     CSV_COLUMNS,
     DEFAULT_EXPORT_SECTIONS,
     NOT_AVAILABLE,
     PDF_TITLE,
+    _add_risk_trend_panel,
+    _get_pdf_styles,
+    _get_reportlab_tools,
     build_csv_file_name,
     build_diagnostic_pdf_bytes,
     build_export_data,
@@ -63,17 +73,15 @@ def test_export_section_options_for_future_popup():
     assert "summary" in keys
     assert "key_signals" in keys
     assert "diagnostic_report" in keys
-    assert "data_quality_notes" in keys
+    assert "data_quality_notes" not in keys
 
 
-def test_export_section_options_put_notes_after_failure_prediction():
-    """Test PDF section order keeps data quality after prediction."""
+def test_export_section_options_omit_internal_data_notes():
+    """Owner exports must not expose internal Model Layer notes."""
     keys = [option["key"] for option in get_export_section_options()]
 
-    assert keys.index("failure_prediction") < keys.index(
-        "data_quality_notes"
-    )
-    assert keys.index("data_quality_notes") < keys.index("key_signals")
+    assert "data_quality_notes" not in keys
+    assert keys.index("failure_prediction") < keys.index("key_signals")
 
 
 def test_clean_export_sections_uses_default_order():
@@ -196,6 +204,36 @@ def test_build_key_signals_csv_bytes_returns_utf8_bytes():
     assert csv_bytes.decode("utf-8").startswith("feature,value")
 
 
+def test_export_zip_contains_each_selected_component_csv():
+    """GL-383: multi-component export ZIP keeps every component file."""
+    dashboard_dir = str(Path("dashboard").resolve())
+    if dashboard_dir not in sys.path:
+        sys.path.insert(0, dashboard_dir)
+
+    from dashboard.pages.overview import _build_zip_bytes
+
+    files = []
+    for idx in range(5):
+        component = {
+            **_sample_component(),
+            "component": f"component_{idx}",
+        }
+        files.append((
+            f"component_{idx}_key_signals.csv",
+            build_key_signals_csv_bytes(component),
+        ))
+
+    zip_bytes = _build_zip_bytes(files)
+
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zip_file:
+        names = sorted(zip_file.namelist())
+        assert names == [f"component_{i}_key_signals.csv" for i in range(5)]
+        for name in names:
+            csv_text = zip_file.read(name).decode("utf-8")
+            assert csv_text.startswith("feature,value,unit")
+            assert "coolant_temp" in csv_text
+
+
 def test_build_csv_file_name_uses_component_and_timestamp():
     """Test CSV filename is simple and stable for download."""
     file_name = build_csv_file_name(_sample_component())
@@ -222,6 +260,22 @@ def test_build_diagnostic_pdf_bytes_returns_pdf_file():
     assert len(pdf_bytes) > 1000
 
 
+def test_build_diagnostic_pdf_bytes_contains_key_report_text():
+    """GL-383: PDF export keeps the important user-facing report text."""
+    pypdf = pytest.importorskip("pypdf")
+    pdf_bytes = build_diagnostic_pdf_bytes(_sample_component())
+
+    reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+    text = "\n".join(page.extract_text() or "" for page in reader.pages)
+
+    assert PDF_TITLE in text
+    assert "Cooling System" in text
+    assert "88%" in text
+    assert "High" in text
+    assert "Coolant Temperature" in text
+    assert "Coolant temperature is high." in text
+
+
 def test_build_diagnostic_pdf_bytes_accepts_section_filter():
     """Test PDF export can use popup section choices."""
     pdf_bytes = build_diagnostic_pdf_bytes(
@@ -233,22 +287,67 @@ def test_build_diagnostic_pdf_bytes_accepts_section_filter():
     assert len(pdf_bytes) > 1000
 
 
+def test_risk_trend_panel_falls_back_with_insufficient_history():
+    """Fewer than 2 risk_history points can't draw a trend line."""
+    tools = _get_reportlab_tools()
+    styles = _get_pdf_styles(tools)
+
+    one_point = [{"timestamp": "2026-06-16T12:00:00Z", "risk_score": 0.5}]
+    for rows in ([], one_point):
+        panel = _add_risk_trend_panel(tools, styles, rows)
+        assert len(panel) >= 1
+
+
+def test_build_diagnostic_pdf_bytes_renders_risk_trend_chart():
+    """PDF export builds successfully with a real multi-point history."""
+    component = _sample_component()
+    component["risk_history"] = [
+        {"timestamp": "2026-06-16T08:00:00Z", "risk_score": 0.2},
+        {"timestamp": "2026-06-16T09:00:00Z", "risk_score": 0.45},
+        {"timestamp": "2026-06-16T10:00:00Z", "risk_score": 0.86},
+    ]
+
+    pdf_bytes = build_diagnostic_pdf_bytes(component)
+
+    assert pdf_bytes.startswith(b"%PDF")
+    assert len(pdf_bytes) > 1000
+
+
+def test_diagnostic_report_pdf_body_style_is_more_readable():
+    """GL-439: diagnostic report body text is larger with wider spacing."""
+    tools = _get_reportlab_tools()
+    styles = _get_pdf_styles(tools)
+
+    assert styles["ReportDiagnosticBody"].fontSize > (
+        styles["ReportBody"].fontSize
+    )
+    assert styles["ReportDiagnosticBody"].leading > (
+        styles["ReportBody"].leading
+    )
+
+
 def test_pdf_title_is_user_facing():
     """Test PDF title is ready for the exported report."""
     assert PDF_TITLE == "Granite Lifeline Diagnostic Report"
 
 
 def test_build_export_data_default_sections():
-    """Test default helper output has summary, signals, and report."""
+    """Test default helper output has summary, prediction, trend, signals,
+    report."""
     export_data = build_export_data(_sample_component())
 
     assert export_data["sections"] == [
         "summary",
+        "failure_prediction",
+        "risk_history",
         "key_signals",
         "diagnostic_report",
     ]
     assert export_data["summary"]["component_name"] == "Cooling System"
-    assert export_data["summary"]["risk_score"] == "86%"
+    assert export_data["summary"]["risk_level"] == "High"
+    assert export_data["summary"]["confidence"] == "88%"
+    assert "risk_score" not in export_data["summary"]
+    assert export_data["risk_history"] == []
     assert len(export_data["key_signals"]) == 2
     assert (
         export_data["diagnostic_report"]["anomaly_description"]
@@ -263,13 +362,14 @@ def test_build_export_data_filters_optional_sections():
         selected_sections=["failure_prediction", "data_quality_notes"],
     )
 
-    assert export_data["sections"] == [
-        "failure_prediction",
-        "data_quality_notes",
-    ]
+    # _sample_component() is risk_level "High" with a non-null
+    # estimated_failure_probability — "chance of crossing into High
+    # risk" would be self-contradictory here, so it correctly does not
+    # appear; see test_failure_prediction.py for the dedicated test.
+    assert export_data["sections"] == ["failure_prediction"]
     assert export_data["failure_prediction"]["has_value"] is True
-    assert "72% probability" in export_data["failure_prediction"]["text"]
-    assert export_data["data_quality_notes"] == [
-        "Failure estimate may change after more drive cycles."
-    ]
+    assert "already reached the High-risk threshold" in (
+        export_data["failure_prediction"]["text"]
+    )
+    assert "data_quality_notes" not in export_data
     assert "summary" not in export_data

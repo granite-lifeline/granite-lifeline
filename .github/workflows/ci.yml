@@ -24,29 +24,42 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
       - name: Install CI dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install flake8 pytest pydantic
+          python -m pip install uv
+          uv sync --locked
 
       - name: Python syntax check
         run: |
-          files=$(find . -name "*.py" -not -path "./.git/*")
-          if [ -z "$files" ]; then
+          if [ -z "$(git ls-files '*.py')" ]; then
             echo "No Python files found. Skipping syntax check."
           else
-            python -m py_compile $files
+            git ls-files '*.py' | xargs -r uv run python -m py_compile
           fi
 
       - name: flake8 style check
         run: |
-          files=$(find . -name "*.py" -not -path "./.git/*")
-          if [ -z "$files" ]; then
+          if [ -z "$(git ls-files '*.py')" ]; then
             echo "No Python files found. Skipping flake8."
           else
-            python -m flake8 $files
+            git ls-files '*.py' | xargs -r uv run python -m flake8
           fi
 
       - name: Run pytest
         run: |
-          python -m pytest tests/test_interface.py -v
+          uv run pytest -q -m "not model_download"
+
+      - name: Run model-download tests (non-blocking)
+        continue-on-error: true
+        run: |
+          echo "::notice::Tests marked model_download make a real network call to Hugging Face Hub on a cold cache (e.g. TTM model loading). Run separately, non-blocking, so Hub flakiness doesn't fail unrelated PRs — but a real regression here still shows as a warning below."
+          uv run pytest -q -m model_download

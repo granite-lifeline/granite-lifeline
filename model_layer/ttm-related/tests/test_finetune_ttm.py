@@ -11,8 +11,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[0]))
 from group1_fixtures import make_multi_segment_frame  # noqa: E402
 from model.finetune_ttm import (  # noqa: E402
     build_forecast_dataset,
+    channel_mixing_model_kwargs,
     filter_by_segments,
     flatten_segment_ids,
+    validate_segment_contiguity,
     sample_shapes,
 )
 from model.kit_residual_detector import (  # noqa: E402
@@ -70,6 +72,15 @@ def test_build_forecast_dataset_uses_ttm_context_and_prediction_shapes():
     ]
 
 
+def test_channel_mixing_overrides_are_opt_in_and_six_channel():
+    assert channel_mixing_model_kwargs(False) == {}
+    assert channel_mixing_model_kwargs(True) == {
+        "num_input_channels": len(MODEL_SIGNALS),
+        "enable_forecast_channel_mixing": True,
+        "fcm_use_mixer": True,
+    }
+
+
 def test_build_forecast_dataset_rejects_non_numeric_model_signal():
     frame = make_multi_segment_frame(
         [("trip_001", "trip_001_seg_001", 700)]
@@ -84,3 +95,28 @@ def test_build_forecast_dataset_rejects_non_numeric_model_signal():
             prediction_length=DEFAULT_PREDICTION_LENGTH,
             stride=DEFAULT_PREDICTION_LENGTH,
         )
+
+
+def test_segment_contiguity_rejects_missing_row_inside_segment():
+    frame = make_multi_segment_frame(
+        [("trip_001", "trip_001_seg_001", 700)]
+    ).drop(index=20)
+    with pytest.raises(ValueError, match="row_in_segment"):
+        validate_segment_contiguity(frame, "train")
+
+
+def test_forecast_dataset_handles_schema_v1_signal_nans_with_masks():
+    frame = make_multi_segment_frame(
+        [("trip_001", "trip_001_seg_001", 700)]
+    )
+    frame.loc[10, "maf"] = float("nan")
+    dataset = build_forecast_dataset(
+        frame,
+        context_length=DEFAULT_CONTEXT_LENGTH,
+        prediction_length=DEFAULT_PREDICTION_LENGTH,
+        stride=DEFAULT_PREDICTION_LENGTH,
+    )
+    sample = dataset[0]
+    maf_index = MODEL_SIGNALS.index("maf")
+    assert sample["past_observed_mask"][10, maf_index].item() == 0
+    assert sample["past_values"][10, maf_index].isfinite().item()

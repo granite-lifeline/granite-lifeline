@@ -1,0 +1,523 @@
+{
+  "summary": {
+    "timestamp": "2017-07-13T05:57:24Z",
+    "anomaly_type": "air_intake_maf_anomaly",
+    "risk_score": 0.5549,
+    "risk_level": "Medium",
+    "component": "air_intake_maf_anomaly",
+    "prediction_confidence": 0.9424,
+    "key_signals": [
+      {
+        "feature": "maf",
+        "value": 58.24,
+        "unit": "g/s",
+        "reference_range": [
+          0,
+          123
+        ]
+      },
+      {
+        "feature": "map",
+        "value": 175.0,
+        "unit": "kPa",
+        "reference_range": [
+          36,
+          237
+        ]
+      },
+      {
+        "feature": "speed_density_maf_residual",
+        "value": 27.4339,
+        "unit": "g/s",
+        "reference_range": [
+          -20,
+          20
+        ]
+      },
+      {
+        "feature": "coolant_temp",
+        "value": 91.0,
+        "unit": "°C",
+        "reference_range": [
+          90,
+          95
+        ]
+      }
+    ],
+    "estimated_cycles_to_failure": null,
+    "estimated_failure_probability": null,
+    "notes": [
+      "Failure estimate unavailable: need at least 5 chronological trips; found 1."
+    ]
+  },
+  "windows": [
+    {
+      "trip_id": "trip_0001",
+      "segment_id": "trip_0001_seg_012",
+      "window_id": "trip_0001_seg_012__w000",
+      "timestamp": "2017-07-13T05:16:52Z",
+      "anomaly_type": "cooling_degradation",
+      "risk_score": 0.2275,
+      "risk_level": "Low",
+      "component": "cooling_degradation",
+      "prediction_confidence": 0.9319,
+      "key_signals": [
+        {
+          "feature": "coolant_temp",
+          "value": 91.0,
+          "unit": "°C",
+          "reference_range": [
+            90,
+            95
+          ]
+        },
+        {
+          "feature": "ect_rate_180s",
+          "value": -0.2118,
+          "unit": "°C/min",
+          "reference_range": [
+            0,
+            2
+          ]
+        },
+        {
+          "feature": "map",
+          "value": 199.0,
+          "unit": "kPa",
+          "reference_range": [
+            36,
+            237
+          ]
+        },
+        {
+          "feature": "speed",
+          "value": 126.0,
+          "unit": "km/h",
+          "reference_range": [
+            0,
+            218
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "Failure estimate unavailable: need at least 5 chronological trips; found 1."
+      ]
+    },
+    {
+      "trip_id": "trip_0001",
+      "segment_id": "trip_0001_seg_012",
+      "window_id": "trip_0001_seg_012__w001",
+      "timestamp": "2017-07-13T05:27:00Z",
+      "anomaly_type": "air_intake_maf_anomaly",
+      "risk_score": 0.0928,
+      "risk_level": "Low",
+      "component": "air_intake_maf_anomaly",
+      "prediction_confidence": 0.9464,
+      "key_signals": [
+        {
+          "feature": "maf",
+          "value": 7.74,
+          "unit": "g/s",
+          "reference_range": [
+            0,
+            123
+          ]
+        },
+        {
+          "feature": "map",
+          "value": 102.0,
+          "unit": "kPa",
+          "reference_range": [
+            36,
+            237
+          ]
+        },
+        {
+          "feature": "speed_density_maf_residual",
+          "value": -0.7642,
+          "unit": "g/s",
+          "reference_range": [
+            -20,
+            20
+          ]
+        },
+        {
+          "feature": "speed",
+          "value": 15.0,
+          "unit": "km/h",
+          "reference_range": [
+            0,
+            218
+          ]
+        },
+        {
+          "feature": "rpm",
+          "value": 896.0,
+          "unit": "RPM",
+          "reference_range": [
+            0,
+            3682
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "Failure estimate unavailable: need at least 5 chronological trips; found 1."
+      ]
+    },
+    {
+      "trip_id": "trip_0001",
+      "segment_id": "trip_0001_seg_012",
+      "window_id": "trip_0001_seg_012__w002",
+      "timestamp": "2017-07-13T05:37:08Z",
+      "anomaly_type": "cooling_degradation",
+      "risk_score": 0.091,
+      "risk_level": "Low",
+      "component": "cooling_degradation",
+      "prediction_confidence": 0.95,
+      "key_signals": [
+        {
+          "feature": "coolant_temp",
+          "value": 91.0,
+          "unit": "°C",
+          "reference_range": [
+            90,
+            95
+          ]
+        },
+        {
+          "feature": "ect_rate_180s",
+          "value": -0.0729,
+          "unit": "°C/min",
+          "reference_range": [
+            0,
+            2
+          ]
+        },
+        {
+          "feature": "map",
+          "value": 111.0,
+          "unit": "kPa",
+          "reference_range": [
+            36,
+            237
+          ]
+        },
+        {
+          "feature": "speed",
+          "value": 79.0,
+          "unit": "km/h",
+          "reference_range": [
+            0,
+            218
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "Failure estimate unavailable: need at least 5 chronological trips; found 1."
+      ]
+    },
+    {
+      "trip_id": "trip_0001",
+      "segment_id": "trip_0001_seg_012",
+      "window_id": "trip_0001_seg_012__w003",
+      "timestamp": "2017-07-13T05:47:16Z",
+      "anomaly_type": "air_intake_maf_anomaly",
+      "risk_score": 0.2037,
+      "risk_level": "Low",
+      "component": "air_intake_maf_anomaly",
+      "prediction_confidence": 0.9317,
+      "key_signals": [
+        {
+          "feature": "maf",
+          "value": 44.52,
+          "unit": "g/s",
+          "reference_range": [
+            0,
+            123
+          ]
+        },
+        {
+          "feature": "map",
+          "value": 129.0,
+          "unit": "kPa",
+          "reference_range": [
+            36,
+            237
+          ]
+        },
+        {
+          "feature": "speed_density_maf_residual",
+          "value": 10.5938,
+          "unit": "g/s",
+          "reference_range": [
+            -20,
+            20
+          ]
+        },
+        {
+          "feature": "rpm",
+          "value": 2275.0,
+          "unit": "RPM",
+          "reference_range": [
+            0,
+            3682
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "Failure estimate unavailable: need at least 5 chronological trips; found 1."
+      ]
+    },
+    {
+      "trip_id": "trip_0001",
+      "segment_id": "trip_0001_seg_012",
+      "window_id": "trip_0001_seg_012__w004",
+      "timestamp": "2017-07-13T05:57:24Z",
+      "anomaly_type": "air_intake_maf_anomaly",
+      "risk_score": 0.5549,
+      "risk_level": "Medium",
+      "component": "air_intake_maf_anomaly",
+      "prediction_confidence": 0.9424,
+      "key_signals": [
+        {
+          "feature": "maf",
+          "value": 58.24,
+          "unit": "g/s",
+          "reference_range": [
+            0,
+            123
+          ]
+        },
+        {
+          "feature": "map",
+          "value": 175.0,
+          "unit": "kPa",
+          "reference_range": [
+            36,
+            237
+          ]
+        },
+        {
+          "feature": "speed_density_maf_residual",
+          "value": 27.4339,
+          "unit": "g/s",
+          "reference_range": [
+            -20,
+            20
+          ]
+        },
+        {
+          "feature": "coolant_temp",
+          "value": 91.0,
+          "unit": "°C",
+          "reference_range": [
+            90,
+            95
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "Failure estimate unavailable: need at least 5 chronological trips; found 1."
+      ]
+    },
+    {
+      "trip_id": "trip_0001",
+      "segment_id": "trip_0001_seg_012",
+      "window_id": "trip_0001_seg_012__w005",
+      "timestamp": "2017-07-13T06:07:32Z",
+      "anomaly_type": "air_intake_maf_anomaly",
+      "risk_score": 0.1293,
+      "risk_level": "Low",
+      "component": "air_intake_maf_anomaly",
+      "prediction_confidence": 0.9254,
+      "key_signals": [
+        {
+          "feature": "maf",
+          "value": 9.38,
+          "unit": "g/s",
+          "reference_range": [
+            0,
+            123
+          ]
+        },
+        {
+          "feature": "map",
+          "value": 107.0,
+          "unit": "kPa",
+          "reference_range": [
+            36,
+            237
+          ]
+        },
+        {
+          "feature": "speed_density_maf_residual",
+          "value": -1.0336,
+          "unit": "g/s",
+          "reference_range": [
+            -20,
+            20
+          ]
+        },
+        {
+          "feature": "speed",
+          "value": 3.0,
+          "unit": "km/h",
+          "reference_range": [
+            0,
+            218
+          ]
+        },
+        {
+          "feature": "rpm",
+          "value": 926.0,
+          "unit": "RPM",
+          "reference_range": [
+            0,
+            3682
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "Failure estimate unavailable: need at least 5 chronological trips; found 1."
+      ]
+    },
+    {
+      "trip_id": "trip_0001",
+      "segment_id": "trip_0001_seg_012",
+      "window_id": "trip_0001_seg_012__w006",
+      "timestamp": "2017-07-13T06:17:40Z",
+      "anomaly_type": "air_intake_maf_anomaly",
+      "risk_score": 0.0411,
+      "risk_level": "Low",
+      "component": "air_intake_maf_anomaly",
+      "prediction_confidence": 0.9406,
+      "key_signals": [
+        {
+          "feature": "maf",
+          "value": 0.0,
+          "unit": "g/s",
+          "reference_range": [
+            0,
+            123
+          ]
+        },
+        {
+          "feature": "map",
+          "value": 100.0,
+          "unit": "kPa",
+          "reference_range": [
+            36,
+            237
+          ]
+        },
+        {
+          "feature": "speed_density_maf_residual",
+          "value": -1.7118,
+          "unit": "g/s",
+          "reference_range": [
+            -20,
+            20
+          ]
+        },
+        {
+          "feature": "tps",
+          "value": 89.0,
+          "unit": "%",
+          "reference_range": [
+            0,
+            89
+          ]
+        },
+        {
+          "feature": "rpm",
+          "value": 0.0,
+          "unit": "RPM",
+          "reference_range": [
+            0,
+            3682
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "Failure estimate unavailable: need at least 5 chronological trips; found 1."
+      ]
+    },
+    {
+      "trip_id": "trip_0001",
+      "segment_id": "trip_0001_seg_012",
+      "window_id": "trip_0001_seg_012__w007",
+      "timestamp": "2017-07-13T06:27:48Z",
+      "anomaly_type": "air_intake_maf_anomaly",
+      "risk_score": 0.0247,
+      "risk_level": "Low",
+      "component": "air_intake_maf_anomaly",
+      "prediction_confidence": 0.95,
+      "key_signals": [
+        {
+          "feature": "maf",
+          "value": 8.38,
+          "unit": "g/s",
+          "reference_range": [
+            0,
+            123
+          ]
+        },
+        {
+          "feature": "map",
+          "value": 105.0,
+          "unit": "kPa",
+          "reference_range": [
+            36,
+            237
+          ]
+        },
+        {
+          "feature": "speed_density_maf_residual",
+          "value": -1.8898,
+          "unit": "g/s",
+          "reference_range": [
+            -20,
+            20
+          ]
+        },
+        {
+          "feature": "rpm",
+          "value": 902.0,
+          "unit": "RPM",
+          "reference_range": [
+            0,
+            3682
+          ]
+        },
+        {
+          "feature": "tps",
+          "value": 83.1,
+          "unit": "%",
+          "reference_range": [
+            0,
+            89
+          ]
+        }
+      ],
+      "estimated_cycles_to_failure": null,
+      "estimated_failure_probability": null,
+      "notes": [
+        "Failure estimate unavailable: need at least 5 chronological trips; found 1."
+      ]
+    }
+  ]
+}

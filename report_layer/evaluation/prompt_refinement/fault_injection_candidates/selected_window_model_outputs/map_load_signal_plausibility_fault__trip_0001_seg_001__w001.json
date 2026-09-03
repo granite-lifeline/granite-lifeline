@@ -1,0 +1,66 @@
+{
+  "trip_id": "trip_0001",
+  "segment_id": "trip_0001_seg_001",
+  "window_id": "trip_0001_seg_001__w001",
+  "timestamp": "2017-07-05T05:36:45Z",
+  "anomaly_type": "map_load_signal_plausibility_fault",
+  "risk_score": 0.9,
+  "risk_level": "High",
+  "component": "map_load_signal_plausibility_fault",
+  "prediction_confidence": 0.9,
+  "key_signals": [
+    {
+      "feature": "map",
+      "value": 104.0,
+      "unit": "kPa",
+      "reference_range": [
+        36,
+        237
+      ]
+    },
+    {
+      "feature": "pedal_slope",
+      "value": 0.0,
+      "unit": "pp/s",
+      "reference_range": [
+        -2.4,
+        2.4
+      ]
+    },
+    {
+      "feature": "speed_density_maf_residual",
+      "value": -1.3061,
+      "unit": "g/s",
+      "reference_range": [
+        -20,
+        20
+      ]
+    },
+    {
+      "feature": "map_range_60s",
+      "value": 98.0,
+      "unit": "kPa",
+      "reference_range": [
+        0,
+        80
+      ]
+    },
+    {
+      "feature": "rpm_slope",
+      "value": -8.2708,
+      "unit": "RPM/s",
+      "reference_range": [
+        -120,
+        135
+      ]
+    }
+  ],
+  "estimated_cycles_to_failure": null,
+  "estimated_failure_probability": 0.0031,
+  "notes": [
+    "map_load_signal_plausibility_fault forwarded from Data Layer proxy_decisions.csv: 5-S3 triggered, DTC P0106, confidence high",
+    "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
+    "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips.",
+    "No positive trip-level risk trend was observed; no threshold crossing cycle is projected."
+  ]
+}

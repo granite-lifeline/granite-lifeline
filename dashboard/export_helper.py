@@ -13,14 +13,12 @@ try:
     from dashboard.anomaly_display import COMPONENT_DISPLAY_NAMES
     from dashboard.failure_prediction import (
         format_failure_prediction_text,
-        get_data_quality_notes,
         is_missing_value,
     )
 except ImportError:  # Streamlit runs pages from inside dashboard/
     from anomaly_display import COMPONENT_DISPLAY_NAMES
     from failure_prediction import (
         format_failure_prediction_text,
-        get_data_quality_notes,
         is_missing_value,
     )
 
@@ -30,13 +28,15 @@ NOT_AVAILABLE = "Not available"
 EXPORT_SECTION_LABELS = {
     "summary": "Summary",
     "failure_prediction": "Failure Prediction",
-    "data_quality_notes": "Data Quality Notes",
+    "risk_history": "Risk Trend",
     "key_signals": "Key Signals",
     "diagnostic_report": "Diagnostic Report",
 }
 
 DEFAULT_EXPORT_SECTIONS = (
     "summary",
+    "failure_prediction",
+    "risk_history",
     "key_signals",
     "diagnostic_report",
 )
@@ -52,14 +52,17 @@ CSV_COLUMNS = (
 )
 
 PDF_TITLE = "Granite Lifeline Diagnostic Report"
-PDF_BLUE = "#2563eb"
+# Matches dashboard/theme.py light-mode tokens exactly (accent,
+# risk_high/medium/low) so the exported PDF and the live Dashboard never
+# show two different colors for the same risk level.
+PDF_BLUE = "#0f62fe"
 PDF_DARK = "#1f2937"
 PDF_MUTED = "#6b7280"
 PDF_BORDER = "#d6d9df"
 PDF_PANEL = "#f8fafc"
-PDF_DANGER = "#dc2626"
-PDF_WARNING = "#f97316"
-PDF_SUCCESS = "#16a34a"
+PDF_DANGER = "#da1e28"
+PDF_WARNING = "#ff832b"
+PDF_SUCCESS = "#24a148"
 
 SIGNAL_DISPLAY_NAMES = {
     "coolant_temp": "Coolant Temperature",
@@ -68,8 +71,10 @@ SIGNAL_DISPLAY_NAMES = {
     "aat_start": "Ambient Temperature at Engine Start",
     "maf_integral_180s": "MAF Integral",
     "intake_temp": "Intake Air Temperature",
+    "intake_air_temp": "Intake Air Temperature",
     "intake_temp_stability": "Intake Temperature Stability",
     "intake_ambient_delta": "Intake-Ambient Temperature Difference",
+    "ambient_air_temp": "Ambient Air Temperature",
     "speed_density_maf_residual": "Speed-Density MAF Residual",
     "pedal_mapping_residual": "Pedal Mapping Residual",
     "pedal_slope": "Pedal Demand Rate",
@@ -77,6 +82,7 @@ SIGNAL_DISPLAY_NAMES = {
     "map_range_60s": "MAP Range",
     "maf": "Mass Airflow",
     "map": "Intake Pressure",
+    "throttle_position": "Throttle Position",
     "accel_pedal_d": "Pedal Sensor D",
     "accel_pedal_e": "Pedal Sensor E",
 }
@@ -269,15 +275,25 @@ def pdf_text(value: Any) -> str:
 
 
 def build_summary(component_data: Dict[str, Any]) -> Dict[str, str]:
-    """Build the top summary section for export."""
+    """Build the top summary section for export.
+
+    risk_score is an internal classification value, not a owner-facing
+    probability (risk_score of 1.0 means "at or past the High-risk
+    threshold", not "100% certain"). The live Dashboard never renders it
+    as literal percentage text — only risk_level (High/Medium/Low) and,
+    separately, the model's prediction_confidence are shown as
+    percentages. The export must match that, not show its own number.
+    """
     component = component_data.get("component")
     return {
         "component": format_plain_value(component),
         "component_name": COMPONENT_DISPLAY_NAMES.get(
             component, format_plain_value(component)
         ),
-        "risk_score": format_percent(component_data.get("risk_score")),
         "risk_level": format_plain_value(component_data.get("risk_level")),
+        "confidence": format_percent(
+            component_data.get("prediction_confidence")
+        ),
         "timestamp": format_timestamp(component_data.get("timestamp")),
     }
 
@@ -314,7 +330,12 @@ def _get_reportlab_tools():
         from reportlab.lib.styles import ParagraphStyle
         from reportlab.lib.styles import getSampleStyleSheet
         from reportlab.lib.units import mm
+        from reportlab.graphics.charts.linecharts import HorizontalLineChart
+        from reportlab.graphics.shapes import Drawing
+        from reportlab.graphics.widgets.markers import makeMarker
         from reportlab.platypus import (
+            KeepTogether,
+            PageBreak,
             Paragraph,
             SimpleDocTemplate,
             Spacer,
@@ -336,6 +357,11 @@ def _get_reportlab_tools():
         "TA_LEFT": TA_LEFT,
         "getSampleStyleSheet": getSampleStyleSheet,
         "mm": mm,
+        "Drawing": Drawing,
+        "HorizontalLineChart": HorizontalLineChart,
+        "makeMarker": makeMarker,
+        "KeepTogether": KeepTogether,
+        "PageBreak": PageBreak,
         "Paragraph": Paragraph,
         "SimpleDocTemplate": SimpleDocTemplate,
         "Spacer": Spacer,
@@ -370,11 +396,20 @@ def _get_pdf_styles(tools: Dict[str, Any]):
         alignment=tools["TA_LEFT"],
     ))
     styles.add(ParagraphStyle(
-        name="ReportHeaderRiskBox",
+        name="ReportHeaderRiskLabel",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=7.5,
+        leading=10,
+        textColor=colors.white,
+        alignment=tools["TA_CENTER"],
+    ))
+    styles.add(ParagraphStyle(
+        name="ReportHeaderRiskBadge",
         parent=styles["BodyText"],
         fontName="Helvetica-Bold",
-        fontSize=11,
-        leading=14,
+        fontSize=15,
+        leading=18,
         textColor=colors.white,
         alignment=tools["TA_CENTER"],
     ))
@@ -382,11 +417,11 @@ def _get_pdf_styles(tools: Dict[str, Any]):
         name="ReportSection",
         parent=styles["Heading2"],
         fontName="Helvetica-Bold",
-        fontSize=14,
-        leading=18,
+        fontSize=13,
+        leading=16,
         textColor=colors.HexColor(PDF_DARK),
-        spaceBefore=3,
-        spaceAfter=7,
+        spaceBefore=0,
+        spaceAfter=0,
     ))
     styles.add(ParagraphStyle(
         name="ReportPanelTitle",
@@ -404,6 +439,12 @@ def _get_pdf_styles(tools: Dict[str, Any]):
         fontSize=9.5,
         leading=14,
         textColor=colors.HexColor(PDF_DARK),
+    ))
+    styles.add(ParagraphStyle(
+        name="ReportDiagnosticBody",
+        parent=styles["ReportBody"],
+        fontSize=10.5,
+        leading=16.5,
     ))
     styles.add(ParagraphStyle(
         name="ReportMuted",
@@ -498,32 +539,49 @@ def _add_report_header(
         f"Generated: {pdf_text(summary['timestamp'])}",
         styles["ReportHeaderSub"],
     )
-    risk_score = summary["risk_score"]
-    if risk_score == NOT_AVAILABLE:
-        risk_score = "N/A"
-    risk = Paragraph(
-        f"RISK SCORE&nbsp;&nbsp;"
-        f"<font size='16'>{pdf_text(risk_score)}</font>"
-        f"<br/>Risk level: {pdf_text(summary['risk_level'])}",
-        styles["ReportHeaderRiskBox"],
+    risk_level = summary["risk_level"]
+    badge_text = risk_level.upper() if risk_level != NOT_AVAILABLE else "N/A"
+
+    # Risk badge is its own small rounded pill nested inside the header
+    # bar, not a second full-height rectangle butted against the first —
+    # avoids the hard two-color seam and the cramped "RISK / SCORE 86%"
+    # line wrap of the previous layout.
+    badge = Table(
+        [[Paragraph("RISK LEVEL", styles["ReportHeaderRiskLabel"])],
+         [Paragraph(pdf_text(badge_text), styles["ReportHeaderRiskBadge"])]],
+        colWidths=[34 * mm],
+        hAlign="CENTER",
     )
+    badge.setStyle(TableStyle([
+        ("ROUNDEDCORNERS", [7, 7, 7, 7]),
+        (
+            "BACKGROUND", (0, 0), (-1, -1),
+            _pdf_color(tools, _risk_color(summary)),
+        ),
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (0, 0), 8),
+        ("BOTTOMPADDING", (0, 0), (0, 0), 1),
+        ("TOPPADDING", (0, 1), (0, 1), 1),
+        ("BOTTOMPADDING", (0, 1), (0, 1), 9),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+    ]))
+
     header = Table(
-        [[[title, subtitle], risk]],
-        colWidths=[126 * mm, 42 * mm],
+        [[[title, subtitle], badge]],
+        colWidths=[134 * mm, 34 * mm],
         hAlign="CENTER",
     )
     header.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (0, 0), _pdf_color(tools, PDF_BLUE)),
-        (
-            "BACKGROUND", (1, 0), (1, 0),
-            _pdf_color(tools, _risk_color(summary)),
-        ),
-        ("BOX", (0, 0), (-1, -1), 0.5, _pdf_color(tools, PDF_BLUE)),
+        ("ROUNDEDCORNERS", [10, 10, 10, 10]),
+        ("BACKGROUND", (0, 0), (-1, -1), _pdf_color(tools, PDF_BLUE)),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 14),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 14),
-        ("TOPPADDING", (0, 0), (-1, -1), 13),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 13),
+        ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+        ("LEFTPADDING", (0, 0), (0, 0), 16),
+        ("RIGHTPADDING", (1, 0), (1, 0), 14),
+        ("TOPPADDING", (0, 0), (-1, -1), 14),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 14),
     ]))
     elements.append(header)
     elements.append(tools["Spacer"](1, 7 * mm))
@@ -534,27 +592,44 @@ def _add_pdf_section(
     tools: Dict[str, Any],
     styles,
     title: str,
-):
-    elements.append(tools["Spacer"](1, 4 * tools["mm"]))
-    elements.append(
-        tools["Paragraph"](pdf_text(title), styles["ReportSection"])
-    )
+) -> List[Any]:
+    """Build a section heading with a colored accent rule.
+
+    Returns the heading flowables so the caller can bundle them into the
+    same KeepTogether group as the section's content — a header must
+    never be stranded alone at the bottom of a page.
+    """
+    Table = tools["Table"]
+    mm = tools["mm"]
+    heading = tools["Paragraph"](pdf_text(title), styles["ReportSection"])
+    rule = Table([[""]], colWidths=[16 * mm], rowHeights=[2.4])
+    rule.setStyle(tools["TableStyle"]([
+        ("BACKGROUND", (0, 0), (-1, -1), _pdf_color(tools, PDF_BLUE)),
+        ("TOPPADDING", (0, 0), (-1, -1), 0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+    ]))
+    return [
+        tools["Spacer"](1, 5 * mm),
+        heading,
+        tools["Spacer"](1, 3),
+        rule,
+        tools["Spacer"](1, 3 * mm),
+    ]
 
 
 def _add_summary_pdf(
-    elements: List[Any],
     tools: Dict[str, Any],
     styles,
     summary: Dict[str, str],
-):
+) -> Any:
     Paragraph = tools["Paragraph"]
     Table = tools["Table"]
     TableStyle = tools["TableStyle"]
     mm = tools["mm"]
     metric_items = [
         ("COMPONENT", summary["component_name"]),
-        ("RISK SCORE", summary["risk_score"]),
         ("RISK LEVEL", summary["risk_level"]),
+        ("MODEL CONFIDENCE", summary["confidence"]),
         ("TIMESTAMP", summary["timestamp"]),
     ]
     cells = []
@@ -567,16 +642,125 @@ def _add_summary_pdf(
         ))
     table = Table([cells], colWidths=[42 * mm] * 4, hAlign="CENTER")
     table.setStyle(TableStyle([
+        ("ROUNDEDCORNERS", [8, 8, 8, 8]),
         ("BACKGROUND", (0, 0), (-1, -1), _pdf_color(tools, PDF_PANEL)),
+        ("LINEABOVE", (0, 0), (-1, 0), 2.5, _pdf_color(tools, PDF_BLUE)),
         ("BOX", (0, 0), (-1, -1), 0.5, _pdf_color(tools, PDF_BORDER)),
         ("INNERGRID", (0, 0), (-1, -1), 0.4, _pdf_color(tools, PDF_BORDER)),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("LEFTPADDING", (0, 0), (-1, -1), 10),
         ("RIGHTPADDING", (0, 0), (-1, -1), 10),
-        ("TOPPADDING", (0, 0), (-1, -1), 10),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+        ("TOPPADDING", (0, 0), (-1, -1), 12),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
     ]))
-    elements.append(table)
+    return table
+
+
+def _format_trend_label(timestamp: Any) -> str:
+    """Format one risk_history timestamp as a short axis label."""
+    text = str(timestamp or "")
+    try:
+        return datetime.fromisoformat(
+            text.replace("Z", "+00:00")
+        ).strftime("%m-%d")
+    except ValueError:
+        return ""
+
+
+def _build_risk_trend_drawing(
+    tools: Dict[str, Any],
+    risk_history: List[Dict[str, Any]],
+) -> Any:
+    """Build a vector line-chart Drawing of risk_score over time.
+
+    Mirrors the live Dashboard's trend chart (dashboard/pages/detail.py
+    _render_trend): a 0-1 "risk index" line, not a percentage, and not
+    described as a failure probability. Uses reportlab's own charting
+    (no matplotlib/kaleido dependency) so the PDF has no new
+    dependency and stays visually consistent with the rest of the
+    report.
+    """
+    Drawing = tools["Drawing"]
+    HorizontalLineChart = tools["HorizontalLineChart"]
+    mm = tools["mm"]
+
+    width = 176 * mm
+    height = 52 * mm
+    values = [float(entry.get("risk_score", 0)) for entry in risk_history]
+    labels = [_format_trend_label(e.get("timestamp")) for e in risk_history]
+
+    # Thin labels so they don't collide when there are many windows —
+    # keep at most ~7 evenly spaced, blank the rest.
+    keep_every = max(1, len(labels) // 7)
+    thinned_labels = [
+        label if idx % keep_every == 0 else ""
+        for idx, label in enumerate(labels)
+    ]
+
+    drawing = Drawing(width, height)
+    chart = HorizontalLineChart()
+    chart.x = 8 * mm
+    chart.y = 12 * mm
+    chart.width = width - 16 * mm
+    chart.height = height - 20 * mm
+    chart.data = [values]
+    chart.categoryAxis.categoryNames = thinned_labels
+    chart.categoryAxis.labels.fontSize = 6.5
+    chart.categoryAxis.labels.fillColor = _pdf_color(tools, PDF_MUTED)
+    chart.valueAxis.valueMin = 0
+    chart.valueAxis.valueMax = 1
+    chart.valueAxis.valueStep = 0.25
+    chart.valueAxis.labels.fontSize = 7
+    chart.valueAxis.labels.fillColor = _pdf_color(tools, PDF_MUTED)
+    chart.lines[0].strokeColor = _pdf_color(tools, PDF_BLUE)
+    chart.lines[0].strokeWidth = 1.6
+    chart.lines[0].symbol = tools["makeMarker"]("Circle")
+    chart.lines[0].symbol.size = 3.2
+    chart.lines[0].symbol.fillColor = _pdf_color(tools, PDF_BLUE)
+    chart.lines[0].symbol.strokeColor = _pdf_color(tools, PDF_BLUE)
+    drawing.add(chart)
+    return drawing
+
+
+def _add_risk_trend_panel(tools: Dict[str, Any], styles, rows) -> List[Any]:
+    Table = tools["Table"]
+    TableStyle = tools["TableStyle"]
+    mm = tools["mm"]
+
+    if len(rows) < 2:
+        return _add_text_panel(
+            tools,
+            styles,
+            "Risk Trend",
+            "Not enough data yet to show a risk score trend.",
+        )
+
+    drawing = _build_risk_trend_drawing(tools, rows)
+    caption = tools["Paragraph"](
+        "Internal risk index over the recorded model windows. It "
+        "supports the Low, Medium and High categories; it is not a "
+        "probability of mechanical failure.",
+        styles["ReportMuted"],
+    )
+    table = Table(
+        [[drawing], [caption]],
+        colWidths=[176 * mm],
+        hAlign="CENTER",
+    )
+    table.setStyle(TableStyle([
+        ("ROUNDEDCORNERS", [8, 8, 8, 8]),
+        ("BACKGROUND", (0, 0), (-1, -1), _pdf_color(tools, PDF_PANEL)),
+        ("LINEBEFORE", (0, 0), (0, -1), 2.5, _pdf_color(tools, PDF_BLUE)),
+        ("BOX", (0, 0), (-1, -1), 0.5, _pdf_color(tools, PDF_BORDER)),
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("TOPPADDING", (0, 0), (0, 0), 8),
+        ("BOTTOMPADDING", (0, 0), (0, 0), 2),
+        ("TOPPADDING", (0, 1), (0, 1), 2),
+        ("BOTTOMPADDING", (0, 1), (0, 1), 8),
+    ]))
+    return [table, tools["Spacer"](1, 2 * mm)]
 
 
 def _status_style_name(status: str) -> str:
@@ -588,11 +772,10 @@ def _status_style_name(status: str) -> str:
 
 
 def _add_signal_pdf_table(
-    elements: List[Any],
     tools: Dict[str, Any],
     styles,
     rows,
-):
+) -> Any:
     Paragraph = tools["Paragraph"]
     table_rows = [[
         Paragraph("Feature", styles["TableHeader"]),
@@ -645,6 +828,7 @@ def _add_signal_pdf_table(
         repeatRows=1,
     )
     style = [
+        ("ROUNDEDCORNERS", [8, 8, 8, 8]),
         ("BACKGROUND", (0, 0), (-1, 0), _pdf_color(tools, PDF_BLUE)),
         ("BOX", (0, 0), (-1, -1), 0.5, _pdf_color(tools, PDF_BORDER)),
         ("INNERGRID", (0, 0), (-1, -1), 0.35, _pdf_color(tools, PDF_BORDER)),
@@ -663,17 +847,17 @@ def _add_signal_pdf_table(
                 _pdf_color(tools, PDF_PANEL),
             ))
     table.setStyle(tools["TableStyle"](style))
-    elements.append(table)
+    return table
 
 
 def _add_text_panel(
-    elements: List[Any],
     tools: Dict[str, Any],
     styles,
     title: str,
     body: Any,
     body_is_html: bool = False,
-):
+    body_style_name: str = "ReportBody",
+) -> List[Any]:
     Paragraph = tools["Paragraph"]
     Table = tools["Table"]
     TableStyle = tools["TableStyle"]
@@ -682,13 +866,15 @@ def _add_text_panel(
     table = Table(
         [[
             Paragraph(pdf_text(title), styles["ReportPanelTitle"]),
-            Paragraph(body_text, styles["ReportBody"]),
+            Paragraph(body_text, styles[body_style_name]),
         ]],
         colWidths=[42 * mm, 126 * mm],
         hAlign="CENTER",
     )
     table.setStyle(TableStyle([
+        ("ROUNDEDCORNERS", [8, 8, 8, 8]),
         ("BACKGROUND", (0, 0), (-1, -1), _pdf_color(tools, PDF_PANEL)),
+        ("LINEBEFORE", (0, 0), (0, 0), 2.5, _pdf_color(tools, PDF_BLUE)),
         ("BOX", (0, 0), (-1, -1), 0.5, _pdf_color(tools, PDF_BORDER)),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("LEFTPADDING", (0, 0), (-1, -1), 10),
@@ -696,28 +882,27 @@ def _add_text_panel(
         ("TOPPADDING", (0, 0), (-1, -1), 9),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
     ]))
-    elements.append(table)
-    elements.append(tools["Spacer"](1, 2 * mm))
+    return [table, tools["Spacer"](1, 2 * mm)]
 
 
 def _add_list_panel(
-    elements: List[Any],
     tools: Dict[str, Any],
     styles,
     title: str,
     items: Iterable[Any],
-):
+    body_style_name: str = "ReportBody",
+) -> List[Any]:
     clean_items = list(items) or [NOT_AVAILABLE]
     body = "<br/>".join(
         f"- {pdf_text(item)}" for item in clean_items
     )
-    _add_text_panel(
-        elements,
+    return _add_text_panel(
         tools,
         styles,
         title,
         body,
         body_is_html=True,
+        body_style_name=body_style_name,
     )
 
 
@@ -728,8 +913,12 @@ def _draw_pdf_footer(canvas, doc, tools: Dict[str, Any]):
     canvas.setFillColor(_pdf_color(tools, PDF_MUTED))
     canvas.setFont("Helvetica", 8)
     y = 10 * mm
+    # The rule needs clear air above the text baseline — 8pt Helvetica's
+    # cap height reaches ~y+5.8, so a rule at y+5 visually cut through
+    # the tops of the footer text. Give it real separation.
+    line_y = y + 12
     canvas.line(
-        doc.leftMargin, y + 5, doc.pagesize[0] - doc.rightMargin, y + 5
+        doc.leftMargin, line_y, doc.pagesize[0] - doc.rightMargin, line_y
     )
     canvas.drawString(doc.leftMargin, y, "Granite Lifeline")
     canvas.drawRightString(
@@ -779,7 +968,10 @@ def build_diagnostic_pdf_bytes(
         rightMargin=16 * tools["mm"],
         leftMargin=16 * tools["mm"],
         topMargin=14 * tools["mm"],
-        bottomMargin=14 * tools["mm"],
+        # Footer rule sits at ~22mm from the page bottom (see
+        # _draw_pdf_footer) — this needs to clear it with real margin,
+        # not just avoid literal overlap.
+        bottomMargin=26 * tools["mm"],
     )
     styles = _get_pdf_styles(tools)
     summary = build_summary(component_data)
@@ -787,63 +979,100 @@ def build_diagnostic_pdf_bytes(
     _add_report_header(elements, tools, styles, summary)
 
     export_data = build_export_data(component_data, selected_sections)
+    KeepTogether = tools["KeepTogether"]
+    SECTION_GAP = 8 * tools["mm"]
+
+    def add_section(
+        title: str,
+        first_panel: Any,
+        *rest_panels: Any,
+        keep_whole: bool = False,
+    ):
+        """Glue the section heading to its content so a heading can
+        never be stranded alone at the bottom of a page.
+
+        By default only the heading + first panel are guaranteed
+        together — later panels may still flow onto the next page if
+        the section is unusually long. keep_whole=True instead keeps
+        the entire section (heading + every panel) as one block, for
+        sections such as Diagnostic Report that read best as a single
+        page and are realistically short enough to fit one.
+        """
+        heading = _add_pdf_section(elements, tools, styles, title)
+        if keep_whole:
+            elements.append(
+                KeepTogether([*heading, first_panel, *rest_panels])
+            )
+        else:
+            elements.append(KeepTogether([*heading, first_panel]))
+            for panel in rest_panels:
+                elements.append(panel)
+        elements.append(tools["Spacer"](1, SECTION_GAP))
 
     if "summary" in export_data:
-        _add_pdf_section(elements, tools, styles, "Summary")
-        _add_summary_pdf(elements, tools, styles, export_data["summary"])
+        add_section("Summary", _add_summary_pdf(
+            tools, styles, export_data["summary"]
+        ))
 
     if "failure_prediction" in export_data:
-        _add_pdf_section(elements, tools, styles, "Failure Prediction")
-        _add_text_panel(
-            elements,
+        panel = _add_text_panel(
             tools,
             styles,
             "Prediction",
             export_data["failure_prediction"]["text"],
         )
+        add_section("Failure Prediction", panel[0], *panel[1:])
 
-    if "data_quality_notes" in export_data:
-        _add_pdf_section(elements, tools, styles, "Data Quality Notes")
-        _add_list_panel(
-            elements,
-            tools,
-            styles,
-            "Notes",
-            export_data["data_quality_notes"],
+    if "risk_history" in export_data:
+        panel = _add_risk_trend_panel(
+            tools, styles, export_data["risk_history"]
         )
+        add_section("Risk Trend", panel[0], *panel[1:])
 
     if "key_signals" in export_data:
-        _add_pdf_section(elements, tools, styles, "Key Signals")
-        _add_signal_pdf_table(
-            elements,
-            tools,
-            styles,
-            export_data["key_signals"],
-        )
+        add_section("Key Signals", _add_signal_pdf_table(
+            tools, styles, export_data["key_signals"]
+        ))
 
     if "diagnostic_report" in export_data:
         report = export_data["diagnostic_report"]
-        _add_pdf_section(elements, tools, styles, "Diagnostic Report")
-        _add_text_panel(
-            elements,
+        # The narrative report reads as its own page, separate from the
+        # data/metrics sections above — not a hard technical requirement,
+        # a deliberate readability choice. _add_report_header() always
+        # appends exactly 2 elements (header table + spacer); only break
+        # if some other section was actually rendered before this one,
+        # so a diagnostic_report-only export doesn't start with a blank
+        # page.
+        if len(elements) > 2:
+            elements.append(tools["PageBreak"]())
+        whats_happening = _add_text_panel(
             tools,
             styles,
             "What's Happening",
             report["anomaly_description"],
+            body_style_name="ReportDiagnosticBody",
         )
-        _add_text_panel(
-            elements,
+        why_this_matters = _add_text_panel(
             tools,
             styles,
             "Why This Matters",
             report["possible_cause"],
+            body_style_name="ReportDiagnosticBody",
         )
-        _add_list_panel(
-            elements,
+        what_to_do = _add_list_panel(
             tools,
             styles,
             "What You Should Do",
             report["recommended_action"],
+            body_style_name="ReportDiagnosticBody",
+        )
+        add_section(
+            "Diagnostic Report",
+            whats_happening[0],
+            *whats_happening[1:],
+            *why_this_matters,
+            *what_to_do,
+            keep_whole=True,
         )
 
     doc.build(
@@ -885,16 +1114,17 @@ def build_export_data(
             "has_value": has_value,
         }
 
+    if "risk_history" in sections:
+        history = component_data.get("risk_history")
+        export_data["risk_history"] = (
+            history if isinstance(history, list) else []
+        )
+
     if "key_signals" in sections:
         export_data["key_signals"] = build_key_signal_rows(component_data)
 
     if "diagnostic_report" in sections:
         export_data["diagnostic_report"] = build_diagnostic_report(
-            component_data
-        )
-
-    if "data_quality_notes" in sections:
-        export_data["data_quality_notes"] = get_data_quality_notes(
             component_data
         )
 

@@ -14,13 +14,16 @@ from pandas.errors import EmptyDataError
 from anomaly_display import COMPONENT_DISPLAY_NAMES
 from csv_validator import validate_csv_columns, validate_csv_min_rows
 from csv_pipeline import (
+    CSV_PROGRESS_STAGES,
     ModelBatchRunnerUnavailable,
     UploadedCsvPipelineError,
+    run_uploaded_csv_history_batch,
     run_uploaded_csv_batch,
 )
 from data_store import get_data_source, get_mock_data, get_overview_components
 from export_helper import (
     CSV_COLUMNS,
+    DEFAULT_EXPORT_SECTIONS,
     EXPORT_SECTION_LABELS,
     build_diagnostic_pdf_bytes,
     build_key_signals_csv_bytes,
@@ -39,6 +42,9 @@ from theme import (
 )
 from ui_components import (
     danger_card_html,
+    empty_state_html,
+    page_title_html,
+    section_heading_html,
     show_footer,
     warning_banner_html,
 )
@@ -48,6 +54,21 @@ from ui_components import (
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
+
+CSV_ANALYSIS_RUNNING_KEY = "csv_analysis_running"
+HISTORY_CSV_MIN_FILES = 5
+
+
+def _set_csv_analysis_running(is_running: bool) -> None:
+    st.session_state[CSV_ANALYSIS_RUNNING_KEY] = is_running
+
+
+def _recover_csv_analysis_running_state() -> bool:
+    """Clear stale loading state left by an interrupted previous run."""
+    if st.session_state.get(CSV_ANALYSIS_RUNNING_KEY, False):
+        _set_csv_analysis_running(False)
+    return False
+
 
 def _show_theme_toggle(dark_mode: bool, tokens: dict) -> None:
     """Render the dark/light-mode icon button."""
@@ -339,6 +360,47 @@ def _show_csv_upload_heading(tokens: dict) -> None:
     )
 
 
+def _show_local_run_button(tokens: dict, key: str) -> None:
+    """Render the page link for local setup instructions."""
+    st.markdown(
+        f"""
+        <style>
+        div.st-key-{key} button,
+        .st-key-{key} button {{
+            background: transparent !important;
+            border: 1.5px solid {tokens["border"]} !important;
+            border-radius: 10px !important;
+            color: {tokens["text"]} !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            min-height: 38px !important;
+            transition: background 0.15s ease, border-color 0.15s ease,
+                        color 0.15s ease !important;
+            width: 100% !important;
+        }}
+        div.st-key-{key} button *,
+        div.st-key-{key} button:hover *,
+        .st-key-{key} button *,
+        .st-key-{key} button:hover * {{
+            color: inherit !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+        }}
+        div.st-key-{key} button:hover,
+        .st-key-{key} button:hover {{
+            background: {hex_to_rgba(tokens["accent"], 0.07)} !important;
+            border-color: {tokens["accent"]} !important;
+            color: {tokens["accent"]} !important;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    if st.button("How to Run Locally", key=key, use_container_width=True):
+        st.session_state["page"] = "local_run"
+        st.rerun()
+
+
 def _error_paragraph(message: str, tokens: dict) -> str:
     return (
         f'<p style="color:{tokens["danger_text"]};font-size:14px;'
@@ -354,12 +416,228 @@ def _show_pipeline_error(title: str, message: str, tokens: dict) -> None:
     )
 
 
-def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
-    """Validate an uploaded CSV and run the dashboard upload pipeline."""
+def _show_missing_csv_columns(missing_cols: list[str], tokens: dict) -> None:
+    items_html = "".join(
+        f'<li style="margin-bottom:4px;">{html.escape(c)}</li>'
+        for c in missing_cols
+    )
+    body = (
+        f'<ul style="color:{tokens["danger_text"]};'
+        f'font-size:14px;margin:8px 0 0 0;'
+        f'padding-left:20px;line-height:1.7;">'
+        f'{items_html}</ul>'
+    )
+    st.markdown(
+        danger_card_html("Missing Required Columns", body, tokens),
+        unsafe_allow_html=True,
+    )
+
+
+def _clear_csv_analysis_loading(target) -> None:
+    """Remove the loading card before showing a terminal state."""
+    if hasattr(target, "empty"):
+        target.empty()
+
+
+def _show_csv_analysis_loading(
+    target, tokens: dict, percent: int, message: str
+) -> None:
+    """Render a clear loading state for the CSV analysis pipeline."""
+    percent = max(0, min(100, int(percent)))
+    target.markdown(
+        f"""
+        <style>
+        .csv-analysis-loading {{
+            align-items: center;
+            background: {tokens["surface"]};
+            border: 1px solid {hex_to_rgba(tokens["accent"], 0.28)};
+            border-radius: 12px;
+            box-shadow: 0 2px 10px {tokens["shadow"]};
+            display: flex;
+            gap: 14px;
+            margin: 12px auto 0 auto;
+            max-width: 620px;
+            padding: 16px 18px;
+        }}
+        .csv-analysis-percent {{
+            align-items: center;
+            background:
+                conic-gradient(
+                    {tokens["accent"]} {percent}%,
+                    {hex_to_rgba(tokens["accent"], 0.18)} 0
+                );
+            border-radius: 999px;
+            color: {tokens["accent"]};
+            display: flex;
+            flex: 0 0 auto;
+            font-size: 13px;
+            font-weight: 800;
+            height: 46px;
+            justify-content: center;
+            position: relative;
+            width: 46px;
+        }}
+        .csv-analysis-percent::before {{
+            background: {tokens["surface"]};
+            border-radius: inherit;
+            content: "";
+            inset: 4px;
+            position: absolute;
+        }}
+        .csv-analysis-percent span {{
+            position: relative;
+            z-index: 1;
+        }}
+        .csv-analysis-title {{
+            color: {tokens["text"]};
+            font-size: 15px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }}
+        .csv-analysis-message {{
+            color: {tokens["text_secondary"]};
+            font-size: 13px;
+            line-height: 1.45;
+        }}
+        </style>
+        <div class="csv-analysis-loading" role="status">
+            <div class="csv-analysis-percent"><span>{percent}%</span></div>
+            <div style="flex:1;">
+                <div class="csv-analysis-title">Analysing your CSV...</div>
+                <div class="csv-analysis-message">
+                    {html.escape(message)}
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _first_uploaded_csv(uploaded_file):
+    """Keep the old single-file path working while multi-upload is wired."""
+    if isinstance(uploaded_file, list):
+        return uploaded_file[0] if uploaded_file else None
+    return uploaded_file
+
+
+def _uploaded_csv_files(uploaded_file) -> list:
     if uploaded_file is None:
-        st.warning("Please select a CSV file before clicking Run Analysis.")
+        return []
+    if isinstance(uploaded_file, list):
+        return uploaded_file
+    return [uploaded_file]
+
+
+def _uploaded_csv_date(uploaded_file) -> datetime:
+    name = getattr(uploaded_file, "name", "")
+    try:
+        return datetime.strptime(name[:10], "%Y-%m-%d")
+    except ValueError as exc:
+        raise ValueError(
+            f"{name} must start with a YYYY-MM-DD trip date."
+        ) from exc
+
+
+def _sort_uploaded_csv_files(uploaded_files: list) -> list:
+    return sorted(
+        uploaded_files,
+        key=lambda file: (_uploaded_csv_date(file), getattr(file, "name", "")),
+    )
+
+
+def _uploaded_file_size_text(uploaded_file) -> str:
+    size = getattr(uploaded_file, "size", None)
+    if size is None:
+        size = len(uploaded_file.getvalue())
+    if size >= 1024 * 1024:
+        return f"{size / (1024 * 1024):.1f}MB"
+    return f"{size / 1024:.1f}KB"
+
+
+def _show_selected_csv_files(uploaded_files, tokens: dict) -> None:
+    files = _uploaded_csv_files(uploaded_files)
+    if not files:
         return
 
+    file_icon = lucide_icon("file-text", size=22, color=tokens["surface"])
+    rows = []
+    for uploaded_file in files:
+        name = html.escape(getattr(uploaded_file, "name", "uploaded.csv"))
+        size_text = html.escape(_uploaded_file_size_text(uploaded_file))
+        rows.append(
+            '<div class="csv-selected-file">'
+            '<div class="csv-selected-file-icon">'
+            f'{file_icon}'
+            '</div>'
+            '<div class="csv-selected-file-copy">'
+            f'<div class="csv-selected-file-name">{name}</div>'
+            f'<div class="csv-selected-file-size">{size_text}</div>'
+            '</div>'
+            '</div>'
+        )
+
+    st.markdown(
+        f"""
+        <div class="csv-selected-files">
+            {''.join(rows)}
+        </div>
+        <style>
+        .csv-selected-files {{
+            display:flex;
+            flex-direction:column;
+            gap:10px;
+            margin:12px auto 16px auto;
+            max-width:min(380px, 100%);
+            width:100%;
+        }}
+        .csv-selected-file {{
+            align-items:center;
+            background:{tokens["surface"]};
+            border:1px solid {tokens["border"]};
+            border-radius:10px;
+            box-sizing:border-box;
+            display:flex;
+            gap:12px;
+            min-height:54px;
+            padding:8px 12px;
+            width:100%;
+        }}
+        .csv-selected-file-icon {{
+            align-items:center;
+            background:{tokens["text"]};
+            border-radius:8px;
+            display:flex;
+            flex:0 0 38px;
+            height:38px;
+            justify-content:center;
+            width:38px;
+        }}
+        .csv-selected-file-copy {{
+            min-width:0;
+        }}
+        .csv-selected-file-name {{
+            color:{tokens["text"]};
+            font-size:14px;
+            font-weight:600;
+            line-height:1.2;
+            overflow:hidden;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+        }}
+        .csv-selected-file-size {{
+            color:{tokens["text_secondary"]};
+            font-size:12px;
+            line-height:1.3;
+            margin-top:3px;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _validate_uploaded_csv_file(uploaded_file, tokens: dict):
     csv_bytes = uploaded_file.getvalue()
     if not csv_bytes.strip():
         _show_pipeline_error(
@@ -368,9 +646,8 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
             "Please upload a valid OBD-II CSV file.",
             tokens,
         )
-        return
+        return None
 
-    st.session_state["uploaded_csv"] = uploaded_file
     try:
         df = pd.read_csv(io.BytesIO(csv_bytes))
     except EmptyDataError:
@@ -379,14 +656,14 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
             "The uploaded file does not contain any CSV rows.",
             tokens,
         )
-        return
+        return None
     except Exception as exc:
         _show_pipeline_error(
             "Unreadable CSV",
             f"The uploaded file could not be parsed as CSV. {exc}",
             tokens,
         )
-        return
+        return None
 
     if df.empty:
         _show_pipeline_error(
@@ -394,27 +671,14 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
             "The uploaded file does not contain any data rows.",
             tokens,
         )
-        return
+        return None
 
     cols_ok, missing_cols = validate_csv_columns(df)
     rows_ok = validate_csv_min_rows(df)
 
     if not cols_ok:
-        items_html = "".join(
-            f'<li style="margin-bottom:4px;">{html.escape(c)}</li>'
-            for c in missing_cols
-        )
-        body = (
-            f'<ul style="color:{tokens["danger_text"]};'
-            f'font-size:14px;margin:8px 0 0 0;'
-            f'padding-left:20px;line-height:1.7;">'
-            f'{items_html}</ul>'
-        )
-        st.markdown(
-            danger_card_html("Missing Required Columns", body, tokens),
-            unsafe_allow_html=True,
-        )
-        return
+        _show_missing_csv_columns(missing_cols, tokens)
+        return None
 
     if not rows_ok:
         _show_pipeline_error(
@@ -423,60 +687,241 @@ def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
             "least 15 minutes of driving data recorded at 1 Hz.",
             tokens,
         )
+        return None
+
+    return csv_bytes, df
+
+
+def _handle_uploaded_csv_history_submit(uploaded_files, tokens: dict) -> None:
+    """Validate a trip-history CSV set before the history pipeline exists."""
+    uploaded_files = _uploaded_csv_files(uploaded_files)
+    if not uploaded_files:
+        st.markdown(
+            empty_state_html(
+                "Choose CSV files first",
+                "Select at least five chronological OBD-II CSV files, "
+                "then run the analysis again.",
+                tokens,
+                icon_name="help-circle",
+                max_width="560px",
+                margin="12px auto 0 auto",
+            ),
+            unsafe_allow_html=True,
+        )
+        return
+
+    if len(uploaded_files) == 1:
+        _handle_uploaded_csv_submit(uploaded_files[0], tokens)
+        return
+
+    if len(uploaded_files) < HISTORY_CSV_MIN_FILES:
+        _show_pipeline_error(
+            "Upload At Least 5 CSV Files",
+            "Failure prediction needs at least five chronological trips. "
+            f"You selected {len(uploaded_files)} CSV files.",
+            tokens,
+        )
         return
 
     try:
-        with st.spinner("Running analysis..."):
-            result = run_uploaded_csv_batch(
-                csv_bytes, uploaded_file.name
+        sorted_files = _sort_uploaded_csv_files(uploaded_files)
+    except ValueError as exc:
+        _show_pipeline_error("File Name Date Required", str(exc), tokens)
+        return
+
+    checked_files = []
+    for uploaded_file in sorted_files:
+        checked = _validate_uploaded_csv_file(uploaded_file, tokens)
+        if checked is None:
+            return
+        checked_files.append((uploaded_file, *checked))
+
+    st.session_state["uploaded_csv_history"] = [
+        uploaded_file for uploaded_file, _csv_bytes, _df in checked_files
+    ]
+    st.session_state["uploaded_csv_history_file_names"] = [
+        uploaded_file.name for uploaded_file, _csv_bytes, _df in checked_files
+    ]
+
+    _set_csv_analysis_running(True)
+    loading_slot = st.empty()
+    progress_percent, progress_message = CSV_PROGRESS_STAGES[
+        "checking_upload"
+    ]
+    _show_csv_analysis_loading(
+        loading_slot, tokens, progress_percent, progress_message
+    )
+
+    def update_progress(percent: int, message: str) -> None:
+        _show_csv_analysis_loading(loading_slot, tokens, percent, message)
+
+    should_rerun = False
+    try:
+        try:
+            result = run_uploaded_csv_history_batch(
+                [
+                    (csv_bytes, uploaded_file.name)
+                    for uploaded_file, csv_bytes, _df in checked_files
+                ],
+                progress_callback=update_progress,
             )
-    except TimeoutError:
-        _show_pipeline_error(
-            "Analysis Timed Out",
-            "The analysis pipeline timed out. Please try uploading a "
-            "shorter drive session.",
-            tokens,
-        )
-        return
-    except ModelBatchRunnerUnavailable as exc:
-        _show_pipeline_error("Model Analysis Unavailable", str(exc), tokens)
-        return
-    except UploadedCsvPipelineError as exc:
-        _show_pipeline_error("Analysis Unavailable", str(exc), tokens)
-        return
-    except Exception as exc:
-        _show_pipeline_error(
-            "Analysis Unavailable",
-            f"The analysis pipeline could not complete. {exc}",
-            tokens,
+        except TimeoutError:
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error(
+                "Analysis Timed Out",
+                "The analysis pipeline timed out. Please try uploading a "
+                "shorter drive session.",
+                tokens,
+            )
+            return
+        except ModelBatchRunnerUnavailable as exc:
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error(
+                "Model Analysis Unavailable", str(exc), tokens
+            )
+            return
+        except UploadedCsvPipelineError as exc:
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error("Analysis Unavailable", str(exc), tokens)
+            return
+        except Exception as exc:
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error(
+                "Analysis Unavailable",
+                f"The analysis pipeline could not complete. {exc}",
+                tokens,
+            )
+            return
+
+        dashboard_data = result.get("dashboard_data", {})
+        components = {
+            k: v for k, v in dashboard_data.items() if k != "_data_source"
+        }
+        if components and all(
+            not c.get("anomaly_description") for c in components.values()
+        ):
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error(
+                "Report Generation Unavailable",
+                "The vehicle evidence was preserved, but a safe diagnostic "
+                "report could not be generated. Please try again.",
+                tokens,
+            )
+            return
+
+        st.session_state["dashboard_data"] = dashboard_data
+        st.session_state["validated_df"] = checked_files[-1][2]
+        st.session_state["dashboard_mode"] = "dashboard"
+        should_rerun = True
+    finally:
+        _set_csv_analysis_running(False)
+
+    if should_rerun:
+        st.rerun()
+
+
+def _handle_uploaded_csv_submit(uploaded_file, tokens: dict) -> None:
+    """Validate an uploaded CSV and run the dashboard upload pipeline."""
+    uploaded_file = _first_uploaded_csv(uploaded_file)
+    if uploaded_file is None:
+        st.markdown(
+            empty_state_html(
+                "Choose a CSV file first",
+                "Select an OBD-II CSV file, then run the analysis again.",
+                tokens,
+                icon_name="help-circle",
+                max_width="560px",
+                margin="12px auto 0 auto",
+            ),
+            unsafe_allow_html=True,
         )
         return
 
-    # report_generator.generate_report() never raises — an LLM timeout or
-    # connection failure surfaces as an empty anomaly_description instead
-    # of an exception, so detect that fallback here rather than in a
-    # (never-triggered) except clause above.
-    components = {k: v for k, v in result.items() if k != "_data_source"}
-    if not components or all(
-        not c.get("anomaly_description") for c in components.values()
-    ):
-        _show_pipeline_error(
-            "Analysis Timed Out",
-            "The diagnostic report could not be generated in time. "
-            "Please try again or upload a shorter drive session.",
-            tokens,
-        )
+    st.session_state["uploaded_csv"] = uploaded_file
+    checked = _validate_uploaded_csv_file(uploaded_file, tokens)
+    if checked is None:
         return
+    csv_bytes, df = checked
 
-    st.session_state["dashboard_data"] = result
-    st.session_state["validated_df"] = df
-    st.session_state["dashboard_mode"] = "dashboard"
-    st.rerun()
+    _set_csv_analysis_running(True)
+    loading_slot = st.empty()
+    progress_percent, progress_message = CSV_PROGRESS_STAGES[
+        "checking_upload"
+    ]
+    _show_csv_analysis_loading(
+        loading_slot, tokens, progress_percent, progress_message
+    )
+
+    def update_progress(percent: int, message: str) -> None:
+        _show_csv_analysis_loading(loading_slot, tokens, percent, message)
+
+    should_rerun = False
+    try:
+        try:
+            result = run_uploaded_csv_batch(
+                csv_bytes,
+                uploaded_file.name,
+                progress_callback=update_progress,
+            )
+        except TimeoutError:
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error(
+                "Analysis Timed Out",
+                "The analysis pipeline timed out. Please try uploading a "
+                "shorter drive session.",
+                tokens,
+            )
+            return
+        except ModelBatchRunnerUnavailable as exc:
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error(
+                "Model Analysis Unavailable", str(exc), tokens
+            )
+            return
+        except UploadedCsvPipelineError as exc:
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error("Analysis Unavailable", str(exc), tokens)
+            return
+        except Exception as exc:
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error(
+                "Analysis Unavailable",
+                f"The analysis pipeline could not complete. {exc}",
+                tokens,
+            )
+            return
+
+        # report_generator.generate_report() fails closed: exhausted technical
+        # retries or a semantic correction that still fails validation returns
+        # an empty report while preserving the original vehicle evidence.
+        components = {k: v for k, v in result.items() if k != "_data_source"}
+        if components and all(
+            not c.get("anomaly_description") for c in components.values()
+        ):
+            _clear_csv_analysis_loading(loading_slot)
+            _show_pipeline_error(
+                "Report Generation Unavailable",
+                "The vehicle evidence was preserved, but a safe diagnostic "
+                "report could not be generated. Please try again.",
+                tokens,
+            )
+            return
+
+        st.session_state["dashboard_data"] = result
+        st.session_state["validated_df"] = df
+        st.session_state["dashboard_mode"] = "dashboard"
+        should_rerun = True
+    finally:
+        _set_csv_analysis_running(False)
+
+    if should_rerun:
+        st.rerun()
 
 
 def _show_csv_uploader(tokens: dict) -> None:
     """CSV upload section with inline validation feedback (re-upload
     in dashboard)."""
+    _recover_csv_analysis_running_state()
     st.markdown(
         f"""
         <style>
@@ -488,7 +933,15 @@ def _show_csv_uploader(tokens: dict) -> None:
             border: 1px solid {tokens["glass_border"]} !important;
             border-radius: 16px !important;
             box-shadow: 0 2px 12px {tokens["shadow"]} !important;
+            box-sizing: border-box !important;
+            margin: 0 auto !important;
+            max-width: 560px !important;
+            min-height: 315px !important;
             padding: 20px 24px !important;
+        }}
+        .st-key-dashboard_upload_pair {{
+            margin: 0 auto !important;
+            max-width: 1160px !important;
         }}
         /* ── Drop-zone ── */
         .st-key-csv_upload_section
@@ -502,9 +955,21 @@ def _show_csv_uploader(tokens: dict) -> None:
             background: transparent !important;
             border: none !important;
             display: flex !important;
+            flex-direction: column !important;
+            gap: 14px !important;
             justify-content: center !important;
-            min-height: 58px !important;
+            min-height: 118px !important;
             padding: 0 !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] > div {{
+            align-items: center !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+            justify-content: center !important;
+            max-width: 100% !important;
+            width: 100% !important;
         }}
         .st-key-csv_upload_section
             [data-testid="stFileUploaderDropzoneInstructions"] {{
@@ -522,12 +987,14 @@ def _show_csv_uploader(tokens: dict) -> None:
             [data-testid="stFileUploader"] section {{
             align-items: center !important;
             display: flex !important;
+            flex-direction: column !important;
+            gap: 14px !important;
             justify-content: center !important;
             padding: 0 !important;
             width: 100% !important;
         }}
         .st-key-csv_upload_section
-            [data-testid="stFileUploader"] button {{
+            [data-testid="stFileUploaderDropzone"] button {{
             align-items: center !important;
             background: {tokens["surface_alt"]} !important;
             border: 1.5px solid {tokens["border"]} !important;
@@ -542,17 +1009,62 @@ def _show_csv_uploader(tokens: dict) -> None:
             min-width: 132px !important;
             padding: 0 24px !important;
             position: relative !important;
+            order: 1 !important;
             width: 132px !important;
         }}
         .st-key-csv_upload_section
-            [data-testid="stFileUploader"] button * {{
+            [data-testid="stFileUploaderDropzone"] > div > * {{
+            order: 2 !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"]
+            [data-testid="stFileChips"] {{
+            align-items: center !important;
+            display: flex !important;
+            justify-content: center !important;
+            width: 100% !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"]
+            [data-testid="stFileChips"]
+            > div:has([data-testid="stFileChip"]) {{
+            display: none !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileChip"] {{
+            display: none !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileChipDeleteBtn"] {{
+            display: none !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderFile"] {{
+            display: none !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] section > div {{
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            max-width: 100% !important;
+            order: 2 !important;
+            width: 100% !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] section > div > div {{
+            max-width: 100% !important;
+            width: 100% !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] button * {{
             color: transparent !important;
             display: none !important;
             font-size: 0 !important;
             line-height: 0 !important;
         }}
         .st-key-csv_upload_section
-            [data-testid="stFileUploader"] button::after {{
+            [data-testid="stFileUploaderDropzone"] button::after {{
             align-items: center !important;
             color: {tokens["text"]} !important;
             content: "Upload";
@@ -566,48 +1078,83 @@ def _show_csv_uploader(tokens: dict) -> None:
             text-align: center !important;
         }}
         .st-key-csv_upload_section
-            [data-testid="stFileUploader"] button:hover {{
+            [data-testid="stFileUploaderDropzone"] button:hover {{
             border-color: {tokens["accent"]} !important;
         }}
         .st-key-csv_upload_section
-            [data-testid="stFileUploader"] button:hover::after {{
+            [data-testid="stFileUploaderDropzone"] button:hover::after {{
             color: {tokens["accent"]} !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] section > div + button,
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDropzone"] section
+            > button:not(:first-child) {{
+            display: none !important;
+        }}
+        .st-key-csv_upload_section
+            [data-testid="stFileUploaderDeleteBtn"] {{
+            display: none !important;
         }}
         /* ── Run Analysis button ── */
         .st-key-csv_submit_btn button {{
             background-color: {tokens["accent"]} !important;
             color: {tokens["accent_contrast"]} !important;
             border: none !important;
-            border-radius: 10px !important;
-            font-weight: 600 !important;
-            font-size: 14px !important;
+            border-radius: 12px !important;
+            font-weight: 700 !important;
+            font-size: 15px !important;
+            min-height: 46px !important;
             transition: opacity 0.15s ease !important;
+        }}
+        .st-key-csv_submit_btn button *,
+        .st-key-csv_submit_btn button p {{
+            color: {tokens["accent_contrast"]} !important;
+            font-size: 15px !important;
+            font-weight: 700 !important;
         }}
         .st-key-csv_submit_btn button:hover {{
             opacity: 0.88 !important;
+        }}
+        .st-key-csv_submit_btn button:disabled {{
+            cursor: progress !important;
+            opacity: 0.64 !important;
         }}
         </style>
         """,
         unsafe_allow_html=True,
     )
 
-    with st.container(key="csv_upload_section"):
-        _show_csv_upload_heading(tokens)
-        uploaded_file = st.file_uploader(
-            "CSV file",
-            type=["csv"],
-            key="csv_file_uploader",
-            label_visibility="collapsed",
-        )
-        submit_clicked = st.button(
-            "Run Analysis",
-            key="csv_submit_btn",
-            use_container_width=True,
-        )
+    with st.container(key="dashboard_upload_pair"):
+        _, local_btn_col = st.columns([4, 1])
+        with local_btn_col:
+            _show_local_run_button(tokens, "dashboard_upload_local_run_btn")
+
+        _, upload_col, _ = st.columns([1, 2, 1], gap="large")
+        with upload_col:
+            with st.container(key="csv_upload_section"):
+                _show_csv_upload_heading(tokens)
+                uploaded_files = st.file_uploader(
+                    "CSV files",
+                    type=["csv"],
+                    accept_multiple_files=True,
+                    key="csv_file_uploader",
+                    label_visibility="collapsed",
+                )
+                _show_selected_csv_files(uploaded_files, tokens)
+                analysis_running = bool(
+                    st.session_state.get(CSV_ANALYSIS_RUNNING_KEY, False)
+                )
+                submit_clicked = st.button(
+                    "Analysing..." if analysis_running else "Run Analysis",
+                    key="csv_submit_btn",
+                    use_container_width=True,
+                    disabled=analysis_running,
+                )
 
     # ── Validation feedback ──
     if submit_clicked:
-        _handle_uploaded_csv_submit(uploaded_file, tokens)
+        _handle_uploaded_csv_history_submit(uploaded_files, tokens)
 
 
 def _component_label(component_key: str) -> str:
@@ -649,6 +1196,26 @@ def _make_export_file_name(
     return "_".join(parts) + f".{extension}"
 
 
+def _export_download_card_html(
+    title: str,
+    meta: str,
+    icon_name: str,
+    tokens: dict,
+) -> str:
+    icon_html = lucide_icon(icon_name, size=18, color=tokens["accent"])
+    return (
+        '<div class="export-download-card">'
+        '<div class="export-download-icon">'
+        f'{icon_html}'
+        '</div>'
+        '<div>'
+        f'<div class="export-download-title">{html.escape(title)}</div>'
+        f'<div class="export-download-meta">{html.escape(meta)}</div>'
+        '</div>'
+        '</div>'
+    )
+
+
 def _show_dashboard_export_controls(
     overview_components: list,
     tokens: dict,
@@ -663,6 +1230,7 @@ def _show_dashboard_export_controls(
 
     section_keys = list(EXPORT_SECTION_LABELS.keys())
     column_keys = list(CSV_COLUMNS)
+    _set_default_state("overview_export_options_open", False)
     _set_default_state("overview_component_dropdown_open", False)
     _set_default_state("overview_pdf_dropdown_open", False)
     _set_default_state("overview_csv_dropdown_open", False)
@@ -671,7 +1239,7 @@ def _show_dashboard_export_controls(
     for section_key in section_keys:
         _set_default_state(
             f"overview_pdf_choice_{section_key}",
-            True,
+            section_key in DEFAULT_EXPORT_SECTIONS,
         )
     for column_key in column_keys:
         _set_default_state(f"overview_csv_choice_{column_key}", True)
@@ -696,6 +1264,116 @@ def _show_dashboard_export_controls(
             [class*="st-key-overview_component_choice_"] {{
             margin-bottom: 0 !important;
         }}
+        .export-quick-summary {{
+            align-items: center;
+            background: {tokens["surface_alt"]};
+            border: 1px solid {tokens["border"]};
+            border-radius: 10px;
+            color: {tokens["text_secondary"]};
+            display: flex;
+            flex-wrap: wrap;
+            font-size: 12px;
+            gap: 8px;
+            justify-content: space-between;
+            margin: 0 0 10px 0;
+            padding: 10px 12px;
+        }}
+        .export-quick-summary strong {{
+            color: {tokens["text"]};
+            font-weight: 700;
+        }}
+        .export-quick-summary span {{
+            white-space: nowrap;
+        }}
+        .export-download-card {{
+            align-items: center;
+            background: {tokens["surface"]};
+            border: 1px solid {tokens["border"]};
+            border-radius: 12px;
+            display: flex;
+            gap: 10px;
+            margin: 2px 0 8px 0;
+            min-height: 58px;
+            padding: 12px 14px;
+        }}
+        .export-download-icon {{
+            align-items: center;
+            background: {tokens["accent_subtle"]};
+            border-radius: 10px;
+            display: inline-flex;
+            height: 34px;
+            justify-content: center;
+            width: 34px;
+        }}
+        .export-download-title {{
+            color: {tokens["text"]};
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.25;
+        }}
+        .export-download-meta {{
+            color: {tokens["text_secondary"]};
+            font-size: 11px;
+            line-height: 1.35;
+            margin-top: 2px;
+        }}
+        .st-key-overview_download_pdf button {{
+            background: {tokens["accent"]} !important;
+            border: 1.5px solid {tokens["accent"]} !important;
+            color: {tokens["accent_contrast"]} !important;
+            min-height: 44px !important;
+        }}
+        .st-key-overview_download_pdf button:hover {{
+            background: {tokens["accent_hover"]} !important;
+            border-color: {tokens["accent_hover"]} !important;
+            color: {tokens["accent_contrast"]} !important;
+        }}
+        .st-key-overview_download_pdf button *,
+        .st-key-overview_download_pdf button:hover * {{
+            color: {tokens["accent_contrast"]} !important;
+        }}
+        .st-key-overview_download_csv button {{
+            background: {tokens["accent"]} !important;
+            border: 1.5px solid {tokens["accent"]} !important;
+            color: {tokens["accent_contrast"]} !important;
+            min-height: 44px !important;
+        }}
+        .st-key-overview_download_csv button:hover {{
+            background: {tokens["accent_hover"]} !important;
+            border-color: {tokens["accent_hover"]} !important;
+            color: {tokens["accent_contrast"]} !important;
+        }}
+        .st-key-overview_download_csv button *,
+        .st-key-overview_download_csv button:hover * {{
+            color: {tokens["accent_contrast"]} !important;
+        }}
+        .st-key-export_options_toggle button {{
+            background: transparent !important;
+            border: 1px dashed {tokens["border"]} !important;
+            color: {tokens["text_secondary"]} !important;
+            margin-top: 10px !important;
+            min-height: 42px !important;
+        }}
+        .st-key-export_options_toggle button:hover {{
+            background: {hex_to_rgba(tokens["accent"], 0.06)} !important;
+            border-color: {tokens["accent"]} !important;
+            color: {tokens["accent"]} !important;
+        }}
+        .st-key-export_options_panel {{
+            background: {tokens["surface_alt"]} !important;
+            border: 1px solid {tokens["border"]} !important;
+            border-radius: 12px !important;
+            margin-top: 10px !important;
+            padding: 12px !important;
+        }}
+        .export-options-title {{
+            color: {tokens["text"]};
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }}
         .st-key-dashboard_export_panel
             [class*="st-key-export_dropdown_"] button {{
             background: {tokens["surface"]} !important;
@@ -717,9 +1395,11 @@ def _show_dashboard_export_controls(
 
     with st.container(key="dashboard_export_panel"):
         st.markdown(
-            f'<div style="text-align:center;color:{tokens["text"]};'
-            'font-size:16px;font-weight:700;margin-bottom:10px;">'
-            'Export Report</div>',
+            section_heading_html(
+                "Export Report",
+                lucide_icon("file-text", size=20, color=tokens["accent"]),
+                side_width=20,
+            ),
             unsafe_allow_html=True,
         )
 
@@ -729,106 +1409,8 @@ def _show_dashboard_export_controls(
                 f"overview_component_choice_{component_key}"
             )
         ]
-        selected_sections = [
-            section_key for section_key in section_keys
-            if st.session_state.get(f"overview_pdf_choice_{section_key}")
-        ]
-        selected_columns = [
-            column_key for column_key in column_keys
-            if st.session_state.get(f"overview_csv_choice_{column_key}")
-        ]
-
-        open_text = (
-            "^" if st.session_state["overview_component_dropdown_open"]
-            else "v"
-        )
-        component_label = (
-            f"Report components "
-            f"({len(selected_component_keys)}/{len(component_keys)}) "
-            f"{open_text}"
-        )
-        if st.button(
-            component_label,
-            key="export_dropdown_components",
-            use_container_width=True,
-        ):
-            st.session_state["overview_component_dropdown_open"] = (
-                not st.session_state["overview_component_dropdown_open"]
-            )
-            st.rerun()
-
-        if st.session_state["overview_component_dropdown_open"]:
-            st.markdown("Report components")
-            component_cols = st.columns(3, gap="small")
-            for idx, component_key in enumerate(component_keys):
-                with component_cols[idx % 3]:
-                    st.checkbox(
-                        _component_label(component_key),
-                        key=f"overview_component_choice_{component_key}",
-                    )
-
-        filter_col_1, filter_col_2 = st.columns(2, gap="small")
-        with filter_col_1:
-            open_text = (
-                "^" if st.session_state["overview_pdf_dropdown_open"]
-                else "v"
-            )
-            pdf_label = (
-                f"PDF sections ({len(selected_sections)}/{len(section_keys)}) "
-                f"{open_text}"
-            )
-            if st.button(
-                pdf_label,
-                key="export_dropdown_pdf",
-                use_container_width=True,
-            ):
-                st.session_state["overview_pdf_dropdown_open"] = (
-                    not st.session_state["overview_pdf_dropdown_open"]
-                )
-                st.rerun()
-
-            if st.session_state["overview_pdf_dropdown_open"]:
-                st.markdown("PDF sections")
-                for section_key in section_keys:
-                    st.checkbox(
-                        EXPORT_SECTION_LABELS.get(section_key, section_key),
-                        key=f"overview_pdf_choice_{section_key}",
-                    )
-
-        with filter_col_2:
-            open_text = (
-                "^" if st.session_state["overview_csv_dropdown_open"]
-                else "v"
-            )
-            csv_label = (
-                f"CSV columns ({len(selected_columns)}/{len(column_keys)}) "
-                f"{open_text}"
-            )
-            if st.button(
-                csv_label,
-                key="export_dropdown_csv",
-                use_container_width=True,
-            ):
-                st.session_state["overview_csv_dropdown_open"] = (
-                    not st.session_state["overview_csv_dropdown_open"]
-                )
-                st.rerun()
-
-            if st.session_state["overview_csv_dropdown_open"]:
-                st.markdown("CSV columns")
-                for column_key in column_keys:
-                    label = column_key.replace("_", " ").title()
-                    st.checkbox(
-                        label,
-                        key=f"overview_csv_choice_{column_key}",
-                    )
-
-        selected_component_keys = [
-            component_key for component_key in component_keys
-            if st.session_state.get(
-                f"overview_component_choice_{component_key}"
-            )
-        ]
+        if not selected_component_keys:
+            selected_component_keys = list(component_keys)
         selected_components = [
             component_lookup[component_key]
             for component_key in selected_component_keys
@@ -857,12 +1439,17 @@ def _show_dashboard_export_controls(
             column_key.replace("_", " ").title()
             for column_key in selected_columns
         ]
+        summary_html = (
+            '<div class="export-quick-summary">'
+            '<strong>Ready to download</strong>'
+            f'<span>{len(selected_component_keys)} component(s)</span>'
+            f'<span>{len(selected_sections)} PDF section(s)</span>'
+            f'<span>{len(selected_columns)} CSV column(s)</span>'
+            '</div>'
+        )
+        st.markdown(summary_html, unsafe_allow_html=True)
+
         pdf_col, csv_col = st.columns(2, gap="small")
-
-        if not selected_components:
-            st.warning("Select at least one component to export.")
-            return
-
         with pdf_col:
             try:
                 if len(selected_components) == 1:
@@ -879,6 +1466,9 @@ def _show_dashboard_export_controls(
                     )
                     pdf_mime = "application/pdf"
                     pdf_label = "Download PDF"
+                    pdf_card_meta = (
+                        f"{len(selected_sections)} section(s), PDF file"
+                    )
                 else:
                     pdf_files = [
                         (
@@ -908,6 +1498,18 @@ def _show_dashboard_export_controls(
                     )
                     pdf_mime = "application/zip"
                     pdf_label = "Download PDF ZIP"
+                    pdf_card_meta = (
+                        f"{len(selected_components)} reports, ZIP file"
+                    )
+                st.markdown(
+                    _export_download_card_html(
+                        "Diagnostic report",
+                        pdf_card_meta,
+                        "file-text",
+                        tokens,
+                    ),
+                    unsafe_allow_html=True,
+                )
                 st.download_button(
                     pdf_label,
                     data=pdf_data,
@@ -917,7 +1519,14 @@ def _show_dashboard_export_controls(
                     use_container_width=True,
                 )
             except RuntimeError as err:
-                st.error(str(err))
+                st.markdown(
+                    danger_card_html(
+                        "PDF export unavailable",
+                        _error_paragraph(str(err), tokens),
+                        tokens,
+                    ),
+                    unsafe_allow_html=True,
+                )
 
         with csv_col:
             if len(selected_components) == 1:
@@ -934,6 +1543,9 @@ def _show_dashboard_export_controls(
                 )
                 csv_mime = "text/csv"
                 csv_label = "Download CSV"
+                csv_card_meta = (
+                    f"{len(selected_columns)} column(s), CSV file"
+                )
             else:
                 csv_files = [
                     (
@@ -963,6 +1575,18 @@ def _show_dashboard_export_controls(
                 )
                 csv_mime = "application/zip"
                 csv_label = "Download CSV ZIP"
+                csv_card_meta = (
+                    f"{len(selected_components)} tables, ZIP file"
+                )
+            st.markdown(
+                _export_download_card_html(
+                    "Key signals table",
+                    csv_card_meta,
+                    "activity",
+                    tokens,
+                ),
+                unsafe_allow_html=True,
+            )
             st.download_button(
                 csv_label,
                 data=csv_data,
@@ -971,6 +1595,120 @@ def _show_dashboard_export_controls(
                 key="overview_download_csv",
                 use_container_width=True,
             )
+
+        options_label = (
+            "Hide export options"
+            if st.session_state["overview_export_options_open"]
+            else "Customize export options"
+        )
+        if st.button(
+            options_label,
+            key="export_options_toggle",
+            use_container_width=True,
+        ):
+            st.session_state["overview_export_options_open"] = (
+                not st.session_state["overview_export_options_open"]
+            )
+            st.rerun()
+
+        if st.session_state["overview_export_options_open"]:
+            with st.container(key="export_options_panel"):
+                st.markdown(
+                    '<div class="export-options-title">Export options</div>',
+                    unsafe_allow_html=True,
+                )
+                open_text = (
+                    "^" if st.session_state["overview_component_dropdown_open"]
+                    else "v"
+                )
+                component_label = (
+                    f"Report components "
+                    f"({len(selected_component_keys)}/{len(component_keys)}) "
+                    f"{open_text}"
+                )
+                if st.button(
+                    component_label,
+                    key="export_dropdown_components",
+                    use_container_width=True,
+                ):
+                    dropdown_key = "overview_component_dropdown_open"
+                    st.session_state[dropdown_key] = (
+                        not st.session_state[dropdown_key]
+                    )
+                    st.rerun()
+
+                if st.session_state["overview_component_dropdown_open"]:
+                    st.markdown("Report components")
+                    component_cols = st.columns(3, gap="small")
+                    for idx, component_key in enumerate(component_keys):
+                        with component_cols[idx % 3]:
+                            st.checkbox(
+                                _component_label(component_key),
+                                key=(
+                                    f"overview_component_choice_"
+                                    f"{component_key}"
+                                ),
+                            )
+
+                filter_col_1, filter_col_2 = st.columns(2, gap="small")
+                with filter_col_1:
+                    open_text = (
+                        "^" if st.session_state["overview_pdf_dropdown_open"]
+                        else "v"
+                    )
+                    pdf_label = (
+                        f"PDF sections "
+                        f"({len(selected_sections)}/{len(section_keys)}) "
+                        f"{open_text}"
+                    )
+                    if st.button(
+                        pdf_label,
+                        key="export_dropdown_pdf",
+                        use_container_width=True,
+                    ):
+                        st.session_state["overview_pdf_dropdown_open"] = (
+                            not st.session_state["overview_pdf_dropdown_open"]
+                        )
+                        st.rerun()
+
+                    if st.session_state["overview_pdf_dropdown_open"]:
+                        st.markdown("PDF sections")
+                        for section_key in section_keys:
+                            st.checkbox(
+                                EXPORT_SECTION_LABELS.get(
+                                    section_key, section_key
+                                ),
+                                key=f"overview_pdf_choice_{section_key}",
+                            )
+
+                with filter_col_2:
+                    open_text = (
+                        "^" if st.session_state["overview_csv_dropdown_open"]
+                        else "v"
+                    )
+                    csv_label = (
+                        f"CSV columns "
+                        f"({len(selected_columns)}/{len(column_keys)}) "
+                        f"{open_text}"
+                    )
+                    if st.button(
+                        csv_label,
+                        key="export_dropdown_csv",
+                        use_container_width=True,
+                    ):
+                        st.session_state["overview_csv_dropdown_open"] = (
+                            not st.session_state["overview_csv_dropdown_open"]
+                        )
+                        st.rerun()
+
+                    if st.session_state["overview_csv_dropdown_open"]:
+                        st.markdown("CSV columns")
+                        for column_key in column_keys:
+                            label = column_key.replace("_", " ").title()
+                            st.checkbox(
+                                label,
+                                key=f"overview_csv_choice_{column_key}",
+                            )
 
 
 def show_mock_data_warning(tokens: dict) -> None:
@@ -1006,8 +1744,10 @@ def show_mock_data_warning(tokens: dict) -> None:
 
 def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
     """Centered upload card with a secondary demo-data link."""
+    _recover_csv_analysis_running_state()
+
     # ── Minimal nav bar: brand left, theme toggle right ──
-    nav_left, nav_right = st.columns([10, 1])
+    nav_left, nav_help, nav_right = st.columns([7, 2, 1])
     with nav_left:
         st.markdown(
             f'<div style="padding:8px 0 24px 0;">'
@@ -1015,6 +1755,9 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             f'color:{tokens["text"]};">Granite Lifeline</span></div>',
             unsafe_allow_html=True,
         )
+    with nav_help:
+        st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
+        _show_local_run_button(tokens, "landing_local_run_btn")
     with nav_right:
         _show_theme_toggle(dark_mode, tokens)
 
@@ -1026,15 +1769,15 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
 
     # ── Hero text ──
     st.markdown(
-        f'<div style="text-align:center;max-width:560px;'
-        f'margin:0 auto 32px auto;">'
-        f'<h1 style="font-size:clamp(24px,4vw,36px);font-weight:700;'
-        f'color:{tokens["text"]};margin:0 0 12px 0;line-height:1.2;">'
-        'Vehicle Health Analysis</h1>'
-        f'<p style="font-size:15px;color:{tokens["text_secondary"]};'
-        'line-height:1.6;margin:0;">'
-        'Upload your OBD-II drive data to get a full health diagnostic report.'
-        '</p></div>',
+        page_title_html(
+            "Vehicle Health Analysis",
+            tokens,
+            subtitle=(
+                "Upload your OBD-II drive data to get a full health "
+                "diagnostic report."
+            ),
+            margin="0 auto 32px auto",
+        ),
         unsafe_allow_html=True,
     )
 
@@ -1049,9 +1792,15 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             border: 1px solid {tokens["glass_border"]} !important;
             border-radius: 20px !important;
             box-shadow: 0 4px 24px {tokens["shadow"]} !important;
+            box-sizing: border-box !important;
             padding: 32px 32px 24px 32px !important;
             max-width: 560px !important;
+            min-height: 315px !important;
             margin: 0 auto !important;
+        }}
+        .st-key-landing_upload_pair {{
+            margin: 0 auto !important;
+            max-width: 1160px !important;
         }}
         /* Larger drop-zone */
         .st-key-landing_upload_card [data-testid="stFileUploader"] {{
@@ -1063,9 +1812,21 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             background: transparent !important;
             border: none !important;
             display: flex !important;
+            flex-direction: column !important;
+            gap: 14px !important;
             justify-content: center !important;
-            min-height: 64px !important;
+            min-height: 124px !important;
             padding: 0 !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] > div {{
+            align-items: center !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+            justify-content: center !important;
+            max-width: 100% !important;
+            width: 100% !important;
         }}
         .st-key-landing_upload_card
             [data-testid="stFileUploaderDropzoneInstructions"] {{
@@ -1080,11 +1841,14 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
         .st-key-landing_upload_card [data-testid="stFileUploader"] section {{
             align-items: center !important;
             display: flex !important;
+            flex-direction: column !important;
+            gap: 14px !important;
             justify-content: center !important;
             padding: 0 !important;
             width: 100% !important;
         }}
-        .st-key-landing_upload_card [data-testid="stFileUploader"] button {{
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] button {{
             align-items: center !important;
             background: {tokens["surface_alt"]} !important;
             border: 1.5px solid {tokens["border"]} !important;
@@ -1099,15 +1863,61 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             min-width: 140px !important;
             padding: 0 26px !important;
             position: relative !important;
+            order: 1 !important;
             width: 140px !important;
         }}
-        .st-key-landing_upload_card [data-testid="stFileUploader"] button * {{
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] > div > * {{
+            order: 2 !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"]
+            [data-testid="stFileChips"] {{
+            align-items: center !important;
+            display: flex !important;
+            justify-content: center !important;
+            width: 100% !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"]
+            [data-testid="stFileChips"]
+            > div:has([data-testid="stFileChip"]) {{
+            display: none !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileChip"] {{
+            display: none !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileChipDeleteBtn"] {{
+            display: none !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderFile"] {{
+            display: none !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] section > div {{
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            max-width: 100% !important;
+            order: 2 !important;
+            width: 100% !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] section > div > div {{
+            max-width: 100% !important;
+            width: 100% !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] button * {{
             color: transparent !important;
             display: none !important;
             font-size: 0 !important;
             line-height: 0 !important;
         }}
-        .st-key-landing_upload_card [data-testid="stFileUploader"]
+        .st-key-landing_upload_card [data-testid="stFileUploaderDropzone"]
                 button::after {{
             align-items: center !important;
             color: {tokens["text"]} !important;
@@ -1121,13 +1931,24 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             position: absolute !important;
             text-align: center !important;
         }}
-        .st-key-landing_upload_card [data-testid="stFileUploader"]
+        .st-key-landing_upload_card [data-testid="stFileUploaderDropzone"]
                 button:hover {{
             border-color: {tokens["accent"]} !important;
         }}
-        .st-key-landing_upload_card [data-testid="stFileUploader"]
+        .st-key-landing_upload_card [data-testid="stFileUploaderDropzone"]
                 button:hover::after {{
             color: {tokens["accent"]} !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] section > div + button,
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDropzone"] section
+            > button:not(:first-child) {{
+            display: none !important;
+        }}
+        .st-key-landing_upload_card
+            [data-testid="stFileUploaderDeleteBtn"] {{
+            display: none !important;
         }}
         /* Run Analysis button — full-width accent */
         .st-key-landing_run_btn button {{
@@ -1142,7 +1963,17 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
             margin-top: 4px !important;
             transition: opacity 0.15s ease !important;
         }}
+        .st-key-landing_run_btn button *,
+        .st-key-landing_run_btn button p {{
+            color: {tokens["accent_contrast"]} !important;
+            font-size: 15px !important;
+            font-weight: 700 !important;
+        }}
         .st-key-landing_run_btn button:hover {{ opacity: 0.88 !important; }}
+        .st-key-landing_run_btn button:disabled {{
+            cursor: progress !important;
+            opacity: 0.64 !important;
+        }}
         /* Demo data link-button */
         .st-key-landing_demo_btn button {{
             background: transparent !important;
@@ -1165,26 +1996,33 @@ def _show_landing_page(dark_mode: bool, tokens: dict) -> None:
     )
 
     # ── Upload card — centered via columns ──
-    _, card_col, _ = st.columns([1, 4, 1])
-    with card_col:
-        with st.container(key="landing_upload_card"):
-            _show_csv_upload_heading(tokens)
-            uploaded_file = st.file_uploader(
-                "CSV file",
-                type=["csv"],
-                key="landing_csv_uploader",
-                label_visibility="collapsed",
-            )
-            # Run Analysis button — full width inside the card col
-            submit_clicked = st.button(
-                "Run Analysis",
-                key="landing_run_btn",
-                use_container_width=True,
-            )
+    with st.container(key="landing_upload_pair"):
+        _, card_col, _ = st.columns([1, 2, 1], gap="large")
+        with card_col:
+            with st.container(key="landing_upload_card"):
+                _show_csv_upload_heading(tokens)
+                uploaded_files = st.file_uploader(
+                    "CSV files",
+                    type=["csv"],
+                    accept_multiple_files=True,
+                    key="landing_csv_uploader",
+                    label_visibility="collapsed",
+                )
+                _show_selected_csv_files(uploaded_files, tokens)
+                # Run Analysis button — full width inside the card col
+                analysis_running = bool(
+                    st.session_state.get(CSV_ANALYSIS_RUNNING_KEY, False)
+                )
+                submit_clicked = st.button(
+                    "Analysing..." if analysis_running else "Run Analysis",
+                    key="landing_run_btn",
+                    use_container_width=True,
+                    disabled=analysis_running,
+                )
 
     # ── Validation feedback ──
     if submit_clicked:
-        _handle_uploaded_csv_submit(uploaded_file, tokens)
+        _handle_uploaded_csv_history_submit(uploaded_files, tokens)
 
     # ── Secondary: demo data entry ──
     st.markdown(
@@ -1264,35 +2102,11 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
             background: transparent !important;
             border: none !important;
         }}
-        div.st-key-dashboard_what_if_btn button,
-        .st-key-dashboard_what_if_btn button {{
-            background: transparent !important;
-            border: 1.5px solid {tokens["border"]} !important;
-            border-radius: 10px !important;
-            color: {tokens["text"]} !important;
-            font-size: 13px !important;
-            font-weight: 600 !important;
-            min-height: 38px !important;
-            transition: border-color 0.15s ease, color 0.15s ease,
-                        background 0.15s ease !important;
-        }}
-        div.st-key-dashboard_what_if_btn button *,
-        div.st-key-dashboard_what_if_btn button:hover *,
-        .st-key-dashboard_what_if_btn button *,
-        .st-key-dashboard_what_if_btn button:hover * {{
-            color: inherit !important;
-        }}
-        div.st-key-dashboard_what_if_btn button:hover,
-        .st-key-dashboard_what_if_btn button:hover {{
-            background: {hex_to_rgba(tokens["accent"], 0.07)} !important;
-            border-color: {tokens["accent"]} !important;
-            color: {tokens["accent"]} !important;
-        }}
         </style>
         """,
         unsafe_allow_html=True,
     )
-    spacer_col, title_col, action_col, theme_col = st.columns([1, 8, 2, 1])
+    spacer_col, title_col, theme_col = st.columns([1, 10, 1])
     with spacer_col:
         st.markdown(
             '<div style="height:8px;"></div>', unsafe_allow_html=True
@@ -1306,7 +2120,6 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
             st.rerun()
     with title_col:
         with st.container(key="page_title_block"):
-            st.title("Vehicle Health Status")
             latest = max(
                 (c.get("timestamp", "") for c in mock_data.values()),
                 default="",
@@ -1318,9 +2131,17 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
                     ).strftime("%Y-%m-%d %H:%M")
                 except Exception:
                     fmt = latest
-                st.caption(f"Last checked: {fmt}")
             else:
-                st.caption("Last checked: N/A")
+                fmt = "N/A"
+            st.markdown(
+                page_title_html(
+                    "Vehicle Health Status",
+                    tokens,
+                    subtitle=f"Last checked: {fmt}",
+                    margin="0 auto 4px auto",
+                ),
+                unsafe_allow_html=True,
+            )
         st.markdown(
             """
             <style>
@@ -1333,36 +2154,20 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
             """,
             unsafe_allow_html=True,
         )
-    with action_col:
-        st.markdown(
-            '<div style="height:12px;"></div>', unsafe_allow_html=True
-        )
-        if st.button(
-            "What-If Analysis",
-            key="dashboard_what_if_btn",
-            use_container_width=True,
-        ):
-            st.session_state["page"] = "what_if"
-            st.rerun()
     with theme_col:
         _show_theme_toggle(dark_mode, tokens)
 
     if not mock_data:
-        info_icon = lucide_icon(
-            "info", size=20, color=tokens["text_secondary"]
-        )
         st.markdown(
-            f'<div style="background:'
-            f'{hex_to_rgba(tokens["text_secondary"], 0.08)};'
-            f'border:1px solid '
-            f'{hex_to_rgba(tokens["text_secondary"], 0.20)};'
-            'border-radius:14px;padding:24px 16px;margin:16px 0;'
-            f'color:{tokens["text_secondary"]};'
-            'display:flex;align-items:center;justify-content:center;'
-            'gap:14px;">'
-            f'{info_icon}'
-            f'<span style="font-weight:600;color:{tokens["text_secondary"]};">'
-            'No components to display</span></div>',
+            empty_state_html(
+                "No current risk patterns detected",
+                "The uploaded trips did not produce a Medium or High risk "
+                "pattern. Continue normal monitoring; this result does not "
+                "rule out every vehicle fault.",
+                tokens,
+                max_width="700px",
+                margin="16px auto",
+            ),
             unsafe_allow_html=True,
         )
         return
@@ -1386,7 +2191,7 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
     else:
         cols = st.columns(3, gap="large")
 
-    # Scoped CSS for the detail button and what-if link button.
+    # Scoped CSS for the detail button.
     st.markdown(
         f"""
         <style>
@@ -1450,8 +2255,8 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
                 size=ring_size,
                 stroke=10,
             )
-            score_text = f"{risk_pct}%" if has_score else "N/A"
-            score_label = "Risk Score" if has_score else "No Data"
+            score_text = risk_level if has_score else "N/A"
+            score_label = "Risk level" if has_score else "No Data"
             card_html = (
                 f'<div style="'
                 f'background:{tokens["glass_surface"]};'
@@ -1476,7 +2281,7 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
                 '<div style="position:absolute;inset:0;display:flex;'
                 'flex-direction:column;align-items:center;'
                 'justify-content:center;">'
-                f'<span style="font-family:{FONT_MONO};font-size:30px;'
+                f'<span style="font-family:{FONT_MONO};font-size:21px;'
                 f'font-weight:700;color:{tokens["text"]};line-height:1;">'
                 f'{score_text}</span>'
                 f'<span style="font-size:11px;'
@@ -1498,77 +2303,6 @@ def _show_dashboard_page(dark_mode: bool, tokens: dict) -> None:
                 st.rerun()
 
     _show_dashboard_export_controls(sorted_components, tokens)
-
-    # ── Re-upload section (collapsed) ──
-    st.markdown(
-        "<div style='height:16px;'></div>", unsafe_allow_html=True
-    )
-    st.markdown(
-        f"""
-        <style>
-        .st-key-dashboard_reupload_expander {{
-            border: 1px solid {tokens["border"]} !important;
-            border-radius: 10px !important;
-            overflow: hidden !important;
-        }}
-        .st-key-dashboard_reupload_toggle button {{
-            align-items: center !important;
-            background: {tokens["surface"]} !important;
-            border: none !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-            color: {tokens["text"]} !important;
-            display: inline-flex !important;
-            font-size: 14px !important;
-            font-weight: 600 !important;
-            gap: 10px !important;
-            justify-content: flex-start !important;
-            line-height: 1.2 !important;
-            margin: 0 !important;
-            min-height: 44px !important;
-            padding: 0 18px !important;
-            text-align: left !important;
-            width: 100% !important;
-        }}
-        .st-key-dashboard_reupload_toggle button:hover {{
-            background: {hex_to_rgba(tokens["accent"], 0.06)} !important;
-            border: none !important;
-            color: {tokens["text"]} !important;
-        }}
-        .st-key-dashboard_reupload_toggle button p {{
-            align-items: center !important;
-            display: inline-flex !important;
-            gap: 10px !important;
-        }}
-        .st-key-dashboard_reupload_body {{
-            border-top: 1px solid {tokens["border"]} !important;
-            padding: 18px 16px 20px 16px !important;
-        }}
-        .st-key-dashboard_reupload_body .st-key-csv_upload_section {{
-            margin: 0 auto !important;
-            max-width: 100% !important;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-    if "dashboard_reupload_open" not in st.session_state:
-        st.session_state["dashboard_reupload_open"] = False
-
-    with st.container(key="dashboard_reupload_expander"):
-        is_open = st.session_state["dashboard_reupload_open"]
-        arrow = "\u25be" if is_open else "\u203a"
-        if st.button(
-            f"{arrow} Upload new data",
-            key="dashboard_reupload_toggle",
-            use_container_width=True,
-        ):
-            st.session_state["dashboard_reupload_open"] = not is_open
-            st.rerun()
-
-        if st.session_state["dashboard_reupload_open"]:
-            with st.container(key="dashboard_reupload_body"):
-                _show_csv_uploader(tokens)
 
     show_footer(dark_mode)
 

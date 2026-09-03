@@ -296,6 +296,8 @@ def _duration_rule_decision(
     best_direction = None
     triggered = False
     trigger_frame = None
+    trigger_direction = None
+    trigger_margin = None
     evidence_count = 0
     for kind, direction, _override in condition_kinds:
         runs = trips.episodes(trip_id, rule_id, kind)
@@ -311,7 +313,8 @@ def _duration_rule_decision(
         if not meeting.empty and not triggered:
             triggered = True
             trigger_frame = meeting
-            best_direction = direction
+            trigger_direction = direction
+            trigger_margin = meeting["margin_seconds"].max()
 
     start, end = trips.span_of(eligible)
     segment_id = (
@@ -324,10 +327,10 @@ def _duration_rule_decision(
             proxy_id=proxy_id, sub_check_id=sub_check,
             unit_scope="trip", trip_id=trip_id, segment_id=segment_id,
             evidence_start_timestamp=start, evidence_end_timestamp=end,
-            direction=best_direction, decision_role=decision_role,
+            direction=trigger_direction, decision_role=decision_role,
             result_state=active_state,
             decision_reason="condition_persistence_met",
-            decision_margin=float(best_margin),
+            decision_margin=float(trigger_margin),
             dtc_candidate_label=dtc_candidate_label,
             dtc_emitted=False, confidence=confidence,
             confidence_capped_low=False,
@@ -399,7 +402,7 @@ def build_trip_decisions(
             opportunity_seconds=seconds(
                 "1-S2", "minimum_evaluable_seconds"),
             decision_role="verdict",
-            dtc_candidate_label="P0217",
+            dtc_candidate_label=rules["1-S2"]["dtc_candidate_label"],
             no_opportunity_reason="insufficient_evaluable_time",
         ))
         rows.append(_duration_rule_decision(
@@ -409,7 +412,8 @@ def build_trip_decisions(
             opportunity_seconds=seconds(
                 "1-S3", "minimum_evaluable_seconds"),
             decision_role="pending_precursor",
-            dtc_candidate_label="P0217", active_state="pending",
+            dtc_candidate_label=rules["1-S3"]["dtc_candidate_label"],
+            active_state="pending",
             no_opportunity_reason="below_minimum_evaluable_window",
         ))
         rows.append(_duration_rule_decision(
@@ -418,7 +422,7 @@ def build_trip_decisions(
             opportunity="run_meets",
             opportunity_seconds=seconds("2-S2", "persistence"),
             decision_role="verdict",
-            dtc_candidate_label="P0101",
+            dtc_candidate_label=rules["2-S2"]["dtc_candidate_label"],
         ))
         rows.append(_duration_rule_decision(
             trips, trip_id, rule_id="2-S3b",
@@ -426,7 +430,7 @@ def build_trip_decisions(
             opportunity="run_meets",
             opportunity_seconds=seconds("2-S3b", "persistence"),
             decision_role="verdict",
-            dtc_candidate_label="P0102",
+            dtc_candidate_label=rules["2-S3b"]["dtc_candidate_label"],
         ))
         rows.append(_duration_rule_decision(
             trips, trip_id, rule_id="3-S1a",
@@ -438,7 +442,7 @@ def build_trip_decisions(
             opportunity_seconds=seconds(
                 "3-S1a", "same_side_persistence"),
             decision_role="verdict",
-            dtc_candidate_label="P2138",
+            dtc_candidate_label=rules["3-S1a"]["dtc_candidate_label"],
             no_opportunity_reason="no_qualifying_masked_opportunity",
         ))
         rows.append(_duration_rule_decision(
@@ -447,7 +451,8 @@ def build_trip_decisions(
             opportunity="run_meets",
             opportunity_seconds=seconds("3-S1b", "persistence"),
             decision_role="verdict",
-            dtc_candidate_label="P2138", confidence="provisional",
+            dtc_candidate_label=rules["3-S1b"]["dtc_candidate_label"],
+            confidence="provisional",
         ))
         rows.append(_duration_rule_decision(
             trips, trip_id, rule_id="4-S1",
@@ -455,7 +460,8 @@ def build_trip_decisions(
             opportunity="run_meets_and_context",
             opportunity_seconds=seconds(
                 "4-S1", "minimum_evaluable_seconds"),
-            decision_role="verdict", dtc_candidate_label="P0111",
+            decision_role="verdict",
+            dtc_candidate_label=rules["4-S1"]["dtc_candidate_label"],
             no_opportunity_reason="no_context_opportunity",
         ))
         rows.append(_duration_rule_decision(
@@ -477,7 +483,8 @@ def build_trip_decisions(
             opportunity="run_meets_and_context",
             opportunity_seconds=seconds(
                 "5-S3", "minimum_evaluable_seconds"),
-            decision_role="verdict", dtc_candidate_label="P0106",
+            decision_role="verdict",
+            dtc_candidate_label=rules["5-S3"]["dtc_candidate_label"],
             no_opportunity_reason="no_context_opportunity",
         ))
         rows.append(_range_rule_decision(trip_id, trips, rule_state,
@@ -585,7 +592,7 @@ def _step_response_decision(
             evidence_end_timestamp=trip_end, direction=None,
             result_state="not_evaluable",
             decision_reason="no_valid_events", decision_margin=None,
-            dtc_candidate_label="P0106", evidence_count=0,
+            dtc_candidate_label=rule["dtc_candidate_label"], evidence_count=0,
             opportunity_present=False,
         )
     complete = trip_events[_as_bool(trip_events["window_complete"])]
@@ -607,7 +614,7 @@ def _step_response_decision(
             else "no_trigger_with_opportunity"
         ),
         decision_margin=float(max_count - m_required),
-        dtc_candidate_label="P0106",
+        dtc_candidate_label=rule["dtc_candidate_label"],
         evidence_count=int(len(evaluable)),
         opportunity_present=True,
     )
@@ -619,7 +626,8 @@ def build_engine_start_decisions(
 ) -> list[dict[str, Any]]:
     """1-S1 decision rows (one per engine-start episode)."""
 
-    wiring = registry["proxy_rules"]["1-S1"]["sensor_trust_wiring"]
+    rule = registry["proxy_rules"]["1-S1"]
+    wiring = rule["sensor_trust_wiring"]
     rows: list[dict[str, Any]] = []
     for episode in engine_start.itertuples(index=False):
         common = {
@@ -631,7 +639,8 @@ def build_engine_start_decisions(
             "evidence_start_timestamp": episode.start_timestamp,
             "evidence_end_timestamp": episode.end_timestamp,
             "direction": "low", "decision_role": "verdict",
-            "dtc_candidate_label": "P0128", "dtc_emitted": False,
+            "dtc_candidate_label": rule["dtc_candidate_label"],
+            "dtc_emitted": False,
             "confidence": "high", "confidence_capped_low": False,
             "evidence_count": 1,
         }
@@ -725,7 +734,10 @@ def build_cold_start_decisions(
             registry["proxy_rules"]["4-S2"]["iat_abs_delta_c"]["value"]
         ),
     }
-    labels = {"1-S4": "P0116", "4-S2": "P0111"}
+    labels = {
+        "1-S4": registry["proxy_rules"]["1-S4"]["dtc_candidate_label"],
+        "4-S2": registry["proxy_rules"]["4-S2"]["dtc_candidate_label"],
+    }
     proxies = {"1-S4": PROXY_IDS["1"], "4-S2": PROXY_IDS["4"]}
     columns = {
         "1-S4": ("s1s4_eligible", "s1s4_ect_aat_abs_delta",

@@ -1,0 +1,65 @@
+{
+  "trip_id": "trip_0040",
+  "segment_id": "trip_0040_seg_001",
+  "window_id": "trip_0040_seg_001__w003",
+  "timestamp": "2018-02-14T06:47:06Z",
+  "anomaly_type": "cooling_degradation",
+  "risk_score": 0.1802,
+  "risk_level": "Low",
+  "component": "cooling_degradation",
+  "prediction_confidence": 0.95,
+  "key_signals": [
+    {
+      "feature": "coolant_temp",
+      "value": 89.0,
+      "unit": "\u00b0C",
+      "reference_range": [
+        90,
+        95
+      ]
+    },
+    {
+      "feature": "ect_rate_180s",
+      "value": -0.2951,
+      "unit": "\u00b0C/min",
+      "reference_range": [
+        0,
+        2
+      ]
+    },
+    {
+      "feature": "maf_integral_180s",
+      "value": 3266.3368,
+      "unit": "g",
+      "reference_range": [
+        0,
+        2500
+      ]
+    },
+    {
+      "feature": "rpm",
+      "value": 1571.0,
+      "unit": "RPM",
+      "reference_range": [
+        0,
+        3682
+      ]
+    },
+    {
+      "feature": "speed",
+      "value": 42.0,
+      "unit": "km/h",
+      "reference_range": [
+        0,
+        218
+      ]
+    }
+  ],
+  "estimated_cycles_to_failure": null,
+  "estimated_failure_probability": 0.0031,
+  "notes": [
+    "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
+    "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips.",
+    "No positive trip-level risk trend was observed; no threshold crossing cycle is projected."
+  ]
+}

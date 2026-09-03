@@ -1,17 +1,17 @@
 # Report Layer
 
 **Owner:** Report Team
-**Status:** Active Development
-**Last Updated:** 2026-07-28
+**Status:** Final implementation reviewed
+**Last Updated:** 2026-09-02
 
 ---
 
 ## Overview
 
-The Report Layer is the third stage in the Granite Lifeline predictive
-maintenance pipeline. It transforms Model Layer predictions into
-human-readable diagnostic reports using IBM Granite LLM, RAG-grounded
-fault knowledge, and a three-layer prompt chain.
+The Report Layer is the third stage in the Granite Lifeline pipeline. It
+turns Model Layer anomaly evidence into an owner-facing report using IBM
+Granite, reviewed automotive knowledge and three task-specific prompts. A
+Validator checks each generated section before it can enter the Dashboard.
 
 ```
 Data Layer → Model Layer → Report Layer → Dashboard
@@ -20,15 +20,16 @@ Data Layer → Model Layer → Report Layer → Dashboard
 ### Core Responsibilities
 
 1. **Context Injection**: Format Model Layer output for LLM consumption
-2. **Report Generation**: Use Granite LLM to generate plain-language diagnostic reports
+2. **Report Generation**: Use Granite to generate plain-language anomaly reports
 3. **Pass-Through**: Forward Model Layer fields unchanged to Dashboard
 4. **History Management**: Build `risk_history` for trend visualization from the Model Layer's batch envelope (`{summary, windows}`) at request time — synthesized per request, not separately persisted
-5. **RAG Grounding**: Retrieve anomaly-specific fault knowledge and risk-level action guidance
+5. **RAG Grounding**: Retrieve anomaly-specific explanations and risk-level action guidance
+6. **Release Validation**: Check structure, evidence use, uncertainty and owner/technician action boundaries; request one targeted correction when needed
 
 ### Generated Report Sections
 
 - **anomaly_description**: Human-readable explanation of detected anomalous behavior
-- **possible_cause**: Likely root cause inferred from key signals and anomaly type
+- **possible_cause**: Possible explanations supported by the supplied evidence and reviewed knowledge
 - **recommended_action**: Suggested inspection or maintenance actions
 
 ---
@@ -58,21 +59,17 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | Failure Projection Context | GL-190, GL-192 | Inject estimated failure probability and cycles into prompts when available |
 | Prompt Rule Hardening | GL-213 | Enforce context-first grounding, strict JSON output, safe use of notes, and no invented failure projection values |
 | ADR 303 | GL-110 | Document RAG knowledge base design |
-| Report Generation Pipeline | GL-241–245 | `pipeline/report_generator.py::generate_report()` orchestrates the full three-layer chain against a live Ollama instance, with per-layer retry and a graceful empty-report fallback on failure (never raises) |
+| Report Generation Pipeline | GL-241–245 | `pipeline/report_generator.py::generate_report()` orchestrates the full three-layer chain against a live Ollama instance. Each generated layer is validated before the next begins; a below-threshold result receives one feedback-driven correction, then falls back safely if it still fails. Transient request/parse failures retain three technical retries (never raises). |
 | Dashboard Wiring | GL-365 | Dashboard's CSV-upload flow calls the real pipeline end-to-end (Data Layer → Model Layer subprocess → `generate_report()`); verified with a real, unmocked run producing a grounded report |
 | Timeout Surfacing Fix | GL-261 | Dashboard now detects `generate_report()`'s silent empty-report fallback and shows an "Analysis Timed Out" error card instead of rendering a blank report |
 
-### [IN PROGRESS]
+### Current evidence and remaining boundary
 
-*(none — the P0 items previously listed here are complete; see Completed above)*
-
-### [PLANNED]
-
-| Component | Priority | Description |
-|-----------|----------|-------------|
-| Unit Tests | P1 | Broaden coverage for `report_generator.py`'s retry logic, timeout handling, and multi-layer failure paths |
-| Integration Tests | P1 | Automated (mocked) end-to-end test for the Data → Model → Report → Dashboard chain — currently only verified once by hand |
-| Retrieval Re-verification | P1 | Re-run the metadata-filter vs. semantic-search comparison on the current 5-type knowledge base (existing 100%/~180x numbers predate the retirement of two anomaly types) |
+The current controlled Report Layer evidence is stored in
+`evaluation/v5-rag-final-ablation/`. It covers five anomaly types under four
+knowledge conditions. Automated tests cover generation, correction, fallback,
+retrieval and interface behaviour. Mechanical accuracy remains unevaluated
+because the project has no technician-verified faults or repair outcomes.
 
 ---
 
@@ -133,13 +130,16 @@ report_layer/
 │   │   └── contradictory_cooling_stress.json
 │   ├── v1-initial-evaluation/              # GL-30 baseline results
 │   ├── v2-model-selection/                 # GL-76 model comparison results
-│   ├── v3-rag-baseline-comparison/         # RAG vs no-RAG results
-│   └── v4-meta-semantic-comparison/        # Meta-semantic evaluation results
+│   ├── v3-rag-baseline-comparison/         # Historical RAG/no-RAG results
+│   ├── v4-meta-semantic-comparison/        # Historical retrieval comparison
+│   └── v5-rag-final-ablation/              # Current controlled evidence
 ├── pipeline/                       # Core logic
 │   ├── __init__.py
 │   ├── context_injection.py        # Format Model Layer output + RAG integration
-│   ├── report_generator.py         # generate_report(): production three-layer chain (GL-241–245)
+│   ├── owner_facing_cleanup.py     # Owner-facing terminology and wording cleanup
 │   ├── prompt_chain_validator.py   # Validate prompt chain outputs
+│   ├── report_validation_policy.py # Input-aware release policies
+│   ├── report_generator.py         # Production generation/correction orchestration
 │   └── scenario_evaluation.py      # GL-30 scenario testing script
 ├── prompts/                        # LLM prompt templates
 │   ├── layer1_description.txt      # Anomaly description prompt
@@ -148,10 +148,9 @@ report_layer/
 ├── rag/                            # RAG knowledge base (GL-110)
 │   ├── knowledge_indexer.py        # ChromaDB indexer
 │   ├── rag_retriever.py            # Metadata-filtered retrieval
-│   ├── symptom_knowledge_indexer.py # Document-level chunking variant (GL-156 comparison)
+│   ├── symptom_knowledge_indexer.py # Comparison-only document-level indexer
 │   └── chroma_db/                  # ChromaDB storage (gitignored)
-├── tests/                          # Unit tests
-│   └── .gitkeep
+├── tests/                          # Focused Report Layer tests
 └── README.md                       # This file
 ```
 
@@ -216,7 +215,8 @@ Three-layer prompt chain designed for plain-language diagnostic reports:
 - Uses retrieved fault knowledge only when supported by current context
 
 **Layer 3: Recommended Action** (`layer3_action.txt`)
-- Returns 2-4 clear, concrete action items in JSON array format
+- Returns exactly four ordered action items: `Now`, `Service timing`,
+  `Stop driving and seek help if`, and `Tell the mechanic`
 - Matches urgency to risk_level (Low/Medium/High)
 - Matches wording strength to prediction_confidence
 - Provides practical guidance for vehicle owners
@@ -258,7 +258,7 @@ and `docs/checklist.md`.
 **Selected Model:** `granite4.1:8b`
 - **Weighted Score:** 4.85/5.0 (highest)
 - **Strengths:** Most actionable recommendations, 100% JSON parsing, latest IBM Granite version
-- **Fallback:** granite4.1:3b (4.55/5.0) if speed/hardware constraints arise
+- **Lower-resource alternative considered:** granite4.1:3b (4.55/5.0)
 
 **Results:** See `evaluation/v2-model-selection/model_comparison.md`
 and `docs/adr/302-granite-llm-model-selection.md`
@@ -319,15 +319,16 @@ These files validate the model's ability to distinguish typical from atypical fa
 **Components:**
 
 **knowledge_indexer.py** (GL-111)
-- Indexes 7 anomaly types from `shared/ground_knowledge/grounded_knowledge.yaml`
-- Creates 28 documents (7 types × 4 documents each):
+- Indexes 5 runtime anomaly types from `shared/ground_knowledge/grounded_knowledge.yaml`
+- Rebuilds 20 documents (5 types × 4 documents each):
   - description_causes
   - actions_low
   - actions_medium
   - actions_high
-- Stores in ChromaDB with metadata: `{"anomaly_type": "<type>", "risk_level": "<level>"}`
+- Stores `anomaly_type` and `section` metadata on every record and adds
+  `risk_level` to action records
 - Validates all expected anomaly types are present
-- Skips re-indexing if already up to date
+- Rebuilds the collection so changed source content cannot leave stale records
 
 **rag_retriever.py** (GL-112)
 - Three retrieval functions with graceful error handling:
@@ -347,7 +348,7 @@ These files validate the model's ability to distinguish typical from atypical fa
 
 **Documentation:** See `docs/adr/303-rag-knowledge-base-design.md`
 
-**Tests:** 33 test cases in `tests/test_rag_retriever.py` (GL-113)
+**Tests:** Retrieval behaviour is covered by `tests/test_rag_retriever.py`.
 
 ---
 
@@ -406,7 +407,7 @@ See `docs/INTERFACE.md` Section 3 for complete field definitions.
 - **Python Packages:** `pydantic`, `requests`, `chromadb`, `langchain`,
   `langchain-community`, `pyyaml` (see root `requirements.txt`)
 - **Ollama:** Local LLM inference server (http://localhost:11434)
-- **Granite Models:** granite4.1:8b (production), granite4.1:3b (fallback)
+- **Granite Model:** granite4.1:8b (production)
 
 ---
 
@@ -434,32 +435,29 @@ pip install -r requirements.txt
 ollama pull granite4.1:8b
 ```
 
-### Run Scenario Evaluation (GL-30)
+### Run the current controlled Report Layer evaluation
 
 ```bash
-# Ensure Ollama is running with granite4.1:8b
-ollama pull granite4.1:8b
-
-# Run scenario evaluation
-python report_layer/pipeline/scenario_evaluation.py
-
-# Or explicitly choose baseline / RAG mode
-python report_layer/pipeline/scenario_evaluation.py --mode rag
+uv run python \
+  report_layer/evaluation/v5-rag-final-ablation/run_final_rag_ablation.py
+uv run python \
+  report_layer/evaluation/v5-rag-final-ablation/run_owner_decision_smoke.py
 ```
 
-**Output:** `report_layer/evaluation/scenario_comparison.md`
+See `evaluation/v5-rag-final-ablation/README.md` before interpreting the
+generated scores or manual-review fields.
 
 ### Run Tests
 
 ```bash
 # Run all project tests
-pytest tests/ -v
+uv run pytest -q -m "not model_download"
 
 # Run RAG retriever tests
-pytest tests/test_rag_retriever.py -v
+uv run pytest tests/test_rag_retriever.py -v
 
 # Run interface and dashboard data loading contract tests
-pytest tests/test_interface.py tests/test_data_loader.py -v
+uv run pytest tests/test_interface.py tests/test_data_loader.py -v
 ```
 
 ---
@@ -491,28 +489,21 @@ All generated reports must satisfy:
 - ✅ **Interface compliance**: Uses only fields defined in INTERFACE.md
 - ✅ **Prompt quality**: Appropriate wording for each layer and risk level
 - ✅ **Plain language**: Understandable without automotive expertise
-- ✅ **Accuracy**: Distinguishes NORMAL vs ABNORMAL signals correctly
+- ✅ **Signal consistency**: Does not reverse supplied values or reference ranges
 - ✅ **Safety**: Avoids overclaiming or causing unnecessary panic
-- ✅ **Story 2 AC3**: Distinguishes typical from atypical fault patterns
+- ✅ **Release behaviour**: Rejects or corrects outputs that violate the
+  implemented report rules
 
 See `docs/checklist.md` for full quality checklist.
 
 ---
 
-## Remaining Work
+## Future evaluation
 
-**1. Unit Tests and Prompt Regression Tests** (P1)
-- Broaden `report_generator.py` coverage: multi-layer failure, partial failure, and the GL-261 fallback-detection path
-- Test Failure Projection present/null cases
-- Test Model Layer Notes are treated as data-quality notes only
-- Mock Ollama API for testing without live calls
-
-**2. Integration Tests** (P1)
-- Automated (mocked) end-to-end test for Data Layer → Model Layer → Report Layer → Dashboard — currently only verified once by hand with real data (real KIT CSV, real TTM inference, real Ollama call)
-- Performance benchmarks
-
-**3. Retrieval Re-verification** (P1)
-- Re-run the metadata-filter vs. semantic-search comparison (`rag_baseline_comparison_table.md` §6) on the current 5-type knowledge base — the existing 100% accuracy / ~180x speed numbers were measured before two anomaly types were retired from the executable enum
+The next evaluation should use faults and repair outcomes verified by qualified
+automotive technicians and should include other vehicles and operating
+conditions. The current automated suite establishes software and rule
+compliance; it cannot establish mechanical diagnostic accuracy.
 
 ### Deliberately Out of Scope
 

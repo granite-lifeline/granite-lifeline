@@ -8,7 +8,7 @@ from dashboard.failure_prediction import (
 
 
 def test_failure_prediction_text_with_value():
-    """Test card text when prediction fields have values."""
+    """Test card text shows both estimates, each with its own horizon."""
     component_data = {
         "estimated_failure_probability": 0.72,
         "estimated_cycles_to_failure": 15,
@@ -16,7 +16,32 @@ def test_failure_prediction_text_with_value():
 
     text, has_value = format_failure_prediction_text(component_data)
 
-    assert text == "72% probability of failure within the next 15 trips"
+    assert (
+        "72% chance of crossing into High risk within the next 10 trips"
+        in text
+    )
+    assert "expected around trip 15" in text
+    assert "probability of failure" not in text
+    assert has_value is True
+
+
+def test_failure_prediction_text_suppresses_crossing_language_at_high_risk():
+    """"Chance of crossing into High risk" is contradictory once
+    risk_level is already High — Model Layer output can still carry a
+    small non-null residual probability at High risk (real data has
+    scored a High-risk case at 0.001), so this can't be assumed away by
+    the fields being null; risk_level must be checked explicitly."""
+    component_data = {
+        "risk_level": "High",
+        "estimated_failure_probability": 0.001,
+        "estimated_cycles_to_failure": None,
+    }
+
+    text, has_value = format_failure_prediction_text(component_data)
+
+    assert "chance of crossing" not in text
+    assert "expected around trip" not in text
+    assert "already reached the High-risk threshold" in text
     assert has_value is True
 
 
@@ -33,8 +58,8 @@ def test_failure_prediction_text_with_null_value():
     assert has_value is False
 
 
-def test_failure_prediction_text_with_one_missing_value():
-    """Test placeholder when only one prediction field is missing."""
+def test_failure_prediction_text_with_only_probability():
+    """Probability alone still renders — the two fields are independent."""
     component_data = {
         "estimated_failure_probability": 0.72,
         "estimated_cycles_to_failure": None,
@@ -42,8 +67,12 @@ def test_failure_prediction_text_with_one_missing_value():
 
     text, has_value = format_failure_prediction_text(component_data)
 
-    assert text == PENDING_FAILURE_PREDICTION_TEXT
-    assert has_value is False
+    assert (
+        "72% chance of crossing into High risk within the next 10 trips"
+        in text
+    )
+    assert "expected around trip" not in text
+    assert has_value is True
 
 
 def test_failure_prediction_text_with_missing_fields():
@@ -54,8 +83,8 @@ def test_failure_prediction_text_with_missing_fields():
     assert has_value is False
 
 
-def test_failure_prediction_text_with_empty_string():
-    """Test placeholder when a prediction field is an empty string."""
+def test_failure_prediction_text_with_only_cycles():
+    """A blank probability does not suppress the cycles estimate."""
     component_data = {
         "estimated_failure_probability": "",
         "estimated_cycles_to_failure": 15,
@@ -63,12 +92,16 @@ def test_failure_prediction_text_with_empty_string():
 
     text, has_value = format_failure_prediction_text(component_data)
 
-    assert text == PENDING_FAILURE_PREDICTION_TEXT
-    assert has_value is False
+    assert (
+        "If the current trend continues, High risk is expected in "
+        "about 15 trips" in text
+    )
+    assert "chance of crossing" not in text
+    assert has_value is True
 
 
 def test_failure_prediction_text_zero_probability_is_value():
-    """Test that 0% is still treated as a real estimate."""
+    """Test that 0% is still treated as a real estimate, not missing."""
     component_data = {
         "estimated_failure_probability": 0.0,
         "estimated_cycles_to_failure": 15,
@@ -76,7 +109,11 @@ def test_failure_prediction_text_zero_probability_is_value():
 
     text, has_value = format_failure_prediction_text(component_data)
 
-    assert text == "0% probability of failure within the next 15 trips"
+    assert (
+        "0% chance of crossing into High risk within the next 10 trips"
+        in text
+    )
+    assert "expected around trip 15" in text
     assert has_value is True
 
 

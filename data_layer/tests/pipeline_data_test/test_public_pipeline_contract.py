@@ -33,6 +33,85 @@ def _copy_pipeline_contracts(tmp_path: Path) -> Path:
     return tmp_path / "data_layer/data_cleaning/src/cleaning_config.yaml"
 
 
+def _patch_cleaning(monkeypatch, enriched) -> None:
+    def fake_clean_dataset_enriched(*args, **kwargs):
+        return enriched.copy(), {
+            "files_processed": 1,
+            "input_rows": len(enriched),
+            "trips": 1,
+            "segments": 1,
+        }
+
+    monkeypatch.setattr(
+        data_cleaning, "clean_dataset_enriched", fake_clean_dataset_enriched
+    )
+
+
+def test_public_pipeline_stops_at_stage_41_by_default(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """The batch path must stay feature-only unless proxy is requested."""
+
+    config_path = _copy_pipeline_contracts(tmp_path)
+    config = load_config(config_path)
+    enriched = fixture_upstream._fixture_enriched(config, rows=12)
+    enriched["trip_id"] = "trip_0001"
+    enriched["segment_id"] = "trip_0001_seg_001"
+    layout = RunLayout.for_run_id("proxy-off-e2e", repo_root=tmp_path)
+    _patch_cleaning(monkeypatch, enriched)
+
+    summary = run_pipeline.run_data_pipeline(
+        layout,
+        config_path=config_path,
+        creation_time_utc="2026-07-27T00:00:00Z",
+    )
+
+    assert "proxy_stage_ids" not in summary
+    assert "proxy_decisions_path" not in summary
+    assert not layout.proxy_decisions.exists()
+    assert not layout.rule_state.exists()
+
+
+def test_public_pipeline_runs_proxy_stages_when_requested(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """With include_proxy the run also yields decision-level output."""
+
+    config_path = _copy_pipeline_contracts(tmp_path)
+    config = load_config(config_path)
+    enriched = fixture_upstream._fixture_enriched(config, rows=12)
+    enriched["trip_id"] = "trip_0001"
+    enriched["segment_id"] = "trip_0001_seg_001"
+    layout = RunLayout.for_run_id("proxy-on-e2e", repo_root=tmp_path)
+    _patch_cleaning(monkeypatch, enriched)
+
+    summary = run_pipeline.run_data_pipeline(
+        layout,
+        config_path=config_path,
+        creation_time_utc="2026-07-27T00:00:00Z",
+        include_proxy=True,
+    )
+
+    assert summary["proxy_stage_ids"] == ["50", "60", "61", "70"]
+    assert len(summary["stage_manifests"]) == 12
+    assert Path(summary["proxy_decisions_path"]).is_file()
+    assert summary["proxy_decisions"] == (
+        "proxy/70_decisions/proxy_decisions.csv"
+    )
+    for path in (
+        layout.rule_state,
+        layout.engine_start_rule_state,
+        layout.pedal_step_events,
+        layout.duration_episodes,
+        layout.proxy_decisions,
+    ):
+        assert path.is_file()
+    # Even with no observed engine start, the episode artifact keeps a
+    # header so stage 70 can parse it.
+    episode_state = pd.read_csv(layout.engine_start_rule_state)
+    assert len(episode_state.columns) > 0
+
+
 def test_public_pipeline_runs_all_online_stages_with_one_layout(
     tmp_path: Path, monkeypatch
 ) -> None:

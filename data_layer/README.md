@@ -1,20 +1,20 @@
 # Data Layer
 
 **Owner:** Data Team
-**Status:** Active Development
-**Last Updated:** 2026-07-27
+**Status:** Completed
+**Last Updated:** 2026-09-02
 
 ---
 
 ## Overview
 
-The Data Layer is the first stage in the Granite Lifeline predictive maintenance pipeline. It transforms raw KIT OBD-II CSV files into cleaned, quality-audited, condition labelled, feature-engineered data and frozen proxy decisions for Model Layer consumption.
+The Data Layer is the first stage in the Granite Lifeline predictive maintenance pipeline. It transforms raw KIT OBD-II CSV files into cleaned, quality-audited, condition-labelled, feature-engineered data and versioned proxy-decision artifacts for Model Layer consumption.
 
 ```text
 Raw OBD-II CSV → Cleaning → Operating Conditions → Feature Engineering → Proxy Decision Engine → Model Layer
 ```
 
-The source corpus contains healthy driving rather than labelled component failures. Proxy rules are therefore derived from observable signal behaviour, anchored to physical and regulatory judgement forms, calibrated against the healthy baseline, reproduced through offline audit, and evaluated with controlled synthetic fault injection.
+The source corpus contains healthy driving rather than labelled component failures. Proxy rules are therefore derived from observable signal behaviour, anchored to physical and regulatory judgement forms, and calibrated against the healthy baseline. The repository also records an offline calibration audit and a controlled synthetic fault-injection campaign. Those artifacts test implementation behaviour under defined perturbations; they do not establish real-vehicle diagnostic accuracy.
 
 ### Core Responsibilities
 
@@ -38,41 +38,26 @@ The source corpus contains healthy driving rather than labelled component failur
 
 ---
 
-## Current Implementation Status
+## Delivery Status
 
-### [COMPLETED]
+All Data Layer components in the agreed repository scope are implemented. Here, **Completed** means that the code, versioned contracts, frozen reference artifacts, callable handoff interfaces, and repository tests are present. It does not imply validation against labelled real-world component failures.
 
-| Component                         | Description                                                                                         |
-| --------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Data Cleaning Pipeline            | Raw CSV to cleaned 1 Hz data with configurable validation, imputation limits, and quality auditing  |
-| Operating-Condition State Machine | Hierarchical`thermal_state` and `child_state` classification with confidence and quality fields |
-| Feature Engineering Pipeline      | Stages 00/10/20/30/40/41 producing 249,694 rows and 46 production columns                           |
-| Feature Contract                  | Versioned 24-feature production manifest with schema and provenance requirements                    |
-| Calibration Registry              | Frozen, read-only thresholds, model coefficients, guards, and routing rules                         |
-| Calibration Audit                 | 48/48 reproduction checks passed                                                                    |
-| Research Diagnostics              | LOTO, candidate-grid, and bootstrap stability outputs                                               |
-| Proxy Decision Engine             | Stages 50/60/61/70; 14 executable sub-checks and 1,471 healthy decision rows                        |
-| Synthetic Fault Injection         | 14 cases × 3 severities × 3 trips; 126 observations; 14/14 cases accepted                         |
-| Research Documentation            | Proxy definition, support derivations, completed Stage-4 evidence, and formal injection methodology |
-| Pipeline Infrastructure           | `RunLayout`, manifests, checksums, continuity helpers, and contract linting                       |
-| Upload Intake Contract            | Single-file callable entry point with fail-fast KIT file-name, column, and row-count validation     |
-| Automated Tests                   | Fixture, pipeline-contract, feature, proxy, upload-intake, and fault-injection regression tests      |
+| Component | Delivered result |
+| --------- | ---------------- |
+| Data cleaning and quality audit | Raw KIT CSV ingestion, timestamp normalization, 1 Hz output, bounded missing-value treatment, and quality/provenance artifacts |
+| Operating-condition classification | Hierarchical `thermal_state` and `child_state` classification with confidence and quality fields |
+| Feature engineering | Stages 00/10/20/30/40/41 and the frozen 46-column production schema |
+| Calibration | Read-only registry plus a recorded 48/48 PASS reproduction audit |
+| Research diagnostics | Recorded leave-one-trip-out, candidate-grid, and bootstrap artifacts |
+| Proxy decision engine | Stages 50/60/61/70, covering 14 executable sub-checks and typed decision/DTC semantics |
+| Synthetic fault injection | Recorded 14-case, 126-observation campaign with 14/14 conditional case acceptances |
+| Artifact governance | Explicit `RunLayout`, stage manifests, SHA-256 verification, provenance, continuity helpers, and contract linting |
+| Upload adapters | Single-file and multi-file callable entry points, fail-fast validation, unique-name protection, and post-cleaning usable-segment validation |
+| Cross-layer handoff | Absolute production-feature and proxy-decision paths returned for the Model Layer and Dashboard integration |
+| Automated verification | 148 collected Data Layer tests covering feature, pipeline-contract, proxy, upload, and fault-injection behaviour |
+| Documentation | Data contracts, proxy definitions/support, injection methodology, operating-condition analysis, and the executable quality-assessment notebook |
 
-### [IN PROGRESS]
-
-| Component                   | Status                                                                                     |
-| --------------------------- | ------------------------------------------------------------------------------------------ |
-| Model Layer Handoff         | Feature contract frozen and output path exposed; consumer-side items tracked in Remaining Work |
-| Dashboard Handoff           | Upload entry point delivered; interface details tracked in Remaining Work                   |
-| Documentation Consolidation | Ongoing alignment of implementation, contract, audit, and research documents               |
-
-### [PLANNED]
-
-| Component                     | Priority | Description                                                                                  |
-| ----------------------------- | -------- | -------------------------------------------------------------------------------------------- |
-| End-to-End Pipeline Tests     | P1       | Exercise raw input through Data Layer and Model Layer handoff                                |
-| Runtime Performance Profiling | P1       | Measure stage-level memory, latency, and artifact-size costs, including single-upload latency |
-| Upload Run Retention          | P1       | Define a cleanup policy for run directories accumulated by Dashboard uploads                 |
+Performance benchmarking, deployment sizing, and retention policy are operational concerns outside the completed functional Data Layer baseline; no latency, throughput, or production-scale claim is made here.
 
 ---
 
@@ -138,14 +123,16 @@ Frozen calibration registry
 | `support`              | Sensor-trust or confidence evidence   | `triggered` | No                           |
 | `arbitration_evidence` | Shared evidence requiring attribution | `triggered` | No                           |
 
+In this table, `pending` is a runtime decision state, not an implementation status.
+
 ### Technology Stack
 
-| Component            | Technology                                      | Purpose                                                                |
-| -------------------- | ----------------------------------------------- | ---------------------------------------------------------------------- |
+| Component            | Technology                                      | Purpose                                             |
+| -------------------- | ----------------------------------------------- | --------------------------------------------------- |
 | Data Processing      | pandas, NumPy                                   | CSV processing, grouping, rolling statistics, deterministic transforms |
 | Statistical Analysis | SciPy, scikit-learn                             | Distribution analysis and baseline linear models                       |
 | Configuration        | YAML, JSON                                      | Cleaning rules, frozen calibration, fault-injection cases              |
-| Contracts            | Python dataclasses, Pydantic-compatible schemas | Run layouts, manifests, artifact descriptors                           |
+| Contracts            | Python dataclasses and explicit JSON/CSV validation | Run layouts, manifests, artifact descriptors                        |
 | Integrity            | SHA-256 manifests                               | Input/output verification and provenance                               |
 | Testing              | pytest                                          | Unit, contract, fixture, integration, and regression tests             |
 
@@ -156,68 +143,39 @@ Frozen calibration registry
 ```text
 data_layer/
 ├── README.md
-├── run_pipeline.py                         # Public online pipeline and upload entry points
+├── run_pipeline.py                         # Batch, single-upload, and multi-upload entry points
 ├── calibration/
 │   ├── calibration_registry.v1.json        # Frozen thresholds and routing
 │   ├── calibration_registry.v1.manifest.json
-│   └── calibration_audit_manifest.json     # Script-90 reproduction result
+│   └── calibration_audit_manifest.json     # Recorded Script-90 audit
 ├── contracts/
-│   └── feature_manifest.v1.json            # Production feature contract
+│   └── feature_manifest.v1.json            # Frozen production-feature contract
 ├── data_cleaning/
+│   ├── quality_assessment_report.ipynb     # Read-only audit of the reference run
 │   └── src/
-│       ├── cleaning_config.yaml
-│       ├── cleaning_core.py
-│       ├── data_cleaning.py
-│       ├── project_paths.py
-│       └── quality_audit.py
 ├── operating_condition_statistics/
 │   ├── operating_condition_analysis.md
 │   └── src/
 ├── feature_engineering/
 │   ├── feature_schema.md
-│   └── src/
-│       ├── 00_input_contract_validator.py
-│       ├── 10_atomic_feature_builder.py
-│       ├── 20_engine_start_context_builder.py
-│       ├── 30_window_feature_builder.py
-│       ├── 40_calibrated_feature_builder.py
-│       ├── 41_production_feature_assembler.py
-│       ├── 90_calibration_registry_builder.py
-│       └── 91_research_diagnostics_builder.py
+│   └── src/                                # Stages 00/10/20/30/40/41 and Scripts 90/91
 ├── proxy_failure/
-│   ├── proxy_failure_definition.md          # Authoritative executable rules
-│   ├── proxy_support.md                     # Research and validation evidence
-│   └── src/
-│       ├── 50_rule_state_builder.py
-│       ├── 60_event_evidence_builder.py
-│       ├── 61_duration_evidence_builder.py
-│       └── 70_proxy_decision_builder.py
+│   ├── proxy_failure_definition.md         # Authoritative executable rules
+│   ├── proxy_support.md                     # Derivation and validation evidence
+│   └── src/                                # Stages 50/60/61/70
 ├── fault_injection/
-│   ├── fault_injection_methodology.md       # Formal experimental methodology
-│   ├── configs/
-│   │   └── fault_injection_cases.v1.json
-│   ├── src/
-│   │   └── run_fault_injection.py
-│   └── outputs/
-│       ├── fault_injection_summary_*.csv
-│       └── fault_injection_summary_*.json
-├── research_diagnostics/
-│   ├── loto_*.csv
-│   ├── grid_*.csv
-│   └── bootstrap_*.json
-├── pipeline_data/
-│   ├── continuity.py
-│   ├── contract_lint.py
-│   ├── manifests.py
-│   ├── paths.py
-│   └── upload_contract.py                    # Single-file upload intake rules
+│   ├── fault_injection_methodology.md
+│   ├── configs/fault_injection_cases.v1.json
+│   ├── outputs/fault_injection_summary_20260903T051231Z.{csv,json}
+│   └── src/run_fault_injection.py
+├── research_diagnostics/                   # Recorded LOTO, grid, and bootstrap outputs
+├── pipeline_data/                          # Paths, manifests, continuity, lint, upload contract
 └── tests/
     ├── condition_label_crosscheck/
     ├── feature_engineering_test/
-    ├── fixture_tests/
+    ├── fixtures/
     ├── pipeline_data_test/
-    ├── proxy_test/
-    └── fixtures/
+    └── proxy_test/
 ```
 
 Runtime artifacts are stored under:
@@ -232,8 +190,7 @@ data/processed/runs/<run_id>/
 
 ### 1. Data Cleaning (`data_cleaning/src/`)
 
-**Purpose:** Convert heterogeneous raw OBD-II CSV files into a consistent
-1 Hz dataset while preserving explicit quality provenance.
+**Purpose:** Convert heterogeneous raw OBD-II CSV files into a consistent 1 Hz dataset while preserving explicit quality provenance.
 
 **Features:**
 
@@ -246,8 +203,7 @@ data/processed/runs/<run_id>/
 
 ### 2. Operating-Condition Classification (`operating_condition_statistics/`)
 
-**Purpose:** Describe the physical context in which proxy evidence is
-interpretable.
+**Purpose:** Describe the physical context in which proxy evidence is interpretable.
 
 **States:**
 
@@ -255,8 +211,7 @@ interpretable.
 - child: `idle`, `steady_driving`, `acceleration`, `deceleration`,
   `high_load`, `inactive`, `unknown`.
 
-Condition confidence and quality flags are retained as production inputs rather
-than being discarded after classification.
+Condition confidence and quality flags are retained as production inputs rather than being discarded after classification.
 
 ### 3. Feature Engineering (`feature_engineering/src/`)
 
@@ -294,8 +249,7 @@ production columns.
 
 **Purpose:** Convert production features into typed diagnostic decisions.
 
-The four-stage design separates instantaneous state, event evidence, duration
-evidence, and final policy:
+The four-stage design separates instantaneous state, event evidence, duration evidence, and final policy:
 
 1. stage 50 creates eligibility and threshold states;
 2. stage 60 constructs pedal-step event evidence;
@@ -303,13 +257,11 @@ evidence, and final policy:
 4. stage 70 applies result-state, confidence, DTC, sensor-trust, and routing
    rules.
 
-The healthy reference run produces 1,471 decision rows across 14 executable
-sub-checks with zero `triggered` or `pending` rows.
+The healthy reference run produces 1,471 decision rows across 14 executable sub-checks with zero `triggered` or `pending` rows.
 
 ### 6. Synthetic Fault Injection (`fault_injection/`)
 
-**Purpose:** Evaluate empirical response to controlled fault-like signal
-perturbations without modifying frozen rules.
+**Purpose:** Evaluate empirical response to controlled fault-like signal perturbations without modifying frozen rules.
 
 **Campaign:**
 
@@ -320,9 +272,7 @@ perturbations without modifying frozen rules.
 - 126 scoped observations;
 - 14/14 cases satisfy the registered campaign acceptance criteria.
 
-The runner verifies target-signal isolation, window eligibility, paired healthy
-state, decision role, candidate DTC, emission semantics, severity monotonicity,
-and strongest-point response.
+The runner verifies target-signal isolation, window eligibility, paired healthy state, decision role, candidate DTC, emission semantics, severity monotonicity, and strongest-point response.
 
 **Documentation:** See
 `fault_injection/fault_injection_methodology.md` and the Stage-4 sections of `proxy_failure/proxy_support.md`.
@@ -337,20 +287,22 @@ and strongest-point response.
 - manifests: ordered inputs/outputs, checksums, schema, and provenance;
 - continuity helpers: trip/segment-safe grouping;
 - contract lint: cross-document and cross-stage consistency checks;
-- upload intake: fail-fast validation of one user-supplied CSV.
+- upload intake: fail-fast validation for single-file and multi-file requests.
 
-**Upload intake** (`upload_contract.py`) accepts a single uploaded file from the Dashboard and rejects unusable input before any run directory or pipeline stage is created. `run_pipeline.run_data_pipeline_for_upload(csv_path, ...)` is the callable entry point: it validates the upload, stages the file into a temporary directory, delegates to `run_data_pipeline`, and removes the staging directory afterwards. The returned summary carries `production_features_path` as an absolute path for downstream consumers.
+**Upload intake** (`upload_contract.py`) validates each uploaded file before the pipeline starts. `run_data_pipeline_for_upload(csv_path, ...)` handles one recording, while `run_data_pipeline_for_uploads(csv_paths, ...)` validates a set of recordings and combines them into one run. The normal pipeline assigns trip order chronologically and preserves trip boundaries. By default, both upload paths enable proxy stages and return absolute `production_features_path` and `proxy_decisions_path` values.
 
-Intake rules are evaluated in order and derived from `cleaning_config.yaml` so they cannot drift from the cleaning contract:
+Pre-run rules are derived from `cleaning_config.yaml` where applicable:
 
 | Rule | Reason | Rejection code |
-| ---- | ------ | -------------- |
-| File keeps its original KIT name | The recording date exists only in the file name; the cleaned CSV carries time-of-day alone | `bad_filename` |
-| All KIT source columns present | Cleaning cannot map absent signals | `missing_columns` |
-| At least 700 data rows | Model window is 512 context + 96 forecast plus margin (INTERFACE.md §1.5) | `too_few_rows` |
-| File parses as CSV | Empty, unreadable, or absent file | `unreadable_csv` |
+| --- | --- | --- |
+| File keeps its original KIT name | The recording date exists only in the file name; the CSV contains time-of-day values | `bad_filename` |
+| All required KIT source columns are present | Cleaning cannot map absent signals | `missing_columns` |
+| At least 700 raw data rows are present | This is the intake contract's inexpensive size floor before cleaning | `too_few_rows` |
+| Recording spans at least 700 seconds | Raw sampling varies, so row count alone does not establish usable duration | `too_few_rows` |
+| File can be read as CSV | Missing, empty, unreadable, or invalidly encoded input cannot be processed | `unreadable_csv` |
+| File names are unique within a multi-file request | Duplicate names would collide in the staging directory | `duplicate_upload_filenames` |
 
-Failures raise `UploadRejected` with a stable `code` and a user-readable message. Because validation precedes run creation, a rejected upload leaves no run artifacts behind.
+After cleaning, each upload run must contain at least one contiguous `segment_id` with 700 rows. Failure raises `no_usable_segment`; unlike a pre-run rejection, the run directory is retained for inspection. Missing or unparsable time values are left to the cleaning stage so it can report them with full context.
 
 ---
 
@@ -358,8 +310,7 @@ Failures raise `UploadRejected` with a stable `code` and a user-readable message
 
 ### Input
 
-The online pipeline consumes raw KIT OBD-II CSV files containing timestamped
-signals such as:
+The online pipeline consumes raw KIT OBD-II CSV files containing timestamped signals such as:
 
 - coolant, intake, and ambient temperature;
 - MAF and MAP;
@@ -367,8 +318,7 @@ signals such as:
 - accelerator-pedal channels;
 - throttle-position context.
 
-Signal availability, names, units, and cleaning policies are governed by the
-cleaning configuration and feature contract.
+Signal availability, names, units, and cleaning policies are governed by the cleaning configuration and feature contract.
 
 ### Output
 
@@ -380,18 +330,17 @@ The Data Layer produces two separate deliveries with different consumers.
 data/processed/runs/<run_id>/features/41_production/production_features.csv
 ```
 
-This is the artifact the Model Layer reads for TTM windowing and inference
-(46 columns: 4 sample keys, 16 context/raw fields, 24 production features,
-2 provenance fields; see `docs/INTERFACE.md` §1.1–1.3). Both pipeline entry
-points return its absolute path as `production_features_path`.
+This is the artifact the Model Layer reads for TTM windowing and inference (46 columns: 4 sample keys, 16 context/raw fields, 24 production features, 2 provenance fields; see `docs/INTERFACE.md` §1.1–1.3). The batch, single-upload, and multi-upload entry points return its absolute path as `production_features_path`.
 
-**2. Proxy decisions — a separate offline delivery.**
+**2. Proxy decisions — a decision-level delivery.**
 
 ```text
 data/processed/runs/<run_id>/proxy/70_decisions/proxy_decisions.csv
 ```
 
-Produced by the independent stage 50/60/61/70 chain, which is not part of `run_pipeline.py`. Per `docs/INTERFACE.md` §1.4 these labels are internal to the Model Layer and used only for (1) healthy-training-data filtering and (2) detection-evaluation ground truth. They are **not** used to train TTM and **do not** flow to the Report Layer or Dashboard.
+Produced by the stage 50/60/61/70 chain. These stages run inside `run_pipeline.py` when `include_proxy` is set: the upload path enables them by default and returns `proxy_decisions_path`, while the batch and CLI paths stay feature-only unless `--include-proxy` is passed. The chain can still be rerun standalone against an existing run directory, which is how `run_fault_injection.py` uses it.
+
+This decision-grain table is distinct from the superseded row-level proxy-label tables documented historically in `docs/INTERFACE.md` §1.4. The current Model Layer can consume it through its optional `--proxy-decisions` input and forward the already-computed verdicts for the two anomaly types it does not score itself. The decisions are not TTM training targets and do not flow to the Report Layer or Dashboard as labels.
 
 Each executed decision carries:
 
@@ -423,8 +372,8 @@ All commands must be executed from the repository root.
 # Activate the project environment if used
 .\.venv\Scripts\Activate.ps1
 
-# Install project dependencies
-pip install -r requirements.txt
+# Install the core and local live-pipeline dependencies
+pip install -r requirements.txt -r requirements-local.txt
 ```
 
 ### Run the Online Data Pipeline
@@ -441,26 +390,44 @@ python data_layer/run_pipeline.py `
   --input-dir D:\path\to\raw\csv
 ```
 
-### Run the Pipeline for One Uploaded CSV
+The batch entry point stops at stage 41. Add `--include-proxy` to continue through the proxy stages in the same run:
 
-Called by the Dashboard rather than from the command line. The caller passes a path to a CSV already saved on disk; the file must keep its original KIT name.
+```powershell
+python data_layer/run_pipeline.py --run-id run_20260724 --include-proxy
+```
+
+### Run the Pipeline for Uploaded CSV Files
+
+The upload APIs accept filesystem paths, not framework-specific upload objects. A Dashboard or other caller must save each upload first and retain its original KIT file name.
 
 ```python
 from data_layer.run_pipeline import (
     UploadRejected,
     run_data_pipeline_for_upload,
+    run_data_pipeline_for_uploads,
 )
 
 try:
-    summary = run_data_pipeline_for_upload(
+    single = run_data_pipeline_for_upload(
         "2019-05-06_Seat_Leon_Karlsruhe_Stuttgart_Normal.csv"
     )
-    features_path = summary["production_features_path"]
+    history = run_data_pipeline_for_uploads(
+        [
+            "2019-05-06_Seat_Leon_Karlsruhe_Stuttgart_Normal.csv",
+            "2019-05-07_Seat_Leon_Stuttgart_Karlsruhe_Normal.csv",
+        ]
+    )
+    print(single["production_features_path"])
+    print(single["proxy_decisions_path"])
 except UploadRejected as exc:
-    show_to_user(exc.code, str(exc))
+    print(exc.code, str(exc))
 ```
 
-### Rerun Proxy Stages for an Existing Run
+Pass `include_proxy=False` to either adapter to stop at stage 41. Pipeline-stage failures surface as `DataPipelineError`, with the original exception retained as the cause.
+
+### Run Proxy Stages for an Existing Feature Run
+
+These stages write into the selected run directory. Use a non-frozen run; do not point exploratory commands at the committed reference run.
 
 ```powershell
 $runDir = "data/processed/runs/run_20260724"
@@ -471,14 +438,19 @@ python data_layer/proxy_failure/src/61_duration_evidence_builder.py --run-dir $r
 python data_layer/proxy_failure/src/70_proxy_decision_builder.py --run-dir $runDir
 ```
 
-### Run the Calibration Audit
+### Reproduce the Calibration Audit
+
+The committed audit is already frozen. Run this only when intentionally reproducing it; use `--output` to avoid replacing the tracked manifest during an exploratory check.
 
 ```powershell
 python data_layer/feature_engineering/src/90_calibration_registry_builder.py `
-  --run-dir data/processed/runs/recalibrate_20260723
+  --run-dir data/processed/runs/recalibrate_20260723 `
+  --output path/to/calibration_audit_manifest.json
 ```
 
-### Run Research Diagnostics
+### Reproduce Research Diagnostics
+
+Script 91 writes to the tracked `data_layer/research_diagnostics/` location. Do not rerun it merely to consume the committed results; use it only for an intentional regeneration.
 
 ```powershell
 python data_layer/feature_engineering/src/91_research_diagnostics_builder.py `
@@ -539,12 +511,12 @@ python -m flake8 data_layer
 | Production columns                       | 46         |
 | Executable proxy sub-checks              | 14         |
 | Healthy decision rows                    | 1,471      |
-| Healthy positive decisions               | 0          |
+| Healthy `triggered` / `pending` decisions | 0 / 0      |
 | Calibration reproduction                 | 48/48 PASS |
 | Stage-4 observations                     | 126        |
-| Stage-4 case acceptance                  | 14/14      |
+| Stage-4 conditional case acceptance      | 14/14      |
 | Proxy + Stage-4 focused regression tests | 20 passed  |
-| Full Data Layer test suite               | 139 passed |
+| Full Data Layer test suite               | 148 passed |
 
 ### Data-Integrity Controls
 
@@ -569,39 +541,22 @@ python -m flake8 data_layer
 
 ---
 
-## Remaining Work
+## Delivered Interfaces and Scope Boundaries
 
-Cross-layer items are recorded here so that decisions taken unilaterally by the Data Layer, and decisions still open, are visible to the other groups. Items marked **[blocking]** prevent the current end-to-end target.
+The Data Layer handoff is complete at the repository interfaces defined in
+`docs/INTERFACE.md`:
 
-### 1. Model Layer Handoff
+| Boundary | Completed Data Layer responsibility |
+| --- | --- |
+| Model Layer | Produce the frozen 46-column `production_features.csv` contract and, when proxy stages are enabled, the separate decision-grain `proxy_decisions.csv`; expose both as absolute paths in the run summary |
+| Dashboard | Provide single-file and multi-file path-based upload adapters with stable `UploadRejected.code` values; the Dashboard persists uploads and calls these adapters |
+| Report Layer | Supply data through the Model Layer boundary; proxy labels are not sent directly to the Report Layer or Dashboard as training labels |
 
-The feature contract is frozen and its absolute path is exposed; the outstanding items are consumer-side.
+The Dashboard integration calls both upload adapters and forwards `proxy_decisions_path` when present. The Model Layer interface records the
+46-column production schema and forwarding of the two proxy-scored anomaly types. These downstream implementations remain owned by their respective layers; they are evidence that the Data Layer handoff is connected, not additional Data Layer functionality.
 
-| # | Item |
-| - | ---- |
-| M1 | **[blocking] Required-column contract.** `input_validation.GROUP1_REQUIRED_COLUMNS` still validates the 41-column INTERFACE v0.6 set. Thirteen of those columns were superseded by schema v1 and are no longer produced: `coolant_slope`, `coolant_stability`, `intake_temp_slope`, `maf_derived_air_load_raw`, `map_derived_air_load_raw`, `maf_map_cohesion`, `map_slope`, `pedal_throttle_gap`, `pedal_to_throttle_delay`, `tps_slope`, `accel_pedal_channel_ratio`, `idle_flag`, `idle_rpm_stability`. Feeding `production_features.csv` therefore fails validation. *Data Layer decision: the superseded columns are not reinstated (INTERFACE.md §1.3 is frozen); the Model Layer updates its required set to the v1 contract.* |
-| M2 | **Cooling threshold migration.** The retired `coolant_slope` is scored in `calculate_risk` with hard-coded bounds `0.0333`/`0.1333`, derived specifically for its **°C/s** unit. Schema v1 provides no per-row coolant slope; its only ECT rate field, `ect_rate_180s`, uses a different window (180 s) **and** a different unit (**°C/min**). Choosing a replacement input is a Model Layer decision, but the existing bounds cannot be carried over unchanged — a direct substitution is a 60× scale error. The same applies to `maf_map_cohesion` and its `2.6` floor once intake scoring is in scope. |
-| M3 | **[blocking] Default input path.** `kit_residual_detector.DEFAULT_INPUT_CSV` still points at the retired `data_layer/feature_engineering/feature_dataset.csv`. |
-| M4 | **`run_model()` ownership.** The Data Layer exposes `production_features_path` only; wrapping inference in a callable `run_model()` belongs to the Model Layer. Any orchestrator should sit outside `data_layer/` so the Data Layer keeps no dependency on the Model Layer. *Inferred from the sprint specification; not yet confirmed cross-group.* |
-| M5 | **No action needed.** The six TTM signals `rpm`, `speed`, `coolant_temp`, `map`, `maf`, `tps` are all present in the 46-column output, so forecasting itself is unaffected. |
-| M6 | **Proxy delivery contract.** `docs/INTERFACE.md` §1.4 still describes the superseded `proxy_training_labels.csv` and duration window tables. The current delivery is `proxy_decisions.csv` from stages 50–70. Requires a cross-group contract update. |
-
-### 2. Dashboard Handoff
-
-| # | Item |
-| - | ---- |
-| D1 | **Entry point signature.** `run_data_pipeline_for_upload(csv_path, ...)` takes a filesystem path, not a Streamlit `UploadedFile`, so the Data Layer keeps no dependency on Streamlit. The Dashboard persists the uploaded object first and passes the path. *Data Layer design; awaiting Dashboard confirmation.* |
-| D2 | **Rejection codes.** `UploadRejected.code` is one of `bad_filename`, `missing_columns`, `too_few_rows`, `unreadable_csv`; the exception message is already user-facing and may be displayed directly. *Data Layer design; awaiting Dashboard confirmation.* |
-| D3 | **Original KIT file name required.** The recording date is parsed from the file name because the CSV carries time-of-day only, so a renamed file cannot be processed. The upload UI must state this. *Data Layer decision; not covered by the sprint specification, which constrains column names only.* |
-| D4 | **Delivered.** KIT column and ≥700-row checks run fail-fast inside the Data Layer before any run directory is created. |
-
-### 3. Performance and Storage
-
-- profile memory and runtime for full-corpus stages;
-- measure single-upload latency, which determines whether the interactive
-  flow is viable as designed;
-- reduce repeated CSV loading where contract-safe;
-- define retention policy for large injected run directories.
+Completion does not change the evidence limits: the reference corpus is healthy driving, proxy thresholds are frozen engineering rules, and the
+fault-injection campaign uses synthetic target-signal perturbations. Results must therefore be described as contract and detectability checks within the registered protocol, not as measured field failure rates or certified vehicle diagnostics.
 
 ---
 
@@ -624,6 +579,18 @@ python data_layer/run_pipeline.py --run-id <run_id>
 
 Stages 50–70 require a completed feature run and verified manifests.
 
+### Upload Rejected as `no_usable_segment`
+
+**Error:** An upload completes the pipeline but is rejected because no contiguous segment reaches 700 rows.
+
+**Explanation:** The recording was interrupted repeatedly, so the cleaning stage split it into short segments. Forecast windows never cross a segment boundary, so total length does not help — one uninterrupted stretch must be long enough. This is expected behaviour, not a fault: one trip in the reference corpus (731 s over 7 segments, longest 593 rows) fails exactly this way.
+
+**Solution:** Use a recording with a longer continuous drive. The run directory is kept and named in the message, so the segment layout can be inspected:
+
+```powershell
+python -c "import pandas as pd; d=pd.read_csv(r'data/processed/runs/<run_id>/features/41_production/production_features.csv', usecols=['segment_id']); print(d.groupby('segment_id').size())"
+```
+
 ### Checksum Drift
 
 **Error:** A stage reports that an artifact checksum differs from its manifest.
@@ -644,25 +611,19 @@ This refresh is deliberately manual: the frozen bundle exists so that a change t
 
 ### No Eligible Fault-Injection Window
 
-**Error:** The Stage-4 runner reports fewer eligible independent windows than
-the configured replicate count.
+**Error:** The Stage-4 runner reports fewer eligible independent windows than the configured replicate count.
 
-**Explanation:** The target rule's guard conditions are not sufficiently
-represented in the selected base run.
+**Explanation:** The target rule's guard conditions are not sufficiently represented in the selected base run.
 
-**Solution:** Use a base run with the required operating opportunities or
-reduce the registered replicate requirement explicitly. Do not alter unrelated
-signals to manufacture eligibility.
+**Solution:** Use a base run with the required operating opportunities or reduce the registered replicate requirement explicitly. Do not alter unrelated signals to manufacture eligibility.
 
 ### Target Run Already Exists
 
 **Error:** `Target run already exists`.
 
-**Explanation:** Fault-injection run IDs are immutable to prevent accidental
-overwrite.
+**Explanation:** Fault-injection run IDs are immutable to prevent accidental overwrite.
 
-**Solution:** Supply a new `--run-prefix` or retain the existing run and
-collect its recorded results.
+**Solution:** Supply a new `--run-prefix` or retain the existing run and collect its recorded results.
 
 ### Import Error
 
@@ -689,8 +650,7 @@ python data_layer/run_pipeline.py --run-id test_run
 **Institution:** University of Bristol MSc Computer Science
 **Sponsor:** IBM
 
-For questions or contributions, refer to the main project README or the
-authoritative Data Layer documents.
+For questions or contributions, refer to the main project README or the authoritative Data Layer documents.
 
 ---
 

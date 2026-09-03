@@ -185,8 +185,8 @@ Not every active proxy row is an independently reportable fault. Verdict rows ma
 
 ### Results
 
-- Observation-level table: `data_layer/fault_injection/outputs/fault_injection_summary_20260724T205415Z.csv`
-- Detailed campaign summary: `data_layer/fault_injection/outputs/fault_injection_summary_20260724T205415Z.json`
+- Observation-level table: `data_layer/fault_injection/outputs/fault_injection_summary_20260903T051231Z.csv`
+- Detailed campaign summary: `data_layer/fault_injection/outputs/fault_injection_summary_20260903T051231Z.json`
 - Proxy-family Stage-4 conclusions: `data_layer/proxy_failure/proxy_support.md`
 
 ### Regression Tests

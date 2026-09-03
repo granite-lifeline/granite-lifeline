@@ -1,8 +1,8 @@
 # Dashboard
 
 **Owner:** Report Team  
-**Status:** Active Development  
-**Last Updated:** 2026-07-28
+**Status:** Final implementation reviewed
+**Last Updated:** 2026-09-02
 
 ---
 
@@ -16,15 +16,15 @@ Data Layer → Model Layer → Report Layer → Dashboard
 
 ### Key Features
 
-- **Health Overview**: At-a-glance view of all monitored components with risk-based prioritization
+- **Health Overview**: Prioritised view of components with detected risk; a
+  separate empty state is shown when no component requires attention
 - **Component Details**: Drill-down pages with metrics and interactive trend charts
 - **CSV Upload & Live Analysis**: Upload a real KIT OBD-II CSV and run it through the full Data Layer → Model Layer → Report Layer pipeline for a live diagnostic report (requires local Ollama + Python ML dependencies — see Setup in the project root README)
-- **What-If Analysis**: Interactive scenario page projecting how driving style / sensor offsets would shift each component's risk score
 - **Signal Tooltips**: Plain-language glossary tooltips for technical signal names, sourced from the Report Layer's `SIGNAL_DISPLAY_NAMES`
 - **Risk Score Trends**: Plotly-powered visualizations showing risk progression over time
 - **Theme Support**: Light/dark mode toggle with an IBM Carbon-inspired "Pro" design
 - **PDF / CSV Export**: Downloads filtered component reports and key signal data from the overview page
-- **Responsive Design**: Optimized for desktop viewing (mobile optimization planned)
+- **Desktop-first layout**: Designed for the laptop/desktop evaluation setting
 
 ---
 
@@ -41,23 +41,23 @@ Data Layer → Model Layer → Report Layer → Dashboard
 | Team Footer | - | Team attribution footer |
 | Diagnostic Report Display | GL-41 | anomaly_description, possible_cause, recommended_action cards |
 | Key Signals Table | GL-41 | ABNORMAL/NORMAL signal rows with reference range |
-| Report Layer Integration | GL-41 | Loads ReportLayerOutput via data_loader.py; MOCK_DATA_FALLBACK retained |
-| Failure Prediction Data Support | GL-198 | Loads estimated_failure_probability, estimated_cycles_to_failure, notes from INTERFACE.md v0.7 test data |
-| Failure Prediction UI Display | GL-278/GL-280 | Shows failure probability card and Data Quality Notes on the detail page |
-| Six-Type Component Display Mapping | GL-273 | Maps all 6 current anomaly types to owner-friendly display names; legacy cooling_system_stress alias retained |
+| Report Layer Integration | GL-41 | Loads ReportLayerOutput via data_loader.py; data_store.py retains the fallback demo data |
+| Failure Prediction Data Support | GL-198 | Loads estimated_failure_probability, estimated_cycles_to_failure, and notes from the current ReportLayerOutput contract |
+| Projection UI Display | GL-278/GL-280 | Shows the Model Layer's threshold-projection summary on the detail page |
+| Five-Type Component Display Mapping | GL-273/GL-384 | Maps all 5 current anomaly types to owner-friendly display names; legacy cooling_system_stress alias retained |
 | PDF / CSV Export | GL-343 to GL-348 | Overview-page export panel with component filters, PDF section filters, CSV column filters, ZIP downloads, local PDF template, and tests |
-| Module Split | GL-255 | `app.py` (2581 lines) split into `theme.py`, `ui_components.py`, `data_store.py`, and `pages/{overview,detail,what_if}.py` |
+| Module Split | GL-255 | `app.py` (2581 lines) split into `theme.py`, `ui_components.py`, `data_store.py`, and `pages/{overview,detail}.py` |
 | CSV Upload Pipeline | GL-256 to GL-262 | Upload validation (KIT column/row checks), user-friendly error cards, and end-to-end wiring to Data Layer + Model Layer + Report Layer |
+| CSV Analysis Loading State | GL-386 to GL-388, GL-412/413, GL-415 to GL-417 | Run Analysis enters an immediate `Analysing...` state, shows a percentage progress ring with simple user-facing staged text, recovers cleanly on failure/refresh, and is covered by regression and demo checklist tests |
 | Live Model Layer Integration | GL-365 | `csv_pipeline.py` invokes the Model Layer's `kit_residual_detector.py --batch` as a subprocess per INTERFACE.md §2.5's documented CLI/error contract; verified with a real, unmocked run producing a live report |
-| What-If Analysis Page | — | Scenario cards, driving-style sliders, per-component risk projection, uncertainty range |
 | Signal Tooltips | — | `glossary.py`; plain-language tooltips for technical signal names |
+| Demo Readiness Check | GL-384 | Final dashboard/report demo checklist, expected outputs, known limitations, and regression command set |
 
-### [PLANNED]
+### Further work
 
-| Feature | Priority | Description |
-|---------|----------|-------------|
-| Mobile Optimization | P1 | Responsive design for mobile devices |
-| 3D Component Visualization | P3 | Interactive 3D car model with component highlighting |
+- mobile and accessibility evaluation;
+- hosted inference for live analysis without local setup;
+- testing with technician-verified faults and additional vehicles.
 
 ---
 
@@ -108,13 +108,9 @@ dashboard/
 ├── anomaly_display.py      # Component/signal display name mappings
 ├── glossary.py             # Signal tooltip text (plain-language, sourced from Report Layer)
 ├── export_helper.py        # PDF / CSV export data and file helpers
-├── EXPORT_REPORT_PLAN.md   # GL-343 export entry and field checklist
 ├── pages/
 │   ├── overview.py         # Health overview + CSV upload entry point
-│   ├── detail.py           # Component detail page
-│   └── what_if.py          # What-if scenario analysis page
-├── assets/                 # Static assets
-├── DATA_INTEGRATION.md     # Data contract and field documentation
+│   └── detail.py           # Component detail page
 ├── tests/
 │   └── ui_required_data.json   # Sample ReportLayerOutput-shaped data (mock fallback)
 └── README.md               # This file
@@ -176,7 +172,8 @@ streamlit run dashboard/app.py --server.runOnSave true
 
 ### Overview Page
 
-**Purpose:** Provide at-a-glance vehicle health status across all monitored components.
+**Purpose:** Show the components with detected risk and prioritise those that
+require the most attention.
 
 **Features:**
 - **Health Summary Banner**: Alert if any component requires urgent attention
@@ -206,14 +203,14 @@ streamlit run dashboard/app.py --server.runOnSave true
 
 **Features:**
 - **Back Navigation**: Return to overview
-- **Component Tabs**: Switch between all monitored components without
+- **Component Tabs**: Switch between the affected components without
   leaving the detail view (risk-colored emoji + name per tab)
 - **Component Header**: Name + risk level badge, centered
 - **Risk Gauge**: Plotly gauge showing current risk score with a
   delta arrow vs. the previous reading
 - **Trend Chart**: Interactive Plotly line chart showing:
-  - Last 5 risk score readings (or fewer if less data available)
-  - Time labels (T-4, T-3, T-2, T-1, Now)
+  - All risk-history entries supplied for the current analysis
+  - Recorded timestamps, with relative labels only when a timestamp is absent
   - Area fill for visual emphasis
   - Hover tooltips with exact values
   - Theme-aware colors
@@ -233,22 +230,22 @@ streamlit run dashboard/app.py --server.runOnSave true
 
 The dashboard implements a single "Pro" theme (minimalist, IBM Carbon Design
 System-inspired) with light/dark mode variants, defined as a token dict
-(`THEME_TOKENS` in `app.py`) rather than duplicated CSS per mode:
+(`THEME_TOKENS` in `theme.py`) rather than duplicated CSS per mode:
 
 **Light Mode (Default)**
 
-- Background: `#f5f5f7`
+- Background: `#f4f4f4`
 - Surface (cards): `#ffffff`
-- Text: `#1d1d1f` / secondary `#6e6e73`
+- Text: `#161616` / secondary `#525252`
 - Accent: `#0f62fe`
 - Risk colors: High `#da1e28`, Medium `#ff832b`, Low `#24a148`
 
 **Dark Mode**
 
-- Background: `#1c1c1e`
-- Surface (cards): `#2c2c2e`
-- Text: `#f5f5f7` / secondary `#98989d`
-- Accent: `#4589ff`
+- Background: `#161616`
+- Surface (cards): `#262626`
+- Text: `#f4f4f4` / secondary `#c6c6c6`
+- Accent: `#78a9ff`
 - Risk colors: High `#fa4d56`, Medium `#ff832b`, Low `#42be65`
 
 Fonts: IBM Plex Sans (headings/body) and IBM Plex Mono (numeric values —
@@ -260,16 +257,17 @@ icon (`COMPONENT_ICONS`) colored by risk level, so risk is perceptible before
 reading any text. Decorative icons (heading icons, theme toggle, alert
 banner) are inline Lucide-style SVGs rendered via `lucide_icon()`, colored
 from the active theme token so they recolor automatically between
-light/dark — a placeholder icon set pending a final sourced icon set.
+light/dark.
 
 Theme state is stored in `st.session_state["dark_mode"]` and persists across page navigation.
 
 ### Data Structure
 
 The dashboard loads `ReportLayerOutput` JSON via `data_loader.py`. A
-`MOCK_DATA_FALLBACK` dict is retained in `app.py` for offline development.
+fallback demo data dict is retained in `data_store.py` for offline
+development.
 
-**Live Data Schema (INTERFACE.md v0.7):**
+**Live Data Schema (current `docs/INTERFACE.md` contract):**
 ```python
 {
     "timestamp": str,                       # ISO 8601
@@ -282,8 +280,8 @@ The dashboard loads `ReportLayerOutput` JSON via `data_loader.py`. A
     "anomaly_description": str,             # Granite LLM generated
     "possible_cause": str,                  # Granite LLM generated
     "recommended_action": List[str],        # Granite LLM generated
-    "estimated_failure_probability": float | None,  # Model Layer, may be null
-    "estimated_cycles_to_failure": int | None,      # Model Layer, may be null
+    "estimated_failure_probability": float | None,  # Model Layer projection
+    "estimated_cycles_to_failure": int | None,      # Model Layer projection
     "notes": List[str],                     # Model Layer validation messages
 }
 ```
@@ -312,7 +310,7 @@ Simple session-state-based routing:
 **Features:**
 - Dynamic time labels based on data length
 - Y-axis: 0-100% range with percentage formatting
-- X-axis: Time labels (T-4 to Now)
+- X-axis: Recorded timestamps, with relative labels as a fallback
 - Line: 3px width, 8px markers, teal color (#19c8b9)
 - Fill: 20% opacity area to zero
 - Hover: Custom template showing time and risk percentage
@@ -321,7 +319,7 @@ Simple session-state-based routing:
 **Data Requirements:**
 - Minimum 2 data points to render chart
 - Shows warning if insufficient data
-- Handles up to 5 data points (T-4 to Now)
+- Handles the risk-history entries supplied for the current analysis
 
 ### Export Report Implementation
 
@@ -355,13 +353,39 @@ Manual checks:
 - Confirm the PDF risk block does not overlap in Preview or the browser PDF
   viewer
 
+### Demo Readiness
+
+GL-384 keeps the final demonstration focused on owner-facing workflows rather
+than implementation details. The current demo path is documented in
+`dashboard/tests/demo_readiness_check.md` and covers:
+
+- Hosted/demo-data launch path
+- Overview page risk prioritization and component navigation
+- Detail page projection summary, trend, key signals, and report text
+- PDF / CSV export flow
+- CSV analysis loading state with a percentage progress ring
+- Empty/error states for CSV upload and missing data
+- Known limitations to disclose during the viva/demo
+
+Recommended pre-demo command:
+
+```bash
+python -m pytest \
+  tests/test_dashboard.py \
+  tests/test_export_helper.py \
+  tests/test_csv_upload_pipeline.py \
+  tests/test_failure_prediction_ui_states.py \
+  tests/test_dashboard_ui_consistency.py \
+  tests/test_demo_readiness.py
+```
+
 ---
 
 ## Development Guidelines
 
 ### Code Style
 
-- **Flake8 compliant**: All code passes `flake8 dashboard/app.py`
+- **Flake8 compliant**: All dashboard code passes `flake8 dashboard`
 - **PEP 8**: 79-character line limit, proper spacing
 - **Type hints**: Use where appropriate for clarity
 - **Docstrings**: Google-style for all functions
@@ -390,7 +414,7 @@ Before committing dashboard changes:
 - Verified responsive layout
 - Checked browser console for errors
 - Ran `python -m pytest tests/test_export_helper.py tests/test_failure_prediction_ui_states.py`
-- Ran `flake8 dashboard/app.py` (exit code 0)
+- Ran `flake8 dashboard` (exit code 0)
 - Verified no breaking changes to data contracts
 
 ---
@@ -421,13 +445,13 @@ prefers this over the static file whenever it's present. This requires local
 Ollama + Model Layer's Python dependencies (see Getting Started above); it
 has been verified end-to-end with a real KIT CSV producing a real report.
 
-**Consumed Fields from ReportLayerOutput (INTERFACE.md v0.7):**
+**Consumed Fields from ReportLayerOutput (current `docs/INTERFACE.md` contract):**
 - `timestamp`, `risk_score`, `risk_level`, `component`
 - `prediction_confidence`, `key_signals`
 - `anomaly_description`, `possible_cause`, `recommended_action`
 - `risk_history` (trend chart)
 - `estimated_failure_probability`, `estimated_cycles_to_failure`
-- `notes`
+- `notes` (retained in the interface data but not displayed as owner guidance)
 
 See `docs/INTERFACE.md` Section 3 for complete field definitions.
 
@@ -437,8 +461,8 @@ See `docs/INTERFACE.md` Section 3 for complete field definitions.
 
 ### Current Limitations
 
-1. **Only 3 of 5 anomaly types have real Model Layer detection logic** (`cooling_degradation`, `air_intake_maf_anomaly`, `accelerator_pedal_sensor`); the other 2 are permanent 0.0-score placeholders in `kit_residual_detector.py`, so a live upload can never surface them as the top result even if that fault is actually present.
-2. **`estimated_cycles_to_failure` / `estimated_failure_probability` are always null** in live mode — the Model Layer's trend estimator (Story 8) is not yet implemented.
+1. **Only 3 of 5 anomaly types have native TTM detection logic** (`cooling_degradation`, `air_intake_maf_anomaly`, `accelerator_pedal_sensor`); the other 2 are supplied by Data Layer `proxy_decisions.csv` forwarding when live uploads include `proxy_decisions_path`.
+2. **The two estimate fields describe Model Layer projections to the High-risk threshold, not calibrated mechanical-failure labels.** They may be `null` when the available history cannot support the relevant projection.
 3. **Desktop-First**: Mobile experience needs optimization.
 4. **No cross-session persistence**: in live mode, `risk_history` is synthesized per request from the Model Layer's batch envelope (every analysed window in the uploaded file), not stored across separate uploads or sessions — this is a deliberate simplification, not an oversight, and is sufficient for "trend within this one upload."
 5. **No hosted/zero-install mode**: live analysis requires local Ollama + Model Layer Python dependencies; there is no paid hosted inference (see Integration with Report Layer above).

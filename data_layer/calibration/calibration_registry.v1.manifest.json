@@ -26,12 +26,12 @@
     {
       "id": "proxy_definition",
       "path": "data_layer/proxy_failure/proxy_failure_definition.md",
-      "sha256": "0001ec59c5a998f0ecc660d80a420d91c63518341b110e64006ea482ea05aa0e"
+      "sha256": "1e6c648b75b0eae0642b8aff4b049178a8af7244fb7c68afdf81ea6db0064787"
     },
     {
       "id": "proxy_support",
       "path": "data_layer/proxy_failure/proxy_support.md",
-      "sha256": "d2f25368f52426bd2c7928b3c9ada5397f9fcf8085bbd51ffbd98858a656b188"
+      "sha256": "7a355aeabb9cae6dd683e8a537c13e227bb8b55143de2c6ab7d7f3f9883847d0"
     }
   ],
   "evidence_root_note": "Paths beginning with 'feature engineering/' or 'experiments/' are logical paths in the approved calibration evidence archive. Runtime production does not require that archive; script 90 requires an explicitly supplied evidence root and verifies these checksums.",

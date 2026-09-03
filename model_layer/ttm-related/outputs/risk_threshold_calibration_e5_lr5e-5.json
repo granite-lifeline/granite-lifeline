@@ -1,0 +1,516 @@
+{
+  "calibration_type": "model_risk_threshold_sweep",
+  "source_results": "ttm-related/outputs/synthetic_eval_results_e5_lr5e-5.json",
+  "source_metadata": {
+    "generated_at": "2026-07-20T23:40:40.853867+00:00",
+    "csv_path": "ttm-related/data/production_feature_manifest/production_features.csv",
+    "manifest_path": "ttm-related/outputs/finetune_split_manifest.json",
+    "model_path": "ttm-related/outputs/ttm_finetuned_e5_lr5e-5/model",
+    "segments": "validation",
+    "context_length": 512,
+    "prediction_length": 96,
+    "injection_design": "512 healthy context + 96 injected future",
+    "risk_alarm_threshold": 0.3,
+    "calibration_registry": "data_layer/calibration/calibration_registry.v1.json"
+  },
+  "selection_rule": {
+    "target_healthy_false_positive_rate": 0.1,
+    "objective": "maximise macro_f1 among thresholds meeting target",
+    "tie_breakers": [
+      "higher exact_hit_rate",
+      "lower healthy_false_positive_rate",
+      "lower threshold"
+    ]
+  },
+  "split": {
+    "method": "every third sorted segment held out",
+    "calibration_segments": [
+      "trip_0002_seg_001",
+      "trip_0008_seg_005",
+      "trip_0012_seg_001",
+      "trip_0021_seg_001",
+      "trip_0025_seg_001",
+      "trip_0060_seg_001",
+      "trip_0072_seg_001",
+      "trip_0078_seg_001"
+    ],
+    "held_out_segments": [
+      "trip_0010_seg_001",
+      "trip_0023_seg_002",
+      "trip_0065_seg_001"
+    ]
+  },
+  "policy": {
+    "path": "/Users/kangkang/Desktop/this-is-true-time-series/ttm-related/config/risk_level_calibration.v1.json",
+    "calibration_version": "model-risk-level.v1",
+    "status": "provisional_synthetic_only",
+    "medium_min_inclusive": 0.4129,
+    "high_min_inclusive": 0.9
+  },
+  "selection": {
+    "selected": {
+      "threshold": 0.4129,
+      "macro_f1": 0.5087719298245613,
+      "micro_f1": 0.5641025641025641,
+      "exact_hit_rate": 0.39285714285714285,
+      "healthy_false_positive_rate": 0.0,
+      "healthy_alarms": 0,
+      "healthy_runs": 8
+    },
+    "candidate_metrics_on_calibration_subset": [
+      {
+        "threshold": 0.0,
+        "macro_f1": 0.5461322990734755,
+        "micro_f1": 0.560344827586207,
+        "exact_hit_rate": 0.5803571428571429,
+        "healthy_false_positive_rate": 1.0,
+        "healthy_alarms": 8,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.096,
+        "macro_f1": 0.5461322990734755,
+        "micro_f1": 0.560344827586207,
+        "exact_hit_rate": 0.5803571428571429,
+        "healthy_false_positive_rate": 1.0,
+        "healthy_alarms": 8,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.1603,
+        "macro_f1": 0.5143862673274439,
+        "micro_f1": 0.5446428571428571,
+        "exact_hit_rate": 0.5446428571428571,
+        "healthy_false_positive_rate": 0.875,
+        "healthy_alarms": 7,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.161,
+        "macro_f1": 0.5143862673274439,
+        "micro_f1": 0.5446428571428571,
+        "exact_hit_rate": 0.5446428571428571,
+        "healthy_false_positive_rate": 0.875,
+        "healthy_alarms": 7,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.1824,
+        "macro_f1": 0.5336840427227801,
+        "micro_f1": 0.5674418604651162,
+        "exact_hit_rate": 0.5446428571428571,
+        "healthy_false_positive_rate": 0.75,
+        "healthy_alarms": 6,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.2134,
+        "macro_f1": 0.5336840427227801,
+        "micro_f1": 0.5674418604651162,
+        "exact_hit_rate": 0.5446428571428571,
+        "healthy_false_positive_rate": 0.75,
+        "healthy_alarms": 6,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.2264,
+        "macro_f1": 0.5284552845528455,
+        "micro_f1": 0.5607476635514018,
+        "exact_hit_rate": 0.5357142857142857,
+        "healthy_false_positive_rate": 0.75,
+        "healthy_alarms": 6,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.2407,
+        "macro_f1": 0.477950234047795,
+        "micro_f1": 0.5333333333333333,
+        "exact_hit_rate": 0.5,
+        "healthy_false_positive_rate": 0.75,
+        "healthy_alarms": 6,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.2433,
+        "macro_f1": 0.5020063650200636,
+        "micro_f1": 0.5572139303482587,
+        "exact_hit_rate": 0.5,
+        "healthy_false_positive_rate": 0.625,
+        "healthy_alarms": 5,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.2569,
+        "macro_f1": 0.5328282828282828,
+        "micro_f1": 0.5833333333333334,
+        "exact_hit_rate": 0.5,
+        "healthy_false_positive_rate": 0.5,
+        "healthy_alarms": 4,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.2618,
+        "macro_f1": 0.5737373737373738,
+        "micro_f1": 0.6120218579234973,
+        "exact_hit_rate": 0.5,
+        "healthy_false_positive_rate": 0.375,
+        "healthy_alarms": 3,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.2988,
+        "macro_f1": 0.5131313131313131,
+        "micro_f1": 0.5977011494252874,
+        "exact_hit_rate": 0.4642857142857143,
+        "healthy_false_positive_rate": 0.25,
+        "healthy_alarms": 2,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.3193,
+        "macro_f1": 0.5131313131313131,
+        "micro_f1": 0.5977011494252874,
+        "exact_hit_rate": 0.4642857142857143,
+        "healthy_false_positive_rate": 0.25,
+        "healthy_alarms": 2,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.3276,
+        "macro_f1": 0.5555555555555555,
+        "micro_f1": 0.6227544910179641,
+        "exact_hit_rate": 0.4642857142857143,
+        "healthy_false_positive_rate": 0.125,
+        "healthy_alarms": 1,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.3307,
+        "macro_f1": 0.5502008032128515,
+        "micro_f1": 0.6144578313253012,
+        "exact_hit_rate": 0.45535714285714285,
+        "healthy_false_positive_rate": 0.125,
+        "healthy_alarms": 1,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.3323,
+        "macro_f1": 0.5447154471544716,
+        "micro_f1": 0.6060606060606061,
+        "exact_hit_rate": 0.44642857142857145,
+        "healthy_false_positive_rate": 0.125,
+        "healthy_alarms": 1,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.3329,
+        "macro_f1": 0.5390946502057613,
+        "micro_f1": 0.5975609756097561,
+        "exact_hit_rate": 0.4375,
+        "healthy_false_positive_rate": 0.125,
+        "healthy_alarms": 1,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.3406,
+        "macro_f1": 0.5390946502057613,
+        "micro_f1": 0.5975609756097561,
+        "exact_hit_rate": 0.4375,
+        "healthy_false_positive_rate": 0.125,
+        "healthy_alarms": 1,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.3544,
+        "macro_f1": 0.5333333333333333,
+        "micro_f1": 0.5889570552147239,
+        "exact_hit_rate": 0.42857142857142855,
+        "healthy_false_positive_rate": 0.125,
+        "healthy_alarms": 1,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.3654,
+        "macro_f1": 0.5274261603375527,
+        "micro_f1": 0.5802469135802469,
+        "exact_hit_rate": 0.41964285714285715,
+        "healthy_false_positive_rate": 0.125,
+        "healthy_alarms": 1,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.3672,
+        "macro_f1": 0.5213675213675214,
+        "micro_f1": 0.5714285714285714,
+        "exact_hit_rate": 0.4107142857142857,
+        "healthy_false_positive_rate": 0.125,
+        "healthy_alarms": 1,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.3741,
+        "macro_f1": 0.5151515151515151,
+        "micro_f1": 0.5625,
+        "exact_hit_rate": 0.4017857142857143,
+        "healthy_false_positive_rate": 0.125,
+        "healthy_alarms": 1,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.3804,
+        "macro_f1": 0.5087719298245613,
+        "micro_f1": 0.5534591194968554,
+        "exact_hit_rate": 0.39285714285714285,
+        "healthy_false_positive_rate": 0.125,
+        "healthy_alarms": 1,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.4129,
+        "macro_f1": 0.5087719298245613,
+        "micro_f1": 0.5641025641025641,
+        "exact_hit_rate": 0.39285714285714285,
+        "healthy_false_positive_rate": 0.0,
+        "healthy_alarms": 0,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.4199,
+        "macro_f1": 0.5022222222222222,
+        "micro_f1": 0.5548387096774194,
+        "exact_hit_rate": 0.38392857142857145,
+        "healthy_false_positive_rate": 0.0,
+        "healthy_alarms": 0,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.4615,
+        "macro_f1": 0.4954954954954955,
+        "micro_f1": 0.5454545454545454,
+        "exact_hit_rate": 0.375,
+        "healthy_false_positive_rate": 0.0,
+        "healthy_alarms": 0,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.5948,
+        "macro_f1": 0.4954954954954955,
+        "micro_f1": 0.5454545454545454,
+        "exact_hit_rate": 0.375,
+        "healthy_false_positive_rate": 0.0,
+        "healthy_alarms": 0,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.76,
+        "macro_f1": 0.4954954954954955,
+        "micro_f1": 0.5454545454545454,
+        "exact_hit_rate": 0.375,
+        "healthy_false_positive_rate": 0.0,
+        "healthy_alarms": 0,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.8411,
+        "macro_f1": 0.4884032969139352,
+        "micro_f1": 0.5359477124183006,
+        "exact_hit_rate": 0.36607142857142855,
+        "healthy_false_positive_rate": 0.0,
+        "healthy_alarms": 0,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.9113,
+        "macro_f1": 0.4884032969139352,
+        "micro_f1": 0.5359477124183006,
+        "exact_hit_rate": 0.36607142857142855,
+        "healthy_false_positive_rate": 0.0,
+        "healthy_alarms": 0,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.9526,
+        "macro_f1": 0.48149227630428443,
+        "micro_f1": 0.5263157894736842,
+        "exact_hit_rate": 0.35714285714285715,
+        "healthy_false_positive_rate": 0.0,
+        "healthy_alarms": 0,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.9557,
+        "macro_f1": 0.4743892828999212,
+        "micro_f1": 0.5165562913907285,
+        "exact_hit_rate": 0.3482142857142857,
+        "healthy_false_positive_rate": 0.0,
+        "healthy_alarms": 0,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.9573,
+        "macro_f1": 0.46708620517430827,
+        "micro_f1": 0.5066666666666666,
+        "exact_hit_rate": 0.3392857142857143,
+        "healthy_false_positive_rate": 0.0,
+        "healthy_alarms": 0,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.9579,
+        "macro_f1": 0.4595744680851064,
+        "micro_f1": 0.4966442953020134,
+        "exact_hit_rate": 0.33035714285714285,
+        "healthy_false_positive_rate": 0.0,
+        "healthy_alarms": 0,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.9656,
+        "macro_f1": 0.4595744680851064,
+        "micro_f1": 0.4966442953020134,
+        "exact_hit_rate": 0.33035714285714285,
+        "healthy_false_positive_rate": 0.0,
+        "healthy_alarms": 0,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.9794,
+        "macro_f1": 0.45184499948607254,
+        "micro_f1": 0.4864864864864865,
+        "exact_hit_rate": 0.32142857142857145,
+        "healthy_false_positive_rate": 0.0,
+        "healthy_alarms": 0,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.9919,
+        "macro_f1": 0.44388819357530246,
+        "micro_f1": 0.47619047619047616,
+        "exact_hit_rate": 0.3125,
+        "healthy_false_positive_rate": 0.0,
+        "healthy_alarms": 0,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 0.9991,
+        "macro_f1": 0.435693871070181,
+        "micro_f1": 0.4657534246575342,
+        "exact_hit_rate": 0.30357142857142855,
+        "healthy_false_positive_rate": 0.0,
+        "healthy_alarms": 0,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 1.0,
+        "macro_f1": 0.42725123576187407,
+        "micro_f1": 0.4551724137931034,
+        "exact_hit_rate": 0.29464285714285715,
+        "healthy_false_positive_rate": 0.0,
+        "healthy_alarms": 0,
+        "healthy_runs": 8
+      },
+      {
+        "threshold": 1.0000000000000002,
+        "macro_f1": 0.0,
+        "micro_f1": 0.0,
+        "exact_hit_rate": 0.0,
+        "healthy_false_positive_rate": 0.0,
+        "healthy_alarms": 0,
+        "healthy_runs": 8
+      }
+    ],
+    "previous_0_3_metrics": {
+      "macro_f1": 0.533095009212529,
+      "micro_f1": 0.5785123966942148,
+      "exact_hit_rate": 0.45454545454545453,
+      "healthy_false_positive_rate": 0.2727272727272727,
+      "healthy_alarms": 3,
+      "healthy_runs": 11
+    },
+    "calibration_metrics": {
+      "macro_f1": 0.5087719298245613,
+      "micro_f1": 0.5641025641025641,
+      "exact_hit_rate": 0.39285714285714285,
+      "healthy_false_positive_rate": 0.0,
+      "healthy_alarms": 0,
+      "healthy_runs": 8
+    },
+    "holdout_metrics": {
+      "macro_f1": 0.5221445221445221,
+      "micro_f1": 0.4848484848484849,
+      "exact_hit_rate": 0.38095238095238093,
+      "healthy_false_positive_rate": 0.3333333333333333,
+      "healthy_alarms": 1,
+      "healthy_runs": 3
+    },
+    "full_metrics": {
+      "macro_f1": 0.5214233841684822,
+      "micro_f1": 0.5405405405405406,
+      "exact_hit_rate": 0.38961038961038963,
+      "healthy_false_positive_rate": 0.09090909090909091,
+      "healthy_alarms": 1,
+      "healthy_runs": 11
+    }
+  },
+  "risk_level_distribution_all_segments": {
+    "healthy": {
+      "Low": 10,
+      "Medium": 0,
+      "High": 1
+    },
+    "cooling": {
+      "Low": 0,
+      "Medium": 1,
+      "High": 32
+    },
+    "maf": {
+      "Low": 42,
+      "Medium": 2,
+      "High": 0
+    },
+    "pedal": {
+      "Low": 45,
+      "Medium": 3,
+      "High": 29
+    }
+  },
+  "registry_reconciliation": {
+    "path": "data_layer/calibration/calibration_registry.v1.json",
+    "sha256": "856998172dc71565b879be97d4a9e737b5ca7c969923bf44b4aec2efa44d2f10",
+    "calibration_version": "calibration.v1",
+    "status": "frozen",
+    "immutable": true,
+    "read_only_confirmation": "The registry was read for this report and was not modified.",
+    "overlap": {
+      "cooling": {
+        "rules": [
+          "1-S1",
+          "1-S3"
+        ],
+        "detector_inputs": [
+          "coolant_temp",
+          "ect_rate_180s"
+        ]
+      },
+      "maf": {
+        "rules": [
+          "2-S2"
+        ],
+        "detector_inputs": [
+          "speed_density_maf_residual",
+          "maf",
+          "map"
+        ]
+      },
+      "pedal": {
+        "rules": [
+          "3-S1a"
+        ],
+        "detector_inputs": [
+          "accel_pedal_channel_delta",
+          "pedal_mapping_residual"
+        ]
+      }
+    }
+  }
+}

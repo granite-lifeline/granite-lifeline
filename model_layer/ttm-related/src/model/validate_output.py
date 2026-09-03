@@ -122,7 +122,11 @@ def validate_notes(value: Any) -> list[str]:
     return errors
 
 
-def validate_output(data: Any) -> list[str]:
+def validate_output(
+    data: Any,
+    *,
+    _is_secondary: bool = False,
+) -> list[str]:
     """Return validation errors. Empty list means valid."""
     errors: list[str] = []
 
@@ -198,6 +202,40 @@ def validate_output(data: Any) -> list[str]:
 
     if "notes" in data:
         errors.extend(validate_notes(data["notes"]))
+
+    if "secondary_risk" in data and _is_secondary:
+        errors.append(
+            "secondary_risk must not contain another secondary_risk"
+        )
+    elif "secondary_risk" in data:
+        secondary = data["secondary_risk"]
+        if not isinstance(secondary, dict):
+            errors.append("secondary_risk must be an object")
+        else:
+            errors.extend(
+                f"secondary_risk.{error}"
+                for error in validate_output(
+                    secondary, _is_secondary=True
+                )
+            )
+            primary_type = data.get("anomaly_type")
+            secondary_type = secondary.get("anomaly_type")
+            if primary_type == secondary_type:
+                errors.append(
+                    "secondary_risk.anomaly_type must differ from "
+                    "the primary anomaly_type"
+                )
+            primary_score = data.get("risk_score")
+            secondary_score = secondary.get("risk_score")
+            if (
+                is_number(primary_score)
+                and is_number(secondary_score)
+                and secondary_score > primary_score
+            ):
+                errors.append(
+                    "secondary_risk.risk_score must not exceed "
+                    "the primary risk_score"
+                )
 
     return errors
 

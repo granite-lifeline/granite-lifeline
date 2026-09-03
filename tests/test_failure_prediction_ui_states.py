@@ -58,11 +58,12 @@ def test_failure_prediction_has_value_and_null_states():
         mock["air_intake_maf_anomaly"]
     )
 
-    expected_text = (
-        "72% probability of failure within the next 15 trips"
-    )
-
-    assert cooling_text == expected_text
+    # This fixture's cooling_degradation entry is risk_level "High" with
+    # a non-null estimated_failure_probability — "chance of crossing
+    # into High risk" would be self-contradictory here, so it must not
+    # appear; see test_failure_prediction.py for the dedicated unit test.
+    assert "chance of crossing" not in cooling_text
+    assert "already reached the High-risk threshold" in cooling_text
     assert cooling_has_value is True
     assert intake_text == PENDING_FAILURE_PREDICTION_TEXT
     assert intake_has_value is False
@@ -95,7 +96,7 @@ def test_failure_prediction_icon_differs_from_trend_icon():
     src = _detail_text()
 
     assert 'show_icon_heading(' in src
-    assert '"Risk Score Trend"' in src
+    assert '"Risk Trend"' in src
     assert re.search(r'lucide_icon\(\s*"trending-up",\s*size=24', src)
     assert re.search(r'lucide_icon\(\s*"alert-triangle",\s*size=24', src)
 
@@ -105,23 +106,21 @@ def test_failure_prediction_uses_top_summary_banner_layout():
     src = _detail_text()
 
     incomplete_index = src.index("Incomplete Data")
-    heading_index = src.index("Failure Prediction</h2>")
+    heading_index = src.index('"Failure Prediction", failure_icon')
     card_call_index = src.index("_render_failure_prediction")
-    risk_index = src.index('"Risk Score"')
+    risk_index = src.index('"Risk Level"')
 
-    assert "grid-template-columns:24px auto 24px" in src
+    assert "section_heading_html(" in src
     assert incomplete_index < heading_index
     assert card_call_index < risk_index
 
 
-def test_failure_prediction_value_state_emphasizes_key_values():
-    """Test value state highlights probability and trip count evenly."""
+def test_failure_prediction_value_state_explains_threshold_projection():
+    """Test value state renders the qualified projection text."""
     src = _detail_text()
 
-    assert "{pct}%" in src
-    assert "{cnt} trips" in src
-    assert src.count("font-size:16px") >= 2
-    assert "justify-content:center;gap:8px;flex-wrap:wrap" in src
+    assert "_html.escape(prediction_text)" in src
+    assert "probability of failure within the next" not in src
 
 
 def test_failure_prediction_pending_matches_info_notice_style():
@@ -134,15 +133,17 @@ def test_failure_prediction_pending_matches_info_notice_style():
     assert "max-width:600px" in src
 
 
-def test_data_quality_notes_uses_content_card_style():
-    """Test notes render as a content card when notes exist."""
+def test_owner_limitation_replaces_internal_data_notes():
+    """Detail page shows a plain limitation, not internal model notes."""
     src = _detail_text()
 
-    assert "Data Quality Notes</div>" in src
-    assert 'info", size=18, color=tokens["accent"]' in src
+    assert "Data Quality Notes</div>" not in src
+    assert (
+        "This is a risk-pattern estimate, not a confirmed mechanical fault."
+        in src
+    )
+    assert "Important limitation</div>" not in src
     assert 'background:{tokens["glass_surface"]}' in src
-    assert 'border:1px solid {tokens["glass_border"]}' in src
-    assert 'border-bottom:2px solid {tokens["border"]}' in src
 
 
 def test_overview_page_has_pdf_and_csv_export_controls():
@@ -152,7 +153,7 @@ def test_overview_page_has_pdf_and_csv_export_controls():
     assert "_show_dashboard_export_controls(sorted_components, tokens)" in src
     assert "build_diagnostic_pdf_bytes" in src
     assert "build_key_signals_csv_bytes" in src
-    assert "Export Report</div>" in src
+    assert 'section_heading_html(\n                "Export Report"' in src
     assert "Report components" in src
     assert "export_dropdown_components" in src
     assert "export_dropdown_pdf" in src
@@ -174,6 +175,84 @@ def test_overview_page_has_pdf_and_csv_export_controls():
     assert '"Download CSV"' in src
 
 
+def test_overview_export_workflow_has_quick_download_then_options():
+    """Test GL-380 keeps downloads visible before advanced filters."""
+    src = _overview_text()
+
+    assert "overview_export_options_open" in src
+    assert "Ready to download" in src
+    assert "export-quick-summary" in src
+    assert "Customize export options" in src
+    assert "export_options_toggle" in src
+    assert "section_key in DEFAULT_EXPORT_SECTIONS" in src
+
+    download_index = src.index("overview_download_pdf")
+    options_index = src.index("export_options_toggle")
+    component_filter_index = src.index("export_dropdown_components")
+
+    assert download_index < options_index
+    assert options_index < component_filter_index
+
+
+def test_overview_export_panel_ui_has_cards_and_options_panel():
+    """Test GL-381 export panel has polished download and options UI."""
+    src = _overview_text()
+
+    assert "def _export_download_card_html" in src
+    assert "export-download-card" in src
+    assert "export-download-icon" in src
+    assert "export-download-title" in src
+    assert "export-download-meta" in src
+    assert "Diagnostic report" in src
+    assert "Key signals table" in src
+    assert "csv_card_meta" in src
+    assert "pdf_card_meta" in src
+    assert '"activity",' in src
+    assert '"table",' not in src
+
+    assert ".st-key-overview_download_pdf button" in src
+    assert ".st-key-overview_download_csv button" in src
+    assert src.count('background: {tokens["accent"]} !important;') >= 2
+    assert src.count('color: {tokens["accent_contrast"]} !important;') >= 4
+    assert ".st-key-export_options_toggle button" in src
+    assert ".st-key-export_options_panel" in src
+    assert 'st.container(key="export_options_panel")' in src
+    assert '<div class="export-options-title">Export options</div>' in src
+
+
+def test_empty_and_error_states_use_shared_polished_components():
+    """Test GL-382 replaces bare Streamlit warnings/errors in key flows."""
+    overview_src = _overview_text()
+    detail_src = _detail_text()
+
+    assert "Choose a CSV file first" in overview_src
+    assert "PDF export unavailable" in overview_src
+    assert "Component not found" in detail_src
+    assert "selected_component_keys = list(component_keys)" in overview_src
+
+    assert "empty_state_html(" in overview_src
+    assert "danger_card_html(" in overview_src
+    assert "empty_state_html(" in detail_src
+
+    assert "Please select a CSV file before clicking Run Analysis." not in (
+        overview_src
+    )
+    assert "Select at least one component to export." not in overview_src
+    assert "No export components selected" not in overview_src
+    assert 'st.error("Component not found.")' not in detail_src
+
+
+def test_detail_empty_sections_have_user_facing_empty_states():
+    """GL-383: detail page covers missing trend and signal sections."""
+    src = _detail_text()
+
+    assert "Incomplete Data" in src
+    assert "Trend not available" in src
+    assert "No signal data available" in src
+    assert "Risk Trend data" in src
+    assert "Key Signals data" in src
+
+
 def test_light_and_dark_theme_tokens_support_failure_prediction_card():
     """Test light and dark themes both include card styling tokens."""
     theme_module = load_dashboard_app_module()
@@ -182,6 +261,9 @@ def test_light_and_dark_theme_tokens_support_failure_prediction_card():
         "glass_border",
         "shadow",
         "accent",
+        "accent_hover",
+        "accent_subtle",
+        "focus",
         "text",
         "text_secondary",
     ]

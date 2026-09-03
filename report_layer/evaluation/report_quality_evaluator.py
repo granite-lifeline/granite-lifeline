@@ -15,6 +15,15 @@ from pathlib import Path
 from statistics import mean
 from typing import List, Tuple
 
+from report_layer import negation_constants as _negation
+
+
+# Retain these public module attributes for evaluation/test compatibility.
+CLAUSE_BOUNDARY = _negation.CLAUSE_BOUNDARY
+NEGATION_WORDS = _negation.NEGATION_WORDS
+PSEUDO_NEGATIONS = _negation.PSEUDO_NEGATIONS
+_find_unnegated_phrases = _negation.find_unnegated_phrases
+
 
 @dataclass
 class ReportQualityScore:
@@ -38,9 +47,12 @@ def evaluate_factual_grounding(
     Evaluate whether report is grounded in the input context.
 
     Checks:
-    - anomaly_description references specific signal values
-    - possible_cause connects to signals in context
-    - recommended_action is consistent with risk_level
+    - Any number used in anomaly_description exists in the input context
+    - possible_cause connects its explanation to readings or signals
+
+    A plain-language description does not have to repeat measurements that
+    the Dashboard already presents. Grounding is reduced only when generated
+    prose introduces a number absent from the supplied evidence.
 
     Args:
         report: Report dict with anomaly_description, possible_cause,
@@ -53,21 +65,24 @@ def evaluate_factual_grounding(
     score = 1.0
     notes = []
 
-    # Extract numbers from context (likely signal values)
-    context_numbers = re.findall(r'\d+\.?\d*', context)
-
-    # Check if anomaly_description references signal values
+    context_numbers = set(re.findall(r"-?\d+(?:\.\d+)?", context))
     desc = report.get("anomaly_description", "")
-    desc_numbers = re.findall(r'\d+\.?\d*', desc)
-    if not desc_numbers:
-        score -= 0.3
+    desc_numbers = set(re.findall(r"-?\d+(?:\.\d+)?", desc))
+    unsupported_numbers = sorted(desc_numbers - context_numbers)
+    if unsupported_numbers:
+        score -= 0.4
         notes.append(
-            "anomaly_description does not reference specific signal values"
+            "anomaly_description introduces numbers absent from context: "
+            + ", ".join(unsupported_numbers)
         )
-    elif any(num in context_numbers for num in desc_numbers):
+    elif desc_numbers:
         notes.append(
-            "anomaly_description references specific signal values from "
-            "context"
+            "All numbers in anomaly_description are present in context"
+        )
+    else:
+        notes.append(
+            "anomaly_description uses a qualitative summary without adding "
+            "unsupported numbers"
         )
 
     # Check if possible_cause connects to signals
@@ -82,32 +97,6 @@ def evaluate_factual_grounding(
             "possible_cause does not clearly connect to signal readings"
         )
 
-    # Check if recommended_action mentions risk level appropriately
-    actions = report.get("recommended_action", [])
-    if isinstance(actions, list):
-        actions_text = " ".join(actions).lower()
-    else:
-        actions_text = str(actions).lower()
-
-    risk_keywords = {
-        "high": ["prompt", "soon", "immediately", "urgent", "avoid"],
-        "medium": ["soon", "check", "inspect", "schedule"],
-        "low": ["monitor", "next service", "when convenient", "observe"]
-    }
-
-    # This check requires risk_level to be passed separately
-    # For now, we check if any urgency language is present
-    has_urgency = any(
-        keyword in actions_text
-        for keywords in risk_keywords.values()
-        for keyword in keywords
-    )
-    if not has_urgency:
-        score -= 0.2
-        notes.append(
-            "recommended_action lacks risk-appropriate urgency language"
-        )
-
     return max(0.0, score), notes
 
 
@@ -119,6 +108,19 @@ def evaluate_readability(report: dict) -> Tuple[float, List[str]]:
     - Absence of unexplained raw field names
     - Absence of unexplained acronyms
     - Average sentence length in anomaly_description
+
+    Score boundaries (extremes only, see evaluate_factual_grounding
+    for why):
+    - Highest (1.0): no raw field name (coolant_temp, maf, map,
+      accel_pedal_d/e, tps, rpm, throttle_pos) appears anywhere in
+      anomaly_description + possible_cause, no acronym
+      (OBD/ECM/PCM/DTC/MAF/MAP/TPS/IAT) appears without a nearby
+      parenthetical explanation, and anomaly_description's average
+      sentence length is 30 words or fewer.
+    - Lowest (0.2, the floor given the three -0.3/-0.3/-0.2
+      deductions below — this function cannot return 0.0): at least
+      one raw field name is present, at least one acronym is present
+      unexplained, and the average sentence length exceeds 30 words.
 
     Args:
         report: Report dict with anomaly_description, possible_cause,
@@ -135,10 +137,16 @@ def evaluate_readability(report: dict) -> Tuple[float, List[str]]:
         report.get("possible_cause", "")
     )
 
-    # Check for unexplained raw field names
+    # Check for unexplained raw field names. "rpm" is deliberately
+    # excluded — unlike coolant_temp/maf/map/etc., "RPM" is
+    # commonly-understood plain English for a car owner, not an
+    # internal snake_case field name. prompt_chain_validator.py's
+    # equivalent list already excludes it for the same reason; found
+    # via qa_cross_validation, where this list flagged "engine RPM"
+    # as unexplained jargon while the validator correctly did not.
     raw_fields = [
         "coolant_temp", "maf", "map", "accel_pedal_d",
-        "accel_pedal_e", "tps", "rpm", "throttle_pos"
+        "accel_pedal_e", "tps", "throttle_pos"
     ]
     found_raw_fields = [
         field for field in raw_fields if field in full_text.lower()
@@ -204,6 +212,22 @@ def evaluate_hedging_appropriateness(
     - Absence of confirmed fault language
     - anomaly_description avoids claiming confirmed fault
 
+    Score boundaries (extremes only, see evaluate_factual_grounding
+    for why):
+    - Highest (1.0): possible_cause contains a hedging phrase (may
+      indicate / could suggest / might / possibly / etc.) or
+      negated-certainty wording (not confirmed, unconfirmed), neither
+      possible_cause nor anomaly_description contains an unnegated
+      confirmed/is-definitely/has-failed/is-broken/is-faulty/
+      has-malfunctioned/is-damaged phrase, and anomaly_description
+      contains no unnegated the-fault-is/the-problem-is/has-failed/
+      is-broken/is-faulty claim.
+    - Lowest (0.0, this function can reach the true floor): none of
+      the above hold — no hedging anywhere, and an unnegated
+      confirmed-fault claim in both possible_cause/
+      anomaly_description and a separate fault claim in
+      anomaly_description.
+
     Args:
         report: Report dict with anomaly_description, possible_cause
 
@@ -216,18 +240,39 @@ def evaluate_hedging_appropriateness(
     cause = report.get("possible_cause", "").lower()
     desc = report.get("anomaly_description", "").lower()
 
-    # Check for hedging phrases in possible_cause
+    # Check for hedging phrases in possible_cause. Negated-certainty
+    # wording ("not confirmed", "unconfirmed") is also a valid form of
+    # hedging, even though it doesn't match the phrase list below —
+    # without this, rephrasing "may indicate X" as "X is not
+    # confirmed" was scored as if it had no hedging at all. "possible
+    # explanation" is layer2_cause.txt's own canonical hedging opener
+    # (five of the prompt's "Good example" blocks use it) but was
+    # missing here, found via the perturbation regression test on
+    # real generated output using exactly that phrasing.
     hedging_phrases = [
         "may indicate", "could suggest", "could be related to",
-        "might", "possibly", "may be", "could be", "suggests"
+        "might", "possibly", "may be", "could be", "suggests",
+        "possible explanation"
     ]
     found_hedging = [
         phrase for phrase in hedging_phrases if phrase in cause
     ]
-    if found_hedging:
-        notes.append(
-            f"Uses appropriate hedging: {', '.join(found_hedging[:2])}"
-        )
+    certainty_markers = ["confirmed", "definite", "certain"]
+    has_negated_certainty = bool(
+        cause
+    ) and any(
+        marker in cause for marker in certainty_markers
+    ) and not _find_unnegated_phrases(cause, certainty_markers)
+    if found_hedging or has_negated_certainty:
+        if not found_hedging:
+            notes.append(
+                "Uses appropriate hedging via negated certainty "
+                "language (e.g. 'not confirmed')"
+            )
+        else:
+            notes.append(
+                f"Uses appropriate hedging: {', '.join(found_hedging[:2])}"
+            )
     else:
         score -= 0.4
         notes.append(
@@ -235,15 +280,18 @@ def evaluate_hedging_appropriateness(
             "could suggest, etc.)"
         )
 
-    # Check for confirmed fault language
+    # Check for confirmed fault language (skipping negated wording
+    # such as "not confirmed" or "no confirmed fault yet" — a bare
+    # substring match previously flagged "no confirmed fault yet" as
+    # an unhedged claim, which is the opposite of what it says)
     confirmed_phrases = [
         "confirmed", "is definitely", "has failed", "is broken",
         "is faulty", "has malfunctioned", "is damaged"
     ]
-    found_confirmed = [
-        phrase for phrase in confirmed_phrases
-        if phrase in cause or phrase in desc
-    ]
+    found_confirmed = sorted(set(
+        _find_unnegated_phrases(cause, confirmed_phrases)
+        + _find_unnegated_phrases(desc, confirmed_phrases)
+    ))
     if found_confirmed:
         score -= 0.4
         notes.append(
@@ -256,7 +304,7 @@ def evaluate_hedging_appropriateness(
         "the fault is", "the problem is", "has failed",
         "is broken", "is faulty"
     ]
-    if any(claim in desc for claim in fault_claims):
+    if _find_unnegated_phrases(desc, fault_claims):
         score -= 0.2
         notes.append(
             "anomaly_description claims confirmed fault"
@@ -276,6 +324,19 @@ def evaluate_actionability(
     - recommended_action has 2-4 items
     - Each action is at least 10 words
     - Urgency language matches risk_level
+
+    Score boundaries (extremes only, see evaluate_factual_grounding
+    for why):
+    - Highest (1.0): recommended_action has 2 to 4 items, every item
+      is at least 10 words, and at least one item contains a wording
+      cue matching risk_level (High: soon/prompt/immediately/avoid/
+      urgent; Medium: soon/check/inspect/schedule; Low: monitor/
+      next service/when convenient/observe).
+    - Lowest (0.1, the floor given the -0.3/-0.3/-0.3 deductions
+      below when combined with the too-few-items case — this
+      function cannot return 0.0): fewer than 2 items, at least one
+      item under 10 words, and no risk-appropriate wording cue
+      anywhere in the actions.
 
     Args:
         report: Report dict with recommended_action

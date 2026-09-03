@@ -87,9 +87,11 @@ def evaluate_model_mae(
     model,
     dataloader: DataLoader,
 ) -> dict[str, Any]:
-    """Compute overall and per-signal MAE, respecting observed masks."""
+    """Compute forecast error and cross-signal relationship fidelity."""
     signal_abs_error = torch.zeros(len(MODEL_SIGNALS), dtype=torch.float64)
     signal_counts = torch.zeros(len(MODEL_SIGNALS), dtype=torch.float64)
+    correlation_error_sum = 0.0
+    correlation_pair_count = 0
 
     with torch.no_grad():
         for batch in tqdm(dataloader, desc="evaluating", leave=False):
@@ -104,6 +106,11 @@ def evaluate_model_mae(
             masked_error = abs_error * observed
             signal_abs_error += masked_error.sum(dim=(0, 1)).double()
             signal_counts += observed.sum(dim=(0, 1)).double()
+            batch_error, batch_pairs = cross_signal_correlation_error(
+                prediction, truth, observed
+            )
+            correlation_error_sum += batch_error
+            correlation_pair_count += batch_pairs
 
     per_signal = {
         signal: float(signal_abs_error[index] / signal_counts[index])
@@ -118,7 +125,58 @@ def evaluate_model_mae(
             signal: int(signal_counts[index].item())
             for index, signal in enumerate(MODEL_SIGNALS)
         },
+        "mean_cross_signal_correlation_error": (
+            correlation_error_sum / correlation_pair_count
+            if correlation_pair_count
+            else None
+        ),
+        "correlation_pairs_evaluated": correlation_pair_count,
     }
+
+
+def cross_signal_correlation_error(
+    prediction: torch.Tensor,
+    truth: torch.Tensor,
+    observed: torch.Tensor,
+) -> tuple[float, int]:
+    """Sum per-window absolute correlation errors for signal pairs."""
+    error_sum = 0.0
+    pair_count = 0
+    for batch_index in range(prediction.shape[0]):
+        for left in range(prediction.shape[2]):
+            for right in range(left + 1, prediction.shape[2]):
+                valid = (
+                    observed[batch_index, :, left]
+                    & observed[batch_index, :, right]
+                )
+                if int(valid.sum()) < 2:
+                    continue
+                pred_corr = _pair_correlation(
+                    prediction[batch_index, valid, left],
+                    prediction[batch_index, valid, right],
+                )
+                truth_corr = _pair_correlation(
+                    truth[batch_index, valid, left],
+                    truth[batch_index, valid, right],
+                )
+                if pred_corr is None or truth_corr is None:
+                    continue
+                error_sum += abs(pred_corr - truth_corr)
+                pair_count += 1
+    return error_sum, pair_count
+
+
+def _pair_correlation(
+    left: torch.Tensor, right: torch.Tensor
+) -> float | None:
+    left = left.double() - left.double().mean()
+    right = right.double() - right.double().mean()
+    denominator = torch.linalg.vector_norm(left) * torch.linalg.vector_norm(
+        right
+    )
+    if float(denominator) <= 1e-12:
+        return None
+    return float(torch.dot(left, right) / denominator)
 
 
 def improvement_pct(before: float, after: float) -> float:
@@ -201,6 +259,12 @@ def write_markdown(path: Path, payload: Mapping[str, Any]) -> None:
         if decision["clear_improvement"]
         else "not a clear improvement"
     )
+    zero_shot_corr_err = payload["zero_shot"][
+        "mean_cross_signal_correlation_error"
+    ]
+    fine_tuned_corr_err = payload["fine_tuned"][
+        "mean_cross_signal_correlation_error"
+    ]
     text = "\n".join(
         [
             "# Fine-tuned TTM Residual Comparison",
@@ -211,6 +275,14 @@ def write_markdown(path: Path, payload: Mapping[str, Any]) -> None:
             f"Validation segments: `{payload['validation']['segments']}`",
             "",
             *rows,
+            "",
+            "## Cross-signal relationship fidelity",
+            "",
+            (
+                "Mean absolute correlation error (lower is better): "
+                f"zero-shot `{zero_shot_corr_err:.4f}`, "
+                f"fine-tuned `{fine_tuned_corr_err:.4f}`."
+            ),
             "",
             "## Decision Rule",
             "",

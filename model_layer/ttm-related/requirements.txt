@@ -35,6 +35,7 @@ psutil==7.2.2
 pyarrow==24.0.0
 python-dateutil==2.9.0.post0
 PyYAML==6.0.3
+pytest==9.1.1
 regex==2026.5.9
 requests==2.34.2
 safetensors==0.8.0

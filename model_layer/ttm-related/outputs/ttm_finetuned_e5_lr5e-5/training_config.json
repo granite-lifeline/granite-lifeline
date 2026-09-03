@@ -1,0 +1,82 @@
+{
+  "generated_at": "2026-07-20T15:47:13.906944+00:00",
+  "mode": "train",
+  "model_path": "ibm-granite/granite-timeseries-ttm-r2",
+  "manifest_file": "ttm-related/outputs/finetune_split_manifest.json",
+  "input_file": "ttm-related/data/production_feature_manifest/production_features.csv",
+  "output_dir": "ttm-related/outputs/ttm_finetuned_e5_lr5e-5",
+  "model_signals": [
+    "rpm",
+    "speed",
+    "coolant_temp",
+    "map",
+    "maf",
+    "tps"
+  ],
+  "context_length": 512,
+  "prediction_length": 96,
+  "stride": 96,
+  "seed": 42,
+  "training": {
+    "epochs": 5.0,
+    "learning_rate": 5e-05,
+    "batch_size": 8
+  },
+  "train": {
+    "segments": 49,
+    "rows": 151015,
+    "windows": 1286,
+    "trips": 47,
+    "missing_model_signal_values": {
+      "rpm": 0,
+      "speed": 0,
+      "coolant_temp": 0,
+      "map": 0,
+      "maf": 0,
+      "tps": 8
+    }
+  },
+  "validation": {
+    "segments": 12,
+    "rows": 30708,
+    "windows": 250,
+    "trips": 12,
+    "missing_model_signal_values": {
+      "rpm": 0,
+      "speed": 0,
+      "coolant_temp": 0,
+      "map": 0,
+      "maf": 0,
+      "tps": 0
+    }
+  },
+  "sample_shapes": {
+    "past_values": [
+      512,
+      6
+    ],
+    "future_values": [
+      96,
+      6
+    ]
+  },
+  "note": "Training run completed and model artifact was saved.",
+  "trainer_metrics": {
+    "train": {
+      "train_runtime": 28.658,
+      "train_samples_per_second": 224.37,
+      "train_steps_per_second": 28.09,
+      "total_flos": 95439981772800.0,
+      "train_loss": 25332.4314052795,
+      "epoch": 5.0
+    },
+    "validation": {
+      "eval_loss": 27810.53515625,
+      "eval_runtime": 0.3646,
+      "eval_samples_per_second": 685.7,
+      "eval_steps_per_second": 87.77,
+      "epoch": 5.0
+    }
+  },
+  "completed_at": "2026-07-20T15:47:43.531613+00:00"
+}

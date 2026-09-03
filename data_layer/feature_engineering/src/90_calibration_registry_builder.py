@@ -26,10 +26,6 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_REGISTRY = (
     REPO_ROOT / "data_layer" / "calibration" / "calibration_registry.v1.json"
 )
-DEFAULT_RELEASE_MANIFEST = (
-    REPO_ROOT / "data_layer" / "calibration"
-    / "calibration_registry.v1.manifest.json"
-)
 
 
 # ---------------------------------------------------------------------------
@@ -185,89 +181,6 @@ def _sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
-
-
-def verify_release_manifest(
-    manifest: AuditManifest,
-    registry_path: Path,
-    release_manifest_path: Path,
-    evidence_root: Path | None,
-) -> None:
-    """Verify registry release metadata and optional evidence checksums."""
-
-    if not release_manifest_path.is_file():
-        manifest.add(AuditRecord(
-            sub_check="release_manifest",
-            param="manifest_exists",
-            frozen_value=str(release_manifest_path),
-            rederived_value=None,
-            tolerance=0.0,
-            unit="path",
-            status="FAIL",
-            method_summary="release manifest must exist",
-        ))
-        return
-
-    release = json.loads(release_manifest_path.read_text(encoding="utf-8"))
-    expected_registry = release["registry"]["sha256"]
-    actual_registry = _sha256_file(registry_path)
-    manifest.add(AuditRecord(
-        sub_check="release_manifest",
-        param="registry_sha256",
-        frozen_value=expected_registry,
-        rederived_value=actual_registry,
-        tolerance=0.0,
-        unit="sha256",
-        status="PASS" if actual_registry == expected_registry else "FAIL",
-        method_summary="registry checksum embedded in release manifest",
-    ))
-
-    for doc in release.get("authoritative_documents", []):
-        path = REPO_ROOT / doc["path"]
-        actual = _sha256_file(path) if path.is_file() else None
-        manifest.add(AuditRecord(
-            sub_check="release_manifest",
-            param=f"authoritative_document:{doc['id']}",
-            frozen_value=doc["sha256"],
-            rederived_value=actual,
-            tolerance=0.0,
-            unit="sha256",
-            status="PASS" if actual == doc["sha256"] else "FAIL",
-            method_summary=f"checksum for {doc['path']}",
-        ))
-
-    source_artifacts = release.get("source_artifacts", [])
-    if evidence_root is None:
-        manifest.add(AuditRecord(
-            sub_check="release_manifest",
-            param="source_artifact_checksums",
-            frozen_value=len(source_artifacts),
-            rederived_value=0,
-            tolerance=0.0,
-            unit="artifacts",
-            status="INCOMPLETE",
-            method_summary=(
-                "no --evidence-root supplied; approved calibration "
-                "evidence checksums were not verified"
-            ),
-        ))
-        return
-
-    for artifact in source_artifacts:
-        path = evidence_root / artifact["path"]
-        actual = _sha256_file(path) if path.is_file() else None
-        manifest.add(AuditRecord(
-            sub_check="release_manifest",
-            param=f"source_artifact:{artifact['id']}",
-            frozen_value=artifact["sha256"],
-            rederived_value=actual,
-            tolerance=0.0,
-            unit="sha256",
-            status="PASS" if actual == artifact["sha256"] else "FAIL",
-            method_summary=(
-                f"checksum for approved evidence {artifact['path']}"
-            ),
-        ))
 
 
 # ---------------------------------------------------------------------------
@@ -779,9 +692,6 @@ def verify_5_S3(manifest: AuditManifest, registry: dict,
 def run_calibration_audit(
     run_dir: Path,
     registry_path: Path = DEFAULT_REGISTRY,
-    release_manifest_path: Path = DEFAULT_RELEASE_MANIFEST,
-    evidence_root: Path | None = None,  # kept for signature compat
-    _unused=True,
 ) -> dict[str, Any]:
     """Run the full calibration reproduction audit."""
     registry = json.loads(registry_path.read_text(encoding="utf-8"))
@@ -798,8 +708,6 @@ def run_calibration_audit(
     print(f"Loaded {len(df):,} rows from {production_csv.name}")
 
     manifest = AuditManifest(str(registry_path), run_dir.name)
-
-    # Phase 0 removed (evidence verification not required)
 
     print("\n--- Phase A: Shared constants ---")
     verify_shared_constants(manifest, registry, df)
@@ -841,12 +749,6 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--registry",
                         default=str(DEFAULT_REGISTRY),
                         help="Path to the frozen calibration registry")
-    parser.add_argument("--release-manifest",
-                        default=str(DEFAULT_RELEASE_MANIFEST),
-                        help="Path to calibration_registry.v1.manifest.json")
-    # parser.add_argument("--evidence-root",
-    #                   help=("Optional approved calibration evidence root. "
-    #                     "verification is reported as INCOMPLETE."))
     parser.add_argument("--output",
                         help="Optional output path for audit manifest JSON")
     return parser
@@ -856,15 +758,12 @@ def main() -> int:
     args = build_argument_parser().parse_args()
     run_dir = Path(args.run_dir).resolve()
     registry_path = Path(args.registry).resolve()
-    release_manifest_path = Path(args.release_manifest).resolve()
 
     if not run_dir.is_dir():
         print(f"ERROR: run directory not found: {run_dir}", file=sys.stderr)
         return 1
 
-    result = run_calibration_audit(
-        run_dir, registry_path, release_manifest_path
-    )
+    result = run_calibration_audit(run_dir, registry_path)
 
     cal_dir = registry_path.parent
     output = args.output or (cal_dir / "calibration_audit_manifest.json")

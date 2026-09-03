@@ -1,0 +1,56 @@
+{
+  "trip_id": "trip_0061",
+  "segment_id": "trip_0061_seg_001",
+  "window_id": "trip_0061_seg_001__w002",
+  "timestamp": "2018-02-28T16:22:08Z",
+  "anomaly_type": "air_intake_maf_anomaly",
+  "risk_score": 0.1832,
+  "risk_level": "Low",
+  "component": "air_intake_maf_anomaly",
+  "prediction_confidence": 0.95,
+  "key_signals": [
+    {
+      "feature": "maf",
+      "value": 31.41,
+      "unit": "g/s",
+      "reference_range": [
+        0,
+        123
+      ]
+    },
+    {
+      "feature": "map",
+      "value": 159.0,
+      "unit": "kPa",
+      "reference_range": [
+        36,
+        237
+      ]
+    },
+    {
+      "feature": "speed_density_maf_residual",
+      "value": -2.0564,
+      "unit": "g/s",
+      "reference_range": [
+        -20,
+        20
+      ]
+    },
+    {
+      "feature": "tps",
+      "value": 83.5,
+      "unit": "%",
+      "reference_range": [
+        0,
+        89
+      ]
+    }
+  ],
+  "estimated_cycles_to_failure": null,
+  "estimated_failure_probability": 0.0031,
+  "notes": [
+    "Failure estimate is a linear projection of trip-level mean risk to the High-risk threshold (0.9000); it is not a calibrated probability of mechanical failure.",
+    "estimated_failure_probability is the model-based probability of crossing that threshold within the next 10 trips.",
+    "No positive trip-level risk trend was observed; no threshold crossing cycle is projected."
+  ]
+}
