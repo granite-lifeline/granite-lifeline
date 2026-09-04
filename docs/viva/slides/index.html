@@ -2063,6 +2063,29 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .report-backup .report-result { padding:18px 14px; border-top:4px solid var(--layer-color); background:#f7faff; text-align:center; }
 .report-backup .report-result b { display:block; color:var(--layer-color); font:850 25px/1 var(--font-mono); }
 .report-backup .report-result span { display:block; margin-top:9px; color:var(--text-muted); font-size:14px; line-height:1.35; }
+/* Model viva backup — question-first, presentation-scale speaking notes. */
+.model-backup .pipeline-node { padding:34px 36px 36px; }
+.model-backup .pipeline-node h4 { font-size:clamp(27px,2.45vw,36px); }
+.model-backup .pipeline-node-purpose { max-width:980px; font-size:18px; line-height:1.48; }
+.model-backup .pipeline-node-id { font-size:15px; }
+.model-backup .pipeline-status { padding:8px 10px; font-size:12px; }
+.model-jump-nav { display:flex; flex-wrap:wrap; gap:10px; margin:0 0 28px; padding:18px 20px; border:1px solid color-mix(in srgb,var(--layer-color) 22%,var(--border)); background:color-mix(in srgb,var(--layer-color) 4%,white); }
+.model-jump-nav button { min-height:44px; padding:10px 14px; border:1px solid color-mix(in srgb,var(--layer-color) 30%,var(--border)); border-radius:5px; background:#fff; color:var(--text); font:700 14px/1.2 var(--font-body); cursor:pointer; }
+.model-jump-nav button:hover { border-color:var(--layer-color); color:var(--layer-color); }
+.model-jump-nav button:focus-visible { outline:3px solid color-mix(in srgb,var(--layer-color) 45%,transparent); outline-offset:2px; }
+.model-answer-list { margin-top:24px; border-top:2px solid color-mix(in srgb,var(--layer-color) 28%,var(--border)); }
+.model-backup .model-answer { padding:26px 2px 28px; border-bottom:1px solid var(--border); }
+.model-backup .model-answer:last-child { padding-bottom:4px; border-bottom:0; }
+.model-backup .model-question { max-width:54ch; color:var(--text); font-size:20px; line-height:1.3; letter-spacing:-.01em; }
+.model-backup .model-answer ul { max-width:76ch; margin-top:14px; padding-left:22px; }
+.model-backup .model-answer li { margin:9px 0; color:var(--text-muted); font-size:17px; line-height:1.52; }
+.model-backup .model-answer li b { color:var(--layer-color); font:800 13px/1.2 var(--font-mono); letter-spacing:.05em; }
+.model-backup .model-code-path { margin-top:15px; padding:12px 14px; border-left:4px solid var(--layer-color); background:#f5f1ff; color:#4c356d; font:600 14px/1.5 var(--font-mono); overflow-wrap:anywhere; }
+.model-backup .model-code-path b { display:block; margin-bottom:6px; color:var(--layer-color); }
+.model-backup .model-code-path code { display:block; color:inherit; font-size:inherit; line-height:1.45; }
+.model-backup .model-code-path code + code { margin-top:4px; }
+.model-backup .model-warning { margin-top:18px; padding:16px 18px; border-left:5px solid #c2413a; background:#fff5f4; color:#5f2521; font-size:17px; line-height:1.5; }
+.model-backup code { font-size:.9em; }
 .integration-workflow { display:flex; align-items:center; gap:10px; margin-top:22px; padding:16px 18px; border:1px solid var(--border); border-radius:10px; background:#fff; }
 .integration-workflow b { color:#1769ff; font:800 14px/1.2 var(--font-mono); }
 .integration-workflow span { color:var(--text-muted); font-size:14px; }
@@ -2085,8 +2108,15 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
   .report-backup .report-six-step { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .report-backup .pipeline-flow-step:nth-child(3)::after { display:none; }
   .report-backup .report-result-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .model-jump-nav { gap:8px; }
   .integration-handoff { grid-template-columns:150px minmax(0,1fr); }
   .integration-artifact { grid-column:1/-1; }
+}
+@media (max-width:700px) {
+  .model-backup .pipeline-node { padding:26px 22px 28px; }
+  .model-jump-nav button { flex:1 1 145px; }
+  .model-backup .model-question { font-size:19px; }
+  .model-backup .model-answer li { font-size:16px; }
 }
 /* Dashboard backup keeps the compact scale introduced on develop. */
 #backupDashboard .pipeline-node h4 { font-size:clamp(21px,2vw,29px); }
@@ -3326,7 +3356,7 @@ st.session_state["dashboard_data"] = result</pre>
         <p>Use this before quoting any result: tests establish code behaviour, committed experiment artefacts establish measured synthetic/dataset results, and neither substitutes for real-fault or domain-expert validation.</p>
         <div class="pipeline-columns" style="margin-top:14px;">
           <div class="pipeline-block"><div class="pipeline-block-label">DATA · RERUN</div><ul><li><strong>148 passed in 10.95 s</strong>: continuity, manifests, feature assembly, proxy stages, upload intake and injection regression.</li><li>Dataset/result artefacts: 249,694 rows; 81 trips/118 segments; 48/48 calibration audit; 14/14 graded case curves accepted from 126 observations.</li><li>Does not establish real-fault recall.</li></ul></div>
-          <div class="pipeline-block"><div class="pipeline-block-label">MODEL · RERUN + ARTEFACTS</div><ul><li><strong>216 passed, 18 skipped</strong> (234 collected).</li><li>Measured artefacts: 250-window MAE comparison; 165 completed synthetic runs; calibrated macro F1 0.5214 and baseline-control alarm rate 1/11.</li><li>No labelled run-to-failure validation.</li></ul></div>
+          <div class="pipeline-block"><div class="pipeline-block-label">MODEL · RERUN + ARTEFACTS</div><ul><li><strong>217 passed, 18 skipped</strong> (235 collected).</li><li>Measured artefacts: 250-window MAE comparison; 165 completed synthetic runs; calibrated macro F1 0.5214 and baseline-control alarm rate 1/11.</li><li>No labelled run-to-failure validation.</li></ul></div>
           <div class="pipeline-block"><div class="pipeline-block-label">REPORT · RERUN + REVIEW</div><ul><li><strong>78 passed in 0.95 s</strong>: interface, index, retrieval, context, generator and end-to-end contracts.</li><li>Artefacts: 2×2 retrieval study; three-scenario RAG comparison; 732-window discovery manifest and five selected current-type reports.</li><li>No automotive expert scoring; RAG quality study remains three cooling scenarios.</li></ul></div>
           <div class="pipeline-block"><div class="pipeline-block-label">DASHBOARD · RERUN</div><ul><li><strong>171 passed, 1 skipped in 5.28 s</strong>: upload, provenance, UI states, export and projection display.</li><li>19 tests exercise upload orchestration with controlled substitutes; 40 cover real/mock loading; 62 cover overview/detail states.</li><li>A full live four-layer upload was not rerun here because Model/Ollama availability and latency are environment-dependent.</li></ul></div>
         </div>
@@ -4085,282 +4115,237 @@ st.session_state["dashboard_data"] = result</pre>
 
         </section>
 
-        <section class="pipeline-layer" id="backupModel" data-layer="model">
-          <header class="pipeline-layer-head"><div><div class="pipeline-layer-label">02 · MODEL LAYER</div><h3>Governed evidence → time-series risk</h3></div><div class="pipeline-layer-owner">MODEL LAYER TEAM</div></header>
-          <article class="pipeline-node" id="modelM0">
-            <details class="pipeline-node-shell">
-            <summary class="pipeline-node-head">
-              <span class="pipeline-node-id">M0</span>
-              <div><h4>Input contract and segment-safe windows</h4><p class="pipeline-node-purpose">Admit only the frozen Data contract, then create forecast contexts whose 512 observed seconds and 96 future seconds belong to one continuous trip segment.</p></div>
-              <span class="pipeline-status">46 COL → 512 + 96</span>
-            </summary>
-            <div class="pipeline-node-body">
-            <div class="pipeline-flow" aria-label="Model input window flow">
-              <div class="pipeline-flow-step"><b>Load 46-column CSV</b><span>Required columns, types, versions, cadence and physical ranges.</span></div>
-              <div class="pipeline-flow-step"><b>Select eligible segment</b><span>One <code>segment_id</code>, at least 700 contiguous 1 Hz rows.</span></div>
-              <div class="pipeline-flow-step"><b>512-step context</b><span>Granite observes six signals from one continuous operating period.</span></div>
-              <div class="pipeline-flow-step"><b>96-step truth</b><span>Held-out future becomes the residual comparison target.</span></div>
+        <section class="pipeline-layer model-backup" id="backupModel" data-layer="model">
+<header class="pipeline-layer-head"><div><div class="pipeline-layer-label">02 · MODEL LAYER</div><h3>Forecast evidence → bounded risk</h3></div><div class="pipeline-layer-owner">MODEL PIPELINE · VIVA BACKUP</div></header>
+          <nav class="model-jump-nav" aria-label="Model backup topics">
+            <button type="button" onclick="openBackupNode('modelM0')">M0 · Input &amp; windows</button>
+            <button type="button" onclick="openBackupNode('modelM1')">M1 · Why TTM</button>
+            <button type="button" onclick="openBackupNode('modelM2')">M2 · Risk &amp; output</button>
+            <button type="button" onclick="openBackupNode('modelM3')">M3 · Training</button>
+            <button type="button" onclick="openBackupNode('modelM4')">M4 · Evaluation</button>
+            <button type="button" onclick="openBackupNode('modelM5')">M5 · Projection</button>
+            <button type="button" onclick="openBackupNode('modelM6')">M6 · Integration</button>
+            <button type="button" onclick="openBackupNode('modelM7')">M7 · Boundaries</button>
+          </nav>
+          <article class="pipeline-node" id="modelM0"><details class="pipeline-node-shell" open>
+<summary class="pipeline-node-head"><span class="pipeline-node-id">M0</span><div><h4>Input quality and segment-safe windows</h4><p class="pipeline-node-purpose">The frozen input contract protects cadence, provenance and continuity before any forecast is run.</p></div><span class="pipeline-status">46 COL · 512 + 96</span></summary>
+            <div class="pipeline-node-body"><div class="model-answer-list">
+              <section class="model-answer"><h5 class="model-question">Forecast window dimensions</h5><ul>
+                <li>These are TTM's built-in lengths: 512 seconds of context and a 96-second forecast at 1 Hz.</li>
+                <li>The frozen split retains 61 of 118 quality-gated segments across 59 trips.</li>
+                <li>The lengths came from the model architecture; we did not optimise them as automotive lead-time horizons.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/kit_residual_detector.py</code><code>model_layer/ttm-related/src/model/prepare_finetune_split.py</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Fail-fast and two-tier input validation</h5><ul>
+                <li>Missing or non-numeric required fields fail clearly; impossible values are repaired or rejected, while unusual-but-possible values remain.</li>
+                <li>More than 5% invalid values rejects the input, and cadence/schema/calibration mismatches stop the run before inference.</li>
+                <li>Validation protects the contract and physical plausibility; it cannot prove the vehicle is mechanically healthy.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/input_validation.py</code><code>model_layer/ttm-related/src/model/kit_residual_detector.py::load_group1_features()</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Segment-safe 700-row eligibility</h5><ul>
+                <li>512 + 96 rows are consumed; the remaining rows are operational margin around an eligible stretch.</li>
+                <li>The ≥700 check applies to one unbroken 1 Hz <code>segment_id</code>, and batch windows do not overlap.</li>
+                <li>Fine-tuning uses its own declared stride; this rule describes the live detector window contract.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/kit_residual_detector.py::select_segment()</code><code>docs/INTERFACE.md</code></div></section>
+            </div></div>
+          </details></article>
+
+          <article class="pipeline-node" id="modelM1"><details class="pipeline-node-shell">
+<summary class="pipeline-node-head"><span class="pipeline-node-id">M1</span><div><h4>TTM residual forecasting without fault labels</h4><p class="pipeline-node-purpose">Ordinary continuation is forecast independently from rule-based attribution, without treating proxy labels as ground truth.</p></div><span class="pipeline-status">FORECAST, NOT CLASSIFY</span></summary>
+            <div class="pipeline-node-body"><div class="model-answer-list">
+              <section class="model-answer"><h5 class="model-question">Forecasting ordinary behaviour without label circularity</h5><ul>
+                <li>Rules test declared physical boundaries; TTM asks whether the next 96 seconds continued as expected from the previous 512.</li>
+                <li>Circularity would occur if the same proxy rules supplied both classifier targets and the evaluation answer; TTM receives neither proxy type nor DTC as a target.</li>
+                <li>Physical features are still needed for attribution, and we have not shown earlier warning before real mechanical failure.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/kit_residual_detector.py::run_ttm_forecast()</code><code>docs/adr/201-residual-detection-over-classification.md</code></div></section>
+              <section class="model-answer"><h5 class="model-question">TTM input, horizon and committed checkpoint</h5><ul>
+                <li>It receives 512 seconds of six signals—RPM, speed, coolant, MAP, MAF and throttle position—and predicts the next 96 seconds of all six.</li>
+                <li>Runtime loads the committed epoch-five fine-tuned checkpoint, denormalises its 96 × 6 output and compares it with the observed future.</li>
+                <li>Different window lengths would require a compatible model configuration, new segment eligibility, fine-tuning, calibration and evaluation; this project did not compare alternatives.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/kit_residual_detector.py::run_ttm_forecast()</code><code>model_layer/ttm-related/src/model/finetune_ttm.py</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Separation of Data proxies and Model evaluation</h5><ul>
+                <li>Data owns proxy definitions and decisions; Model owns forecasting, controlled injection evaluation and forwarding two Data-owned verdicts.</li>
+                <li>Fine-tuning uses ordinary-driving status plus a segment-quality gate—not <code>proxy_decisions.csv</code> as labels.</li>
+                <li>Proxy decisions are computed engineering evidence, not verified negatives or mechanically confirmed outcomes.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/prepare_finetune_split.py</code><code>model_layer/ttm-related/src/model/proxy_decision_forwarding.py</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Per-window normalisation and denormalisation</h5><ul>
+                <li>RPM is in the thousands while temperatures move by degrees, so each channel is centred and scaled before forecasting.</li>
+                <li>Predictions are converted back to RPM, km/h, °C, kPa, g/s and percent before residuals are measured; near-zero standard deviation is replaced by 1.</li>
+                <li>Window-local scaling still needs a separate reference-range step before gaps become comparable risk evidence.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/kit_residual_detector.py::run_ttm_forecast()</code></div></section>
+            </div></div>
+          </details></article>
+
+          <article class="pipeline-node" id="modelM2"><details class="pipeline-node-shell">
+<summary class="pipeline-node-head"><span class="pipeline-node-id">M2</span><div><h4>Risk attribution and ranked output</h4><p class="pipeline-node-purpose">Residual, physical and forwarded evidence are kept distinct before candidates are ranked.</p></div><span class="pipeline-status">3 SCORED · 2 FORWARDED</span></summary>
+            <div class="pipeline-node-body"><div class="model-answer-list">
+              <section class="model-answer"><h5 class="model-question">Residual-to-risk transformation</h5><ul>
+                <li>We average each signal's absolute 96-second forecast gap, divide it by that signal's baseline reference width, then combine forecast and physical evidence by component.</li>
+                <li>Cooling, airflow and pedal use continuous evidence ramps; the strongest forecast or physical evidence sets each score, while repeated-window scores remain visible for persistence inspection.</li>
+                <li>A risk score of 0.8 means strong unusual modelled behaviour on a 0–1 evidence scale—not an 80% probability of mechanical failure.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/kit_residual_detector.py::calculate_residuals()</code><code>model_layer/ttm-related/src/model/kit_residual_detector.py::calculate_ranked_risks()</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Ranked candidates and expressed uncertainty</h5><ul>
+                <li>The top-level type is the strongest candidate, not a diagnosis; v1.6 also returns the complete second-ranked component in <code>secondary_risk</code>.</li>
+                <li>All five types are ranked; primary and secondary each carry score, level, confidence, evidence, provenance and estimates.</li>
+                <li>Only the top two are exposed, families are predefined, and there is no real multi-fault validation.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>shared/interface_models.py::ModelLayerOutput</code><code>model_layer/ttm-related/src/model/validate_output.py</code><code>docs/INTERFACE.md</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Proxy failure conditions as engineering stand-ins</h5><ul>
+                <li>It is a physically justified stand-in definition of failure when verified mechanical labels do not exist.</li>
+                <li>For cooling, temperature outside the expected range or continuing to rise after warm-up can provide proxy evidence.</li>
+                <li>A proxy rule is a shared engineering definition, not proof that a component failed.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>docs/INTERFACE.md</code><code>model_layer/ttm-related/src/model/proxy_decision_forwarding.py</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Evidence-based retirement of unsupported types</h5><ul>
+                <li>Two types were removed because the available signals could not support a stable executable decision.</li>
+                <li>Throttle position was saturated for electronic-throttle tracking, and idle-speed control lacked a target-idle signal.</li>
+                <li>The final contract covers five executable types, not every possible vehicle fault.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>docs/INTERFACE.md</code><code>shared/interface_models.py</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Data-owned IAT and MAP/load paths</h5><ul>
+                <li><code>intake_air_temperature_sensor_fault</code> and <code>map_load_signal_plausibility_fault</code> are validated and forwarded from Data, not scored by our residual logic.</li>
+                <li>Their direct persistence/plausibility paths include no-response, hard-stuck, cold-start and MAP–MAF arbitration evidence.</li>
+                <li>We did not prove residual scoring could never work for them; the split reflects evidence and ownership.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/proxy_decision_forwarding.py</code><code>dashboard/csv_pipeline.py</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Three Model-scored and two forwarded types</h5><ul>
+                <li>Model scores cooling, airflow and accelerator-pedal evidence; it forwards Data's IAT-sensor and MAP/load-plausibility verdicts.</li>
+                <li>IAT is not one of the six forecast channels, while both forwarded families have clearer persistence and deterministic plausibility paths in Data.</li>
+                <li>Forwarding does not mean TTM detected them—we validate, map and label Data's decision provenance without re-running its logic.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/proxy_decision_forwarding.py</code><code>shared/interface_models.py</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Confidence as evidence stability</h5><ul>
+                <li>For Model-scored results it is <code>1 − std(normalised gap scores)</code>, clipped to 0.35–0.95: stability of evidence, not diagnostic probability.</li>
+                <li>The three largest forecast gaps become key signals; the pedal rule is excluded because the forecast did not create it.</li>
+                <li>Forwarded verdicts instead retain Data confidence—0.9 high, 0.6 provisional, 0.35 low—and use the weakest supporting row.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/kit_residual_detector.py</code><code>model_layer/ttm-related/src/model/proxy_decision_forwarding.py</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Fixed score mapping for forwarded verdicts</h5><ul>
+                <li>By a fixed mapping: emitted DTC 0.9, triggered 0.6, supporting/arbitration evidence 0.5, otherwise 0.</li>
+                <li>The 21-column decision file is validated and matched by trip, plus segment where Data scoped it that way.</li>
+                <li>Trip-level decisions apply to every Model window in that trip, so they cannot be localised more finely.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/proxy_decision_forwarding.py</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Diagnostic-code context by component</h5><ul>
+                <li>Cooling P0128/P0217; airflow P0101/P0102; pedal P2138; IAT P0111–P0113; MAP/load P0106.</li>
+                <li>IAT and MAP/load are the two Data-decided families; the other three are Model-scored.</li>
+                <li>Codes are context in notes—we do not emit them as confirmed diagnoses.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>docs/INTERFACE.md</code><code>shared/interface_models.py</code></div></section>
+            </div></div>
+          </details></article>
+
+          <article class="pipeline-node" id="modelM3"><details class="pipeline-node-shell">
+<summary class="pipeline-node-head"><span class="pipeline-node-id">M3</span><div><h4>Fine-tuning and model selection</h4><p class="pipeline-node-purpose">A baseline-only split, one official artefact and a rejected channel-mixing ablation define the released detector.</p></div><span class="pipeline-status">EPOCH 5 · 250 WINDOWS</span></summary>
+            <div class="pipeline-node-body"><div class="model-answer-list">
+              <section class="model-answer"><h5 class="model-question">Baseline-only fine-tuning</h5><ul>
+                <li>The model must learn ordinary continuation; training on faulty trajectories could teach it to forecast the fault and shrink the gap.</li>
+                <li>Five epochs reduced held-out MAE by 5.23% on 250 windows from 12 trip-disjoint validation segments.</li>
+                <li>One split, one seed, no conventional external baseline, and overall MAE is dominated by RPM scale.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/finetune_ttm.py</code><code>model_layer/ttm-related/outputs/finetune_residual_comparison_e5_lr5e-5.json</code></div></section>
+              <section class="model-answer"><h5 class="model-question">One official detector artefact</h5><ul>
+                <li>The formal evaluation and runtime both use the committed epoch-five fine-tuned artefact.</li>
+                <li>Both resolve <code>OFFICIAL_DETECTOR_MODEL_PATH</code>; production exposes no model override.</li>
+                <li>Zero-shot remains only as the comparison baseline, not the released detector.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/kit_residual_detector.py</code><code>model_layer/ttm-related/src/model/run_synthetic_evaluation.py</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Common-channel forecasting</h5><ul>
+                <li>The official configuration reuses common weights while forecasting each signal independently.</li>
+                <li>MAP–MAF consistency and pedal agreement are added later as engineered physical features.</li>
+                <li>The optional channel mixer was rejected; cross-signal relationships therefore come from engineered features rather than the backbone.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/finetune_ttm.py</code><code>model_layer/ttm-related/src/model/compare_finetune_residuals.py</code></div></section>
+              <section class="model-answer"><h5 class="model-question">MAP response after fine-tuning</h5><ul>
+                <li>It barely worsened—21.63 to 21.66, or 0.15%—but it was the only channel not to improve.</li>
+                <li>The channel mixer also worsened overall MAE from 54.9666 to 55.6532 and correlation error from 0.4366 to 0.5311.</li>
+                <li>Cross-signal dependence is our working explanation, not an isolated causal finding; the training set has only 47 trips.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/compare_finetune_residuals.py</code><code>model_layer/ttm-related/outputs/finetune_residual_comparison_e5_lr5e-5.json</code></div></section>
+            </div></div>
+          </details></article>
+
+          <article class="pipeline-node" id="modelM4"><details class="pipeline-node-shell">
+<summary class="pipeline-node-head"><span class="pipeline-node-id">M4</span><div><h4>Synthetic evaluation and threshold calibration</h4><p class="pipeline-node-purpose">Family-level results expose the false-alarm trade-off and the limits of non-independent evaluation.</p></div><span class="pipeline-status">154 INJECTIONS · 11 CONTROLS</span></summary>
+            <div class="pipeline-node-body"><div class="model-answer-list">
+              <section class="model-answer"><h5 class="model-question">Uneven performance across fault families</h5><ul>
+                <li>Cooling offsets separate cleanly from its baseline, while proportional airflow under-read is small compared with ordinary MAF forecast variation.</li>
+                <li>Cooling recall is 1.0, MAF recall is 0.0455, and macro F1 0.5214 shows the equal-weighted average is dragged down by weak families.</li>
+                <li>A 5.23% lower forecast MAE improves ordinary prediction but does not prove better anomaly detection; detection needs its own injected-fault and baseline-control evaluation.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/outputs/finetune_residual_comparison_e5_lr5e-5.json</code><code>model_layer/ttm-related/outputs/synthetic_eval_metrics_e5_lr5e-5_calibrated.json</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Controlled synthetic evaluation</h5><ul>
+                <li>We plant controlled changes into quality-gated ordinary-driving futures, so the expected family is known.</li>
+                <li>Fourteen perturbation settings over 11 usable stretches produce 154 injected cases; 11 unchanged and 11 MAP attribution controls are separate.</li>
+                <li>This proves response to artificial changes, not detection of real breakdowns.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/fault_injection.py</code><code>model_layer/ttm-related/src/model/run_synthetic_evaluation.py</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Provisional false-alarm calibration</h5><ul>
+                <li>We sweep alarm thresholds and maximise calibration macro F1 subject to baseline-control false positives ≤10%.</li>
+                <li>The selected 0.4129 threshold reduced baseline alarms from 3/11 to 1/11; High remains 0.9.</li>
+                <li>Weak pedal sensitivity fell, one held-out control still scored 1.0, and the policy is provisional synthetic-only.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/risk_threshold_calibration.py</code><code>model_layer/ttm-related/outputs/risk_threshold_calibration_e5_lr5e-5.json</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Airflow residual weakness</h5><ul>
+                <li>A proportional MAF under-read is small relative to ordinary airflow forecast variation, so its residual rarely clears the shared threshold.</li>
+                <li>MAF precision is 0.20 and recall 0.0455—2 true positives from 44 injected cases.</li>
+                <li>A stricter shared threshold will not fix the evidence mismatch; measured MAF should be compared directly with the independent pressure-and-speed estimate.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/outputs/synthetic_eval_metrics_e5_lr5e-5_calibrated.json</code><code>model_layer/ttm-related/src/model/kit_residual_detector.py</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Calibration and hold-out boundary</h5><ul>
+                <li>The evaluation is not fully independent: eight of 11 usable stretches selected the threshold and were also included in headline metrics.</li>
+                <li>Only three stretches were held out, and one of those still produced a maximum-risk baseline alarm.</li>
+                <li>One injection onset and one future window per stretch cannot support a general accuracy claim; we stopped further tuning to limit overfitting.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/risk_threshold_calibration.py</code><code>model_layer/ttm-related/outputs/synthetic_eval_metrics_e5_lr5e-5_calibrated.json</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Family-level detection results</h5><ul>
+                <li>Performance is reported by family because one aggregate accuracy would hide the uneven response.</li>
+                <li>Cooling recall 1.0, pedal recall 0.3247 with precision 1.0, and MAF recall 0.0455; macro F1 is 0.5214.</li>
+                <li>All figures come from planted changes in one vehicle dataset, not field faults.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/outputs/synthetic_eval_metrics_e5_lr5e-5_calibrated.json</code></div></section>
+            </div></div>
+          </details></article>
+
+          <article class="pipeline-node" id="modelM5"><details class="pipeline-node-shell">
+<summary class="pipeline-node-head"><span class="pipeline-node-id">M5</span><div><h4>Risk history and threshold-crossing projection</h4><p class="pipeline-node-purpose">Trip-level trends project detector-score crossings, not mechanical failure or remaining useful life.</p></div><span class="pipeline-status">≥5 TRIPS · HIGH = 0.9</span></summary>
+            <div class="pipeline-node-body"><div class="model-answer-list">
+              <section class="model-answer"><h5 class="model-question">Component-specific threshold-crossing projection</h5><ul>
+                <li>We average each component's primary/secondary windows per trip, fit its chronological trip means, and project crossing the High score of 0.9.</li>
+                <li>If rising, cycles are <code>ceil((0.9 − latest) / slope)</code>; a normal error model gives the chance of crossing within ten trips.</li>
+                <li>Fewer than five trips returns both fields null; flat/falling or >50-trip projections suppress only the cycle estimate.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/failure_estimation.py::estimate_from_history()</code><code>model_layer/ttm-related/src/model/risk_history.py</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Meaning of the 75.02% projection</h5><ul>
+                <li>The 0.7502 value is the fitted chance that this detector's risk score crosses 0.9 within ten trips.</li>
+                <li>The viva case uses 22 real Model windows from six chronological ordinary-driving Seat Leon trips and projects a five-trip crossing with probability 0.7502.</li>
+                <li>There is no observed failure event, so this is neither mechanical-failure probability nor remaining useful life.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>report_layer/evaluation/viva_real_case</code><code>model_layer/ttm-related/src/model/failure_estimation.py</code></div></section>
+            </div></div>
+          </details></article>
+
+          <article class="pipeline-node" id="modelM6"><details class="pipeline-node-shell">
+<summary class="pipeline-node-head"><span class="pipeline-node-id">M6</span><div><h4>Cross-team integration and engineering reliability</h4><p class="pipeline-node-purpose">Versioned contracts carry evidence to Dashboard and prevent silent interface errors.</p></div><span class="pipeline-status">INTERFACE v1.6 · FAIL CLOSED</span></summary>
+            <div class="pipeline-node-body"><div class="model-answer-list">
+              <section class="model-answer"><h5 class="model-question">Contract review and semantic errors</h5><ul>
+                <li>Contract verification exposed silent semantic errors that valid CSV shapes alone could not catch.</li>
+                <li>We caught a historical °C/s versus °C/min sixty-times unit mismatch, and later corrected P0116/P0128 ownership to cooling.</li>
+                <li>The DTC correction remains current; the historical slope column was later removed in the schema rewrite.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>docs/INTERFACE.md</code><code>shared/interface_models.py</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Batch handoff to Dashboard</h5><ul>
+                <li>One upload command passes both Data outputs to Model; batch mode returns the highest-risk summary plus every ranked window.</li>
+                <li>Each window keeps primary fields and optional complete <code>secondary_risk</code>, and Report builds component histories from both positions.</li>
+                <li>Failures return one <code>ERROR:</code> line and non-zero exit rather than a traceback; no eligible window fails closed.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>dashboard/csv_pipeline.py</code><code>model_layer/ttm-related/src/model/kit_residual_detector.py</code><code>model_layer/ttm-related/src/model/validate_output.py</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Fresh Model verification</h5><ul>
+                <li>The fresh 04 September Model run passed 217 tests, skipped 18 and collected 235.</li>
+                <li>Input-validation, Model-input-contract and batch-mode suites alone passed 73/73.</li>
+                <li>Tests verify code and contract behaviour; they do not establish diagnostic truth.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/tests</code><code>shared/interface_models.py</code></div></section>
+            </div></div>
+          </details></article>
+
+          <article class="pipeline-node" id="modelM7"><details class="pipeline-node-shell">
+<summary class="pipeline-node-head"><span class="pipeline-node-id">M7</span><div><h4>Claim boundaries and next steps</h4><p class="pipeline-node-purpose">Research evidence is bounded separately from deployment readiness and diagnostic truth.</p></div><span class="pipeline-status">OFFLINE RESEARCH SYSTEM</span></summary>
+            <div class="pipeline-node-body"><div class="model-answer-list">
+              <section class="model-answer"><h5 class="model-question">Priority next steps</h5><ul>
+                <li>Validate on an external dataset with mechanically verified faults and redesign the weak airflow evidence first.</li>
+                <li>Then add gradual realistic injections, second-vehicle transfer testing and runtime model provenance.</li>
+                <li>Data proxy decisions remain integration evidence, not a replacement for ground truth.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/fault_injection.py</code><code>model_layer/ttm-related/src/model/kit_residual_detector.py</code></div></section>
+              <section class="model-answer"><h5 class="model-question">Offline research system boundary</h5><ul>
+                <li>The demonstrated system is an offline pipeline over recorded trips.</li>
+                <li>It has synthetic single-vehicle evaluation and deterministic interfaces, not real-time vehicle integration.</li>
+                <li>Deployment needs labelled field validation, broader vehicles, monitoring and safety governance.</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>docs/INTERFACE.md</code><code>model_layer/ttm-related/outputs/synthetic_eval_metrics_e5_lr5e-5_calibrated.json</code></div></section>
+              <section class="model-answer"><h5 class="model-question">No mechanically verified failure outcomes</h5><ul>
+                <li>None of the 81 ordinary-driving trips has a mechanically verified fault, repair outcome or failure event.</li>
+                <li>Detection evidence comes from controlled injections; the viva projection uses ordinary-driving risk history.</li>
+                <li>The supported claim is “proxy evidence” or “planted-fault response,” not “real-fault recall.”</li>
+              </ul><div class="model-code-path"><b>CODE PATH</b><code>model_layer/ttm-related/src/model/run_synthetic_evaluation.py</code><code>report_layer/evaluation/viva_real_case</code></div></section>
             </div>
-
-            <div class="pipeline-columns">
-              <div class="pipeline-block"><div class="pipeline-block-label">FAIL-FAST INPUT VALIDATION</div><ul>
-                <li><code>load_group1_features()</code> validates required identity, context, sensor, feature and provenance columns before inference.</li>
-                <li><code>dt_seconds</code> must be non-null and exactly 1.0; schema must be <code>feature_schema.v1</code> and calibration <code>calibration.v1</code>.</li>
-                <li>Timestamps, trip/segment identity and row order must remain coherent; sensor values are checked against declared physical ranges.</li>
-                <li>Missing values are handled explicitly in <code>prepare_segment()</code>; validation results remain available to confidence/notes rather than silently disappearing.</li>
-                <li>A contract failure exits with one Dashboard-friendly <code>ERROR:</code> line rather than an uncontrolled traceback.</li>
-              </ul></div>
-              <div class="pipeline-block"><div class="pipeline-block-label">WHY ≥700 WHEN 512+96=608</div><ul>
-                <li>608 rows are consumed by one context+forecast pair; the 700-row interface threshold provides operational margin.</li>
-                <li>Eligibility is checked on one <code>segment_id</code>, not total rows across the CSV.</li>
-                <li><code>select_segment()</code> rejects explicit short segments and otherwise chooses an eligible segment deterministically.</li>
-                <li>Detector batch mode uses non-overlapping 608-row windows so each row contributes to at most one evaluated window.</li>
-                <li>Fine-tuning is a separate workflow and uses its declared stride; it does not change the live detector's batch-window semantics.</li>
-              </ul></div>
+            <div class="model-warning"><strong>Claim boundary:</strong> risk score, prediction confidence and projected threshold-crossing probability are three different quantities. None is a confirmed diagnosis or probability that the vehicle will break.</div>
             </div>
-
-            <div class="evidence-chips">
-              <div class="evidence-chip"><b>46 REQUIRED COLUMNS</b><span>schema-v1 input</span></div>
-              <div class="evidence-chip"><b>6 MODEL SIGNALS</b><span>RPM · speed · ECT · MAP · MAF · TPS</span></div>
-              <div class="evidence-chip"><b>512 CONTEXT</b><span>observed history</span></div>
-              <div class="evidence-chip"><b>96 FORECAST</b><span>future truth</span></div>
-              <div class="evidence-chip"><b>73 / 73 TESTS</b><span>input + contract + batch</span></div>
-            </div>
-
-            <div class="pipeline-disclosure">
-              <details open><summary>Historical evolution: closing the Data–Model window contract</summary><div class="pipeline-detail"><div class="evolution-rail">
-                <div class="evolution-step"><b>EARLY MVP · JUN</b><span>The detector established a 512→96 forecasting path before the final Data schema existed.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>GL-153 · 11 JUL</b><span>Automated Group 1 input-contract and data-quality tests made assumptions executable.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>INTERFACE v0.7</b><span>1 Hz, ≥700 contiguous rows and no-cross-segment windows became explicit cross-team requirements.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>GL-364 · 27 JUL</b><span>Validation and detector input migrated to the frozen 46-column schema-v1 delivery.</span></div>
-              </div></div></details>
-              <details><summary>Single-window and batch behaviour</summary><div class="pipeline-detail"><ul>
-                <li><strong>Single-window:</strong> analyse a selected eligible segment/window and emit one <code>ModelLayerOutput</code>.</li>
-                <li><strong>Batch:</strong> sweep every eligible segment with non-overlapping windows and emit <code>{summary, windows}</code>.</li>
-                <li>Each window adds <code>trip_id</code>, <code>segment_id</code> and Model-local <code>window_id</code>; the summary is the highest-primary-risk window and preserves the primary fields plus optional <code>secondary_risk</code>.</li>
-                <li>The Model window ID is deliberately distinct from Data's proxy-evidence window ID because their grains and construction differ.</li>
-              </ul></div></details>
-              <details><summary>Rejected shortcuts and failure cases</summary><div class="pipeline-detail"><ul>
-                <li><strong>Take the first 608 rows:</strong> rejected because they may span a segment boundary or contain an ineligible short region.</li>
-                <li><strong>Concatenate short segments:</strong> rejected because the resulting temporal sequence never occurred.</li>
-                <li><strong>Trust columns by position:</strong> rejected; named contract and provenance versions must agree.</li>
-                <li><strong>Coerce every invalid sensor value:</strong> rejected because inference confidence must reflect degraded evidence.</li>
-                <li><strong>Use overlapping detector windows as independent evaluation cases:</strong> rejected in batch mode to limit duplicate evidence.</li>
-              </ul></div></details>
-              <details><summary>Code and verification evidence</summary><div class="pipeline-detail"><ul>
-                <li><code>kit_residual_detector.py</code>: <code>load_group1_features()</code>, <code>select_segment()</code>, <code>prepare_segment()</code>, <code>select_context_and_truth()</code>, <code>iter_windows()</code>.</li>
-                <li><code>input_validation.py</code>: required-column and physical sensor-range validation.</li>
-                <li><code>shared/interface_models.py::DataLayerOutput</code> and <code>docs/INTERFACE.md</code> define the cross-layer input shape.</li>
-                <li>Verified locally on 2026-09-04: input validation, model-input contract and batch-mode suites passed 73/73 tests.</li>
-              </ul></div></details>
-            </div>
-            </div>
-            </details>
-          </article>
-
-          <article class="pipeline-node" id="modelM1">
-            <details class="pipeline-node-shell">
-            <summary class="pipeline-node-head">
-              <span class="pipeline-node-id">M1</span>
-              <div><h4>Granite TTM forecast and residual detector</h4><p class="pipeline-node-purpose">Predict the next 96 seconds of six engine signals from the previous 512 seconds, then use prediction error as independent evidence that current behaviour has departed from its quality-gated ordinary-driving continuation.</p></div>
-              <span class="pipeline-status">ADR 201 · FORECAST, NOT CLASSIFY</span>
-            </summary>
-            <div class="pipeline-node-body">
-            <div class="pipeline-flow" aria-label="TTM residual detection">
-              <div class="pipeline-flow-step"><b>512 × 6 context</b><span>RPM, speed, coolant, MAP, MAF and TPS from one segment.</span></div>
-              <div class="pipeline-flow-step"><b>Window normalisation</b><span>Per-signal mean/std; near-zero std safely replaced by 1.</span></div>
-              <div class="pipeline-flow-step"><b>Granite TTM</b><span>The selected epoch-five fine-tuned model forecasts 96 × 6 in the final detector.</span></div>
-              <div class="pipeline-flow-step"><b>Absolute residual</b><span>|forecast − observed future|, summarised by mean and max per signal.</span></div>
-            </div>
-
-            <div class="pipeline-columns">
-              <div class="pipeline-block"><div class="pipeline-block-label">WHY NOT TRAIN A FAULT CLASSIFIER?</div><ul>
-                <li>The 81 source trips record ordinary driving, but none has a mechanically verified fault or repair outcome to supervise a classifier.</li>
-                <li>Data proxy outputs are physical rules, not real labels. Training on them and evaluating against them would be circular.</li>
-                <li>A classifier head would learn to reproduce thresholds such as overheating, not independently recognise physical degradation.</li>
-                <li>A custom LSTM from scratch would need to learn normal dynamics from a small single-vehicle dataset without TTM's broad pretraining.</li>
-                <li>Forecasting can learn from quality-gated ordinary-driving sequences: expected continuation is predicted, and unexpected deviation becomes the signal.</li>
-              </ul></div>
-              <div class="pipeline-block"><div class="pipeline-block-label">EXACT FORECAST IMPLEMENTATION</div><ul>
-                <li><code>run_ttm_forecast()</code> converts the six context channels to float32 and normalises each channel within the current window.</li>
-                <li><code>get_model()</code> loads the committed <code>ttm_finetuned_e5_lr5e-5/model</code> artefact with context=512 and prediction=96.</li>
-                <li>Inference runs in <code>eval()</code> and <code>torch.no_grad()</code>; the output is checked for exactly 96 timesteps and six signals.</li>
-                <li>The prediction is transformed back to original units before comparison with the observed future.</li>
-                <li><code>calculate_residuals()</code> uses absolute error; <code>summarize_residuals()</code> records mean and maximum error for each signal.</li>
-              </ul></div>
-            </div>
-
-            <div class="evidence-chips">
-              <div class="evidence-chip"><b>6 SIGNALS</b><span>multivariate forecast</span></div>
-              <div class="evidence-chip"><b>512 → 96</b><span>history to future</span></div>
-              <div class="evidence-chip"><b>ABSOLUTE ERROR</b><span>mean + max per signal</span></div>
-              <div class="evidence-chip"><b>NO FAULT TARGETS</b><span>anti-circular training</span></div>
-              <div class="evidence-chip"><b>TTM R2</b><span>IBM pretrained forecaster</span></div>
-            </div>
-
-            <div class="pipeline-disclosure">
-              <details open><summary>Historical evolution: classifier draft → residual architecture</summary><div class="pipeline-detail"><div class="evolution-rail">
-                <div class="evolution-step"><b>15 JUN · EARLY DRAFT</b><span>The brief-inspired design proposed extracting TTM embeddings and attaching a fault classifier head.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>20 JUN · REDESIGN</b><span>Missing real labels and proxy-label circularity led to forecast-residual detection in <code>kit_residual_detector.py</code>.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>23 JUN · MVP</b><span>A working Data → TTM → residual → risk → interface pipeline was delivered without a training bottleneck.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>ADR 201 · 22 JUL</b><span>The decision and its limits were formally recorded; quality-gated fine-tuning preserved the same paradigm.</span></div>
-              </div></div></details>
-              <details><summary>How residual evidence remains independent from proxy rules</summary><div class="pipeline-detail"><ul>
-                <li>TTM never receives <code>anomaly_type</code>, DTC or proxy result as a training target.</li>
-                <li>Its task is only to forecast six observed time series from their previous values.</li>
-                <li>The frozen fine-tuning split uses quality flags and confidence only; decision-level proxy outputs do not define its split or loss.</li>
-                <li>Controlled synthetic injections provide the evaluation key after training; they are not training targets.</li>
-                <li>This provides some separation between “Data's physical rule fired” and “the temporal continuation was difficult for TTM to predict.”</li>
-                <li>Evaluation is still limited by synthetic proxies because no real faults exist; independence reduces circularity but cannot create missing ground truth.</li>
-              </ul></div></details>
-              <details><summary>Why window normalisation is necessary—and its limitation</summary><div class="pipeline-detail"><ul>
-                <li>RPM, speed, temperature and airflow have very different units and numerical scales; direct tensors would let large-magnitude channels dominate.</li>
-                <li>Per-window mean/std places the six signals on comparable numerical scales for the forecaster.</li>
-                <li>A channel with std below 1e−6 uses 1.0 to prevent division by zero.</li>
-                <li>Predictions are denormalised before residuals are reported, so evidence returns to RPM, km/h, °C, kPa, g/s and percent units.</li>
-                <li>Because normalisation is window-local, residual magnitude still needs reference-range scaling before it becomes a cross-signal risk score.</li>
-              </ul></div></details>
-              <details><summary>What a high residual means—and what it does not</summary><div class="pipeline-detail"><ul>
-                <li>It means observed future behaviour differed from TTM's expected continuation under that context.</li>
-                <li>It may indicate degradation, but can also reflect unusual baseline-compatible driving, distribution shift, missing-data handling or forecast error.</li>
-                <li>Residuals therefore become risk evidence, not calibrated failure probabilities.</li>
-                <li>Component attribution requires physically informed scoring and key-signal context in the next node.</li>
-                <li>A fixed rule can identify an already crossed boundary; a residual may provide an earlier leading indicator, but this project has not measured real lead time.</li>
-              </ul></div></details>
-              <details><summary>Code and architecture evidence</summary><div class="pipeline-detail"><ul>
-                <li><code>kit_residual_detector.py</code>: <code>load_model()</code>, <code>run_ttm_forecast()</code>, <code>extract_prediction_tensor()</code>, <code>calculate_residuals()</code>, <code>summarize_residuals()</code>.</li>
-                <li><code>MODEL_SIGNALS = [rpm, speed, coolant_temp, map, maf, tps]</code>; context 512; prediction 96.</li>
-                <li><code>docs/adr/201-residual-detection-over-classification.md</code>: options, anti-circularity rationale, implementation and consequences.</li><li><code>finetune_residual_comparison_e5_lr5e-5.json</code> records 250 paired validation windows produced through this forecast/residual path: overall MAE 58.0004 zero-shot and 54.9666 fine-tuned.</li><li>Batch-mode tests exercise 512+96 window orchestration with <code>run_ttm_forecast()</code> replaced by a deterministic forecast stub; numerical model quality is therefore evidenced by the committed comparison artefact, not those unit tests.</li>
-                <li>The final detector and <code>run_synthetic_evaluation.py</code> both load <code>OFFICIAL_DETECTOR_MODEL_PATH</code>, which resolves to the committed epoch-five fine-tuned artefact. The production CLI exposes no model override. The released zero-shot checkpoint remains only in the separate forecasting comparison.</li>
-              </ul></div></details>
-            </div>
-            </div>
-            </details>
-          </article>
-
-          <article class="pipeline-node" id="modelM2">
-            <details class="pipeline-node-shell">
-            <summary class="pipeline-node-head">
-              <span class="pipeline-node-id">M2</span>
-              <div><h4>Risk attribution and bounded proxy forwarding</h4><p class="pipeline-node-purpose">Translate forecast error and physical window evidence into five comparable anomaly scores, while making it explicit which three families Model scores and which two it only relays from Data.</p></div>
-              <span class="pipeline-status">5 SCORES · PRIMARY + SECONDARY</span>
-            </summary>
-            <div class="pipeline-node-body">
-            <div class="pipeline-flow" aria-label="Risk attribution flow">
-              <div class="pipeline-flow-step"><b>Normalise residuals</b><span>Mean error divided by each signal's baseline reference-range width; clipped 0–1.</span></div>
-              <div class="pipeline-flow-step"><b>Build five scores</b><span>Cooling, MAF/intake, pedal + two Data-forwarded families.</span></div>
-              <div class="pipeline-flow-step"><b>Rank five families</b><span>Stable ordering exposes the strongest at top level and the next distinct component as <code>secondary_risk</code>.</span></div>
-              <div class="pipeline-flow-step"><b>Explain both results</b><span>Each position carries level, confidence, key signals, notes, provenance and estimate fields.</span></div>
-            </div>
-
-            <div class="pipeline-columns">
-              <div class="pipeline-block"><div class="pipeline-block-label">THREE MODEL-SCORED FAMILIES</div><ul>
-                <li><strong>Cooling:</strong> maximum of coolant forecast residual, peak coolant scaled from 95→110°C, and ECT rate scaled 2→8°C/min when coolant &gt;85°C.</li>
-                <li><strong>Air-intake/MAF:</strong> maximum of MAF residual score, MAP residual score and |speed-density MAF residual| scaled 18→35 g/s.</li>
-                <li><strong>Pedal:</strong> mean dual-channel disagreement scaled from 2→10 percentage points; missing pedal evidence forces this family to 0 with a note.</li>
-                <li>These paths mix TTM deviation with declared physical features; <code>risk_score</code> is therefore a bounded evidence score, not probability.</li>
-              </ul></div>
-              <div class="pipeline-block"><div class="pipeline-block-label">TWO DATA-OWNED FAMILIES</div><ul>
-                <li>IAT sensor and MAP/load plausibility DTC logic remains in Data stages 50–70.</li>
-                <li>Without <code>proxy_decisions.csv</code>, both preserve the historical 0.0 placeholder.</li>
-                <li>With the file, Model validates its 21-column decision contract, matches trip plus segment where applicable, and relays the already-decided result.</li>
-                <li>Risk mapping: emitted verdict 0.9; triggered verdict 0.6; triggered support/arbitration evidence 0.5; otherwise 0.</li>
-                <li>5-S2 evidence routed to MAF cannot incorrectly raise the MAP family.</li>
-              </ul></div>
-            </div>
-
-            <div class="evidence-chips">
-              <div class="evidence-chip"><b>3 MODEL-SCORED</b><span>cooling · MAF · pedal</span></div>
-              <div class="evidence-chip"><b>2 DATA-FORWARDED</b><span>IAT · MAP/load</span></div>
-              <div class="evidence-chip"><b>0.4129 MEDIUM</b><span>inspection alarm</span></div>
-              <div class="evidence-chip"><b>0.9000 HIGH</b><span>priority inspection</span></div>
-              <div class="evidence-chip"><b>TOP 2 EXPOSED</b><span>secondary emitted even Low</span></div>
-              <div class="evidence-chip"><b>NOT A PROBABILITY</b><span>normalised evidence score</span></div>
-            </div>
-
-            <div class="pipeline-disclosure">
-              <details open><summary>Historical integration: five names, mixed scoring ownership</summary><div class="pipeline-detail"><div class="evolution-rail">
-                <div class="evolution-step"><b>EARLY MODEL</b><span>Three residual/rule-assisted families were Model-scored; pending families remained zero placeholders.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>DATA v1 CONTRACT</b><span>The anomaly enum stabilised at five after throttle and idle families were removed.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>GL-368 · 31 JUL</b><span>Model gained validated decision-grain forwarding for Data-owned IAT and MAP/load verdicts.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>LIVE DASHBOARD</b><span>The upload orchestrator now passes both Data output paths, closing the two-family 0.0 demo gap.</span></div>
-              </div></div></details>
-              <details><summary>How prediction confidence is calculated</summary><div class="pipeline-detail"><ul>
-                <li>For Model-scored results, the six normalised residual scores are compared; confidence is <code>1 − std(scores)</code>, clipped to 0.35–0.95.</li>
-                <li>Top key signals remain the three largest TTM residual channels.</li>
-                <li>The rule-only pedal score is deliberately excluded from residual-spread confidence because TTM forecast spread did not create it.</li>
-                <li>A winning forwarded verdict uses Data confidence instead: high→0.9, provisional→0.6, low→0.35; any low-confidence cap forces 0.35.</li>
-                <li>Where multiple proxy rows support one verdict, the weakest confidence is reported conservatively.</li>
-              </ul></div></details>
-              <details><summary>Risk levels and the provisional threshold evidence</summary><div class="pipeline-detail"><ul>
-                <li><strong>Low:</strong> risk &lt;0.4129—record only.</li>
-                <li><strong>Medium:</strong> 0.4129≤risk&lt;0.9—raise an inspection alarm.</li>
-                <li><strong>High:</strong> risk≥0.9—priority inspection; 0.9 is a conservative presentation boundary, not 90% failure probability.</li>
-                <li>0.4129 was selected on eight calibration segments by maximising macro F1 subject to baseline-control FPR≤0.10; calibration FPR was 0/8.</li>
-                <li>On three held-out baseline segments FPR was 1/3, and the full 11-segment baseline-control FPR was 1/11 (9.09%). The policy is correctly marked <code>provisional_synthetic_only</code>.</li>
-              </ul></div></details>
-              <details><summary>Grain mismatch and forwarding limitation</summary><div class="pipeline-detail"><ul>
-                <li>Data decisions may be trip-, episode- or segment-scoped; Model outputs one result per 608-row detector window.</li>
-                <li>Trip/episode decisions therefore apply to every Model window in that trip; segment-first-row decisions are restricted to the named segment when available.</li>
-                <li>This preserves usable integration but cannot precisely localise every decision to one 96-second future window.</li>
-                <li>Every forwarded result adds a note naming Data provenance, sub-check IDs, DTC and confidence so Report does not mistake it for TTM scoring.</li>
-              </ul></div></details>
-              <details><summary>Code and policy evidence</summary><div class="pipeline-detail"><ul>
-                <li><code>kit_residual_detector.py</code>: <code>normalized_residual_scores()</code>, <code>calculate_ranked_risks()</code>, <code>clipped_scale()</code>, <code>build_ranked_interface_json()</code>.</li>
-                <li><code>proxy_decision_forwarding.py</code>: contract validation, applicability, arbitration filtering and <code>forward_verdicts()</code>.</li>
-                <li><code>risk_level_calibration.py</code> + <code>risk_level_calibration.v1.json</code>: versioned Low/Medium/High policy.</li>
-                <li><code>risk_threshold_calibration_e5_lr5e-5.json</code>: candidate sweep, calibration/holdout/full metrics and explicit synthetic-only limitation.</li>
-                <li>DTC families per runtime type (report Table 3): cooling P0128/P0217 · MAF P0101/P0102 · pedal P2138 · IAT P0111–P0113 (Data-scored) · MAP/load P0106 (Data-scored). Codes give context in <code>notes</code>; they are not emitted as diagnoses.</li>
-              </ul></div></details>
-            </div>
-            </div>
-            </details>
-          </article>
-
-          <article class="pipeline-node" id="modelM3">
-            <details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">M3</span><div><h4>Quality-gated TTM fine-tuning</h4><p class="pipeline-node-purpose">Adapt the pretrained forecaster to this vehicle's baseline dynamics without introducing proxy fault labels, then compare it fairly with zero-shot TTM on exactly the same held-out trips and windows.</p></div><span class="pipeline-status">5.23% LOWER MAE · MODEST WIN</span></summary>
-            <div class="pipeline-node-body">
-              <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Quality gate</b><span>Only high-confidence, OK evidence and ≥700-row segments.</span></div><div class="pipeline-flow-step"><b>Trip-level split</b><span>47 training trips / 12 validation trips; no neighbouring-window leakage.</span></div><div class="pipeline-flow-step"><b>Forecast loss</b><span>5 epochs, learning rate 5e−5, batch size 8, seed 42, stride 96.</span></div><div class="pipeline-flow-step"><b>Paired comparison</b><span>Zero-shot and fine-tuned models score the same 250 validation windows.</span></div></div>
-              <div class="pipeline-columns"><div class="pipeline-block"><div class="pipeline-block-label">SPLIT AND TRAINING EVIDENCE</div><ul><li>118 total segments became 61 eligible segments across 59 trips; 57 short/ineligible segments were excluded.</li><li>The split occurs by <code>trip_id</code>, not random windows, so one trip cannot appear in both training and validation.</li><li>Training produced 1,286 forecast windows; validation used 30,708 rows, 12 segments/trips and 250 windows.</li><li>All six validation model channels had zero missing values.</li><li>Fine-tuning predicts the same six forecast signals; no anomaly type, proxy result or DTC enters the loss.</li></ul></div><div class="pipeline-block"><div class="pipeline-block-label">ZERO-SHOT VS FINE-TUNED</div><ul><li>Overall MAE: <strong>58.0004 → 54.9666</strong>, a 5.2307% reduction.</li><li>RPM improved 5.77%, speed 5.59%, TPS 6.93%.</li><li>Coolant improved only 0.33%; MAF 0.59%.</li><li>MAP worsened slightly: 21.6310 → 21.6636, or −0.1507% improvement.</li><li>The predeclared decision required ≥5% overall gain and at least 4/6 non-worse signals; overall passed and 5/6 signals were non-worse.</li></ul></div></div>
-              <div class="evidence-chips"><div class="evidence-chip"><b>47 / 12 TRIPS</b><span>train / validation</span></div><div class="evidence-chip"><b>1,286 / 250 WINDOWS</b><span>train / validation</span></div><div class="evidence-chip"><b>5 EPOCHS</b><span>LR 5e−5 · batch 8</span></div><div class="evidence-chip"><b>5.2307% GAIN</b><span>overall MAE</span></div><div class="evidence-chip"><b>MAP −0.1507%</b><span>one channel worsened</span></div><div class="evidence-chip"><b>MIXER REJECTED</b><span>MAE 55.6532 vs 54.9666</span></div></div>
-              <div class="pipeline-disclosure"><details open><summary>Historical evolution and model-selection discipline</summary><div class="pipeline-detail"><div class="evolution-rail"><div class="evolution-step"><b>ZERO-SHOT MVP</b><span>TTM worked immediately without project-specific training.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>STORY 6 · GL-207</b><span>Quality-gated split, dry-run validation and fine-tuning workflow were implemented.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>SCHEMA-v1 REPOINT</b><span>Training and evaluation moved to frozen production features.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>5-EPOCH REFRESH</b><span>The committed model met the predeclared overall/non-worse decision rule.</span></div></div></div></details><details><summary>Why the result is reported as modest evidence</summary><div class="pipeline-detail"><ul><li>The 5.23% overall improvement narrowly clears the 5% rule; it is useful, not transformative.</li><li>Only 12 validation trips are available and all come from one vehicle/corpus.</li><li>Overall MAE is scale-dominated by RPM; per-signal results prevent the average hiding MAP degradation.</li><li><strong>Why MAP got worse:</strong> MAP has stronger physical relationships with other signals, and the common-channel model forecasts each channel from its own history only. This is consistent with the design but was not tested independently.</li><li>One data split, one random seed, no conventional external time-series baselines; overall MAE compares the tested configurations and is not a common physical error scale.</li><li>Lower baseline forecast MAE does not automatically imply better fault detection; that requires the separate synthetic evaluation.</li></ul></div></details><details><summary>Rejected ablation: forecast-channel mixing</summary><div class="pipeline-detail"><ul><li>To let cross-signal information reach the forecast, TTM's optional forecast-channel mixer was fine-tuned and scored on the same 250 validation windows.</li><li>Overall MAE rose to <strong>55.6532</strong> against 54.9666 for the common-channel model, and every one of the six signals got worse.</li><li>Mean cross-signal correlation error rose from 0.4366 to 0.5311, so the mixer did not reproduce inter-signal structure better.</li><li>Working hypothesis: extra learnable parameters with only 47 training trips make generalisable cross-signal relationships hard to estimate. Not isolated experimentally; applies only to the tested configuration.</li><li>Development-set ablation, not an independent final test. The common-channel epoch-five artefact stayed official; calibration and synthetic detection were not rerun on the mixer.</li></ul></div></details><details><summary>Code, artefacts and verification</summary><div class="pipeline-detail"><ul><li><code>prepare_finetune_split.py</code>: trip-safe eligibility and split manifest.</li><li><code>finetune_ttm.py</code>: segment-bounded forecast datasets and Trainer configuration.</li><li><code>compare_finetune_residuals.py</code>: paired zero-shot/fine-tuned MAE evaluation.</li><li><code>finetune_residual_comparison_e5_lr5e-5.json</code>: exact 250-window results.</li></ul></div></details></div>
-            </div></details>
-          </article>
-
-          <article class="pipeline-node" id="modelM4">
-            <details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">M4</span><div><h4>Synthetic detector evaluation and risk calibration</h4><p class="pipeline-node-purpose">Measure alarm and attribution behaviour under controlled future-window perturbations, then select a provisional alarm threshold without hiding the detector's strong cooling bias and weak MAF sensitivity.</p></div><span class="pipeline-status">165 RUNS · MACRO F1 0.5214</span></summary>
-            <div class="pipeline-node-body">
-              <div class="pipeline-flow"><div class="pipeline-flow-step"><b>512 baseline context</b><span>Untouched history from validation segments.</span></div><div class="pipeline-flow-step"><b>96 injected future</b><span>Cooling, MAF or pedal perturbation with known scenario family.</span></div><div class="pipeline-flow-step"><b>Detector sweep</b><span>Fine-tuned TTM + risk attribution; one failed primary run recorded.</span></div><div class="pipeline-flow-step"><b>Threshold policy</b><span>Maximise macro F1 subject to calibration baseline-control FPR ≤10%.</span></div></div>
-              <div class="pipeline-columns"><div class="pipeline-block"><div class="pipeline-block-label">CALIBRATED RESULTS</div><ul><li>165 primary runs completed; 1 failed run was recorded rather than silently removed.</li><li>11 of 12 validation segments were usable: 154 injected cases plus 11 unchanged controls. One segment lacked enough post-warm-up rows and is the recorded failure.</li><li>11 separate MAP ×1.25 attribution controls assessed attribution only; they sit outside the 154-case three-class denominator.</li><li>Macro precision 0.7333, recall 0.4567, F1 <strong>0.5214</strong>.</li><li>Micro precision 0.8824, recall 0.3896, F1 <strong>0.5405</strong>.</li><li>Exact hit rate 0.3896; attribution accuracy ignoring alarm threshold 0.5649.</li><li>Baseline-control alarm rate: 1/11 = <strong>9.09%</strong>.</li></ul></div><div class="pipeline-block"><div class="pipeline-block-label">PER-FAMILY REALITY</div><ul><li><strong>Cooling:</strong> 33/33—precision, recall and F1 all 1.0.</li><li><strong>MAF:</strong> 2 TP, 8 FP, 42 FN—precision 0.20, recall 0.0455, F1 0.0741.</li><li><strong>Pedal:</strong> 25 TP, 0 FP, 52 FN—precision 1.0, recall 0.3247, F1 0.4902.</li><li>Strong pedal offsets reached 10/11 correct attribution; small offsets and gain errors were often below alarm.</li><li>The aggregate score must not be quoted without these family-level failures.</li></ul></div></div>
-              <div class="evidence-chips"><div class="evidence-chip"><b>165 COMPLETE</b><span>1 failed run</span></div><div class="evidence-chip"><b>F1 0.5214</b><span>macro</span></div><div class="evidence-chip"><b>FPR 9.09%</b><span>1 / 11 baseline</span></div><div class="evidence-chip"><b>COOLING RECALL 1.0</b><span>33 / 33</span></div><div class="evidence-chip"><b>MAF RECALL 0.0455</b><span>2 / 44</span></div></div>
-              <div class="pipeline-disclosure"><details open><summary>Historical calibration iteration: fewer false alarms, lower sensitivity</summary><div class="pipeline-detail"><div class="evolution-rail"><div class="evolution-step"><b>ORIGINAL 0.30</b><span>Macro F1 0.533; exact-hit rate 0.455; baseline-control FPR 3/11 = 27.3%.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>CONSTRAINED SWEEP</b><span>Choose maximum calibration macro F1 only among thresholds with baseline-control FPR ≤10%.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>SELECTED 0.4129</b><span>Full baseline-control FPR fell to 1/11 = 9.09%; macro F1 also fell to 0.521.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>PROVISIONAL POLICY</b><span>The trade-off is recorded, with held-out FPR 1/3 exposing remaining instability.</span></div></div></div></details><details><summary>How 0.4129 was selected</summary><div class="pipeline-detail"><ul><li>Sorted validation segments were deterministically divided into 8 calibration and 3 held-out segments.</li><li>Candidate thresholds maximised macro F1 only if calibration baseline-control FPR≤0.10; tie-breakers preferred exact hits, lower FPR, then lower threshold.</li><li>0.4129 achieved calibration FPR 0/8 and macro F1 0.5088.</li><li>Held-out FPR was 1/3, exposing instability; full baseline-control FPR was 1/11.</li><li>High=0.9 is a conservative presentation boundary, not statistically fitted failure probability.</li></ul></div></details><details><summary>Why Model and Data injection results differ</summary><div class="pipeline-detail"><ul><li>Data D6 asks whether a specific frozen proxy rule responds to the signal shape it declares.</li><li>Model M4 asks whether TTM residual attribution names the correct broad family and crosses a common alarm threshold.</li><li>Therefore Data can show 14/14 proxy curves accepted while Model still has poor MAF recall; they validate different mechanisms.</li><li>Neither campaign measures real-fault recall.</li></ul></div></details><details><summary>Claim boundary and future correction</summary><div class="pipeline-detail"><ul><li>Results are synthetic, single-vehicle and limited to three Model-scored families.</li><li>One baseline segment received risk 1.0, showing extreme normal-looking model evidence can still occur.</li><li>Only one injection onset and one future window were tested per validation segment.</li><li>Eight of the 11 evaluated segments selected the threshold and were then included in the aggregate metrics, so this is not an independent final fault-test split.</li><li>Further tuning on the same synthetic cases was deliberately avoided to limit overfitting to the small evaluation set.</li><li>MAF is the priority for future work: compare anomaly-specific normalisation, operating-state thresholds and cross-signal features on the same cases before any deployment claim.</li><li>The honest conclusion is a working, partially discriminative research detector—not production diagnostic validation.</li></ul></div></details><details><summary>Code and result evidence</summary><div class="pipeline-detail"><ul><li><code>run_synthetic_evaluation.py</code>, <code>fault_injection.py</code>, <code>synthetic_evaluation_metrics.py</code>, <code>risk_threshold_calibration.py</code>.</li><li><code>synthetic_eval_metrics_e5_lr5e-5_calibrated.json</code> and <code>risk_threshold_calibration_e5_lr5e-5.json</code>.</li></ul></div></details></div>
-            </div></details>
-          </article>
-
-          <article class="pipeline-node" id="modelM5">
-            <details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">M5</span><div><h4>Risk history and threshold-crossing projection</h4><p class="pipeline-node-purpose">Build a separate chronological history for each component from its primary and secondary appearances, then project whether that component's risk trend may cross High—without presenting it as remaining useful life.</p></div><span class="pipeline-status">STORY 8 · TREND, NOT RUL</span></summary>
-            <div class="pipeline-node-body">
-              <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Ranked window history</b><span>Primary and <code>secondary_risk</code> appearances are assigned to their components within the current batch.</span></div><div class="pipeline-flow-step"><b>Component trip means</b><span>Each component's unique window scores are averaged per chronological trip.</span></div><div class="pipeline-flow-step"><b>Separate linear trends</b><span>Least-squares <code>rᵢ = a + bi</code> per component, requiring at least five trips.</span></div><div class="pipeline-flow-step"><b>Threshold projection</b><span>Each component receives cycles and 10-trip crossing probability relative to High=0.9.</span></div></div>
-              <div class="pipeline-columns"><div class="pipeline-block"><div class="pipeline-block-label">POINT ESTIMATE</div><ul><li>If latest trip mean is already High, cycles=0 and probability=1.0.</li><li>If slope≤0, no crossing cycle is projected, but the 10-trip crossing probability is still returned.</li><li>Otherwise <code>ceil((0.9 − latest risk) / slope)</code>; a crossing beyond 50 trips makes the cycle estimate null while retaining probability.</li><li>With fewer than five chronological trips, both estimate fields remain null and the reason enters <code>notes</code>.</li><li>Trip ordering uses first timestamp plus stable trip identity, not filename sorting alone.</li></ul></div><div class="pipeline-block"><div class="pipeline-block-label">DEMO EVIDENCE, NOT VALIDATION</div><ul><li>Fixture trip means rise from 0.1900 to 0.5850 across six trips.</li><li>Estimated slope: 0.07885714 risk per trip.</li><li>Projected crossing: 4 further trips.</li><li>Normal-error-model probability of crossing within 10 trips: 1.0.</li><li>This means “projected risk score crosses 0.9,” not “mechanical failure occurs with 100% probability.”</li></ul></div></div>
-              <div class="evidence-chips"><div class="evidence-chip"><b>≥5 TRIPS</b><span>minimum history</span></div><div class="evidence-chip"><b>TRIP MEAN</b><span>window noise reduced</span></div><div class="evidence-chip"><b>10-TRIP HORIZON</b><span>probability definition</span></div><div class="evidence-chip"><b>50-TRIP CAP</b><span>no distant extrapolation</span></div><div class="evidence-chip"><b>DEMO: 4 CYCLES</b><span>fixture only</span></div></div>
-              <div class="pipeline-disclosure"><details open><summary>Historical evolution: null placeholders to bounded projection</summary><div class="pipeline-detail"><div class="evolution-rail"><div class="evolution-step"><b>INTERFACE PLACEHOLDERS</b><span>Cycle/probability fields existed but remained null because no estimator or run-to-failure labels existed.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>PRIMARY AUDIT HISTORY</b><span>Per-window trip identity, deduplication and chronological validation made the persisted primary-risk path reproducible.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>GL-289</b><span>Trip means, least-squares trend, ≥5-trip gate, 10-trip horizon and 50-trip cap were implemented.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>v1.6 RANKED HISTORY</b><span>Current-batch primary and secondary appearances now feed separate component projections while retaining threshold-crossing semantics.</span></div></div></div></details><details><summary>Why this is not remaining useful life</summary><div class="pipeline-detail"><ul><li>The dataset contains no failure dates, repair events or run-to-failure trajectories.</li><li>The regression models detector score trend, not physical degradation state.</li><li><code>estimated_failure_probability</code> is retained for interface compatibility but is explicitly defined as threshold-crossing probability.</li><li>Linear risk growth may not persist; operating mix, maintenance and forecast noise can change the trend.</li></ul></div></details><details><summary>Conservative unavailable states</summary><div class="pipeline-detail"><ul><li>Insufficient trips returns both fields null rather than inventing a slope.</li><li>Flat/falling trends return no projected cycle but retain their 10-trip crossing probability.</li><li>Crossings beyond 50 trips return no projected cycle but retain probability because long cycle extrapolation is not credible.</li><li>Batch mode fits an independent trend per component. Single-window CLI runs have one persisted history file, so primary and <code>secondary_risk</code> share that projection (fixed 27 Aug 2026, regression-tested).</li><li>Every decision adds a human-readable note to preserve semantics in Report and Dashboard.</li></ul></div></details><details><summary>Code and evidence</summary><div class="pipeline-detail"><ul><li><code>risk_history.py</code>: persisted primary-risk structure validation, deduplication, append/load.</li><li><code>kit_residual_detector.py</code>: <code>component_histories_from_batch()</code> and <code>add_component_estimates_to_batch()</code>.</li><li><code>failure_estimation.py</code>: <code>estimate_from_history()</code>.</li><li><code>failure_estimation_demo.json/.md</code> is a rising fixture demonstration, not a measured vehicle prediction.</li></ul></div></details></div>
-            </div></details>
-          </article>
-
-          <article class="pipeline-node" id="modelM6">
-            <details class="pipeline-node-shell" open>
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">M6</span><div><h4>Validated ModelLayerOutput handoff</h4><p class="pipeline-node-purpose">Package ranked evidence as stable top-level primary fields plus an optional complete second component, or in a batch envelope whose summary preserves that same v1.6 shape.</p></div><span class="pipeline-status">INTERFACE v1.6 · FAIL CLOSED</span></summary>
-            <div class="pipeline-node-body">
-              <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Ranked window result</b><span>Primary top-level fields plus complete second-ranked <code>secondary_risk</code>.</span></div><div class="pipeline-flow-step"><b>Component estimates</b><span>Nullable cycles/probability fields annotated independently in both positions.</span></div><div class="pipeline-flow-step"><b>Schema validation</b><span>Enums, ranges, distinct components, score ordering and key-signal objects.</span></div><div class="pipeline-flow-step"><b>Report handoff</b><span>Single object or <code>{summary, windows}</code> batch envelope.</span></div></div>
-              <div class="pipeline-columns"><div class="pipeline-block"><div class="pipeline-block-label">SINGLE-WINDOW FIELDS</div><ul><li><code>timestamp</code>, five-type <code>anomaly_type</code>, 0–1 <code>risk_score</code>, Low/Medium/High <code>risk_level</code>.</li><li><code>component</code> must equal <code>anomaly_type</code>.</li><li>0–1 <code>prediction_confidence</code> and structured <code>key_signals[]</code> with value, unit and two-value reference range.</li><li>Nullable <code>estimated_cycles_to_failure</code> and <code>estimated_failure_probability</code>; <code>notes[]</code> preserves limitations and provenance.</li><li>Optional <code>secondary_risk</code> is a complete distinct-component result, emitted even when Low, with score no greater than the primary; ties between types resolve by a fixed anomaly-type order.</li></ul></div><div class="pipeline-block"><div class="pipeline-block-label">BATCH ENVELOPE</div><ul><li><code>summary</code> is the highest-primary-risk window and remains a valid ranked ModelLayerOutput; equal scores resolve to the first window in input-file order.</li><li><code>windows</code> contains every analysed ranked result plus trip, segment and Model-local window ID.</li><li>Every pure result is validated before identity fields are merged.</li><li>Component histories use primary and secondary positions for independent in-request trend estimation.</li><li>If no eligible window exists or any output violates the contract, inference fails rather than handing malformed JSON to Report.</li></ul></div></div>
-              <div class="evidence-chips"><div class="evidence-chip"><b>5-TYPE ENUM</b><span>component mirrors anomaly</span></div><div class="evidence-chip"><b>0–1 BOUNDS</b><span>score · confidence · probability</span></div><div class="evidence-chip"><b>STRUCTURED SIGNALS</b><span>value · unit · range</span></div><div class="evidence-chip"><b>NULLABLE ESTIMATES</b><span>absence is explicit</span></div><div class="evidence-chip"><b>217 TESTS PASSED</b><span>18 skips · 235 collected</span></div></div>
-              <div class="pipeline-disclosure"><details open><summary>Historical interface evolution embodied here</summary><div class="pipeline-detail"><div class="evolution-rail"><div class="evolution-step"><b>MVP OUTPUT</b><span>Residual detector produced the first Report-facing JSON.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>v1.1 BATCH</b><span>Worst-window summary plus identified windows added without breaking single shape.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>v1.4 FORWARDING</b><span>Data verdict provenance entered risk/confidence/notes without new fields.</span></div><div class="evolution-arrow">→</div><div class="evolution-step"><b>v1.6 RANKED RISK</b><span>Optional complete <code>secondary_risk</code> preserves the second component without changing primary fields.</span></div></div></div></details><details><summary>Why key signals are structured objects</summary><div class="pipeline-detail"><ul><li>A feature name alone cannot explain whether a value is high, low or unusual.</li><li>Value, unit and reference range let Report create a grounded explanation without inventing measurement context.</li><li>NaN/all-missing aggregates are omitted so invalid JSON values never cross the interface.</li><li>Priority lists keep component-relevant features visible while residual ranking supplies additional evidence.</li></ul></div></details><details><summary>Validation and claim boundary</summary><div class="pipeline-detail"><ul><li><code>validate_output.py</code> validates shape and ranges, not diagnostic truth.</li><li><code>shared/interface_models.py</code> independently expresses the same contract with Pydantic validators.</li><li>Primary and secondary components must differ, and secondary score cannot exceed primary; these checks validate ranking shape, not diagnostic truth.</li><li>Risk score, confidence and projected crossing probability have different meanings and must not be conflated in Report wording.</li><li>The output is decision-support evidence; real fault confirmation remains outside the demonstrated system boundary.</li></ul></div></details><details><summary>Verification evidence</summary><div class="pipeline-detail"><ul><li>Fresh Model suite: 217 passed, 18 skipped (235 collected) on 2026-09-04, including the 27 Aug single-window <code>secondary_risk</code> projection regression test. Skips preserve documented retired or dependency-gated scenarios.</li><li><code>validate_output.py</code>, <code>shared/interface_models.py</code>, <code>docs/INTERFACE.md</code> and batch/ranking tests define and verify the v1.6 handoff.</li></ul></div></details></div>
-            </div></details>
-          </article>
-
+          </details></article>
         </section>
 
         <section class="pipeline-layer" id="backupReportLegacy" data-layer="report" hidden>
@@ -5248,6 +5233,17 @@ function toggleBackup() {
 function scrollBackupTo(id) {
   const target = document.getElementById(id);
   if (!target) return;
+  if (target.classList.contains('pipeline-node')) {
+    openBackupNode(id);
+    return;
+  }
+  target.scrollIntoView({ behavior: 'auto', block: 'start' });
+}
+function openBackupNode(id) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  const shell = target.querySelector('details.pipeline-node-shell');
+  if (shell) shell.open = true;
   target.scrollIntoView({ behavior: 'auto', block: 'start' });
 }
 document.addEventListener('keydown', (e) => {
