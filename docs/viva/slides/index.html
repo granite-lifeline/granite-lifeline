@@ -2044,9 +2044,49 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .report-backup .report-score span { font-size:17px; }
 .report-backup .report-score b { color:var(--layer-color); font:800 22px/1 var(--font-mono); }
 .report-backup .report-boundary { padding:18px 20px; border-left:5px solid var(--layer-color); background:#eef5ff; font-size:18px; line-height:1.5; }
+.report-backup .report-table + .report-boundary { margin-top:22px; background:#f7faff; }
+.report-backup .report-table { width:100%; margin-top:24px; border-collapse:collapse; table-layout:fixed; background:#fff; }
+.report-backup .report-table th { padding:13px 12px; border-bottom:2px solid var(--layer-color); color:var(--layer-color); font:800 14px/1.25 var(--font-mono); text-align:left; }
+.report-backup .report-table td { padding:13px 12px; border-bottom:1px solid var(--border); color:var(--text-muted); font-size:15px; line-height:1.38; vertical-align:top; }
+.report-backup .report-table td strong { color:var(--text); }
+.report-backup .report-table .selected-row { background:#eef5ff; }
+.report-backup .report-quote { margin-top:22px; padding:20px 22px; border-left:5px solid var(--layer-color); background:#f7faff; color:var(--text); font-size:18px; line-height:1.5; }
+.report-backup .report-quote.bad { border-left-color:#c2413a; background:#fff5f4; }
+.report-backup .report-quote.good { border-left-color:#27864a; background:#f1faf4; }
+.report-backup .report-case-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; margin-top:24px; }
+.report-backup .report-case { padding:20px 22px; border:1px solid var(--border); border-radius:10px; background:#fff; }
+.report-backup .report-case b { display:block; color:var(--layer-color); font:800 14px/1.2 var(--font-mono); }
+.report-backup .report-case p,
+.report-backup .report-case li { color:var(--text-muted); font-size:16px; line-height:1.48; }
+.report-backup .report-case ul { margin:12px 0 0; padding-left:20px; }
+.report-backup .report-result-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-top:24px; }
+.report-backup .report-result { padding:18px 14px; border-top:4px solid var(--layer-color); background:#f7faff; text-align:center; }
+.report-backup .report-result b { display:block; color:var(--layer-color); font:850 25px/1 var(--font-mono); }
+.report-backup .report-result span { display:block; margin-top:9px; color:var(--text-muted); font-size:14px; line-height:1.35; }
+.integration-workflow { display:flex; align-items:center; gap:10px; margin-top:22px; padding:16px 18px; border:1px solid var(--border); border-radius:10px; background:#fff; }
+.integration-workflow b { color:#1769ff; font:800 14px/1.2 var(--font-mono); }
+.integration-workflow span { color:var(--text-muted); font-size:14px; }
+.integration-workflow i { color:#1769ff; font-style:normal; font-weight:800; }
+.integration-map { grid-column:1/-1; display:grid; gap:16px; }
+.integration-handoff { display:grid; grid-template-columns:170px minmax(0,1fr) 280px; gap:18px; align-items:stretch; padding:18px; border:1px solid var(--border); border-left:5px solid #1769ff; border-radius:10px; background:#fff; }
+.integration-handoff-title { align-self:center; }
+.integration-handoff-title b { display:block; color:#1769ff; font:800 14px/1.2 var(--font-mono); }
+.integration-handoff-title strong { display:block; margin-top:8px; color:var(--text); font-size:20px; line-height:1.25; }
+.integration-code { margin:0; padding:15px 16px; border-radius:8px; background:#11161d; color:#d7e5ff; font:13px/1.5 var(--font-mono); white-space:pre-wrap; overflow-wrap:anywhere; }
+.integration-artifact { padding:15px 16px; border-radius:8px; background:#f3f7ff; }
+.integration-artifact b { display:block; color:#1769ff; font:800 12px/1.2 var(--font-mono); }
+.integration-artifact span { display:block; margin-top:8px; color:var(--text-muted); font-size:14px; line-height:1.42; }
+.integration-run { grid-column:1/-1; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-top:4px; }
+.integration-run div { position:relative; padding:15px 12px; border-top:4px solid #1769ff; background:#f3f7ff; text-align:center; }
+.integration-run div:not(:last-child)::after { content:"→"; position:absolute; right:-10px; top:50%; transform:translate(50%,-50%); color:#1769ff; font-weight:900; z-index:2; }
+.integration-run b { display:block; color:#1769ff; font:800 12px/1.2 var(--font-mono); }
+.integration-run span { display:block; margin-top:7px; color:var(--text-muted); font-size:13px; line-height:1.35; }
 @media (max-width:1100px) {
   .report-backup .report-six-step { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .report-backup .pipeline-flow-step:nth-child(3)::after { display:none; }
+  .report-backup .report-result-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .integration-handoff { grid-template-columns:150px minmax(0,1fr); }
+  .integration-artifact { grid-column:1/-1; }
 }
 /* Dashboard backup keeps the compact scale introduced on develop. */
 #backupDashboard .pipeline-node h4 { font-size:clamp(21px,2vw,29px); }
@@ -3220,15 +3260,64 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
     <main class="backup-document">
       <section class="backup-overview" id="backupOverview">
         <div>
-          <div class="backup-overview-kicker">END-TO-END TECHNICAL MAP</div>
-          <h2>Follow one uploaded recording through every decision.</h2>
-          <p>This reference keeps the four layers in one flow. Each node records what the code does, why the design changed, the artefact handed forward, the evidence supporting the claim, and the boundary of what has not been demonstrated.</p>
+          <div class="backup-overview-kicker">FROM FOUR LAYERS TO ONE PIPELINE</div>
+          <h2>How independently developed components were connected.</h2>
+          <p>Shared contracts allowed parallel development. Each boundary was then connected and checked before the complete local upload path was used.</p>
+          <div class="integration-workflow" aria-label="Team development workflow"><b>JIRA TASK</b><i>→</i><span>GitHub branch</span><i>→</i><span>Pull request + CI</span><i>→</i><span>develop</span><i>→</i><span>Discord update</span></div>
         </div>
-        <div class="backup-route" aria-label="Pipeline overview">
-          <div class="backup-route-row"><span class="backup-route-index">01</span><strong>Data</strong><span>CSV → evidence</span></div>
-          <div class="backup-route-row"><span class="backup-route-index">02</span><strong>Model</strong><span>evidence → risk</span></div>
-          <div class="backup-route-row"><span class="backup-route-index">03</span><strong>Report</strong><span>risk → explanation</span></div>
-          <div class="backup-route-row"><span class="backup-route-index">04</span><strong>Dashboard</strong><span>explanation → action</span></div>
+
+        <div class="integration-map" aria-label="Cross-layer integration map">
+          <div class="integration-handoff">
+            <div class="integration-handoff-title"><b>BOUNDARY 01</b><strong>Data → Model</strong></div>
+            <pre class="integration-code">production_features, proxy_decisions =
+    _run_data_layer(raw_path)
+
+model_output = _run_model_layer(
+    production_features,
+    proxy_decisions,
+    output_path,
+)</pre>
+            <div class="integration-artifact"><b>HANDOFF</b><span><strong>production_features.csv</strong><br>46 ordered feature columns</span><span><strong>proxy_decisions.csv</strong><br>optional rule-based evidence</span><span><code>dashboard/csv_pipeline.py</code></span></div>
+          </div>
+
+          <div class="integration-handoff">
+            <div class="integration-handoff-title"><b>BOUNDARY 02</b><strong>Model → Report</strong></div>
+            <pre class="integration-code">ModelLayerOutput(**model_payload)
+
+report = generate_report(
+    model_payload,
+    risk_history=_component_risk_history(
+        raw, component
+    ),
+)</pre>
+            <div class="integration-artifact"><b>HANDOFF</b><span><strong>Validated Model JSON</strong><br>anomaly, risk, confidence, signals and projections</span><span>Only affected Medium/High components proceed to report generation.</span><span><code>dashboard/data_loader.py</code></span></div>
+          </div>
+
+          <div class="integration-handoff">
+            <div class="integration-handoff-title"><b>BOUNDARY 03</b><strong>Report → Dashboard</strong></div>
+            <pre class="integration-code">result[component_key] = report
+result["_data_source"][component_key] = source
+
+if components and all(
+    not c.get("anomaly_description")
+    for c in components.values()
+):
+    _show_pipeline_error(
+        "Report Generation Unavailable", ...
+    )
+    return
+
+st.session_state["dashboard_data"] = result</pre>
+            <div class="integration-artifact"><b>HANDOFF</b><span><strong>Dashboard-ready dictionary</strong><br>Model evidence + three accepted report sections</span><span>An all-empty Report fallback is stopped before the results page.</span><span><code>dashboard/pages/overview.py</code></span></div>
+          </div>
+
+          <div class="integration-run" aria-label="Complete local upload path">
+            <div><b>UPLOAD</b><span>Original KIT CSV file</span></div>
+            <div><b>DATA</b><span>Clean signals, features and rule evidence</span></div>
+            <div><b>MODEL</b><span>Batch anomaly and component risk JSON</span></div>
+            <div><b>REPORT</b><span>Validated report for each affected component</span></div>
+            <div><b>DASHBOARD</b><span>Overview, detail evidence and export</span></div>
+          </div>
         </div>
       </section>
 
@@ -4344,142 +4433,108 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
         </section>
 
         <section class="pipeline-layer report-backup" id="backupReport" data-layer="report">
-          <header class="pipeline-layer-head">
-            <div><div class="pipeline-layer-label">03 · REPORT LAYER</div><h3>Model evidence → an owner-readable report</h3></div>
-            <div class="pipeline-layer-owner">FINAL PIPELINE · VIVA BACKUP</div>
-          </header>
+          <header class="pipeline-layer-head"><div><div class="pipeline-layer-label">03 · REPORT LAYER</div><h3>Evidence behind the final report pipeline</h3></div><div class="pipeline-layer-owner">FINAL DESIGN · VIVA BACKUP</div></header>
 
-          <article class="pipeline-node" id="reportB0">
-            <details class="pipeline-node-shell" open>
-              <summary class="pipeline-node-head"><span class="pipeline-node-id">R0</span><div><h4>The complete Report Layer in six steps</h4><p class="pipeline-node-purpose">Use this page first. It shows where the Model output enters, where reviewed knowledge is added, and why generated text is checked before the Dashboard receives it.</p></div><span class="pipeline-status">ONE END-TO-END VIEW</span></summary>
-              <div class="pipeline-node-body">
-                <div class="pipeline-flow report-six-step">
-                  <div class="pipeline-flow-step"><b>1 · Receive</b><span>Validate the Model Layer JSON and select the current component result.</span></div>
-                  <div class="pipeline-flow-step"><b>2 · Prepare</b><span>Turn technical fields into a structured evidence summary for Granite.</span></div>
-                  <div class="pipeline-flow-step"><b>3 · Retrieve</b><span>Select reviewed knowledge for the same anomaly, section and risk level.</span></div>
-                  <div class="pipeline-flow-step"><b>4 · Generate</b><span>Run three focused calls: what happened, why it may matter, and what to do.</span></div>
-                  <div class="pipeline-flow-step"><b>5 · Validate</b><span>Score each section; correct one failed section once.</span></div>
-                  <div class="pipeline-flow-step"><b>6 · Deliver</b><span>Return Model evidence and the three accepted report sections to the Dashboard.</span></div>
-                </div>
-                <div class="pipeline-disclosure">
-                  <details><summary>What is fixed and what is generated?</summary><div class="pipeline-detail"><ul><li><strong>Fixed upstream evidence:</strong> component, risk score, risk level, confidence, signals, projections and notes.</li><li><strong>Generated language:</strong> anomaly description, possible cause and recommended actions.</li><li>The Report Layer does not recalculate the Model result.</li></ul></div></details>
-                  <details><summary>Where this path begins in the code</summary><div class="pipeline-detail"><ul><li><code>report_layer/pipeline/report_generator.py::generate_report()</code> coordinates the complete process.</li><li>Input and output structures are defined in <code>shared/interface_models.py</code>.</li></ul></div></details>
-                </div>
-              </div>
-            </details>
-          </article>
+          <article class="pipeline-node" id="reportB0"><details class="pipeline-node-shell" open>
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R0</span><div><h4>Granite model selection</h4><p class="pipeline-node-purpose">Four locally runnable Granite models were compared on the same Cooling case and the same three-call sequence.</p></div><span class="pipeline-status">HISTORICAL SELECTION TEST</span></summary>
+            <div class="pipeline-node-body">
+              <table class="report-table"><thead><tr><th>Criterion</th><th>Weight</th><th>3.3 2B</th><th>3.3 8B</th><th>4.1 3B</th><th>4.1 8B</th></tr></thead><tbody><tr><td>Plain language</td><td>30%</td><td>3</td><td>4</td><td>4</td><td>5</td></tr><tr><td>Grounding</td><td>25%</td><td>4</td><td>4</td><td>4</td><td>5</td></tr><tr><td>Valid JSON</td><td>20%</td><td>2</td><td>5</td><td>5</td><td>5</td></tr><tr><td>Action quality</td><td>15%</td><td>3</td><td>3</td><td>4</td><td>5</td></tr><tr><td>Uncertainty</td><td>10%</td><td>4</td><td>4</td><td>4</td><td>4</td></tr><tr class="selected-row"><td><strong>Weighted total</strong></td><td><strong>100%</strong></td><td><strong>3.15</strong></td><td><strong>4.05</strong></td><td><strong>4.15</strong></td><td><strong>4.85 · selected</strong></td></tr></tbody></table>
+              <div class="report-boundary"><strong>Evidence boundary:</strong> this single controlled case supported the project choice; it is not a general ranking of Granite models.</div>
+            </div>
+          </details></article>
 
-          <article class="pipeline-node" id="reportB1">
-            <details class="pipeline-node-shell">
-              <summary class="pipeline-node-head"><span class="pipeline-node-id">R1</span><div><h4>Prepare the Model evidence before Granite sees it</h4><p class="pipeline-node-purpose">The Model JSON is valid for software, but its field names and numbers need context before they can support a clear report.</p></div><span class="pipeline-status">PREPARE</span></summary>
-              <div class="pipeline-node-body">
-                <div class="pipeline-columns">
-                  <div class="pipeline-block"><div class="pipeline-block-label">EXAMPLE · COOLING RESULT</div><ul><li><code>coolant_temp</code> becomes <strong>coolant temperature</strong>.</li><li>The value is compared with its supplied reference range and labelled Normal or Abnormal.</li><li><code>coolant_temp</code> and <code>ect_rate_180s</code> can activate the predefined <strong>thermal pattern</strong> relationship.</li><li>This is a designed signal combination, not a statistical correlation discovered by Granite.</li></ul></div>
-                  <div class="pipeline-block"><div class="pipeline-block-label">BOUNDARIES ADDED TO THE CONTEXT</div><ul><li>Model notes remain data-quality or provenance notes; they are not treated as mechanical causes.</li><li>Risk score, confidence and projected threshold crossing keep separate meanings.</li><li>If the component is already High risk, future wording about “reaching High” is withheld from the prompt.</li><li>Missing projection values remain unavailable; Granite cannot invent replacements.</li></ul></div>
-                </div>
-                <div class="report-boundary"><strong>Why keep projection fields in the final JSON?</strong> The Dashboard uses them as Model outputs. The Report Layer passes them through unchanged, while controlling whether they are safe to mention in generated text.</div>
-                <div class="pipeline-disclosure">
-                  <details><summary>Projection meanings</summary><div class="pipeline-detail"><ul><li><code>estimated_cycles_to_failure</code> estimates how many further trips the risk trend may take to reach the High-risk threshold. It is not physical remaining useful life.</li><li><code>estimated_failure_probability</code> is the probability of crossing that threshold within the fixed next ten trips. It is independent of the cycle estimate.</li></ul></div></details>
-                  <details><summary>Code evidence</summary><div class="pipeline-detail"><ul><li><code>report_layer/pipeline/context_injection.py</code> prepares display names, ranges, signal relationships and prompt context.</li></ul></div></details>
-                </div>
-              </div>
-            </details>
-          </article>
+          <article class="pipeline-node" id="reportB1"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R1</span><div><h4>Automotive knowledge storage design</h4><p class="pipeline-node-purpose">The storage method had to keep reviewed knowledge inspectable and select only the part required by the current report section.</p></div><span class="pipeline-status">20 REVIEWED RECORDS</span></summary>
+            <div class="pipeline-node-body">
+              <table class="report-table"><thead><tr><th>Option</th><th>Observed trade-off</th><th>Decision</th></tr></thead><tbody><tr><td>Full knowledge in every prompt</td><td>Unrelated material and unnecessary prompt length</td><td>Not used</td></tr><tr><td>Semantic vector retrieval</td><td>Useful when the category is unknown; ranking varied across records</td><td>Compared</td></tr><tr class="selected-row"><td><strong>Metadata-filtered ChromaDB</strong></td><td>Exact filtering from the anomaly key already supplied by the Model Layer</td><td><strong>Selected</strong></td></tr></tbody></table>
+              <div class="report-result-grid"><div class="report-result"><b>5</b><span>supported anomaly types</span></div><div class="report-result"><b>1</b><span>cause record per type</span></div><div class="report-result"><b>3</b><span>risk-specific action records</span></div><div class="report-result"><b>20</b><span>records rebuilt from YAML</span></div></div>
+              <div class="pipeline-disclosure"><details><summary>Storage evidence</summary><div class="pipeline-detail"><ul><li><code>report_layer/rag/grounded_knowledge.yaml</code> is the reviewed source.</li><li><code>report_layer/rag/knowledge_indexer.py</code> rebuilds the collection and checks all five anomaly types.</li></ul></div></details></div>
+            </div>
+          </details></article>
 
-          <article class="pipeline-node" id="reportB2">
-            <details class="pipeline-node-shell">
-              <summary class="pipeline-node-head"><span class="pipeline-node-id">R2</span><div><h4>Selective RAG: retrieve the right knowledge record</h4><p class="pipeline-node-purpose">RAG means Retrieval-Augmented Generation: reviewed information is selected first and then supplied to Granite with the current vehicle evidence.</p></div><span class="pipeline-status">RETRIEVE</span></summary>
-              <div class="pipeline-node-body">
-                <div class="pipeline-flow">
-                  <div class="pipeline-flow-step"><b>Reviewed YAML</b><span>Five supported anomaly types with possible causes and risk-specific actions.</span></div>
-                  <div class="pipeline-flow-step"><b>Rebuild index</b><span>Five types × four records: one cause record and Low, Medium, High action records.</span></div>
-                  <div class="pipeline-flow-step"><b>Match metadata</b><span>Use the known anomaly type, report section and current risk level.</span></div>
-                  <div class="pipeline-flow-step"><b>Check relevance</b><span>Cooling also checks whether the signal direction fits overheating knowledge.</span></div>
-                </div>
-                <div class="pipeline-columns">
-                  <div class="pipeline-block"><div class="pipeline-block-label">WHY EXACT METADATA?</div><ul><li>The Model already provides the anomaly identity.</li><li>Exact matching prevents knowledge for another component or risk level entering the prompt.</li><li>It is deterministic and easier to inspect than semantic similarity for this interface.</li></ul></div>
-                  <div class="pipeline-block"><div class="pipeline-block-label">CURRENT LIMIT</div><ul><li>Matching the category does not prove that every sentence fits the current signal direction.</li><li>Cooling has an additional direction check because its source mainly describes overheating.</li><li>The other four anomaly types currently rely on metadata matching.</li></ul></div>
-                </div>
-                <div class="pipeline-disclosure">
-                  <details><summary>What happens to workshop procedures?</summary><div class="pipeline-detail"><ul><li>Owner-safe guidance covers observation, service timing and warning signs.</li><li>Scan-tool diagnosis, wiring checks, calibration and replacement are assigned to a qualified mechanic.</li></ul></div></details>
-                  <details><summary>Code evidence</summary><div class="pipeline-detail"><ul><li><code>report_layer/rag/knowledge_indexer.py</code> recreates the 20-record ChromaDB collection.</li><li><code>report_layer/rag/rag_retriever.py</code> applies exact metadata filters.</li></ul></div></details>
-                </div>
-              </div>
-            </details>
-          </article>
+          <article class="pipeline-node" id="reportB2"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R2</span><div><h4>Metadata and semantic retrieval comparison</h4><p class="pipeline-node-purpose">RAG is the overall method. This experiment compared two ways of choosing which reviewed record enters a prompt.</p></div><span class="pipeline-status">HISTORICAL · 7 TYPES</span></summary>
+            <div class="pipeline-node-body">
+              <table class="report-table"><thead><tr><th>Retrieval method</th><th>Correct record</th><th>Average time</th></tr></thead><tbody><tr class="selected-row"><td><strong>Metadata + section</strong></td><td><strong>7/7</strong></td><td><strong>≈0.34 ms</strong></td></tr><tr><td>Semantic + section</td><td>4/7</td><td>≈61.0 ms</td></tr><tr class="selected-row"><td><strong>Metadata + whole document</strong></td><td><strong>7/7</strong></td><td><strong>≈0.31 ms</strong></td></tr><tr><td>Semantic + whole document</td><td>6/7</td><td>≈57.4 ms</td></tr></tbody></table>
+              <div class="report-case-grid"><div class="report-case"><b>METADATA FILTERING</b><p>Matches explicit fields such as anomaly type, report section and risk level.</p></div><div class="report-case"><b>SEMANTIC RETRIEVAL</b><p>Embeds the query and ranks records by similarity of meaning.</p></div></div>
+              <div class="report-boundary"><strong>Scope:</strong> this design experiment used seven categories available at that stage. Production now supports five anomaly types.</div>
+            </div>
+          </details></article>
 
-          <article class="pipeline-node" id="reportB3">
-            <details class="pipeline-node-shell">
-              <summary class="pipeline-node-head"><span class="pipeline-node-id">R3</span><div><h4>Three calls answer three different questions</h4><p class="pipeline-node-purpose">The report is generated in order. Each call receives only the evidence required for its question, making a failed section easier to identify and correct.</p></div><span class="pipeline-status">GENERATE</span></summary>
-              <div class="pipeline-node-body">
-                <div class="report-call-grid">
-                  <div class="report-call"><b>CALL 1 · WHAT HAPPENED?</b><strong>Input</strong><p>Prepared Model evidence only.</p><strong>Output</strong><p>Observed pattern, relevant signals and current risk meaning.</p></div>
-                  <div class="report-call"><b>CALL 2 · WHY MIGHT IT MATTER?</b><strong>Input</strong><p>Model evidence, accepted Call 1 and admitted cause knowledge.</p><strong>Output</strong><p>Possible explanations expressed with uncertainty.</p></div>
-                  <div class="report-call"><b>CALL 3 · WHAT SHOULD I DO?</b><strong>Input</strong><p>Model evidence, accepted earlier sections and risk-specific action knowledge.</p><strong>Output</strong><p>Now · Service timing · Stop if · Tell the mechanic.</p></div>
-                </div>
-                <div class="report-boundary"><strong>Dependency:</strong> Call 2 starts only after Call 1 passes. Call 3 starts only after both earlier sections pass.</div>
-                <div class="pipeline-disclosure">
-                  <details><summary>Why three calls instead of one long prompt?</summary><div class="pipeline-detail"><ul><li>Observation, possible cause and action have different evidence permissions.</li><li>Only Calls 2 and 3 receive retrieved knowledge.</li><li>A failed call can be corrected without regenerating accepted sections.</li><li>The cost is three local inference calls and higher latency.</li></ul></div></details>
-                </div>
-              </div>
-            </details>
-          </article>
+          <article class="pipeline-node" id="reportB3"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R3</span><div><h4>Model evidence received</h4><p class="pipeline-node-purpose">One Medium-risk Cooling case is used through the next three cards to show what the Report Layer receives and what it may explain.</p></div><span class="pipeline-status">STRUCTURED INPUT</span></summary>
+            <div class="pipeline-node-body">
+              <div class="report-case-grid"><div class="report-case"><b>CURRENT RESULT</b><ul><li><code>cooling_degradation</code></li><li>Risk score: <strong>0.5021 · Medium</strong></li><li>Prediction confidence: <strong>0.842</strong></li></ul></div><div class="report-case"><b>SUPPORTING SIGNALS</b><ul><li>Coolant: <strong>85°C</strong> · reference 90–95°C</li><li>Rise rate: <strong>5.0486°C/min</strong> · reference 0–2</li><li>Both values remain Model Layer evidence.</li></ul></div><div class="report-case"><b>TRIP ESTIMATE</b><p><code>estimated_cycles_to_failure = 5</code><br>Projected trips until the risk trend reaches the High threshold.</p></div><div class="report-case"><b>TEN-TRIP PROBABILITY</b><p><code>estimated_failure_probability = 0.7502</code><br>Chance of crossing High within the fixed next ten trips.</p></div></div>
+              <div class="report-boundary">These projections describe the Model risk threshold. They are not a probability or countdown of confirmed mechanical failure.</div>
+            </div>
+          </details></article>
 
-          <article class="pipeline-node" id="reportB4">
-            <details class="pipeline-node-shell">
-              <summary class="pipeline-node-head"><span class="pipeline-node-id">R4</span><div><h4>Inside Call 3: turn knowledge into safe owner guidance</h4><p class="pipeline-node-purpose">This example shows how one production prompt narrows Granite's job without allowing technical workshop procedures to become instructions for the owner.</p></div><span class="pipeline-status">PROMPT ANATOMY</span></summary>
-              <div class="pipeline-node-body">
-                <div class="pipeline-flow">
-                  <div class="pipeline-flow-step"><b>Role</b><span>Vehicle-maintenance decision-support assistant writing for a non-specialist owner.</span></div>
-                  <div class="pipeline-flow-step"><b>Task + evidence</b><span>Write actions using the current risk, signals and admitted action knowledge.</span></div>
-                  <div class="pipeline-flow-step"><b>Rules + edge cases</b><span>No invented values, repairs or failure dates; unavailable knowledge triggers general verification.</span></div>
-                  <div class="pipeline-flow-step"><b>Fixed JSON</b><span>Exactly four strings: Now, Service timing, Stop if, Tell the mechanic.</span></div>
-                </div>
-                <div class="pipeline-columns">
-                  <div class="pipeline-block"><div class="pipeline-block-label">UNSAFE DRAFT</div><p>“Replace the cooling fan.”</p></div>
-                  <div class="pipeline-block"><div class="pipeline-block-label">OWNER-SAFE FORM</div><p>“Tell the mechanic that the cooling evidence should be checked, including fan operation.”</p></div>
-                </div>
-                <div class="pipeline-disclosure">
-                  <details><summary>How the prompt rules evolved</summary><div class="pipeline-detail"><ul><li>Early positive and negative examples helped define desired behaviour.</li><li>When details from a specific example appeared in an unrelated report, those examples were removed from production prompts.</li><li>The useful distinctions became direct rules and regression cases, so a new report can use only values from its current Model input.</li></ul></div></details>
-                  <details><summary>Production prompt files</summary><div class="pipeline-detail"><ul><li><code>report_layer/prompt_chain/prompts/layer1_description.txt</code></li><li><code>report_layer/prompt_chain/prompts/layer2_cause.txt</code></li><li><code>report_layer/prompt_chain/prompts/layer3_action.txt</code></li></ul></div></details>
-                </div>
-              </div>
-            </details>
-          </article>
+          <article class="pipeline-node" id="reportB4"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R4</span><div><h4>Prompt context construction</h4><p class="pipeline-node-purpose">Technical fields are converted into a short evidence summary while their values and meanings remain unchanged.</p></div><span class="pipeline-status">PREPARED EVIDENCE</span></summary>
+            <div class="pipeline-node-body">
+              <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Readable names</b><span><code>coolant_temp</code> → coolant temperature.</span></div><div class="pipeline-flow-step"><b>Reference check</b><span>85°C is below the supplied 90–95°C range.</span></div><div class="pipeline-flow-step"><b>Relationship</b><span>Low temperature + rapid warming activates the defined thermal pattern.</span></div><div class="pipeline-flow-step"><b>Meaning retained</b><span>Risk, confidence and projections remain separate values.</span></div></div>
+              <div class="report-quote good">“Coolant temperature is below its reference range, while its rate of increase is above the expected range.”</div>
+              <div class="pipeline-disclosure"><details><summary>What a defined relationship means</summary><div class="pipeline-detail"><ul><li>The relationship is activated only when the required signals are available.</li><li>It describes a combination chosen in the implementation; Granite does not discover a new statistical correlation.</li><li><code>report_layer/pipeline/context_injection.py</code> prepares the context.</li></ul></div></details></div>
+            </div>
+          </details></article>
 
-          <article class="pipeline-node" id="reportB5">
-            <details class="pipeline-node-shell">
-              <summary class="pipeline-node-head"><span class="pipeline-node-id">R5</span><div><h4>Validate, explain the failure, then correct once</h4><p class="pipeline-node-purpose">Granite may return valid JSON and still break a report rule. The Validator checks the meaning and structure of each section before release.</p></div><span class="pipeline-status">VALIDATE</span></summary>
-              <div class="pipeline-node-body">
-                <div class="pipeline-columns">
-                  <div class="pipeline-block"><div class="pipeline-block-label">RELEASE FLOW</div><ul><li>Generate one report section.</li><li>Apply the rules for that section.</li><li><strong>Score below 0.80:</strong> block and return the rejected JSON with specific warnings.</li><li>Granite corrects that section once; the same Validator checks it again.</li><li><strong>Score at least 0.80:</strong> release to the next call or final output.</li></ul></div>
-                  <div class="pipeline-block"><div class="pipeline-block-label">EXAMPLE SCORE</div><div class="report-score"><span>Starting score</span><b>1.00</b><span>Unexplained raw field: <code>coolant_temp</code></span><b>−0.20</b><span>Confirmed-fault wording: “has failed”</span><b>−0.20</b><span>Explanation too short</span><b>−0.20</b><span>Blocked result</span><b>0.40</b></div></div>
-                </div>
-                <div class="pipeline-disclosure">
-                  <details><summary>What the Validator checks</summary><div class="pipeline-detail"><ul><li>Unsupported numbers, raw field names, excessive certainty and missing uncertainty wording.</li><li>Owner/technician action boundaries, urgency mismatches and required action fields.</li><li>Cross-section repetition and several contradictions between the text and Model evidence.</li><li>Negation is checked within the current clause, so “no fault has been confirmed” is not treated as a confirmed-fault claim.</li></ul></div></details>
-                  <details><summary>Two failure paths</summary><div class="pipeline-detail"><ul><li><strong>Technical failure:</strong> request error, timeout or malformed JSON receives up to three attempts.</li><li><strong>Content failure:</strong> a parsed section below 0.80 receives one targeted correction.</li><li>A second content failure returns the report fallback.</li></ul></div></details>
-                  <details><summary>Code evidence</summary><div class="pipeline-detail"><ul><li><code>report_layer/prompt_chain_validator.py</code> contains the release checks and penalties.</li><li><code>report_layer/pipeline/report_generator.py</code> coordinates retry, correction and fallback.</li></ul></div></details>
-                </div>
-              </div>
-            </details>
-          </article>
+          <article class="pipeline-node" id="reportB5"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R5</span><div><h4>Knowledge admitted to this Cooling case</h4><p class="pipeline-node-purpose">Retrieval finds category-matched material; an additional check decides whether its explanation fits the direction of the current signals.</p></div><span class="pipeline-status">CASE-LEVEL ADMISSION</span></summary>
+            <div class="pipeline-node-body">
+              <div class="pipeline-columns"><div class="pipeline-block"><div class="pipeline-block-label">RETRIEVED POSSIBILITIES</div><ul><li>Coolant circulation</li><li>Thermostat operation</li><li>Cooling fan operation</li><li>Coolant level or quality</li><li>Radiator airflow or restriction</li></ul></div><div class="pipeline-block"><div class="pipeline-block-label">CURRENT EVIDENCE</div><ul><li>Temperature is below its reference range.</li><li>Temperature is rising faster than expected.</li><li>Pure overheating wording does not fit this observation.</li><li>Cautious circulation, sensor or fan checks may still be presented as possibilities.</li></ul></div></div>
+              <div class="report-boundary"><strong>Current limit:</strong> Cooling has this signal-direction check. The other four production categories currently use exact metadata filtering only.</div>
+            </div>
+          </details></article>
 
-          <article class="pipeline-node" id="reportB6">
-            <details class="pipeline-node-shell">
-              <summary class="pipeline-node-head"><span class="pipeline-node-id">R6</span><div><h4>Deliver one contract to the Dashboard</h4><p class="pipeline-node-purpose">The final object keeps the Model result traceable and adds only the three report sections that passed the release process.</p></div><span class="pipeline-status">DELIVER</span></summary>
-              <div class="pipeline-node-body">
-                <div class="pipeline-columns">
-                  <div class="pipeline-block"><div class="pipeline-block-label">MODEL FIELDS · PASSED THROUGH</div><ul><li>Timestamp, component, risk score and risk level</li><li>Prediction confidence and supporting signals</li><li>Two optional projection fields and Model notes</li><li>Request-local risk history for the trend chart</li></ul></div>
-                  <div class="pipeline-block"><div class="pipeline-block-label">REPORT FIELDS · ADDED</div><ul><li><strong>What’s Happening:</strong> <code>anomaly_description</code></li><li><strong>Why This Matters:</strong> <code>possible_cause</code></li><li><strong>What You Should Do:</strong> <code>recommended_action</code></li><li>PDF export formats this same object; it does not generate a second report.</li></ul></div>
-                </div>
-                <div class="report-boundary"><strong>If report generation fails:</strong> Model evidence is preserved, the three generated fields are empty, and the Dashboard shows that report generation is unavailable.</div>
-                <div class="pipeline-disclosure">
-                  <details><summary>Current partial-failure limitation</summary><div class="pipeline-detail"><ul><li>If every affected component has empty report text, the Dashboard shows an unavailable state.</li><li>If one component succeeds and another fails, the successful result can still open the results view while the failed component shows pending text.</li><li>A future interface should include an explicit generation status for each component.</li></ul></div></details>
-                  <details><summary>What this output can support</summary><div class="pipeline-detail"><ul><li>The pipeline can show which unusual pattern was detected, the supporting readings, possible explanations and owner-safe next steps.</li><li>It cannot confirm a mechanical fault without technician-verified cases and repair outcomes.</li></ul></div></details>
-                </div>
-              </div>
-            </details>
-          </article>
+          <article class="pipeline-node" id="reportB6"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R6</span><div><h4>Three production Calls</h4><p class="pipeline-node-purpose">Each Call has a separate question, evidence allowance and output contract.</p></div><span class="pipeline-status">SEQUENTIAL GENERATION</span></summary>
+            <div class="pipeline-node-body">
+              <div class="report-call-grid"><div class="report-call"><b>CALL 1 · WHAT HAPPENED?</b><strong>Evidence</strong><p>Prepared Model fields only.</p><strong>Example</strong><p>“Coolant temperature is low while warming faster than expected.”</p></div><div class="report-call"><b>CALL 2 · WHY MIGHT IT MATTER?</b><strong>Evidence</strong><p>Accepted Call 1 + admitted cause knowledge.</p><strong>Example</strong><p>“This pattern may relate to sensing or coolant circulation.”</p></div><div class="report-call"><b>CALL 3 · WHAT SHOULD I DO?</b><strong>Evidence</strong><p>Risk state + role-separated action knowledge.</p><strong>Example</strong><p>“Arrange an inspection and report the two readings to the mechanic.”</p></div></div>
+              <table class="report-table"><thead><tr><th>Call</th><th>Fixed boundary</th><th>Output</th></tr></thead><tbody><tr><td>1</td><td>No diagnosis or retrieved cause</td><td>Observed pattern</td></tr><tr><td>2</td><td>Possible causes remain conditional</td><td>Explanation</td></tr><tr><td>3</td><td>Technical procedures assigned to mechanic</td><td>Now · timing · stop conditions · mechanic information</td></tr></tbody></table>
+            </div>
+          </details></article>
+
+          <article class="pipeline-node" id="reportB7"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R7</span><div><h4>Example-value leakage</h4><p class="pipeline-node-purpose">A specific number in an early few-shot example appeared in a new report even though it was absent from that report’s Model input.</p></div><span class="pipeline-status">OBSERVED FAILURE → REGRESSION CASE</span></summary>
+            <div class="pipeline-node-body">
+              <div class="report-case-grid"><div class="report-case"><b>CURRENT COOLING INPUT</b><p>Failure-threshold probability: <strong>1.0</strong><br>Estimated trips: <strong>4</strong><br>No value of 0.31% was supplied.</p></div><div class="report-case"><b>EARLY EXAMPLE</b><p>An unrelated accelerator-pedal example contained the illustrative value <strong>0.31%</strong>.</p></div></div>
+              <div class="report-quote bad">“The model projects a very low probability (0.31%) of crossing the High-risk threshold…”</div>
+              <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Remove concrete examples</b><span>Production prompts no longer receive reusable fictional values.</span></div><div class="pipeline-flow-step"><b>Write direct rules</b><span>Every reported value must occur in the current Model context.</span></div><div class="pipeline-flow-step"><b>Keep the failure</b><span>The leaked-value case becomes a regression input.</span></div><div class="pipeline-flow-step"><b>Verify</b><span>The corrected run uses 100% and four trips from the real input.</span></div></div>
+            </div>
+          </details></article>
+
+          <article class="pipeline-node" id="reportB8"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R8</span><div><h4>Validator and targeted correction</h4><p class="pipeline-node-purpose">A parsed JSON section can still contain unsupported or unsuitable language, so every generated section passes the same release rules.</p></div><span class="pipeline-status">0.80 RELEASE THRESHOLD</span></summary>
+            <div class="pipeline-node-body">
+              <div class="report-case-grid"><div class="report-case"><b>INITIAL OUTPUT</b><p>“<code>coolant_temp</code> is high and the cooling fan has failed.”</p><div class="report-score"><span>Start</span><b>1.00</b><span>Raw field</span><b>−0.20</b><span>Confirmed fault</span><b>−0.20</b><span>Too short</span><b>−0.20</b><span>Blocked</span><b>0.40</b></div></div><div class="report-case"><b>CORRECTION PACKAGE</b><ul><li>Original task and current evidence</li><li>Rejected JSON output</li><li>Three Validator warnings</li></ul><b style="margin-top:18px">CORRECTED OUTPUT</b><p>“Coolant temperature is outside its expected range. This may indicate a cooling-system issue that a mechanic should verify.”</p><div class="report-result"><b>1.00</b><span>same checks · released</span></div></div></div>
+              <div class="report-boundary">Penalty values reflect rule severity. The 0.80 threshold was calibrated with ten generated reports across the five supported anomaly types.</div>
+            </div>
+          </details></article>
+
+          <article class="pipeline-node" id="reportB9"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R9</span><div><h4>Two failure paths</h4><p class="pipeline-node-purpose">The pipeline treats a failed model request differently from a readable JSON response that breaks a report rule.</p></div><span class="pipeline-status">RETRY · CORRECT · FALLBACK</span></summary>
+            <div class="pipeline-node-body">
+              <div class="report-case-grid"><div class="report-case"><b>TECHNICAL FAILURE</b><ul><li>Request error</li><li>Timeout</li><li>Malformed JSON</li><li><strong>Response:</strong> retry the call, up to three attempts.</li></ul></div><div class="report-case"><b>CONTENT FAILURE</b><ul><li>JSON parses successfully</li><li>Section scores below 0.80</li><li><strong>Response:</strong> one targeted correction, then check again.</li></ul></div></div>
+              <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Second content failure</b><span>Stop further generation.</span></div><div class="pipeline-flow-step"><b>Fallback object</b><span>Keep the same interface shape.</span></div><div class="pipeline-flow-step"><b>Preserve evidence</b><span>Risk values and signals remain available.</span></div><div class="pipeline-flow-step"><b>Leave text empty</b><span>Dashboard shows report generation unavailable.</span></div></div>
+            </div>
+          </details></article>
+
+          <article class="pipeline-node" id="reportB10"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R10</span><div><h4>Four knowledge conditions</h4><p class="pipeline-node-purpose">The final evaluation changed only the knowledge supplied to Granite while keeping the model, prompts, temperature, inputs and Validator fixed.</p></div><span class="pipeline-status">4 × 5 = 20 REPORTS</span></summary>
+            <div class="pipeline-node-body">
+              <table class="report-table"><thead><tr><th>Condition</th><th>Knowledge supplied</th><th>Purpose</th></tr></thead><tbody><tr><td>No retrieved knowledge</td><td>Model context only</td><td>Generation baseline</td></tr><tr><td>Cause knowledge</td><td>Reviewed descriptions and possible causes</td><td>Test explanation grounding</td></tr><tr><td>Cause + raw workshop actions</td><td>Cause records and unseparated procedures</td><td>Expose audience/action-role problems</td></tr><tr class="selected-row"><td><strong>Cause + role-separated actions</strong></td><td>Owner observations, timing and stop conditions separated from mechanic procedures</td><td><strong>Final design</strong></td></tr></tbody></table>
+              <div class="report-case-grid"><div class="report-case"><b>OWNER GUIDANCE</b><p>What to observe now, when to arrange service, and which visible warning signs require urgent help.</p></div><div class="report-case"><b>MECHANIC INFORMATION</b><p>Scan-tool checks, wiring inspection, calibration and replacement decisions are presented as requests for a qualified mechanic.</p></div></div>
+            </div>
+          </details></article>
+
+          <article class="pipeline-node" id="reportB11"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R11</span><div><h4>Final manual-review evidence</h4><p class="pipeline-node-purpose">Twenty final reports were reviewed against the current Model inputs, retrieved records and owner-action rules.</p></div><span class="pipeline-status">FINAL V5 EVIDENCE</span></summary>
+            <div class="pipeline-node-body">
+              <div class="report-result-grid"><div class="report-result"><b>20/20</b><span>reports generated and released</span></div><div class="report-result"><b>4/5</b><span>retrieval relevance pass</span></div><div class="report-result"><b>1/5</b><span>knowledge use pass</span></div><div class="report-result"><b>3/5</b><span>audience suitability pass</span></div><div class="report-result"><b>5/5</b><span>action safety pass</span></div><div class="report-result"><b>8/8</b><span>saved High-risk contradictions rejected</span></div><div class="report-result"><b>0/20</b><span>final regenerated reports repeated the contradiction</span></div><div class="report-result"><b>0</b><span>fallback reports</span></div></div>
+              <table class="report-table"><thead><tr><th>Partial result</th><th>Observed limitation</th></tr></thead><tbody><tr><td>Retrieval relevance · IAT</td><td>The record matched the category, but the displayed temperatures could not distinguish circuit and connector possibilities.</td></tr><tr><td>Knowledge use · 4 types</td><td>Knowledge made possible causes more specific, but the available signals could not distinguish every category-relevant cause.</td></tr><tr><td>Audience · Air Intake and IAT</td><td>The explanations remained too dense for a non-specialist reader.</td></tr></tbody></table>
+              <div class="report-boundary"><strong>Meaning of partial:</strong> the report was released, but manual review found a material limitation in that dimension. These results assess report behaviour and rule compliance; technician-verified faults are still required to assess mechanical accuracy.</div>
+            </div>
+          </details></article>
         </section>
 
         <section class="pipeline-layer" id="backupDashboard" data-layer="dashboard">
