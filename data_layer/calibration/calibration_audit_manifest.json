@@ -1,6 +1,6 @@
 {
   "audit_type": "calibration_reproduction_audit",
-  "registry_path": "D:\\OBD-II\\granite-lifeline\\data_layer\\calibration\\calibration_registry.v1.json",
+  "registry_path": "data_layer\\calibration\\calibration_registry.v1.json",
   "data_run_id": "recalibrate_20260723",
   "total_checks": 48,
   "passed": 48,

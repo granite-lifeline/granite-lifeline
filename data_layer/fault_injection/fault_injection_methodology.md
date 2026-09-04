@@ -217,8 +217,8 @@ Primary versioned inputs:
 
 Primary results:
 
-- `outputs/fault_injection_summary_20260724T205415Z.csv`: one row per injected trip-level observation;
-- `outputs/fault_injection_summary_20260724T205415Z.json`: observation rows, detectability curves, Wilson intervals, monotonicity checks, healthy-base execution, and acceptance results;
+- `outputs/fault_injection_summary_20260903T051231Z.csv`: one row per injected trip-level observation;
+- `outputs/fault_injection_summary_20260903T051231Z.json`: observation rows, detectability curves, Wilson intervals, monotonicity checks, healthy-base execution, routed-DTC contract checks, and acceptance results;
 - `data/processed/runs/stage4_*`: copied feature artifacts, recomputed evidence, proxy decisions, and manifests for each injected run;
 
 ---

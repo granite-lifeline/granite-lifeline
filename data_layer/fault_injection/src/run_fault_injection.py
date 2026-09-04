@@ -110,6 +110,35 @@ def json_default(value: Any) -> Any:
     )
 
 
+def parse_bool(value: Any, *, field: str, null_value: bool = False) -> bool:
+    """Parse a persisted boolean without treating non-empty text as true."""
+
+    if pd.isna(value):
+        return null_value
+    if isinstance(value, (bool, np.bool_)):
+        return bool(value)
+    if isinstance(
+        value, (int, float, np.integer, np.floating)
+    ) and value in (0, 1):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1"}:
+            return True
+        if normalized in {"false", "0"}:
+            return False
+    raise FaultInjectionError(
+        f"Invalid boolean value for {field}: {value!r}"
+    )
+
+
+def load_calibration_registry() -> dict[str, Any]:
+    """Load the same frozen registry consumed by the proxy stages."""
+
+    path = REPO_ROOT / "data_layer/calibration/calibration_registry.v1.json"
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def load_cases(config_path: Path) -> list[dict[str, Any]]:
     config = json.loads(config_path.read_text(encoding="utf-8"))
     cases = config.get("cases", [])
@@ -222,67 +251,108 @@ def consecutive_window(mask: pd.Series, duration: int) -> list[int] | None:
 
 
 def select_basic_windows(
-    frame: pd.DataFrame, case: dict[str, Any]
+    frame: pd.DataFrame,
+    case: dict[str, Any],
+    registry: dict[str, Any],
 ) -> list[Window]:
     selector = case["selector"]
     duration = int(case.get("duration_seconds", 1))
     base = pd.Series(True, index=frame.index)
 
+    rules = registry["proxy_rules"]
+    engine_on_rpm = float(
+        registry["shared_constants"]["engine_on_rpm"]["value"]
+    )
+
     if selector == "post_warmup":
         mask = base & frame["thermal_state"].eq("post_warmup")
         if case["expected_sub_check_id"] == "1-S2":
-            mask &= frame["ambient_temp"].le(25)
+            ambient_max = rules["1-S2"]["guards"][
+                "ambient_at_window_start_max_c"
+            ]["value"]
+            mask &= frame["ambient_temp"].le(float(ambient_max))
     elif selector == "post_warmup_high_load":
         mask = base & frame["operating_state"].eq("post_warmup__high_load")
     elif selector == "steady_driving":
+        guards = rules["5-S2"]["guards"]
         mask = (
             base
             & frame["operating_state"].eq("post_warmup__steady_driving")
-            & frame["pedal_slope"].eq(0)
-            & frame["rpm_slope"].abs().le(9)
+            & frame["pedal_slope"].eq(
+                float(guards["pedal_slope_abs"]["value"])
+            )
+            & frame["rpm_slope"].abs().le(
+                float(guards["rpm_slope_abs"]["value"])
+            )
         )
     elif selector == "engine_firing":
-        mask = base & frame["rpm"].ge(500)
+        firing_rpm = rules["2-S3b"]["rpm"]["value"]
+        mask = base & frame["rpm"].ge(float(firing_rpm))
     elif selector == "pedal_lowmotion":
+        slope_max = rules["3-S1a"]["guards"]["pedal_slope_abs"]["value"]
         mask = (
             base
-            & frame["rpm"].ge(50)
-            & frame["pedal_slope"].abs().le(2.4)
+            & frame["rpm"].ge(engine_on_rpm)
+            & frame["pedal_slope"].abs().le(float(slope_max))
             & frame["pedal_mapping_residual"].notna()
         )
     elif selector == "iat_context_change":
+        thresholds = rules["4-S1"]["context_thresholds"]
         mask = (
             base
-            & frame["rpm"].ge(50)
+            & frame["rpm"].ge(engine_on_rpm)
             & (
-                frame["speed_std_120s"].ge(12.4)
-                | frame["maf_std_120s"].ge(8.5)
+                frame["speed_std_120s"].ge(
+                    float(thresholds["speed_std_120s"]["raw_value"])
+                )
+                | frame["maf_std_120s"].ge(
+                    float(thresholds["maf_std_120s"]["raw_value"])
+                )
             )
             & frame["intake_temp_stability"].notna()
         )
     elif selector == "map_context_change":
+        thresholds = rules["5-S3"]["context_thresholds"]
         mask = (
             base
-            & frame["rpm"].ge(50)
+            & frame["rpm"].ge(engine_on_rpm)
             & (
-                frame["rpm_std_120s"].ge(241.0)
-                | frame["speed_std_120s"].ge(12.4)
-                | frame["accel_pedal_mean_std_120s"].ge(9.9)
+                frame["rpm_std_120s"].ge(
+                    float(thresholds["rpm_std_120s"]["raw_value"])
+                )
+                | frame["speed_std_120s"].ge(
+                    float(thresholds["speed_std_120s"]["raw_value"])
+                )
+                | frame["accel_pedal_mean_std_120s"].ge(
+                    float(thresholds[
+                        "accel_pedal_mean_std_120s"
+                    ]["raw_value"])
+                )
             )
             & frame["map_range_60s"].notna()
         )
     elif selector in {"cold_start_ect", "cold_start_iat"}:
+        rule_id = "1-S4" if selector == "cold_start_ect" else "4-S2"
+        guards = rules[rule_id]["guards"]
         first = frame["row_in_segment"].eq(1)
         later_start = frame.groupby(
             ["trip_id", "segment_id"], sort=False
         )["engine_start_observed"].transform(
-            lambda values: values.fillna(False).astype(bool).any()
+            lambda values: values.map(
+                lambda value: parse_bool(
+                    value, field="engine_start_observed"
+                )
+            ).any()
         )
         mask = (
             base
             & first
-            & frame["segment_gap_seconds"].ge(21600)
-            & frame["rpm"].lt(50)
+            & frame["segment_gap_seconds"].ge(
+                float(guards["segment_gap_seconds"]["value"])
+            )
+            & frame["rpm"].lt(
+                float(guards["first_row_rpm"]["value"])
+            )
             & later_start
             & frame[["coolant_temp", "intake_temp", "ambient_temp"]]
             .notna().all(axis=1)
@@ -290,11 +360,11 @@ def select_basic_windows(
         if selector == "cold_start_ect":
             mask &= (
                 frame["intake_temp"] - frame["ambient_temp"]
-            ).abs().le(7)
+            ).abs().le(float(guards["iat_witness_abs_delta_c"]["value"]))
         else:
             mask &= (
                 frame["coolant_temp"] - frame["ambient_temp"]
-            ).abs().le(15)
+            ).abs().le(float(guards["ect_witness_abs_delta_c"]["value"]))
     else:
         raise FaultInjectionError(f"Unsupported selector: {selector}")
 
@@ -328,11 +398,16 @@ def select_basic_windows(
 
 
 def select_warmup_windows(
-    frame: pd.DataFrame, case: dict[str, Any]
+    frame: pd.DataFrame,
+    case: dict[str, Any],
+    registry: dict[str, Any],
 ) -> list[Window]:
     """Return independent, injection-capable observed warm-up episodes."""
 
     minimum_followup = int(case.get("minimum_followup_seconds", 900))
+    guards = registry["proxy_rules"]["1-S1"]["start_guards"]
+    ect_start_max = float(guards["ect_start_max_c"]["value"])
+    aat_start_min = float(guards["aat_start_min_c"]["value"])
     candidates = frame[
         frame["engine_start_episode_id"].notna()
         & frame["elapsed_since_engine_start"].notna()
@@ -347,14 +422,16 @@ def select_warmup_windows(
         trip_id = str(first["trip_id"])
         if trip_id in used_trips:
             continue
-        if not bool(first.get("engine_start_observed", False)):
+        if not parse_bool(
+            first.get("engine_start_observed", False),
+            field="engine_start_observed",
+        ):
             continue
         if (
             pd.isna(first["ect_start"])
-            or float(first["ect_start"]) > 50
-            or float(first["ect_start"]) >= 79
+            or float(first["ect_start"]) > ect_start_max
             or pd.isna(first["aat_start"])
-            or float(first["aat_start"]) < -7
+            or float(first["aat_start"]) < aat_start_min
         ):
             continue
         eligible = group[
@@ -382,16 +459,19 @@ def select_warmup_windows(
 
 
 def select_pedal_step_windows(
-    frame: pd.DataFrame, case: dict[str, Any]
+    frame: pd.DataFrame,
+    case: dict[str, Any],
+    registry: dict[str, Any],
 ) -> list[Window]:
     """Select events likely to be consumed by 5-S1."""
 
     needed = int(case.get("event_count", 4))
+    state_parameters = registry["proxy_rules"]["5-S1"][
+        "state_parameters"
+    ]
     thresholds = {
-        "post_warmup__idle": 9.2,
-        "post_warmup__steady_driving": 11.4,
-        "post_warmup__acceleration": 18.6,
-        "post_warmup__high_load": 26.5,
+        state: float(parameters["pedal_step_threshold"]["value"])
+        for state, parameters in state_parameters.items()
     }
     step_threshold = frame["operating_state"].map(thresholds)
     mask = (
@@ -403,7 +483,10 @@ def select_pedal_step_windows(
     # The low-magnitude steady-driving bin is explicitly non-separable.
     steady_low = (
         frame["operating_state"].eq("post_warmup__steady_driving")
-        & frame["pedal_slope"].lt(15.907275785122629)
+        & frame["pedal_slope"].lt(float(
+            state_parameters["post_warmup__steady_driving"]
+            ["magnitude_split"]["value"]
+        ))
     )
     mask &= ~steady_low
     windows: list[Window] = []
@@ -436,31 +519,18 @@ def select_pedal_step_windows(
         f"No pedal-step window found for {case['case_id']}.")
 
 
-def select_window(frame: pd.DataFrame, case: dict[str, Any]) -> Window:
-    if case["selector"] == "pedal_step_events":
-        windows = select_pedal_step_windows(frame, case)
-    elif case["selector"] == "warmup_episode":
-        windows = select_warmup_windows(frame, case)
-    else:
-        windows = select_basic_windows(frame, case)
-    ordinal = int(case.get("_window_ordinal", 0))
-    if ordinal >= len(windows):
-        raise FaultInjectionError(
-            f"{case['case_id']} requested window {ordinal}, but only "
-            f"{len(windows)} independent trip windows are available."
-        )
-    return windows[ordinal]
-
-
 def select_windows(
-    frame: pd.DataFrame, case: dict[str, Any], count: int
+    frame: pd.DataFrame,
+    case: dict[str, Any],
+    count: int,
+    registry: dict[str, Any],
 ) -> list[Window]:
     if case["selector"] == "pedal_step_events":
-        windows = select_pedal_step_windows(frame, case)
+        windows = select_pedal_step_windows(frame, case, registry)
     elif case["selector"] == "warmup_episode":
-        windows = select_warmup_windows(frame, case)
+        windows = select_warmup_windows(frame, case, registry)
     else:
-        windows = select_basic_windows(frame, case)
+        windows = select_basic_windows(frame, case, registry)
     if len(windows) < count:
         raise FaultInjectionError(
             f"{case['case_id']} severity {case.get('_severity_id')} needs "
@@ -530,13 +600,10 @@ def inject_case(frame: pd.DataFrame,
             f"Unsupported injection strategy: {strategy}")
 
 
-def recompute_dependent_features(frame: pd.DataFrame) -> None:
+def recompute_dependent_features(
+    frame: pd.DataFrame, registry: dict[str, Any]
+) -> None:
     """Refresh feature columns consumed by proxy stages after injection."""
-
-    registry = json.loads(
-        (REPO_ROOT / "data_layer/calibration/calibration_registry.v1.json")
-        .read_text(encoding="utf-8")
-    )
 
     speed_density = registry["feature_transforms"]["speed_density_maf"]
     pedal_mapping = registry["feature_transforms"]["pedal_mapping"]
@@ -561,7 +628,19 @@ def recompute_dependent_features(frame: pd.DataFrame) -> None:
         )
     )
 
-    hidden = frame["rpm"] * frame["map"] / (frame["intake_temp"] + 273.15)
+    absolute_temperature = frame["intake_temp"] + 273.15
+    invalid_temperature = frame["intake_temp"].notna() & (
+        ~np.isfinite(frame["intake_temp"])
+        | ~np.isfinite(absolute_temperature)
+        | absolute_temperature.le(0)
+    )
+    if invalid_temperature.any():
+        indices = frame.index[invalid_temperature].tolist()[:5]
+        raise FaultInjectionError(
+            "intake_temp must be finite and above absolute zero before "
+            f"speed-density recomputation; invalid rows: {indices}"
+        )
+    hidden = frame["rpm"] * frame["map"] / absolute_temperature
     bounds = speed_density["prediction_clipping_bounds"]
     model_inputs = {
         "map_derived_air_load_raw": hidden.clip(
@@ -684,11 +763,27 @@ def evaluate_case(
         or str(actual_dtc) == str(expected_dtc)
     )
     expected_emitted = case.get("expected_dtc_emitted")
-    emitted_bool = bool(emitted) if pd.notna(emitted) else False
+    emitted_bool = parse_bool(emitted, field="dtc_emitted")
     emission_matches = (
         expected_emitted is None
-        or emitted_bool is bool(expected_emitted)
+        or emitted_bool == parse_bool(
+            expected_emitted, field="expected_dtc_emitted"
+        )
     )
+    actual_routed_dtc = chosen.get("routed_dtc")
+    if "expected_routed_dtc" in case:
+        expected_routed_dtc = case["expected_routed_dtc"]
+        routed_dtc_matches = (
+            pd.isna(actual_routed_dtc)
+            if expected_routed_dtc is None
+            else str(actual_routed_dtc) == str(expected_routed_dtc)
+        )
+    elif expected_emitted is not None and not parse_bool(
+        expected_emitted, field="expected_dtc_emitted"
+    ):
+        routed_dtc_matches = pd.isna(actual_routed_dtc)
+    else:
+        routed_dtc_matches = True
     return {
         "actual_result_state": chosen.get("result_state"),
         "baseline_result_state": baseline_state,
@@ -699,62 +794,15 @@ def evaluate_case(
         "dtc_matches_expected": dtc_matches,
         "dtc_emitted": emitted_bool,
         "emission_matches_expected": emission_matches,
-        "routed_dtc": chosen.get("routed_dtc"),
+        "routed_dtc": actual_routed_dtc,
+        "routed_dtc_matches_expected": routed_dtc_matches,
         "confidence": chosen.get("confidence"),
         "passed": bool(
             not hits.empty
             and not baseline_already_positive
             and dtc_matches
             and emission_matches
-        ),
-    }
-
-
-def run_case(
-    *,
-    base_layout: RunLayout,
-    case: dict[str, Any],
-    run_id: str,
-    creation_time_utc: str,
-) -> dict[str, Any]:
-    target_layout = RunLayout.for_run_id(run_id, repo_root=REPO_ROOT)
-    copy_minimal_run(base_layout, target_layout)
-
-    frame = pd.read_csv(target_layout.production_features, low_memory=False)
-    window = select_window(frame, case)
-    inject_case(frame, case, window)
-    recompute_dependent_features(frame)
-    frame.to_csv(
-        target_layout.production_features,
-        index=False,
-        float_format="%.15g",
-        lineterminator="\n",
-    )
-    update_production_manifest(target_layout, case)
-    run_proxy_stages(target_layout, creation_time_utc)
-    result = evaluate_case(
-        target_layout, case, window, baseline_layout=base_layout
-    )
-    return {
-        "case_id": case["case_id"],
-        "run_id": run_id,
-        "proxy_id": case["proxy_id"],
-        "expected_sub_check_id": case["expected_sub_check_id"],
-        "expected_result_state": case.get(
-            "expected_result_state", "triggered"
-        ),
-        "target_signal": case["target_signal"],
-        "selector": case["selector"],
-        "severity_id": case.get("_severity_id", "single"),
-        "severity_rank": case.get("_severity_rank", 0),
-        "replicate": case.get("_window_ordinal", 0) + 1,
-        "trip_id": window.trip_id,
-        "segment_id": window.segment_id,
-        "injection_start_timestamp": window.start_timestamp,
-        "injection_end_timestamp": window.end_timestamp,
-        **result,
-        "decisions_path": target_layout.run_relative_posix(
-            target_layout.proxy_decisions
+            and routed_dtc_matches
         ),
     }
 
@@ -771,10 +819,13 @@ def run_batch_case(
     target_layout = RunLayout.for_run_id(run_id, repo_root=REPO_ROOT)
     copy_minimal_run(base_layout, target_layout)
     frame = pd.read_csv(target_layout.production_features, low_memory=False)
-    windows = select_windows(frame, case, int(case.get("_replicates", 1)))
+    registry = load_calibration_registry()
+    windows = select_windows(
+        frame, case, int(case.get("_replicates", 1)), registry
+    )
     for window in windows:
         inject_case(frame, case, window)
-    recompute_dependent_features(frame)
+    recompute_dependent_features(frame, registry)
     frame.to_csv(
         target_layout.production_features,
         index=False,
@@ -810,8 +861,9 @@ def collect_batch_case_results(
         injected = pd.read_csv(
             target_layout.production_features, low_memory=False
         )
+        registry = load_calibration_registry()
         windows = select_windows(
-            injected, case, int(case.get("_replicates", 1))
+            injected, case, int(case.get("_replicates", 1)), registry
         )
     rows: list[dict[str, Any]] = []
     for replicate, window in enumerate(windows, start=1):
@@ -1030,7 +1082,10 @@ def write_summary(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--base-run-id", default="recalibrate_20260723")
+    parser.add_argument(
+        "--base-run-id",
+        help="Existing healthy run used as the injection baseline.",
+    )
     parser.add_argument("--config", default=str(DEFAULT_CONFIG))
     parser.add_argument("--max-cases", type=int)
     parser.add_argument("--only-case")
@@ -1063,6 +1118,8 @@ def main() -> int:
             for case in cases
         ], ensure_ascii=False, indent=2))
         return 0
+    if not args.base_run_id:
+        raise FaultInjectionError("--base-run-id is required.")
 
     cases = expand_cases(cases)
     stamp = utc_stamp()
@@ -1082,7 +1139,10 @@ def main() -> int:
         case_copy = copy.deepcopy(case)
         suffix = f"{case_copy['case_id']}__{case_copy['_severity_id']}"
         run_id = f"{prefix}__{suffix}"
-        print(f"[Stage4] Running {suffix} -> {run_id}")
+        print(
+            f"[Stage4] Running {suffix} -> {run_id}",
+            file=sys.stderr,
+        )
         rows.extend(
             run_batch_case(
                 base_layout=base_layout,
@@ -1099,5 +1159,8 @@ if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except FaultInjectionError as exc:
-        print(json.dumps({"error": str(exc)}, ensure_ascii=False, indent=2))
+        print(
+            json.dumps({"error": str(exc)}, ensure_ascii=False, indent=2),
+            file=sys.stderr,
+        )
         raise SystemExit(1)

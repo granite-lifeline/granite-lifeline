@@ -14,6 +14,40 @@
 
 ---
 
+## Rehearsal Script
+
+**Lucca — stage 0**
+
+I’m Lucca. Ray and I will explain how we use TTM to detect anomalies.
+
+A supervised fault classifier learns from verified normal and faulty examples. Our 81 trips record ordinary driving without verified fault outcomes. The only targets were the Data team’s stand-in rules, so using them as both answer and test would be marking our own homework.
+
+**NEXT — stage 1**
+
+We therefore learned ordinary continuation. IBM’s pre-trained Tiny Time Mixer, fine-tuned on quality-gated baseline trips, reads 512 seconds of six signals and forecasts the next 96. Impossible readings are repaired or rejected; unusual but possible values remain. Ray will show how the forecast becomes evidence.
+
+**NEXT — Ray, stage 2**
+
+When prediction and reality separate, the mean gap across 96 seconds provides evidence of unexpected behaviour. It is only one source: predictable faults can leave small gaps.
+
+**NEXT — stage 3**
+
+We divide each signal’s mean gap by its baseline reference width, making degrees and RPM comparable. We repeat this across eligible windows and aggregate by trip for longer-term history.
+
+**NEXT — stage 4**
+
+For each system, the strongest forecast or physical evidence sets its score. Cooling ranks highest here, then the type, score, level, confidence and supporting readings leave as structured JSON.
+
+**NEXT — stage 5**
+
+We tested detection and forecasting separately. Across 154 synthetic changes, cooling was always caught, pedal alarms missed smaller changes, and airflow under-read was rarely caught. One of eleven unchanged controls also alarmed. Fine-tuning reduced validation forecast error by 5.23 percent. None of this proves detection of real faults.
+
+**NEXT — Model-to-Report handoff**
+
+Here, cooling-degradation evidence is Medium risk. Coolant is 85 degrees—below its 90-to-95 reference—but rising at 5.05 degrees per minute, above the zero-to-two range. This becomes the Report Layer’s input. Charlotte will show how it becomes useful to an owner.
+
+---
+
 ## Why This Challenge Is Specific to This Project
 
 *(~20s. Say 2 of these 3; the first is mandatory.)*
@@ -27,10 +61,10 @@
 *(~35s. Bullets 1–2 are the core; 3–4 as time allows.)*
 
 - We flipped the problem: instead of teaching a model what *faults* look like, we use a model that predicts what *normal* looks like. IBM's pre-trained forecasting model [Granite TTM] watches about 8.5 minutes of six engine readings and predicts the next 1.5 minutes — and it works straight out of the box, no fault examples needed. *[zero-shot, 512→96 steps at 1 Hz, channels rpm/speed/coolant_temp/map/maf/tps]*
-- On quality-gated ordinary driving, prediction should stay close to reality. When behaviour changes, reality can drift away from the prediction — and the *size of that gap* becomes independent anomaly evidence. A gap can reveal a temporal change that no single reading explains on its own, but we did not measure real mechanical lead time. *[forecast residuals]*
+- When a quality-gated ordinary-driving window follows a pattern the model can forecast, prediction stays close to reality. When behaviour changes, reality can drift away — and the *size of that gap* becomes one source of independent anomaly evidence. Predictable anomalies can still produce a small gap, so residuals are interpreted with physical features. We did not measure real mechanical lead time. *[forecast residuals]*
 - Forecasts never match perfectly, so we scale each signal's mean forecast gap by its baseline reference-range width. We then set the shared alarm line by rule rather than by taste: pick the line that detects the most, subject to raising no more than one alarm in ten baseline controls. That landed at 0.41, reducing baseline alarms from three-in-eleven to one-in-eleven. *[residual mean ÷ baseline reference span; alarm threshold 0.4129 = max macro F1 s.t. baseline alarm rate ≤ 0.10]*
 - Before anything reaches the model, incoming data is checked in two tiers: physically impossible values (an engine temperature below −40) are repaired or rejected with a clear message — but values that are merely *unusual* pass through untouched, because deleting the unusual would delete the very anomalies we're hunting. On top of that the file's own contract is enforced: one reading per second on every row, and the expected data version — a mismatch stops the run before the model ever sees it. *[two-tier range mechanism, Story 3; hard contract assertions on `dt_seconds == 1.0`, `schema_version`, `calibration_version`, operating-state form]*
-- We combine the forecast gaps with physically grounded engineered features to score the most likely system, producing a risk score, risk level, and problem type in the agreed format. Five problem types are defined; we score three and relay the data team's verdict for the other two. The Data Layer owns the proxy definitions and frozen transforms; the Model Layer owns its continuous scoring path. *[residual + physical attribution → interface JSON; 3 Model-scored + 2 Data-forwarded]*
+- We combine the forecast gaps with physically grounded engineered features to score the highest-risk system, producing a risk score, risk level, and problem type in the agreed format. Five problem types are defined; we score three and relay the data team's verdict for the other two. The Data Layer owns the proxy definitions and frozen transforms; the Model Layer owns its retrospective window-scoring path. *[residual + physical attribution → interface JSON; 3 Model-scored + 2 Data-forwarded]*
 
 ## Why Our Approach Is Better Than Alternatives
 
@@ -43,7 +77,7 @@
 
 *(~20s.)*
 
-- **Synthetic-change testing — and the results split sharply by type.** We defined 14 controlled perturbation settings and applied them across 11 usable held-out stretches, giving **154 injected cases**. **Overheating: caught every time — 33 out of 33, with no false alarms.** **Pedal sensor: never wrong when it does alarm, but it only catches the bigger changes.** **Air intake: the proportional under-read is almost never caught.** We report that as a finding, not a footnote: the airflow shift barely moves a forecast that already tracks airflow loosely, so it needs different evidence, not a stricter shared alarm. *[per-type P/R: cooling 1.000/1.000, pedal 1.000/0.325, MAF 0.200/0.045; macro F1 0.521; Story 7]*
+- **Synthetic-change testing — and the results split sharply by type.** We defined 14 controlled perturbation settings and applied them across 11 usable validation stretches, giving **154 injected cases**. **Cooling changes: caught every time — 33 out of 33, with no false positive attribution within that class.** **Pedal sensor: never wrong when it does alarm, but it only catches the bigger changes.** **Air intake: the proportional under-read is almost never caught.** One of the 11 unchanged controls still alarmed at the provisional boundary. We report that as a finding, not a footnote: the airflow shift barely moves a forecast that already tracks airflow loosely, so it needs different evidence, not a stricter shared alarm. *[per-type P/R: cooling 1.000/1.000, pedal 1.000/0.325, MAF 0.200/0.045; macro F1 0.521; Story 7]*
 - **Before/after extra training:** we compared the out-of-the-box model with the version fine-tuned on this car's quality-gated unlabelled trips. On 250 held-out windows, overall prediction error dropped **5.23%**, and five of the six signals improved. The selected epoch-five fine-tuned artefact is also used by the final pipeline. *[MAE 58.0004 → 54.9666; e5/lr5e-5/bs8; Story 6]*
 - **Honest limitation (always say this):** all of this proves detection of *planted* faults defined by stand-in rules. It does not prove the system catches real mechanical failures — that would need mechanically verified failure data, which our dataset doesn't contain. And one held-out baseline stretch still scores maximum risk; no alarm setting removes that one without switching off detection entirely, so it's an open problem we've written down rather than tuned away.
 
