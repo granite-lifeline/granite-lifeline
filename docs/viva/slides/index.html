@@ -2140,6 +2140,129 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .integration-run div:not(:last-child)::after { content:"→"; position:absolute; right:-10px; top:50%; transform:translate(50%,-50%); color:#1769ff; font-weight:900; z-index:2; }
 .integration-run b { display:block; color:#1769ff; font:800 12px/1.2 var(--font-mono); }
 .integration-run span { display:block; margin-top:7px; color:var(--text-muted); font-size:13px; line-height:1.35; }
+.teamwork-evidence { display:flex; flex-direction:column; margin:34px 0 54px; padding:34px 0 48px; border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+.teamwork-evidence-head { max-width:920px; }
+.teamwork-evidence-head { order:0; }
+.teamwork-evidence > .teamwork-section { order:1; }
+.teamwork-evidence > .teamwork-pipeline-overview { order:2; margin-top:38px; padding-top:38px; border-top:1px solid var(--border); }
+.teamwork-evidence > .teamwork-summary { order:3; }
+.teamwork-evidence-kicker { color:#1769ff; font:800 12px/1.2 var(--font-mono); letter-spacing:.11em; }
+.teamwork-evidence h2 { margin:10px 0 0; font-size:clamp(30px,3.2vw,48px); line-height:1.05; letter-spacing:-.03em; }
+.teamwork-evidence-head p { margin:14px 0 0; max-width:75ch; color:var(--text-muted); font-size:17px; line-height:1.55; }
+.teamwork-section { margin-top:30px; }
+.teamwork-section-title { display:flex; align-items:baseline; gap:14px; margin-bottom:15px; }
+.teamwork-section-title b { color:#1769ff; font:800 13px/1.2 var(--font-mono); }
+.teamwork-section-title h3 { margin:0; font-size:25px; line-height:1.15; }
+.jira-evidence { display:grid; grid-template-columns:280px 1fr; gap:20px; padding:22px; border-left:6px solid #1769ff; background:#fff; box-shadow:0 12px 34px rgba(29,29,31,.055); }
+.jira-epic { display:flex; flex-direction:column; justify-content:center; padding:22px; background:#101318; color:#fff; }
+.jira-epic span { color:#78a9ff; font:800 13px/1.2 var(--font-mono); }
+.jira-epic strong { margin-top:10px; font-size:25px; line-height:1.18; }
+.jira-epic small { margin-top:14px; color:rgba(255,255,255,.65); font-size:14px; line-height:1.45; }
+.jira-items { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.jira-item { padding:16px 18px; border-top:4px solid #1769ff; background:#f3f7ff; }
+.jira-item b { display:block; color:#1769ff; font:800 13px/1.2 var(--font-mono); }
+.jira-item strong { display:block; margin-top:8px; font-size:18px; line-height:1.25; }
+.jira-item span { display:block; margin-top:7px; color:var(--text-muted); font-size:14px; line-height:1.4; }
+.automation-ci { display:grid; grid-template-columns:minmax(360px,.9fr) minmax(500px,1.1fr); gap:22px; align-items:stretch; }
+.teamwork-image { margin:0; overflow:hidden; background:#fff; border:1px solid var(--border); box-shadow:0 12px 34px rgba(29,29,31,.055); }
+.teamwork-image img { display:block; width:100%; height:100%; max-height:520px; object-fit:cover; object-position:top; }
+.teamwork-image figcaption { padding:11px 15px; color:var(--text-muted); font:700 11px/1.4 var(--font-mono); }
+.ci-panel { padding:24px; background:#101318; color:#fff; }
+.ci-panel h4 { margin:0; font-size:24px; }
+.ci-panel > p { margin:10px 0 0; color:rgba(255,255,255,.66); font-size:15px; line-height:1.45; }
+.ci-flow { display:grid; grid-template-columns:1fr 34px 1fr 34px 1fr; gap:8px; align-items:center; margin-top:22px; }
+.ci-step { min-height:112px; display:flex; flex-direction:column; justify-content:center; padding:15px; border-top:4px solid #78a9ff; background:rgba(255,255,255,.075); }
+.ci-step b { color:#78a9ff; font:800 11px/1.2 var(--font-mono); }
+.ci-step strong { margin-top:8px; font-size:17px; line-height:1.25; }
+.ci-step span { margin-top:6px; color:rgba(255,255,255,.63); font-size:12px; line-height:1.35; }
+.ci-arrow { color:#78a9ff; font:800 24px/1 var(--font-mono); text-align:center; }
+.ci-outcome { margin-top:18px; padding:13px 15px; border-left:4px solid #78a9ff; background:rgba(120,169,255,.10); color:rgba(255,255,255,.78); font-size:14px; line-height:1.45; }
+.communication-contract { display:grid; grid-template-columns:1fr; gap:22px; align-items:stretch; }
+.discord-evidence { position:relative; overflow:hidden; border:1px solid var(--border); background:#fff; box-shadow:0 12px 34px rgba(29,29,31,.055); }
+.discord-evidence img { display:block; width:100%; height:auto; }
+.discord-evidence figcaption { position:absolute; left:0; right:0; bottom:0; padding:12px 16px; color:#fff; background:linear-gradient(transparent,rgba(16,19,24,.92)); font:700 11px/1.4 var(--font-mono); }
+.contract-evidence { padding:24px; border-left:6px solid #1769ff; background:#fff; box-shadow:0 12px 34px rgba(29,29,31,.055); }
+.contract-evidence h4 { margin:0; font-size:24px; }
+.contract-evidence > p { margin:10px 0 0; color:var(--text-muted); font-size:15px; line-height:1.45; }
+.contract-code { margin:18px 0 0; padding:18px; overflow:auto; background:#11161d; color:#d7e5ff; font:13px/1.55 var(--font-mono); white-space:pre-wrap; }
+.contract-result { display:grid; grid-template-columns:1fr 38px 1fr; gap:8px; align-items:center; margin-top:15px; }
+.contract-result div { padding:13px; background:#f3f7ff; text-align:center; }
+.contract-result b { display:block; color:#1769ff; font:800 11px/1.2 var(--font-mono); }
+.contract-result span { display:block; margin-top:6px; color:var(--text-muted); font-size:13px; line-height:1.35; }
+.contract-result i { color:#1769ff; font:800 22px/1 var(--font-mono); text-align:center; font-style:normal; }
+.teamwork-summary { margin-top:28px; padding:18px 22px; border-left:6px solid #1769ff; background:#f3f7ff; color:var(--text); font-size:19px; line-height:1.45; font-weight:700; }
+.brief-grid { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(340px,.75fr); gap:22px; align-items:stretch; }
+.moscow-table { background:#fff; border:1px solid var(--border); box-shadow:0 12px 34px rgba(29,29,31,.055); }
+.moscow-row { display:grid; grid-template-columns:120px 1fr; min-height:66px; border-bottom:1px solid var(--border); }
+.moscow-row:last-child { border-bottom:0; }
+.moscow-row > * { display:flex; align-items:center; padding:15px 18px; }
+.moscow-row.header { min-height:48px; color:#fff; background:#101318; }
+.moscow-row.header b { font:800 12px/1.2 var(--font-mono); letter-spacing:.05em; }
+.moscow-row strong { border-left:5px solid #1769ff; color:#1769ff; font:800 15px/1.2 var(--font-mono); }
+.moscow-row.should strong { border-left-color:#4589ff; }
+.moscow-row.could strong { border-left-color:#f1c21b; color:#8a5d00; }
+.moscow-row.wont strong { border-left-color:#8d8d8d; color:#525252; }
+.moscow-row span { color:var(--text-muted); font-size:15px; line-height:1.45; }
+.brief-refinement { padding:24px 26px; color:#fff; background:#101318; }
+.brief-refinement > b { color:#78a9ff; font:800 12px/1.2 var(--font-mono); }
+.brief-refinement p { margin:16px 0 0; padding-top:16px; border-top:1px solid rgba(255,255,255,.14); color:rgba(255,255,255,.76); font-size:15px; line-height:1.5; }
+.gantt-evidence,.jira-proof-image,.meeting-index-image { margin:0; overflow:hidden; background:#fff; border:1px solid var(--border); box-shadow:0 12px 34px rgba(29,29,31,.055); }
+.gantt-evidence img,.jira-proof-image img,.meeting-index-image img { display:block; width:100%; height:auto; }
+.jira-proof-image img { max-height:none; object-fit:contain; }
+.gantt-evidence figcaption,.jira-proof-image figcaption,.meeting-index-image figcaption { padding:11px 15px; color:var(--text-muted); font:700 11px/1.4 var(--font-mono); }
+.jira-native-scroll { overflow:hidden; background:#eef1f5; }
+.jira-proof-grid { display:grid; grid-template-columns:1fr; gap:18px; margin-top:22px; }
+.jira-hierarchy { padding:24px; background:#101318; color:#fff; }
+.jira-hierarchy h4 { margin:0 0 19px; font-size:24px; }
+.hierarchy-main { display:grid; grid-template-columns:1fr 32px 1fr 32px 1fr; gap:8px; align-items:stretch; }
+.hierarchy-main div { padding:14px 16px; border-left:4px solid #78a9ff; background:rgba(255,255,255,.075); }
+.hierarchy-main b { display:block; color:#78a9ff; font:800 11px/1.2 var(--font-mono); }
+.hierarchy-main span { display:block; margin-top:6px; color:rgba(255,255,255,.72); font-size:14px; line-height:1.4; }
+.hierarchy-main i { display:grid; place-items:center; color:#78a9ff; font:800 20px/1 var(--font-mono); text-align:center; font-style:normal; }
+.sprint-callout { margin-top:18px; padding:15px 16px; border:1px solid rgba(120,169,255,.45); }
+.sprint-callout b { color:#78a9ff; font:800 11px/1.2 var(--font-mono); }
+.sprint-callout span { display:block; margin-top:6px; color:rgba(255,255,255,.75); font-size:14px; line-height:1.4; }
+.meeting-index-grid { display:grid; grid-template-columns:minmax(360px,.7fr) minmax(0,1.3fr); gap:22px; align-items:stretch; }
+.meeting-index-image img { max-height:540px; object-fit:contain; background:#fff; }
+.meeting-purpose { display:grid; gap:12px; }
+.meeting-purpose div { display:flex; flex-direction:column; justify-content:center; padding:20px 22px; border-left:5px solid #1769ff; background:#f3f7ff; }
+.meeting-purpose b { color:#1769ff; font:800 13px/1.2 var(--font-mono); }
+.meeting-purpose span { margin-top:8px; color:var(--text-muted); font-size:16px; line-height:1.45; }
+.meeting-records { display:grid; gap:10px; margin-top:20px; }
+.meeting-records details { overflow:hidden; border:1px solid var(--border); background:#fff; }
+.meeting-records summary { display:flex; justify-content:space-between; align-items:center; gap:20px; padding:17px 20px; cursor:pointer; list-style:none; }
+.meeting-records summary::-webkit-details-marker { display:none; }
+.meeting-records summary span { color:var(--text); font-size:16px; line-height:1.35; }
+.meeting-records summary b { margin-right:14px; color:#1769ff; font:800 12px/1.2 var(--font-mono); }
+.meeting-records summary i { color:#1769ff; font:800 11px/1.2 var(--font-mono); font-style:normal; white-space:nowrap; }
+.meeting-records details[open] summary { border-bottom:1px solid var(--border); background:#f3f7ff; }
+.meeting-records details[open] summary i::after { content:" · CLOSE"; }
+.meeting-page-stack { display:grid; gap:16px; padding:16px; background:#eef1f5; }
+.meeting-page-stack figure { margin:0; overflow:hidden; border:1px solid var(--border); background:#fff; }
+.meeting-page-stack img { display:block; width:100%; max-height:none; height:auto; object-fit:contain; background:#fff; }
+.meeting-page-stack figcaption { padding:8px 12px; color:var(--text-muted); font:700 10px/1.3 var(--font-mono); }
+.automation-only { display:grid; grid-template-columns:minmax(400px,.9fr) minmax(0,1.1fr); gap:22px; align-items:stretch; }
+.automation-steps { display:grid; gap:12px; padding:24px; color:#fff; background:#101318; }
+.automation-steps div { padding:17px 18px; border-left:4px solid #78a9ff; background:rgba(255,255,255,.075); }
+.automation-steps b { display:block; color:#78a9ff; font:800 12px/1.2 var(--font-mono); }
+.automation-steps span { display:block; margin-top:7px; color:rgba(255,255,255,.74); font-size:15px; line-height:1.4; }
+.automation-steps p { margin:0; padding:15px 17px; border-top:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.68); font-size:14px; line-height:1.45; }
+.real-ci-flow { display:grid; grid-template-columns:repeat(4,1fr 28px) 1.12fr; gap:8px; align-items:stretch; }
+.real-ci-flow > i { display:grid; place-items:center; color:#1769ff; font:800 22px/1 var(--font-mono); font-style:normal; }
+.real-ci-step { min-height:190px; display:flex; flex-direction:column; justify-content:center; padding:19px 17px; border-top:5px solid #1769ff; background:#fff; box-shadow:0 10px 28px rgba(29,29,31,.05); }
+.real-ci-step b { color:#1769ff; font:800 11px/1.2 var(--font-mono); }
+.real-ci-step strong { margin-top:10px; font-size:18px; line-height:1.25; }
+.real-ci-step span { margin-top:9px; color:var(--text-muted); font-size:13px; line-height:1.42; }
+.real-ci-step.external { border-top-color:#f1c21b; background:#fff9df; }
+.real-ci-step.external b { color:#8a5d00; }
+.ci-meaning { display:grid; grid-template-columns:210px 1fr; gap:18px; margin-top:16px; padding:15px 18px; border-left:5px solid #f1c21b; background:#fff9df; }
+.ci-meaning b { color:#8a5d00; font:800 11px/1.3 var(--font-mono); }
+.ci-meaning span { color:var(--text-muted); font-size:14px; line-height:1.45; }
+.communication-frequency { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:18px; }
+.communication-frequency div { padding:17px 18px; border-top:4px solid #1769ff; background:#f3f7ff; }
+.communication-frequency b { display:block; color:#1769ff; font:800 12px/1.2 var(--font-mono); }
+.communication-frequency span { display:block; margin-top:7px; color:var(--text-muted); font-size:15px; line-height:1.4; }
+.interface-inline-note { margin:16px 0 0; padding:16px 19px; border-left:5px solid #1769ff; background:#fff; color:var(--text); font-size:16px; line-height:1.45; font-weight:650; }
 @media (max-width:1100px) {
   .report-backup .report-six-step { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .report-backup .pipeline-flow-step:nth-child(3)::after { display:none; }
@@ -2149,6 +2272,12 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
   .model-jump-nav { gap:8px; }
   .integration-handoff { grid-template-columns:150px minmax(0,1fr); }
   .integration-artifact { grid-column:1/-1; }
+  .automation-ci,.communication-contract { grid-template-columns:1fr; }
+  .brief-grid,.jira-proof-grid,.meeting-index-grid,.automation-only { grid-template-columns:1fr; }
+  .real-ci-flow { grid-template-columns:1fr; }
+  .real-ci-flow > i { transform:rotate(90deg); }
+  .hierarchy-main { grid-template-columns:1fr; }
+  .hierarchy-main i { transform:rotate(90deg); }
 }
 @media (max-width:700px) {
   .model-backup .pipeline-node { padding:26px 22px 28px; }
@@ -2161,6 +2290,12 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
   .model-backup .pipeline-flow { grid-template-columns:1fr; }
   .model-backup .pipeline-flow-step::after { display:none; }
   .model-backup .report-table { table-layout:auto; }
+  .jira-evidence,.jira-items { grid-template-columns:1fr; }
+  .ci-flow { grid-template-columns:1fr; }
+  .ci-arrow { transform:rotate(90deg); }
+  .contract-result { grid-template-columns:1fr; }
+  .contract-result i { transform:rotate(90deg); }
+  .communication-frequency { grid-template-columns:1fr; }
 }
 /* Dashboard backup keeps the compact scale introduced on develop. */
 #backupDashboard .pipeline-node h4 { font-size:clamp(21px,2vw,29px); }
@@ -3324,7 +3459,8 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
     <button class="backup-close" onclick="toggleBackup()">&times; Close (Esc)</button>
   </div>
   <nav class="backup-layer-nav" aria-label="Pipeline layers">
-    <button class="backup-layer-link primary" onclick="scrollBackupTo('backupOverview')">End-to-end</button>
+    <button class="backup-layer-link primary" onclick="scrollBackupTo('backupTeamwork')">Teamwork</button>
+    <button class="backup-layer-link" onclick="scrollBackupTo('backupOverview')">End-to-end</button>
     <button class="backup-layer-link" onclick="scrollBackupTo('backupData')">01 &middot; Data</button>
     <button class="backup-layer-link" onclick="scrollBackupTo('backupModel')">02 &middot; Model</button>
     <button class="backup-layer-link" onclick="scrollBackupTo('backupReport')">03 &middot; Report</button>
@@ -3332,9 +3468,10 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
   </nav>
   <div class="backup-body" id="backupBody">
     <main class="backup-document">
-      <section class="backup-overview" id="backupOverview">
+      <section class="teamwork-evidence" id="backupTeamwork">
+      <section class="backup-overview teamwork-pipeline-overview" id="backupOverview">
         <div>
-          <div class="backup-overview-kicker">FROM FOUR LAYERS TO ONE PIPELINE</div>
+          <div class="teamwork-section-title"><b>07</b><h3>From four layers to one pipeline</h3></div>
           <h2>How independently developed components were connected.</h2>
           <p>Shared contracts allowed parallel development. Each boundary was then connected and checked before the complete local upload path was used.</p>
           <div class="integration-workflow" aria-label="Team development workflow"><b>JIRA TASK</b><i>→</i><span>GitHub branch</span><i>→</i><span>Pull request + CI</span><i>→</i><span>develop</span><i>→</i><span>Discord update</span></div>
@@ -3395,16 +3532,120 @@ st.session_state["dashboard_data"] = result</pre>
         </div>
       </section>
 
-      <div class="pipeline-next" id="backupEvidenceLedger">
-        <strong>Evidence ledger · what was rerun, what is artefact-backed, and what remains unproven</strong>
-        <p>Use this before quoting any result: tests establish code behaviour, committed experiment artefacts establish measured synthetic/dataset results, and neither substitutes for real-fault or domain-expert validation.</p>
-        <div class="pipeline-columns" style="margin-top:14px;">
-          <div class="pipeline-block"><div class="pipeline-block-label">DATA · RERUN</div><ul><li><strong>148 passed in 10.95 s</strong>: continuity, manifests, feature assembly, proxy stages, upload intake and injection regression.</li><li>Dataset/result artefacts: 249,694 rows; 81 trips/118 segments; 48/48 calibration audit; 14/14 graded case curves accepted from 126 observations.</li><li>Does not establish real-fault recall.</li></ul></div>
-          <div class="pipeline-block"><div class="pipeline-block-label">MODEL · RERUN + ARTEFACTS</div><ul><li><strong>217 passed, 18 skipped</strong> (235 collected).</li><li>Measured artefacts: 250-window MAE comparison; 165 completed synthetic runs; calibrated macro F1 0.5214 and baseline-control alarm rate 1/11.</li><li>No labelled run-to-failure validation.</li></ul></div>
-          <div class="pipeline-block"><div class="pipeline-block-label">REPORT · RERUN + REVIEW</div><ul><li><strong>78 passed in 0.95 s</strong>: interface, index, retrieval, context, generator and end-to-end contracts.</li><li>Artefacts: 2×2 retrieval study; three-scenario RAG comparison; 732-window discovery manifest and five selected current-type reports.</li><li>No automotive expert scoring; RAG quality study remains three cooling scenarios.</li></ul></div>
-          <div class="pipeline-block"><div class="pipeline-block-label">DASHBOARD · RERUN</div><ul><li><strong>171 passed, 1 skipped in 5.28 s</strong>: upload, provenance, UI states, export and projection display.</li><li>19 tests exercise upload orchestration with controlled substitutes; 40 cover real/mock loading; 62 cover overview/detail states.</li><li>A full live four-layer upload was not rerun here because Model/Ollama availability and latency are environment-dependent.</li></ul></div>
+        <header class="teamwork-evidence-head">
+          <div class="teamwork-evidence-kicker">TEAMWORK EVIDENCE</div>
+          <h2>Teamwork across four connected components</h2>
+          <p>IBM supplied the project direction. The team converted it into Sprint work, reviewed code through GitHub and used regular records and updates to keep parallel development aligned.</p>
+        </header>
+
+        <div class="teamwork-section" id="teamworkBrief">
+          <div class="teamwork-section-title"><b>01</b><h3>IBM brief and MoSCoW priorities</h3></div>
+          <div class="brief-grid">
+            <div class="moscow-table" role="table" aria-label="MoSCoW requirements from the original IBM brief">
+              <div class="moscow-row header" role="row"><b>Priority</b><b>Original IBM brief</b></div>
+              <div class="moscow-row must" role="row"><strong>Must</strong><span>Analyse temperature, RPM and load data; train a model to predict component failure; use Granite to explain predictions.</span></div>
+              <div class="moscow-row should" role="row"><strong>Should</strong><span>Visualise failure risk over time.</span></div>
+              <div class="moscow-row could" role="row"><strong>Could</strong><span>Simulate different driving conditions.</span></div>
+              <div class="moscow-row wont" role="row"><strong>Won't</strong><span>Include real-time in-vehicle integration.</span></div>
+            </div>
+            <div class="brief-refinement">
+              <b>WHAT THE TEAM REFINED</b>
+              <p>The dataset contained no verified failures, so the final system reports anomaly risk and leaves fault confirmation to a mechanic.</p>
+              <p>The team investigated the What-If page, then removed it because the available data could not support a reliable driving-condition simulation.</p>
+              <p>IBM required Granite and substantial use of BoB. The student team remained responsible for the architecture, implementation and tests.</p>
+            </div>
+          </div>
         </div>
-      </div>
+
+        <div class="teamwork-section" id="teamworkPlanning">
+          <div class="teamwork-section-title"><b>02</b><h3>From the delivery plan to a completed Jira task</h3></div>
+          <figure class="gantt-evidence">
+            <img src="assets/project-gantt.png" alt="Project Gantt chart showing seven Sprints and five major Epics">
+            <figcaption>PROJECT GANTT · SEVEN SPRINTS AND THE PLANNED DURATION OF EACH MAJOR EPIC</figcaption>
+          </figure>
+          <div class="jira-proof-grid">
+            <figure class="jira-proof-image">
+              <div class="jira-native-scroll"><img src="assets/jira-task-gl129.png" alt="Jira task GL-129 with four completed subtasks"></div>
+              <figcaption>SPRINT 4 EVIDENCE · GL-129 CONNECTED THE FIRST THREE AVAILABLE MODEL OUTPUTS TO THE DASHBOARD; THE FINAL PIPELINE LATER SUPPORTED FIVE TYPES</figcaption>
+            </figure>
+            <div class="jira-hierarchy" aria-label="Jira work hierarchy">
+              <h4>How the work was organised</h4>
+              <div class="hierarchy-main">
+                <div><b>EPIC</b><span>A major functional area, such as System Integration &amp; Pipeline.</span></div>
+                <i>→</i>
+                <div><b>USER STORY OR TASK</b><span>A user-facing outcome or a defined piece of engineering work, such as GL-129.</span></div>
+                <i>→</i>
+                <div><b>SUBTASK</b><span>A smaller action required to complete its parent. GL-129 contained GL-130 to GL-133.</span></div>
+              </div>
+              <div class="sprint-callout"><b>SPRINT</b><span>A two-week period containing selected Stories, Tasks and Subtasks. It is a timebox, not another level in the hierarchy.</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="teamwork-section" id="teamworkMeetings">
+          <div class="teamwork-section-title"><b>03</b><h3>Sprint meetings recorded plans, progress and improvements</h3></div>
+          <div class="meeting-index-grid">
+            <figure class="meeting-index-image">
+              <img src="assets/confluence-sprint-records.png" alt="Confluence folders containing Sprint planning, stand-up, progress update and viva dry-run records">
+              <figcaption>CONFLUENCE RECORD INDEX · MEETING DOCUMENTS ORGANISED BY SPRINT</figcaption>
+            </figure>
+            <div class="meeting-purpose">
+              <div><b>PLANNING</b><span>Recorded each group's intended work and the next action items.</span></div>
+              <div><b>STAND-UP</b><span>Recorded completed work, current work and blockers for each member.</span></div>
+              <div><b>RETROSPECTIVE</b><span>Recorded what worked and what the team needed to change in the next Sprint.</span></div>
+            </div>
+          </div>
+          <div class="meeting-records">
+            <details><summary><span><b>S3 PLANNING</b>Plans, cross-layer interface work and action items</span><i>Open evidence</i></summary><div class="meeting-page-stack"><figure><img src="assets/confluence-s3-planning-p1.png" alt="Sprint 3 planning record page 1"><figcaption>PAGE 1 OF 1</figcaption></figure></div></details>
+            <details><summary><span><b>S5.1 STAND-UP</b>Completed work, work in progress and blockers by team member</span><i>Open evidence</i></summary><div class="meeting-page-stack"><figure><img src="assets/confluence-s51-standup-p1.png" alt="Sprint 5 week 1 stand-up record page 1"><figcaption>PAGE 1 OF 5</figcaption></figure><figure><img src="assets/confluence-s51-standup-p2.png" alt="Sprint 5 week 1 stand-up record page 2"><figcaption>PAGE 2 OF 5</figcaption></figure><figure><img src="assets/confluence-s51-standup-p3.png" alt="Sprint 5 week 1 stand-up record page 3"><figcaption>PAGE 3 OF 5</figcaption></figure><figure><img src="assets/confluence-s51-standup-p4.png" alt="Sprint 5 week 1 stand-up record page 4"><figcaption>PAGE 4 OF 5</figcaption></figure><figure><img src="assets/confluence-s51-standup-p5.png" alt="Sprint 5 week 1 stand-up record page 5"><figcaption>PAGE 5 OF 5</figcaption></figure></div></details>
+            <details><summary><span><b>S3 RETROSPECTIVE</b>Communication, documentation and interface improvements</span><i>Open evidence</i></summary><div class="meeting-page-stack"><figure><img src="assets/confluence-s3-retrospective-p1.png" alt="Sprint 3 retrospective record page 1"><figcaption>PAGE 1 OF 1</figcaption></figure></div></details>
+          </div>
+        </div>
+
+        <div class="teamwork-section" id="teamworkAutomationNew">
+          <div class="teamwork-section-title"><b>04</b><h3>Jira automation kept task and code-review status in step</h3></div>
+          <div class="automation-only">
+            <figure class="teamwork-image">
+              <img src="assets/jira-automation-create-branch.png" alt="Jira automation that creates a GitHub branch when a Task or Story moves to In Progress">
+              <figcaption>PROJECT EVIDENCE · JIRA AUTOMATION FOR THE IN PROGRESS TRANSITION</figcaption>
+            </figure>
+            <div class="automation-steps">
+              <div><b>IN PROGRESS</b><span>Create a named GitHub branch from <code>develop</code>.</span></div>
+              <div><b>IN REVIEW</b><span>Opening a pull request updates the Jira work item.</span></div>
+              <div><b>DONE</b><span>Merging the approved pull request completes the Jira workflow.</span></div>
+              <p>The automation made progress easier to follow. Acceptance criteria, review and tests still determined whether the work was complete.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="teamwork-section" id="teamworkCI">
+          <div class="teamwork-section-title"><b>05</b><h3>The CI workflow checked each proposed code change</h3></div>
+          <div class="real-ci-flow" aria-label="Continuous integration workflow from ci.yml">
+            <div class="real-ci-step trigger"><b>TRIGGER</b><strong>Push or pull request</strong><span><code>develop</code> or <code>main</code></span></div><i>→</i>
+            <div class="real-ci-step"><b>ENVIRONMENT</b><strong>Ubuntu and Python 3.11</strong><span>Checkout code, restore the <code>uv</code> cache and install <code>uv.lock</code>.</span></div><i>→</i>
+            <div class="real-ci-step"><b>STATIC CHECKS</b><strong><code>py_compile</code> then <code>flake8</code></strong><span>Find syntax errors, style problems and common code issues.</span></div><i>→</i>
+            <div class="real-ci-step"><b>BLOCKING TESTS</b><strong><code>pytest -m "not model_download"</code></strong><span>Run the core suite without external model downloads.</span></div><i>→</i>
+            <div class="real-ci-step external"><b>EXTERNAL TESTS</b><strong><code>pytest -m model_download</code></strong><span>Check the real Hugging Face download path. Failure warns but does not block unrelated work.</span></div>
+          </div>
+          <div class="ci-meaning"><b>WHY THE LAST STEP IS SEPARATE</b><span>Network availability and a cold model cache can fail independently of the repository code, so the workflow records this result without failing every pull request.</span></div>
+        </div>
+
+        <div class="teamwork-section" id="teamworkCommunication">
+          <div class="teamwork-section-title"><b>06</b><h3>Regular updates made cross-layer progress visible</h3></div>
+          <figure class="discord-evidence">
+            <img src="assets/ibm-sprint2-team-update.png" alt="Discord Sprint 2 project and team update sent to IBM">
+            <figcaption>PROJECT EVIDENCE · TEAM, CONTRACT AND CI UPDATE TO IBM, 22 JUNE 2026</figcaption>
+          </figure>
+          <div class="communication-frequency">
+            <div><b>SUPERVISOR</b><span>Meeting approximately once a week.</span></div>
+            <div><b>IBM</b><span>Progress update approximately once per Sprint.</span></div>
+            <div><b>TEAM</b><span>Jira, Discord and meeting records used between scheduled meetings.</span></div>
+          </div>
+          <p class="interface-inline-note">Shared interfaces allowed each group to develop against the same field definitions before the complete pipeline was connected.</p>
+        </div>
+
+        <div class="teamwork-summary">The plan defined the major work, Jira assigned it, meeting records tracked it, and GitHub checks controlled how completed changes entered the shared pipeline.</div>
+      </section>
 
       <div class="backup-pipeline">
         <section class="pipeline-layer" id="backupData" data-layer="data">
