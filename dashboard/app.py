@@ -34,6 +34,11 @@ def main() -> None:
 
     if "page" not in st.session_state:
         st.session_state["page"] = "overview"
+        # Local demos can skip the upload landing page with ``?demo=1``.
+        # The hosted/default URL keeps the normal landing experience.
+        query_params = getattr(st, "query_params", {})
+        if query_params.get("demo") == "1":
+            st.session_state["dashboard_mode"] = "dashboard"
     if "dark_mode" not in st.session_state:
         st.session_state["dark_mode"] = False
 

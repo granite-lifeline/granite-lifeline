@@ -8,7 +8,7 @@ they are not confirmed mechanical diagnoses.
 
 ## Dashboard Demo
 
-[![Open Dashboard](https://img.shields.io/badge/Open%20Dashboard-granite--lifeline.streamlit.app-19c8b9?style=for-the-badge&logo=streamlit&logoColor=white)](https://granite-lifeline.streamlit.app)
+[![Open Dashboard](https://img.shields.io/badge/Open%20Dashboard-granite--lifeline.streamlit.app-19c8b9?style=for-the-badge&logo=streamlit&logoColor=white)](https://granite-lifeline.streamlit.app/?demo=1)
 
 ## Viva Presentation
 

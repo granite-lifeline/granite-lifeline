@@ -34,7 +34,10 @@ RISK_PRIORITY: dict[str, int] = {
     "Unknown": 3,
 }
 
-_DEFAULT_TEST_FILE = "dashboard/tests/ui_required_data.json"
+_DEFAULT_TEST_FILE = (
+    "report_layer/evaluation/user_testing_ab/generated/"
+    "dashboard-report-b.json"
+)
 
 
 # ---------------------------------------------------------------------------
