@@ -423,12 +423,17 @@ Before committing dashboard changes:
 
 ### Static / Demo Mode
 
-With no CSV uploaded, the dashboard loads a fixed sample `ReportLayerOutput`-shaped
-JSON via `load_dashboard_data()` in `data_loader.py`. The file path defaults to
-`dashboard/tests/ui_required_data.json` and can be overridden with the
-`DASHBOARD_TEST_DATA` environment variable. This is what the public hosted
-demo (`granite-lifeline.streamlit.app`) runs, since it has no budget for
-hosted LLM/model inference (see `docs/viva/report_challenge.md` Limitations).
+With no CSV uploaded, the dashboard loads a fixed `ReportLayerOutput`-shaped
+JSON via `load_static_dashboard_data()` in `data_loader.py`. The hosted demo
+defaults to the reviewed user-testing stimulus at
+`report_layer/evaluation/user_testing_ab/generated/dashboard-report-b.json`,
+which contains the two affected components shown in the final Dashboard user
+study. The path can be overridden with the `DASHBOARD_TEST_DATA` environment
+variable. The five-component `dashboard/tests/ui_required_data.json` fixture
+is retained for interface and regression coverage. The public hosted demo
+(`granite-lifeline.streamlit.app`) uses static data because it has no budget
+for hosted LLM/model inference (see `docs/viva/report_challenge.md`
+Limitations).
 Streamlit Cloud should deploy the lightweight `requirements.txt` environment
 and use Python 3.11 from the app's Advanced settings; local-only
 `requirements-local.txt` and Model Layer dependencies are intentionally kept
