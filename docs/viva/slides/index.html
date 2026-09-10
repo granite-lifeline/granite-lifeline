@@ -2063,6 +2063,32 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .report-backup .report-result { padding:18px 14px; border-top:4px solid var(--layer-color); background:#f7faff; text-align:center; }
 .report-backup .report-result b { display:block; color:var(--layer-color); font:850 25px/1 var(--font-mono); }
 .report-backup .report-result span { display:block; margin-top:9px; color:var(--text-muted); font-size:14px; line-height:1.35; }
+.report-backup .validator-sequence { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:30px; margin-top:24px; }
+.report-backup .validator-stage { position:relative; padding:21px 22px; border:1px solid var(--border); border-top:5px solid var(--layer-color); border-radius:10px; background:#fff; }
+.report-backup .validator-stage:not(:last-child)::after { content:"\2192"; position:absolute; top:47%; right:-24px; color:var(--layer-color); font:800 25px/1 var(--font-mono); }
+.report-backup .validator-stage > b { display:block; color:var(--layer-color); font:800 15px/1.2 var(--font-mono); }
+.report-backup .validator-stage h5 { margin:8px 0 13px; color:var(--text); font-size:21px; line-height:1.2; }
+.report-backup .validator-stage p { margin:0; color:var(--text-muted); font-size:16px; line-height:1.45; }
+.report-backup .validator-gate { margin-top:14px; padding-top:13px; border-top:1px solid var(--border); color:var(--text) !important; font-weight:750; }
+.report-backup .validator-dependency { display:grid; grid-template-columns:1.05fr 1.95fr; gap:18px; margin-top:18px; }
+.report-backup .validator-dependency-card { padding:18px 20px; border-radius:10px; background:#f7faff; }
+.report-backup .validator-dependency-card b { display:block; color:var(--layer-color); font:800 14px/1.2 var(--font-mono); }
+.report-backup .validator-dependency-card p { margin:9px 0 0; color:var(--text-muted); font-size:16px; line-height:1.45; }
+.report-backup .validator-rule-row { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:11px; }
+.report-backup .validator-rule { padding:11px 12px; border-left:3px solid var(--layer-color); background:#fff; color:var(--text-muted); font-size:14px; line-height:1.35; }
+.report-backup .validator-rule strong { display:block; margin-bottom:4px; color:var(--text); }
+.report-backup .rag-call-grid { display:grid; grid-template-columns:1.35fr 1fr; gap:18px; margin-top:20px; align-items:stretch; }
+.report-backup .rag-call-grid .pipeline-code { margin:0; min-height:100%; padding:18px 20px; font-size:14px; line-height:1.55; }
+.report-backup .rag-output-list { display:grid; gap:10px; }
+.report-backup .rag-output-item { padding:14px 16px; border-left:4px solid var(--layer-color); background:#f7faff; color:var(--text-muted); font-size:15px; line-height:1.4; }
+.report-backup .rag-output-item strong { display:block; margin-bottom:3px; color:var(--text); font-size:16px; }
+.report-backup .validator-engine { display:grid; grid-template-columns:1.2fr .8fr; gap:18px; margin-top:22px; }
+.report-backup .validator-engine-flow { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:9px; }
+.report-backup .validator-engine-step { display:flex; align-items:center; justify-content:center; min-height:94px; padding:13px 10px; border-top:4px solid var(--layer-color); background:#fff; color:var(--text); font-size:15px; font-weight:750; line-height:1.3; text-align:center; }
+.report-backup .validator-penalties { padding:17px 18px; border-radius:10px; background:#f7faff; }
+.report-backup .validator-penalties b { display:block; color:var(--layer-color); font:800 14px/1.2 var(--font-mono); }
+.report-backup .validator-penalty-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; }
+.report-backup .validator-penalty-row span { padding:11px 8px; background:#fff; color:var(--text); font:800 18px/1 var(--font-mono); text-align:center; }
 /* Model viva backup — question-first, presentation-scale speaking notes. */
 .model-backup .pipeline-node { padding:34px 36px 36px; }
 .model-backup .pipeline-node h4 { font-size:clamp(27px,2.45vw,36px); }
@@ -4596,10 +4622,11 @@ st.session_state["dashboard_data"] = result</pre>
             <button type="button" onclick="openBackupNode('reportB5')">R5 · Knowledge admission</button>
             <button type="button" onclick="openBackupNode('reportB6')">R6 · Three calls</button>
             <button type="button" onclick="openBackupNode('reportB7')">R7 · Value leakage</button>
-            <button type="button" onclick="openBackupNode('reportB8')">R8 · Validation</button>
-            <button type="button" onclick="openBackupNode('reportB9')">R9 · Failure paths</button>
-            <button type="button" onclick="openBackupNode('reportB10')">R10 · Evaluation design</button>
-            <button type="button" onclick="openBackupNode('reportB11')">R11 · Review evidence</button>
+            <button type="button" onclick="openBackupNode('reportB8')">R8 · Sequential gates</button>
+            <button type="button" onclick="openBackupNode('reportB9')">R9 · Validator rules</button>
+            <button type="button" onclick="openBackupNode('reportB10')">R10 · Failure paths</button>
+            <button type="button" onclick="openBackupNode('reportB11')">R11 · Evaluation design</button>
+            <button type="button" onclick="openBackupNode('reportB12')">R12 · Review evidence</button>
           </nav>
 
           <article class="pipeline-node" id="reportB0"><details class="pipeline-node-shell" open>
@@ -4641,6 +4668,21 @@ st.session_state["dashboard_data"] = result</pre>
             <div class="pipeline-node-body">
               <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Readable names</b><span><code>coolant_temp</code> → coolant temperature.</span></div><div class="pipeline-flow-step"><b>Reference check</b><span>85°C is below the supplied 90–95°C range.</span></div><div class="pipeline-flow-step"><b>Relationship</b><span>Low temperature + rapid warming activates the defined thermal pattern.</span></div><div class="pipeline-flow-step"><b>Meaning retained</b><span>Risk, confidence and projections remain separate values.</span></div></div>
               <div class="report-quote good">“Coolant temperature is below its reference range, while its rate of increase is above the expected range.”</div>
+              <div class="rag-call-grid"><pre class="pipeline-code"># Abridged from build_context_with_rag()
+context = build_context(ttm_output)
+risk = ttm_output.risk_level.lower()
+
+rag_knowledge = retrieve_all(
+    anomaly_type=ttm_output.anomaly_type,
+    risk_level=risk,
+)
+
+# R5 applies the signal-relevance gate here.
+return {
+    "context": context,
+    "fault_knowledge": fault_knowledge,
+    "actions_knowledge": actions_knowledge,
+}</pre><div class="rag-output-list"><div class="rag-output-item"><strong>context</strong>Current Model evidence prepared for owner-facing language.</div><div class="rag-output-item"><strong>fault_knowledge</strong>Reviewed possible-cause record matched to the anomaly type.</div><div class="rag-output-item"><strong>actions_knowledge</strong>Reviewed guidance matched to the anomaly type and risk level.</div></div></div>
               <div class="pipeline-disclosure"><details><summary>What a defined relationship means</summary><div class="pipeline-detail"><ul><li>The relationship is activated only when the required signals are available.</li><li>It describes a combination chosen in the implementation; Granite does not discover a new statistical correlation.</li><li><code>report_layer/pipeline/context_injection.py</code> prepares the context.</li></ul></div></details></div>
             </div>
           </details></article>
@@ -4671,31 +4713,47 @@ st.session_state["dashboard_data"] = result</pre>
           </details></article>
 
           <article class="pipeline-node" id="reportB8"><details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">R8</span><div><h4>Validator and targeted correction</h4><p class="pipeline-node-purpose">A parsed JSON section can still contain unsupported or unsuitable language, so every generated section passes the same release rules.</p></div><span class="pipeline-status">0.80 RELEASE THRESHOLD</span></summary>
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R8</span><div><h4>Three Calls through sequential gates</h4><p class="pipeline-node-purpose">Each accepted section becomes part of the next prompt. A failed section is corrected before generation continues.</p></div><span class="pipeline-status">GENERATE → VALIDATE → CONTINUE</span></summary>
             <div class="pipeline-node-body">
-              <div class="report-case-grid"><div class="report-case"><b>INITIAL OUTPUT</b><p>“<code>coolant_temp</code> is high and the cooling fan has failed.”</p><div class="report-score"><span>Start</span><b>1.00</b><span>Raw field</span><b>−0.20</b><span>Confirmed fault</span><b>−0.20</b><span>Too short</span><b>−0.20</b><span>Blocked</span><b>0.40</b></div></div><div class="report-case"><b>CORRECTION PACKAGE</b><ul><li>Original task and current evidence</li><li>Rejected JSON output</li><li>Three Validator warnings</li></ul><b style="margin-top:18px">CORRECTED OUTPUT</b><p>“Coolant temperature is outside its expected range. This may indicate a cooling-system issue that a mechanic should verify.”</p><div class="report-result"><b>1.00</b><span>same checks · released</span></div></div></div>
-              <div class="report-boundary">Penalty values reflect rule severity. The 0.80 threshold was calibrated with ten generated reports across the five supported anomaly types.</div>
+              <div class="validator-sequence">
+                <div class="validator-stage"><b>CALL 1</b><h5>Observation</h5><p>Model evidence and prepared context.</p><p class="validator-gate">Clean → validate → one correction if required</p></div>
+                <div class="validator-stage"><b>CALL 2</b><h5>Possible causes</h5><p>Model evidence + accepted Call 1 + cause knowledge.</p><p class="validator-gate">Clean → validate → one correction if required</p></div>
+                <div class="validator-stage"><b>CALL 3</b><h5>Recommended actions</h5><p>Model evidence + accepted Calls 1–2 + action knowledge.</p><p class="validator-gate">Clean → validate → one correction if required</p></div>
+              </div>
+              <div class="validator-dependency">
+                <div class="validator-dependency-card"><b>DEPENDENCY</b><p>Call 2 receives the accepted observation. Call 3 receives both accepted earlier sections. Each Call also keeps access to the relevant Model evidence.</p></div>
+                <div class="validator-dependency-card"><b>RELEASE PATH</b><p>After Call 3 passes, the complete cleaned chain is checked once more. Release follows only when all three sections score at least 0.80; otherwise the report uses the fallback path.</p></div>
+              </div>
             </div>
           </details></article>
 
           <article class="pipeline-node" id="reportB9"><details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">R9</span><div><h4>Two failure paths</h4><p class="pipeline-node-purpose">The pipeline treats a failed model request differently from a readable JSON response that breaks a report rule.</p></div><span class="pipeline-status">RETRY · CORRECT · FALLBACK</span></summary>
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R9</span><div><h4>How the Validator checks one section</h4><p class="pipeline-node-purpose">The same validation framework selects rules for the section, scores the result and returns exact warnings for one correction attempt.</p></div><span class="pipeline-status">SECTION-SPECIFIC RULES · ≥0.80</span></summary>
+            <div class="pipeline-node-body">
+              <div class="validator-engine"><div class="validator-engine-flow"><div class="validator-engine-step">Generated JSON</div><div class="validator-engine-step">Owner-facing cleanup</div><div class="validator-engine-step">Select section rules</div><div class="validator-engine-step">Score + warnings</div><div class="validator-engine-step">Accept or correct once</div></div><div class="validator-penalties"><b>RULE SEVERITY</b><div class="validator-penalty-row"><span>−0.10</span><span>−0.20</span><span>−0.40</span></div><p class="validator-gate">Start at 1.00 · release at 0.80 or above</p></div></div>
+              <div class="validator-dependency-card" style="margin-top:18px"><b>ONE FRAMEWORK · DIFFERENT CHECKS</b><div class="validator-rule-row"><div class="validator-rule"><strong>Observation</strong>Evidence meaning · unsupported values · fault certainty</div><div class="validator-rule"><strong>Possible causes</strong>Hedging · repetition · signal direction</div><div class="validator-rule"><strong>Actions</strong>Four roles · urgency · owner safety</div><div class="validator-rule"><strong>Shared</strong>High-risk projection consistency · release threshold</div></div></div>
+              <div class="report-case-grid"><div class="report-case"><b>FAILED SECTION</b><p>“<code>coolant_temp</code> is high and the cooling fan has failed.”</p><p>Warnings identify the raw field, unsupported direction and confirmed-fault wording.</p></div><div class="report-case"><b>TARGETED CORRECTION</b><p>The correction prompt receives the original task, rejected JSON and exact warnings. Only this section is regenerated and checked again.</p></div></div>
+            </div>
+          </details></article>
+
+          <article class="pipeline-node" id="reportB10"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R10</span><div><h4>Two failure paths</h4><p class="pipeline-node-purpose">The pipeline treats a failed model request differently from a readable JSON response that breaks a report rule.</p></div><span class="pipeline-status">RETRY · CORRECT · FALLBACK</span></summary>
             <div class="pipeline-node-body">
               <div class="report-case-grid"><div class="report-case"><b>TECHNICAL FAILURE</b><ul><li>Request error</li><li>Timeout</li><li>Malformed JSON</li><li><strong>Response:</strong> retry the call, up to three attempts.</li></ul></div><div class="report-case"><b>CONTENT FAILURE</b><ul><li>JSON parses successfully</li><li>Section scores below 0.80</li><li><strong>Response:</strong> one targeted correction, then check again.</li></ul></div></div>
               <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Second content failure</b><span>Stop further generation.</span></div><div class="pipeline-flow-step"><b>Fallback object</b><span>Keep the same interface shape.</span></div><div class="pipeline-flow-step"><b>Preserve evidence</b><span>Risk values and signals remain available.</span></div><div class="pipeline-flow-step"><b>Leave text empty</b><span>Dashboard shows report generation unavailable.</span></div></div>
             </div>
           </details></article>
 
-          <article class="pipeline-node" id="reportB10"><details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">R10</span><div><h4>Four knowledge conditions</h4><p class="pipeline-node-purpose">The final evaluation changed only the knowledge supplied to Granite while keeping the model, prompts, temperature, inputs and Validator fixed.</p></div><span class="pipeline-status">4 × 5 = 20 REPORTS</span></summary>
+          <article class="pipeline-node" id="reportB11"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R11</span><div><h4>Four knowledge conditions</h4><p class="pipeline-node-purpose">The final evaluation changed only the knowledge supplied to Granite while keeping the model, prompts, temperature, inputs and Validator fixed.</p></div><span class="pipeline-status">4 × 5 = 20 REPORTS</span></summary>
             <div class="pipeline-node-body">
               <table class="report-table"><thead><tr><th>Condition</th><th>Knowledge supplied</th><th>Purpose</th></tr></thead><tbody><tr><td>No retrieved knowledge</td><td>Model context only</td><td>Generation baseline</td></tr><tr><td>Cause knowledge</td><td>Reviewed descriptions and possible causes</td><td>Test explanation grounding</td></tr><tr><td>Cause + raw workshop actions</td><td>Cause records and unseparated procedures</td><td>Expose audience/action-role problems</td></tr><tr class="selected-row"><td><strong>Cause + role-separated actions</strong></td><td>Owner observations, timing and stop conditions separated from mechanic procedures</td><td><strong>Final design</strong></td></tr></tbody></table>
               <div class="report-case-grid"><div class="report-case"><b>OWNER GUIDANCE</b><p>What to observe now, when to arrange service, and which visible warning signs require urgent help.</p></div><div class="report-case"><b>MECHANIC INFORMATION</b><p>Scan-tool checks, wiring inspection, calibration and replacement decisions are presented as requests for a qualified mechanic.</p></div></div>
             </div>
           </details></article>
 
-          <article class="pipeline-node" id="reportB11"><details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">R11</span><div><h4>Final manual-review evidence</h4><p class="pipeline-node-purpose">Twenty final reports were reviewed against the current Model inputs, retrieved records and owner-action rules.</p></div><span class="pipeline-status">FINAL V5 EVIDENCE</span></summary>
+          <article class="pipeline-node" id="reportB12"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R12</span><div><h4>Final manual-review evidence</h4><p class="pipeline-node-purpose">Twenty final reports were reviewed against the current Model inputs, retrieved records and owner-action rules.</p></div><span class="pipeline-status">FINAL V5 EVIDENCE</span></summary>
             <div class="pipeline-node-body">
               <div class="report-result-grid"><div class="report-result"><b>20/20</b><span>reports generated and released</span></div><div class="report-result"><b>4/5</b><span>retrieval relevance pass</span></div><div class="report-result"><b>1/5</b><span>knowledge use pass</span></div><div class="report-result"><b>3/5</b><span>audience suitability pass</span></div><div class="report-result"><b>5/5</b><span>action safety pass</span></div><div class="report-result"><b>8/8</b><span>saved High-risk contradictions rejected</span></div><div class="report-result"><b>0/20</b><span>final regenerated reports repeated the contradiction</span></div><div class="report-result"><b>0</b><span>fallback reports</span></div></div>
               <table class="report-table"><thead><tr><th>Partial result</th><th>Observed limitation</th></tr></thead><tbody><tr><td>Retrieval relevance · IAT</td><td>The record matched the category, but the displayed temperatures could not distinguish circuit and connector possibilities.</td></tr><tr><td>Knowledge use · 4 types</td><td>Knowledge made possible causes more specific, but the available signals could not distinguish every category-relevant cause.</td></tr><tr><td>Audience · Air Intake and IAT</td><td>The explanations remained too dense for a non-specialist reader.</td></tr></tbody></table>
