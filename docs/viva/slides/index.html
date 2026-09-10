@@ -3754,8 +3754,8 @@ st.session_state["dashboard_data"] = result</pre>
           <nav class="backup-jump-nav" aria-label="Data backup topics">
             <button type="button" onclick="openBackupNode('dataD0')">D0 · Upload intake</button>
             <button type="button" onclick="openBackupNode('dataD1')">D1 · Cleaning</button>
-            <button type="button" onclick="openBackupNode('dataD2')">D2 · Feature contract</button>
-            <button type="button" onclick="openBackupNode('dataD3')">D3 · Operating condition</button>
+            <button type="button" onclick="openBackupNode('dataD2')">D2 · Operating condition</button>
+            <button type="button" onclick="openBackupNode('dataD3')">D3 · Feature contract</button>
             <button type="button" onclick="openBackupNode('dataD4')">D4 · Calibration</button>
             <button type="button" onclick="openBackupNode('dataD5')">D5 · Proxy evidence</button>
             <button type="button" onclick="openBackupNode('dataD6')">D6 · Fault injection</button>
@@ -3853,6 +3853,119 @@ st.session_state["dashboard_data"] = result</pre>
             <details class="pipeline-node-shell">
             <summary class="pipeline-node-head">
               <span class="pipeline-node-id">D2</span>
+              <div><h4>Hierarchical operating-condition stratification</h4><p class="pipeline-node-purpose">Give every 1 Hz sample physically meaningful context, so normal warm-up, idle and high-load behaviour are not mistaken for faults—and real deviations are not hidden by global averages.</p></div>
+              <span class="pipeline-status">ADR 102 · ACCEPTED</span>
+            </summary>
+            <div class="pipeline-node-body">
+
+            <div class="pipeline-flow" aria-label="Operating condition inference flow">
+              <div class="pipeline-flow-step"><b>Segment-bounded signals</b><span>Speed smoothing, differencing and cumulative MAF reset at every segment.</span></div>
+              <div class="pipeline-flow-step"><b>Thermal state</b><span>engine_off / warmup / post_warmup / unknown.</span></div>
+              <div class="pipeline-flow-step"><b>Kinematic child state</b><span>idle / high_load / acceleration / deceleration / steady_driving.</span></div>
+              <div class="pipeline-flow-step"><b>Auditable context</b><span>Combined state + confidence + explicit missing-field flags.</span></div>
+            </div>
+
+            <div class="pipeline-columns">
+              <div class="pipeline-block">
+                <div class="pipeline-block-label">WHY TWO LEVELS, NOT ONE LABEL</div>
+                <ul>
+                  <li><strong>Thermal state</strong> answers whether a reading belongs to engine-off, warm-up or regulated operation.</li>
+                  <li><strong>Child state</strong> answers what power demand and vehicle motion were occurring.</li>
+                  <li>The same MAF, MAP or intake temperature can be normal at high load but abnormal at idle.</li>
+                  <li><code>operating_state</code> combines both dimensions, for example <code>post_warmup__high_load</code>, while retaining each component separately.</li>
+                  <li>These are <strong>context labels, not fault labels</strong>; they control valid comparisons and proxy enable windows.</li>
+                </ul>
+              </div>
+              <div class="pipeline-block">
+                <div class="pipeline-block-label">EXACT PHYSICAL RULES</div>
+                <ul>
+                  <li><strong>Engine off:</strong> RPM &lt; 50.</li>
+                  <li><strong>Post-warmup proxy:</strong> coolant ≥75°C plus hot idle RPM &lt;850, cumulative air ≥1,500 g, or IAT−ambient &gt;8°C.</li>
+                  <li><strong>Idle:</strong> smoothed speed &lt;1 km/h and |acceleration| &lt;0.15 m/s².</li>
+                  <li><strong>High load:</strong> moving and VSP ≥20 kW/t or acceleration ≥1.2 m/s².</li>
+                  <li>Precedence is Idle → High Load → Acceleration → Deceleration → Steady Driving; fragments shorter than 3 s are cleaned within their segment.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="evidence-chips">
+              <div class="evidence-chip"><b>77.85% POST-WARMUP</b><span>194,394 / 249,694 rows</span></div>
+              <div class="evidence-chip"><b>35.39% STEADY</b><span>largest child state</span></div>
+              <div class="evidence-chip"><b>99.99% HIGH CONFIDENCE</b><span>249,669 rows</span></div>
+              <div class="evidence-chip"><b>3 s SMOOTH + CLEANUP</b><span>reduces quantisation fragments</span></div>
+              <div class="evidence-chip"><b>VSP PHYSICS</b><span>speed + acceleration demand</span></div>
+            </div>
+
+            <div class="pipeline-disclosure">
+              <details open>
+                <summary>Historical evolution: from global statistics to state-aware evidence</summary>
+                <div class="pipeline-detail"><div class="evolution-rail">
+                  <div class="evolution-step"><b>GL-89 · 30 JUN</b><span>Initial layered operating-condition analysis established per-state statistics.</span></div>
+                  <div class="evolution-arrow">→</div>
+                  <div class="evolution-step"><b>GL-103/106 · 30 JUN–1 JUL</b><span>The state hierarchy and methodology were refined and documented.</span></div>
+                  <div class="evolution-arrow">→</div>
+                  <div class="evolution-step"><b>GL-168/204 · 7–13 JUL</b><span>Outputs were regenerated and the analysis became a repeatable pipeline stage.</span></div>
+                  <div class="evolution-arrow">→</div>
+                  <div class="evolution-step"><b>ADR 102 / GL-362</b><span>The physical rationale, thresholds, confidence degradation and downstream contract were formally accepted.</span></div>
+                </div></div>
+              </details>
+              <details>
+                <summary>Why post_warmup is explicitly called a proxy</summary>
+                <div class="pipeline-detail"><ul>
+                  <li>The dataset has no catalyst-temperature channel, so true catalyst warm-up cannot be directly observed.</li>
+                  <li>Coolant ≥75°C is required as a baseline, but cannot promote the state alone; one auxiliary condition must corroborate it.</li>
+                  <li>Cumulative MAF represents engine work, hot-idle RPM supports regulated operation, and IAT−ambient captures heat soak.</li>
+                  <li>This preserves a useful thermal context while preventing the Dashboard or Report from presenting inferred catalyst state as measured fact.</li>
+                </ul></div>
+              </details>
+              <details>
+                <summary>Smoothing, VSP and boundary discipline</summary>
+                <div class="pipeline-detail"><ul>
+                  <li>Integer-quantised 1 Hz speed makes raw sample differences noisy. A centred 3-second mean is applied before acceleration is calculated.</li>
+                  <li><code>VSP = v × (1.1a + 0.132) + 0.000302v³</code> combines velocity and acceleration into physically grounded power demand.</li>
+                  <li>Smoothing, differencing, cumulative MAF and fragment cleanup reset inside each <code>segment_id</code>; D2 inherits D1's no-cross-gap guarantee.</li>
+                  <li>The 3-second smoothing/cleanup reduces isolated state flips, with the acknowledged trade-off of slightly blurring genuine short transitions.</li>
+                </ul></div>
+              </details>
+              <details>
+                <summary>Confidence, degraded inference and exact dataset distribution</summary>
+                <div class="pipeline-detail"><ul>
+                  <li><strong>High:</strong> RPM, speed, coolant and MAF complete—249,669 rows (99.98999%).</li>
+                  <li><strong>Medium:</strong> a non-fatal field is missing but inference can continue—12 rows.</li>
+                  <li><strong>Low:</strong> RPM or speed is missing and state relies on bounded forward inheritance—13 rows.</li>
+                  <li>Thermal distribution: post-warmup 194,394; warm-up 46,518; engine-off 8,775; unknown 7.</li>
+                  <li>Child distribution: steady 88,376; deceleration 65,291; acceleration 42,796; high load 26,278; idle 18,167; engine-off 8,773; unknown 13.</li>
+                </ul></div>
+              </details>
+              <details>
+                <summary>Rejected alternatives and evidential boundary</summary>
+                <div class="pipeline-detail"><ul>
+                  <li><strong>Global ranges:</strong> rejected because they confuse state-dependent normal behaviour with faults.</li>
+                  <li><strong>One flat state:</strong> rejected because consumers need thermal and kinematic dimensions independently.</li>
+                  <li><strong>Unsupervised clusters:</strong> rejected because unnamed clusters are unstable and cannot expose fixed physical rules.</li>
+                  <li><strong>Drop low-confidence rows:</strong> rejected; retaining rows with visible confidence lets downstream stages choose eligibility.</li>
+                  <li><strong>Boundary:</strong> thresholds are project- and dataset-specific. The rules are auditable, but not claimed as universal values for every vehicle.</li>
+                </ul></div>
+              </details>
+              <details>
+                <summary>Code, outputs and independent sanity check</summary>
+                <div class="pipeline-detail"><ul>
+                  <li><code>operating_condition_statistics/src/operating_condition_analysis.py</code>: <code>compute_dt_seconds()</code>, <code>build_quality_flags()</code> and hierarchical state construction.</li>
+                  <li>Outputs: <code>operating_condition_enriched.csv</code>, counts, per-condition signal summary and published rule constants.</li>
+                  <li>Cross-layer fields: <code>thermal_state</code>, <code>child_state</code>, <code>operating_state</code>, <code>condition_confidence</code>, <code>condition_quality_flags</code>.</li>
+                  <li>An independent filename-label cross-check found physically coherent stop-and-go patterns: Stau trips had the highest acceleration+deceleration share (0.486) and engine-off share (0.070).</li>
+                  <li><code>docs/adr/102-operating-condition-stratification.md</code> records decision, sources, alternatives, consequences and mitigations.</li>
+                </ul></div>
+              </details>
+            </div>
+            </div>
+            </details>
+          </article>
+
+          <article class="pipeline-node" id="dataD3">
+            <details class="pipeline-node-shell">
+            <summary class="pipeline-node-head">
+              <span class="pipeline-node-id">D3</span>
               <div><h4>Frozen feature contract and production assembly</h4><p class="pipeline-node-purpose">Convert governed 1 Hz evidence into one deterministic, versioned Data–Model handoff whose fields, order, ownership and provenance cannot drift silently.</p></div>
               <span class="pipeline-status">FEATURE_SCHEMA.V1 · FROZEN</span>
             </summary>
@@ -3947,119 +4060,6 @@ st.session_state["dashboard_data"] = result</pre>
                   <li><code>10_atomic_feature_builder.py</code>, <code>20_engine_start_context_builder.py</code>, <code>30_window_feature_builder.py</code>, <code>40_calibrated_feature_builder.py</code>: owned feature families.</li>
                   <li><code>41_production_feature_assembler.py</code>: <code>_feature_groups()</code>, <code>build_production_features()</code>, <code>run_production_feature_assembler()</code>.</li>
                   <li>Final artefacts: <code>features/41_production/production_features.csv</code> and <code>production_features_manifest.json</code>.</li>
-                </ul></div>
-              </details>
-            </div>
-            </div>
-            </details>
-          </article>
-
-          <article class="pipeline-node" id="dataD3">
-            <details class="pipeline-node-shell">
-            <summary class="pipeline-node-head">
-              <span class="pipeline-node-id">D3</span>
-              <div><h4>Hierarchical operating-condition stratification</h4><p class="pipeline-node-purpose">Give every 1 Hz sample physically meaningful context, so normal warm-up, idle and high-load behaviour are not mistaken for faults—and real deviations are not hidden by global averages.</p></div>
-              <span class="pipeline-status">ADR 102 · ACCEPTED</span>
-            </summary>
-            <div class="pipeline-node-body">
-
-            <div class="pipeline-flow" aria-label="Operating condition inference flow">
-              <div class="pipeline-flow-step"><b>Segment-bounded signals</b><span>Speed smoothing, differencing and cumulative MAF reset at every segment.</span></div>
-              <div class="pipeline-flow-step"><b>Thermal state</b><span>engine_off / warmup / post_warmup / unknown.</span></div>
-              <div class="pipeline-flow-step"><b>Kinematic child state</b><span>idle / high_load / acceleration / deceleration / steady_driving.</span></div>
-              <div class="pipeline-flow-step"><b>Auditable context</b><span>Combined state + confidence + explicit missing-field flags.</span></div>
-            </div>
-
-            <div class="pipeline-columns">
-              <div class="pipeline-block">
-                <div class="pipeline-block-label">WHY TWO LEVELS, NOT ONE LABEL</div>
-                <ul>
-                  <li><strong>Thermal state</strong> answers whether a reading belongs to engine-off, warm-up or regulated operation.</li>
-                  <li><strong>Child state</strong> answers what power demand and vehicle motion were occurring.</li>
-                  <li>The same MAF, MAP or intake temperature can be normal at high load but abnormal at idle.</li>
-                  <li><code>operating_state</code> combines both dimensions, for example <code>post_warmup__high_load</code>, while retaining each component separately.</li>
-                  <li>These are <strong>context labels, not fault labels</strong>; they control valid comparisons and proxy enable windows.</li>
-                </ul>
-              </div>
-              <div class="pipeline-block">
-                <div class="pipeline-block-label">EXACT PHYSICAL RULES</div>
-                <ul>
-                  <li><strong>Engine off:</strong> RPM &lt; 50.</li>
-                  <li><strong>Post-warmup proxy:</strong> coolant ≥75°C plus hot idle RPM &lt;850, cumulative air ≥1,500 g, or IAT−ambient &gt;8°C.</li>
-                  <li><strong>Idle:</strong> smoothed speed &lt;1 km/h and |acceleration| &lt;0.15 m/s².</li>
-                  <li><strong>High load:</strong> moving and VSP ≥20 kW/t or acceleration ≥1.2 m/s².</li>
-                  <li>Precedence is Idle → High Load → Acceleration → Deceleration → Steady Driving; fragments shorter than 3 s are cleaned within their segment.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div class="evidence-chips">
-              <div class="evidence-chip"><b>77.85% POST-WARMUP</b><span>194,394 / 249,694 rows</span></div>
-              <div class="evidence-chip"><b>35.39% STEADY</b><span>largest child state</span></div>
-              <div class="evidence-chip"><b>99.99% HIGH CONFIDENCE</b><span>249,669 rows</span></div>
-              <div class="evidence-chip"><b>3 s SMOOTH + CLEANUP</b><span>reduces quantisation fragments</span></div>
-              <div class="evidence-chip"><b>VSP PHYSICS</b><span>speed + acceleration demand</span></div>
-            </div>
-
-            <div class="pipeline-disclosure">
-              <details open>
-                <summary>Historical evolution: from global statistics to state-aware evidence</summary>
-                <div class="pipeline-detail"><div class="evolution-rail">
-                  <div class="evolution-step"><b>GL-89 · 30 JUN</b><span>Initial layered operating-condition analysis established per-state statistics.</span></div>
-                  <div class="evolution-arrow">→</div>
-                  <div class="evolution-step"><b>GL-103/106 · 30 JUN–1 JUL</b><span>The state hierarchy and methodology were refined and documented.</span></div>
-                  <div class="evolution-arrow">→</div>
-                  <div class="evolution-step"><b>GL-168/204 · 7–13 JUL</b><span>Outputs were regenerated and the analysis became a repeatable pipeline stage.</span></div>
-                  <div class="evolution-arrow">→</div>
-                  <div class="evolution-step"><b>ADR 102 / GL-362</b><span>The physical rationale, thresholds, confidence degradation and downstream contract were formally accepted.</span></div>
-                </div></div>
-              </details>
-              <details>
-                <summary>Why post_warmup is explicitly called a proxy</summary>
-                <div class="pipeline-detail"><ul>
-                  <li>The dataset has no catalyst-temperature channel, so true catalyst warm-up cannot be directly observed.</li>
-                  <li>Coolant ≥75°C is required as a baseline, but cannot promote the state alone; one auxiliary condition must corroborate it.</li>
-                  <li>Cumulative MAF represents engine work, hot-idle RPM supports regulated operation, and IAT−ambient captures heat soak.</li>
-                  <li>This preserves a useful thermal context while preventing the Dashboard or Report from presenting inferred catalyst state as measured fact.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>Smoothing, VSP and boundary discipline</summary>
-                <div class="pipeline-detail"><ul>
-                  <li>Integer-quantised 1 Hz speed makes raw sample differences noisy. A centred 3-second mean is applied before acceleration is calculated.</li>
-                  <li><code>VSP = v × (1.1a + 0.132) + 0.000302v³</code> combines velocity and acceleration into physically grounded power demand.</li>
-                  <li>Smoothing, differencing, cumulative MAF and fragment cleanup reset inside each <code>segment_id</code>; D3 inherits D1's no-cross-gap guarantee.</li>
-                  <li>The 3-second smoothing/cleanup reduces isolated state flips, with the acknowledged trade-off of slightly blurring genuine short transitions.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>Confidence, degraded inference and exact dataset distribution</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><strong>High:</strong> RPM, speed, coolant and MAF complete—249,669 rows (99.98999%).</li>
-                  <li><strong>Medium:</strong> a non-fatal field is missing but inference can continue—12 rows.</li>
-                  <li><strong>Low:</strong> RPM or speed is missing and state relies on bounded forward inheritance—13 rows.</li>
-                  <li>Thermal distribution: post-warmup 194,394; warm-up 46,518; engine-off 8,775; unknown 7.</li>
-                  <li>Child distribution: steady 88,376; deceleration 65,291; acceleration 42,796; high load 26,278; idle 18,167; engine-off 8,773; unknown 13.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>Rejected alternatives and evidential boundary</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><strong>Global ranges:</strong> rejected because they confuse state-dependent normal behaviour with faults.</li>
-                  <li><strong>One flat state:</strong> rejected because consumers need thermal and kinematic dimensions independently.</li>
-                  <li><strong>Unsupervised clusters:</strong> rejected because unnamed clusters are unstable and cannot expose fixed physical rules.</li>
-                  <li><strong>Drop low-confidence rows:</strong> rejected; retaining rows with visible confidence lets downstream stages choose eligibility.</li>
-                  <li><strong>Boundary:</strong> thresholds are project- and dataset-specific. The rules are auditable, but not claimed as universal values for every vehicle.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>Code, outputs and independent sanity check</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><code>operating_condition_statistics/src/operating_condition_analysis.py</code>: <code>compute_dt_seconds()</code>, <code>build_quality_flags()</code> and hierarchical state construction.</li>
-                  <li>Outputs: <code>operating_condition_enriched.csv</code>, counts, per-condition signal summary and published rule constants.</li>
-                  <li>Cross-layer fields: <code>thermal_state</code>, <code>child_state</code>, <code>operating_state</code>, <code>condition_confidence</code>, <code>condition_quality_flags</code>.</li>
-                  <li>An independent filename-label cross-check found physically coherent stop-and-go patterns: Stau trips had the highest acceleration+deceleration share (0.486) and engine-off share (0.070).</li>
-                  <li><code>docs/adr/102-operating-condition-stratification.md</code> records decision, sources, alternatives, consequences and mitigations.</li>
                 </ul></div>
               </details>
             </div>
@@ -4208,7 +4208,7 @@ st.session_state["dashboard_data"] = result</pre>
               </ul></div></details>
               <details><summary>Executability, persistence and conservative failure behaviour</summary><div class="pipeline-detail"><ul>
                 <li>Only frozen/executable designs produce rows. Downgraded, descriptive, infeasible or removed designs leave no runtime footprint.</li>
-                <li>Rule enablement inherits D1 continuity and D3 operating-state boundaries; invalid quality breaks persistence rather than bridging it.</li>
+                <li>Rule enablement inherits D1 continuity and D2 operating-state boundaries; invalid quality breaks persistence rather than bridging it.</li>
                 <li>Out-of-domain inputs return <code>not_evaluable</code>; they are not forced into pass or triggered.</li>
                 <li>Pre-registration prevents moving a threshold just beyond the baseline maximum merely to claim zero false positives.</li>
                 <li>The runtime output records proxy/sub-check IDs, direction, role, state, reason, margin, DTC candidate/emission and provenance.</li>
