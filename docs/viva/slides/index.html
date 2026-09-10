@@ -2220,6 +2220,42 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .integration-run div:not(:last-child)::after { content:"→"; position:absolute; right:-10px; top:50%; transform:translate(50%,-50%); color:#1769ff; font-weight:900; z-index:2; }
 .integration-run b { display:block; color:#1769ff; font:800 12px/1.2 var(--font-mono); }
 .integration-run span { display:block; margin-top:7px; color:var(--text-muted); font-size:13px; line-height:1.35; }
+.integration-file-flow { grid-column:1/-1; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.integration-file-card { position:relative; padding:18px; border-top:5px solid #1769ff; background:#fff; box-shadow:0 8px 24px rgba(29,29,31,.05); }
+.integration-file-card:not(:last-child)::after { content:'→'; position:absolute; right:-12px; top:50%; transform:translate(50%,-50%); color:#1769ff; font:900 22px/1 var(--font-mono); z-index:2; }
+.integration-file-card > b { color:#1769ff; font:800 14px/1.2 var(--font-mono); }
+.integration-file-part { margin-top:12px; }
+.integration-file-part strong { display:block; color:var(--text); font:800 11px/1.2 var(--font-mono); letter-spacing:.04em; }
+.integration-file-part ul { margin:6px 0 0; padding-left:17px; color:var(--text-muted); font-size:13px; line-height:1.38; }
+.integration-gate-map { grid-column:1/-1; display:grid; gap:14px; }
+.integration-gate-row { display:grid; grid-template-columns:1fr 46px 1.35fr 46px 1fr; gap:14px; align-items:stretch; }
+.integration-gate-source,.integration-gate-check,.integration-gate-pass,.integration-gate-fail { padding:21px 22px; border-radius:9px; background:#fff; }
+.integration-gate-source { grid-column:1; }
+.integration-gate-arrow { grid-column:2; }
+.integration-gate-check { grid-column:3; }
+.integration-gate-branch { grid-column:4; }
+.integration-gate-pass { grid-column:5; }
+.integration-gate-fail { display:none; }
+.integration-gate-source { border-left:5px solid #1769ff; }
+.integration-gate-check { border-top:5px solid #1769ff; background:#f3f7ff; }
+.integration-gate-pass { border-left:5px solid #27864a; background:#f1faf4; }
+.integration-gate-fail { display:flex; flex-direction:column; justify-content:center; border-left:5px solid #c2413a; background:#fff3f2; }
+.integration-gate-row .integration-gate-fail { display:none; }
+.integration-gate-source b,.integration-gate-check b,.integration-gate-pass b,.integration-gate-fail b { display:block; font:800 16px/1.2 var(--font-mono); }
+.integration-gate-source b,.integration-gate-check b { color:#1769ff; }
+.integration-gate-pass b { color:#27864a; }
+.integration-gate-fail b { color:#c2413a; }
+.integration-gate-source ul,.integration-gate-check ul,.integration-gate-pass ul,.integration-gate-fail ul { margin:11px 0 0; padding-left:21px; color:var(--text-muted); font-size:17px; line-height:1.48; }
+.integration-gate-arrow { display:grid; place-items:center; color:#1769ff; font:900 30px/1 var(--font-mono); }
+.integration-gate-branch { display:grid; place-items:center; color:#27864a; font:900 30px/1 var(--font-mono); }
+.integration-gate-branch span { display:none; }
+.integration-gate-branch::before { content:'→'; }
+.integration-orchestrator-note { grid-column:1/-1; padding:17px 20px; border-left:5px solid #1769ff; background:#f3f7ff; color:var(--text-muted); font-size:17px; line-height:1.45; }
+.integration-orchestrator-note strong { color:#1769ff; }
+.integration-stop-note { grid-column:1/-1; padding:17px 20px; border-left:5px solid #c2413a; background:#fff3f2; color:var(--text-muted); font-size:17px; line-height:1.45; }
+.integration-stop-note strong { color:#c2413a; }
+.integration-gate-branch .gate-pass { color:#27864a; }
+.integration-gate-branch .gate-fail { color:#c2413a; }
 .teamwork-evidence { display:flex; flex-direction:column; margin:34px 0 54px; padding:34px 0 48px; border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
 .teamwork-evidence-head { max-width:920px; }
 .teamwork-evidence-head { order:0; }
@@ -3557,56 +3593,15 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
     <main class="backup-document">
       <section class="teamwork-evidence" id="backupTeamwork">
       <section class="backup-overview teamwork-pipeline-overview" id="backupOverview">
-        <div>
-          <div class="teamwork-section-title"><b>07</b><h3>From four layers to one pipeline</h3></div>
-          <h2>How independently developed components were connected.</h2>
-          <p>Shared contracts allowed parallel development. Each boundary was then connected and checked before the complete local upload path was used.</p>
-          <div class="integration-workflow" aria-label="Team development workflow"><b>JIRA TASK</b><i>→</i><span>GitHub branch</span><i>→</i><span>Pull request + CI</span><i>→</i><span>develop</span><i>→</i><span>Discord update</span></div>
-        </div>
-
+        <div class="teamwork-section-title"><b>07</b><h3>End-to-end integration · inputs, checks and failure paths</h3></div>
         <div class="integration-map" aria-label="Cross-layer integration map">
-          <div class="integration-handoff">
-            <div class="integration-handoff-title"><b>BOUNDARY 01</b><strong>Data → Model</strong></div>
-            <pre class="integration-code">production_features, proxy_decisions =
-    _run_data_layer(raw_path)
-
-model_output = _run_model_layer(
-    production_features,
-    proxy_decisions,
-    output_path,
-)</pre>
-            <div class="integration-artifact"><b>HANDOFF</b><span><strong>production_features.csv</strong><br>46 ordered feature columns</span><span><strong>proxy_decisions.csv</strong><br>optional rule-based evidence</span><span><code>dashboard/csv_pipeline.py</code></span></div>
-          </div>
-
-          <div class="integration-handoff">
-            <div class="integration-handoff-title"><b>BOUNDARY 02</b><strong>Model → Report</strong></div>
-            <pre class="integration-code">ModelLayerOutput(**model_payload)
-
-report = generate_report(
-    model_payload,
-    risk_history=_component_risk_history(
-        raw, component
-    ),
-)</pre>
-            <div class="integration-artifact"><b>HANDOFF</b><span><strong>Validated Model JSON</strong><br>anomaly, risk, confidence, signals and projections</span><span>Only affected Medium/High components proceed to report generation.</span><span><code>dashboard/data_loader.py</code></span></div>
-          </div>
-
-          <div class="integration-handoff">
-            <div class="integration-handoff-title"><b>BOUNDARY 03</b><strong>Report → Dashboard</strong></div>
-            <pre class="integration-code">result[component_key] = report
-result["_data_source"][component_key] = source
-
-if components and all(
-    not c.get("anomaly_description")
-    for c in components.values()
-):
-    _show_pipeline_error(
-        "Report Generation Unavailable", ...
-    )
-    return
-
-st.session_state["dashboard_data"] = result</pre>
-            <div class="integration-artifact"><b>HANDOFF</b><span><strong>Dashboard-ready dictionary</strong><br>Model evidence + three accepted report sections</span><span>An all-empty Report fallback is stopped before the results page.</span><span><code>dashboard/pages/overview.py</code></span></div>
+          <div class="integration-gate-map" aria-label="Boundary checks, accepted outputs and failure paths">
+            <div class="integration-orchestrator-note"><strong>ORCHESTRATION · DASHBOARD</strong> controls the sequence and checks that each handoff is available. Each receiving layer then validates its own input contract before processing. The layers do not call one another directly.</div>
+            <div class="integration-gate-row"><div class="integration-gate-source"><b>DASHBOARD UPLOAD</b><ul><li>1 raw CSV, or ≥5 dated CSVs</li><li>Original filenames retained</li></ul></div><div class="integration-gate-arrow">→</div><div class="integration-gate-check"><b>DATA INPUT GATE</b><ul><li>Non-empty; valid KIT filename</li><li>11 required columns; minimum rows</li><li>History: each file valid, names unique, date ordered</li></ul></div><div class="integration-gate-branch"><span class="gate-pass">PASS →</span><span class="gate-fail">FAIL →</span></div><div class="integration-gate-pass"><b>DATA RUNS</b><ul><li>Single file or one joint history run</li><li>Trip boundaries preserved</li></ul></div><div class="integration-gate-fail"><b>STOP</b><ul><li>Specific upload error</li><li>No downstream run</li></ul></div></div>
+            <div class="integration-gate-row"><div class="integration-gate-source"><b>DATA OUTPUT · ONE PAIR</b><ul><li><code>production_features.csv</code> · 46-column sample evidence</li><li><code>proxy_decisions.csv</code> · 21-column rule decisions</li></ul></div><div class="integration-gate-arrow">→</div><div class="integration-gate-check"><b>MODEL INPUT GATE</b><ul><li>Feature file exists; proxy file exists when reported</li><li>Feature schema, calibration and 1 Hz timing</li><li>Usable ≥700-row segment; proxy schema valid</li></ul></div><div class="integration-gate-branch"><span class="gate-pass">PASS →</span><span class="gate-fail">FAIL →</span></div><div class="integration-gate-pass"><b>MODEL RUNS</b><ul><li>One isolated batch subprocess</li><li>Writes one <code>model_output.json</code></li></ul></div><div class="integration-gate-fail"><b>STOP</b><ul><li>Non-zero <code>ERROR:</code> or timeout</li><li>Dashboard shows failure</li></ul></div></div>
+            <div class="integration-gate-row"><div class="integration-gate-source"><b>MODEL OUTPUT · ONE JSON</b><ul><li><code>summary</code> · highest primary-risk window</li><li><code>windows</code> · every eligible window</li></ul></div><div class="integration-gate-arrow">→</div><div class="integration-gate-check"><b>REPORT INPUT GATE</b><ul><li>Output file exists and parses as JSON</li><li>Select affected components</li><li>Pydantic checks fields, values and relationships</li></ul></div><div class="integration-gate-branch"><span class="gate-pass">PASS →</span><span class="gate-fail">FAIL →</span></div><div class="integration-gate-pass"><b>REPORT RUNS</b><ul><li>One report per affected component</li><li>Each section validated before release</li></ul></div><div class="integration-gate-fail"><b>STOP</b><ul><li>Invalid Model output</li><li>No report generation</li></ul></div></div>
+            <div class="integration-gate-row"><div class="integration-gate-source"><b>REPORT OUTPUT · IN MEMORY</b><ul><li>Model evidence retained</li><li>What was observed</li><li>Possible causes</li><li>Recommended actions</li><li>Component-keyed result + source label</li></ul></div><div class="integration-gate-arrow">→</div><div class="integration-gate-check"><b>DASHBOARD ACCEPTANCE GATE</b><ul><li>At least one affected component</li><li>Detect all-empty Report fallback</li><li>Only accepted result updates session state</li></ul></div><div class="integration-gate-branch"><span class="gate-pass">PASS →</span><span class="gate-fail">FAIL →</span></div><div class="integration-gate-pass"><b>DISPLAY</b><ul><li>Overview, detail and risk history</li><li>Key signals, report and export</li></ul></div><div class="integration-gate-fail"><b>STOP</b><ul><li>Report unavailable card</li><li>Previous state not overwritten</li></ul></div></div>
+            <div class="integration-stop-note"><strong>IF ANY BOUNDARY CHECK FAILS</strong> · Processing stops before the next layer and the Dashboard shows that the upload could not be completed.</div>
           </div>
 
           <div class="integration-run" aria-label="Complete local upload path">
@@ -3741,7 +3736,6 @@ st.session_state["dashboard_data"] = result</pre>
           <p class="interface-inline-note">Shared interfaces allowed each group to develop against the same field definitions before the complete pipeline was connected.</p>
         </div>
 
-        <div class="teamwork-summary">The plan defined the major work, Jira assigned it, meeting records tracked it, and GitHub checks controlled how completed changes entered the shared pipeline.</div>
       </section>
 
       <div class="backup-pipeline">
