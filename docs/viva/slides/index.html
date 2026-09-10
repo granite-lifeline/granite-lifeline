@@ -3761,7 +3761,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
             <summary class="pipeline-node-head">
               <span class="pipeline-node-id">D0</span>
               <div><h4>Upload intake and run isolation</h4><p class="pipeline-node-purpose">Reject recordings that cannot satisfy the Data or Model contract before expensive processing begins, then preserve every accepted run as a traceable set of artefacts.</p></div>
-              <span class="pipeline-status">IMPLEMENTED</span>
+              <span class="pipeline-status">6 REJECT CODES</span>
             </summary>
             <div class="pipeline-node-body">
 
@@ -3796,7 +3796,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
             <summary class="pipeline-node-head">
               <span class="pipeline-node-id">D1</span>
               <div><h4>Continuity-aware cleaning</h4><p class="pipeline-node-purpose">Turn irregular OBD-II recordings into 1 Hz evidence without inventing continuity across missing time, invalid samples or recording boundaries.</p></div>
-              <span class="pipeline-status">ADR 101 · ACCEPTED</span>
+              <span class="pipeline-status">249,694 ROWS · 81→118</span>
             </summary>
             <div class="pipeline-node-body">
 
@@ -3848,7 +3848,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
             <summary class="pipeline-node-head">
               <span class="pipeline-node-id">D2</span>
               <div><h4>Hierarchical operating-condition stratification</h4><p class="pipeline-node-purpose">Give every 1 Hz sample physically meaningful context, so normal warm-up, idle and high-load behaviour are not mistaken for faults—and real deviations are not hidden by global averages.</p></div>
-              <span class="pipeline-status">ADR 102 · ACCEPTED</span>
+              <span class="pipeline-status">77.85% POST-WARMUP</span>
             </summary>
             <div class="pipeline-node-body">
 
@@ -3899,7 +3899,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
             <summary class="pipeline-node-head">
               <span class="pipeline-node-id">D3</span>
               <div><h4>Frozen feature contract and production assembly</h4><p class="pipeline-node-purpose">Convert governed 1 Hz evidence into one deterministic, versioned Data–Model handoff whose fields, order, ownership and provenance cannot drift silently.</p></div>
-              <span class="pipeline-status">FEATURE_SCHEMA.V1 · FROZEN</span>
+              <span class="pipeline-status">46 COLUMNS · FROZEN</span>
             </summary>
             <div class="pipeline-node-body">
 
@@ -3932,7 +3932,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
             <summary class="pipeline-node-head">
               <span class="pipeline-node-id">D4</span>
               <div><h4>Executable proxy failure evidence</h4><p class="pipeline-node-purpose">Screen physically plausible fault symptoms into a deliberately small set of runtime checks, preserving the difference between a verdict, supporting evidence, a pending precursor and a design that was never executable.</p></div>
-              <span class="pipeline-status">ADR 103 · 14 CHECKS / 5 FAMILIES</span>
+              <span class="pipeline-status">14 CHECKS / 5 FAMILIES</span>
             </summary>
             <div class="pipeline-node-body">
             <div class="pipeline-flow" aria-label="How the proxy families were established">
@@ -3964,7 +3964,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
             <summary class="pipeline-node-head">
               <span class="pipeline-node-id">D5</span>
               <div><h4>Offline calibration and governed residual features</h4><p class="pipeline-node-purpose">Keep the baseline reference fixed: user uploads may apply approved transformations, but can never redefine “normal” by fitting on the vehicle currently being diagnosed.</p></div>
-              <span class="pipeline-status">CALIBRATION.V1 · FROZEN</span>
+              <span class="pipeline-status">48/48 PASS · 66-TRIP COHORT</span>
             </summary>
             <div class="pipeline-node-body">
             <div class="pipeline-flow" aria-label="Calibration governance flow">
@@ -3996,7 +3996,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
             <summary class="pipeline-node-head">
               <span class="pipeline-node-id">D6</span>
               <div><h4>Graded synthetic fault-injection validation</h4><p class="pipeline-node-purpose">Challenge every executable proxy end to end with paired, single-signal interventions—testing severity response, independent contexts and diagnostic semantics without claiming synthetic detection is field recall.</p></div>
-              <span class="pipeline-status">ADR 104 · 14 / 14 ACCEPTED</span>
+              <span class="pipeline-status">14 / 14 ACCEPTED</span>
             </summary>
             <div class="pipeline-node-body">
             <div class="pipeline-flow" aria-label="Fault injection experiment">
@@ -4036,7 +4036,7 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
             <summary class="pipeline-node-head">
               <span class="pipeline-node-id">D7</span>
               <div><h4>Two deliveries, one traceable Data handoff</h4><p class="pipeline-node-purpose">Hand Model both sample-grain forecasting evidence and decision-grain proxy evidence from the same isolated run, while preserving their different meanings, consumers and claim boundaries.</p></div>
-              <span class="pipeline-status">INTERFACE v1.3+ · LIVE UPLOAD</span>
+              <span class="pipeline-status">2 DELIVERIES · SAME RUN</span>
             </summary>
             <div class="pipeline-node-body">
             <div class="pipeline-flow" aria-label="Data handoff flow">
