@@ -3808,98 +3808,42 @@ st.session_state["dashboard_data"] = result</pre>
             <div class="pipeline-flow" aria-label="Continuity-aware cleaning flow">
               <div class="pipeline-flow-step"><b>Raw source identity</b><span>Filename date + in-file time; stable chronological file order.</span></div>
               <div class="pipeline-flow-step"><b>UTC timeline</b><span>Localise in Europe/Berlin, sort timestamps and keep the last duplicate.</span></div>
-              <div class="pipeline-flow-step"><b>Trip → segments</b><span>A raw gap greater than 3 seconds starts a new continuous segment.</span></div>
+              <div class="pipeline-flow-step"><b>Hard-invalid masking</b><span>Whole-file pass: values outside physical bounds are set to missing, before any segment split.</span></div>
+              <div class="pipeline-flow-step"><b>Trip → segments</b><span>A gap greater than 3 seconds on the masked timeline starts a new continuous segment.</span></div>
               <div class="pipeline-flow-step"><b>Segment-safe 1 Hz grid</b><span>Resample each segment independently; fill only complete gaps of at most 2 seconds.</span></div>
-              <div class="pipeline-flow-step"><b>Continuity blocks</b><span>Break again wherever quality, trip, segment, row or 1-second cadence fails.</span></div>
             </div>
 
-            <div class="pipeline-columns">
-              <div class="pipeline-block">
-                <div class="pipeline-block-label">THE THREE IDENTITIES — NOT INTERCHANGEABLE</div>
-                <ul>
-                  <li><strong><code>trip_id</code></strong> identifies one source driving record. It preserves provenance and groups segments that came from the same file.</li>
-                  <li><strong><code>segment_id</code></strong> identifies raw recording continuity inside a trip. It changes when the observed timestamp gap is <strong>&gt;3 s</strong>.</li>
-                  <li><strong><code>continuity_block_id</code></strong> is stricter downstream eligibility. It also breaks on invalid quality, a missing/flagged sample, a non-consecutive row, or a timestamp step other than exactly 1 s.</li>
-                  <li>Therefore “same trip” does not mean “safe rolling window”, and even “same segment” does not guarantee that every row is eligible.</li>
-                </ul>
-              </div>
-              <div class="pipeline-block">
-                <div class="pipeline-block-label">CURRENT CLEANING AND QUALITY LOGIC</div>
-                <ul>
-                  <li><code>_parse_timestamps()</code> combines filename date with source time, localises it, and emits UTC.</li>
-                  <li>Hard-invalid values outside physical bounds become missing values, but their origin remains visible through per-signal flags.</li>
-                  <li>Suspicious yet physically possible values are retained and flagged; the cleaner does not silently rewrite uncertain evidence.</li>
-                  <li>Cross-field rules mark contradictions such as RPM=0 while speed&gt;0, MAF=0 while RPM&gt;0, and sub-zero coolant in warm ambient conditions.</li>
-                  <li><code>_resample_segment()</code> creates <code>row_in_segment</code>, source-sample counts and observed-sensor counts on the 1 Hz grid.</li>
-                </ul>
-              </div>
+            <table class="report-table">
+              <thead><tr><th>Rule</th><th>Threshold / behaviour</th></tr></thead>
+              <tbody>
+                <tr><td>New segment</td><td>Raw timestamp gap &gt;3 s starts a new <code>segment_id</code>.</td></tr>
+                <tr><td>Short-gap fill</td><td>Gaps of ≤2 s are filled on the 1 Hz grid; longer gaps are left missing, never bridged.</td></tr>
+                <tr><td>Hard-invalid values</td><td>Outside physical bounds → set to missing, but flagged (<code>had_hard_invalid_source</code>).</td></tr>
+                <tr><td>Suspicious values</td><td>Physically possible but unusual → kept as-is, flagged (<code>is_suspicious</code>); never silently rewritten.</td></tr>
+                <tr><td>Cross-field checks</td><td>Flags contradictions, e.g. RPM=0 with speed&gt;0, MAF=0 with RPM&gt;0, sub-zero coolant in warm ambient.</td></tr>
+              </tbody>
+            </table>
+
+            <table class="report-table">
+              <thead><tr><th>Identity</th><th>Breaks when</th><th>Granularity</th></tr></thead>
+              <tbody>
+                <tr><td><code>trip_id</code></td><td>Never breaks within one source file.</td><td>Coarsest — file-level provenance.</td></tr>
+                <tr><td><code>segment_id</code></td><td>Raw timestamp gap &gt;3 s — a genuine recording break.</td><td>Medium — “was recording paused or restarted”.</td></tr>
+                <tr class="selected-row"><td><code>continuity_block_id</code></td><td>Not a D1 output — computed on demand by downstream feature-engineering (D3) and proxy (D5) scripts, each with its own required-valid-signal set. Breaks whenever any row in that set fails the quality-valid mask (missing / imputed / suspicious / hard-invalid) or the row/timestamp is not perfectly consecutive — on <strong>both sides</strong>, even with no time gap at all.</td><td>Finest, but caller-dependent — no single block count for the whole corpus.</td></tr>
+              </tbody>
+            </table>
+
+            <div class="report-boundary"><strong>Same segment ≠ same block:</strong> a segment only breaks on a genuine recording gap (&gt;3 s). A single bad or flagged reading inside an otherwise continuous segment still splits the block on both sides of it — so a 700-row segment can still fail to contain any 700-row block. Rolling features and Model windows are gated on <code>continuity_block_id</code>, the strictest of the three identities.</div>
+
+            <div class="report-result-grid">
+              <div class="report-result"><b>249,694</b><span>cleaned rows, full corpus</span></div>
+              <div class="report-result"><b>81 → 118</b><span>trips → segments</span></div>
+              <div class="report-result"><b>&gt;3s / ≤2s</b><span>break / fill thresholds</span></div>
+              <div class="report-result"><b>12 / 12</b><span>continuity tests passed</span></div>
             </div>
 
-            <div class="evidence-chips">
-              <div class="evidence-chip"><b>249,694 ROWS</b><span>cleaned full-corpus artefact</span></div>
-              <div class="evidence-chip"><b>81 TRIPS → 118 SEGMENTS</b><span>one file is not always continuous</span></div>
-              <div class="evidence-chip"><b>&gt;3 s BREAK</b><span>new segment boundary</span></div>
-              <div class="evidence-chip"><b>≤2 s FILL</b><span>only short complete missing runs</span></div>
-              <div class="evidence-chip"><b>12 / 12 TESTS</b><span>continuity contract verified</span></div>
-            </div>
+            <div class="data-code-path"><b>CODE PATH</b><code>data_layer/data_cleaning/src/cleaning_core.py</code><code>data_layer/pipeline_data/continuity.py :: build_quality_valid_mask(), build_continuity_blocks()</code><code>data_layer/data_cleaning/src/cleaning_config.yaml (v3.0)</code></div>
 
-            <div class="pipeline-disclosure">
-              <details open>
-                <summary>Historical evolution: how the boundary contract emerged</summary>
-                <div class="pipeline-detail">
-                  <div class="evolution-rail">
-                    <div class="evolution-step"><b>INITIAL PIPELINE</b><span>Timestamp alignment and 1 Hz resampling existed, but a source file could still be treated as one continuous record.</span></div>
-                    <div class="evolution-arrow">→</div>
-                    <div class="evolution-step"><b>QUALITY REVIEW</b><span>Several files contained multiple discontinuous sections. File-level continuity would bridge time the vehicle was not observed.</span></div>
-                    <div class="evolution-arrow">→</div>
-                    <div class="evolution-step"><b>GL-308 · 19 JUL</b><span>A shared <code>continuity.py</code> contract centralised valid masks, blocks, windows, elapsed spans and event neighbourhoods.</span></div>
-                    <div class="evolution-arrow">→</div>
-                    <div class="evolution-step"><b>ADR 101 · 25 JUL</b><span>The two-level <code>trip_id + segment_id</code> identity and the 3 s / 2 s thresholds were documented as an accepted architectural decision.</span></div>
-                  </div>
-                </div>
-              </details>
-              <details>
-                <summary>Why crossing a boundary would invalidate later results</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><strong>Interpolation:</strong> could invent a smooth transition across an unobserved stop, restart or logging outage.</li>
-                  <li><strong>Rolling features and slopes:</strong> could compare sensor values that were not adjacent in real time.</li>
-                  <li><strong>Persistence logic:</strong> could count evidence on opposite sides of a gap as one continuous event.</li>
-                  <li><strong>Model windows:</strong> could present a synthetic 512-step history assembled from separate operating periods.</li>
-                  <li><strong>Evaluation:</strong> could overstate usable coverage and create false confidence in planted-fault detection.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>Exact downstream admission rule</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><code>build_quality_valid_mask()</code> admits a signal only when its value exists and its imputed, suspicious and hard-invalid flags are explicitly false. Missing flags are treated conservatively as invalid.</li>
-                  <li><code>build_continuity_blocks()</code> continues a block only when current and previous samples are valid, trip and segment match, <code>row_in_segment</code> increments by one, and timestamps differ by exactly one second.</li>
-                  <li>Recorded break reasons are <code>dataset_start</code>, <code>invalid_sample</code>, <code>trip_boundary</code>, <code>segment_boundary</code>, <code>previous_sample_invalid</code>, <code>row_not_consecutive</code> and <code>timestamp_not_consecutive</code>.</li>
-                  <li><code>strict_window_mask()</code>, <code>strict_elapsed_span_mask()</code> and <code>strict_event_neighborhood_mask()</code> reuse this shared rule. A 180-second elapsed span requires 181 valid endpoints.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>Rejected alternatives and trade-offs</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><strong>One file = one continuous trip:</strong> simple, but demonstrably false for the source corpus.</li>
-                  <li><strong>Concatenate all records:</strong> rejected because vehicle sessions and time gaps would disappear.</li>
-                  <li><strong>Keep only <code>trip_id</code>:</strong> rejected because downstream code could not distinguish separate continuous sections.</li>
-                  <li><strong>Drop every row after a large gap:</strong> rejected because valid evidence after the gap would be lost; a new segment preserves it safely.</li>
-                  <li><strong>Interpolate every gap:</strong> rejected because long gaps cannot be justified as observed vehicle behaviour.</li>
-                  <li><strong>Trade-off:</strong> strict boundaries reduce coverage near gaps, but make every admitted temporal feature auditable. The 3 s and 2 s thresholds remain dataset-specific rather than universal physical constants.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>Output contract, code and verification evidence</summary>
-                <div class="pipeline-detail"><ul>
-                  <li>Output preserves <code>timestamp</code>, <code>trip_id</code>, <code>segment_id</code>, <code>row_in_segment</code>, signals, metadata, per-signal imputed/suspicious/hard-invalid flags and aggregate quality flags.</li>
-                  <li><code>data_layer/data_cleaning/src/cleaning_core.py</code>: timestamp parsing, invalid/suspicious masks, short-gap filling, segment resampling and global cadence validation.</li>
-                  <li><code>data_layer/data_cleaning/src/cleaning_config.yaml</code> v3.0: timezone, 1 s resampling, 3 s segment gap, 2 s imputation limit and signal bounds.</li>
-                  <li><code>data_layer/pipeline_data/continuity.py</code>: the single shared boundary and window contract used by Feature and Proxy stages.</li>
-                  <li><code>docs/adr/101-continuity-aware-data-cleaning.md</code>: context, decision, alternatives, consequences and mitigations.</li>
-                  <li>Verified locally against <code>operating_condition_enriched.csv</code>: 249,694 rows, 81 unique trips and 118 unique segments. The dedicated continuity suite passed 12/12 tests in 0.28 s.</li>
-                </ul></div>
-              </details>
-            </div>
             </div>
             </details>
           </article>
