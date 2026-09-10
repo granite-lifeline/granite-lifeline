@@ -2059,20 +2059,100 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .report-backup .report-case p,
 .report-backup .report-case li { color:var(--text-muted); font-size:16px; line-height:1.48; }
 .report-backup .report-case ul { margin:12px 0 0; padding-left:20px; }
+.report-backup .report-case-grid.report-conclusion-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
 .report-backup .report-result-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-top:24px; }
 .report-backup .report-result { padding:18px 14px; border-top:4px solid var(--layer-color); background:#f7faff; text-align:center; }
 .report-backup .report-result b { display:block; color:var(--layer-color); font:850 25px/1 var(--font-mono); }
 .report-backup .report-result span { display:block; margin-top:9px; color:var(--text-muted); font-size:14px; line-height:1.35; }
+.report-backup .validator-sequence { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:30px; margin-top:24px; }
+.report-backup .validator-stage { position:relative; padding:21px 22px; border:1px solid var(--border); border-top:5px solid var(--layer-color); border-radius:10px; background:#fff; }
+.report-backup .validator-stage:not(:last-child)::after { content:"\2192"; position:absolute; top:47%; right:-24px; color:var(--layer-color); font:800 25px/1 var(--font-mono); }
+.report-backup .validator-stage > b { display:block; color:var(--layer-color); font:800 15px/1.2 var(--font-mono); }
+.report-backup .validator-stage h5 { margin:8px 0 13px; color:var(--text); font-size:21px; line-height:1.2; }
+.report-backup .validator-stage p { margin:0; color:var(--text-muted); font-size:16px; line-height:1.45; }
+.report-backup .validator-gate { margin-top:14px; padding-top:13px; border-top:1px solid var(--border); color:var(--text) !important; font-weight:750; }
+.report-backup .validator-dependency { display:grid; grid-template-columns:1.05fr 1.95fr; gap:18px; margin-top:18px; }
+.report-backup .validator-dependency-card { padding:18px 20px; border-radius:10px; background:#f7faff; }
+.report-backup .validator-dependency-card b { display:block; color:var(--layer-color); font:800 14px/1.2 var(--font-mono); }
+.report-backup .validator-dependency-card p { margin:9px 0 0; color:var(--text-muted); font-size:16px; line-height:1.45; }
+.report-backup .validator-rule-row { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:11px; }
+.report-backup .validator-rule { padding:11px 12px; border-left:3px solid var(--layer-color); background:#fff; color:var(--text-muted); font-size:14px; line-height:1.35; }
+.report-backup .validator-rule strong { display:block; margin-bottom:4px; color:var(--text); }
+.report-backup .rag-call-grid { display:grid; grid-template-columns:1.35fr 1fr; gap:18px; margin-top:20px; align-items:stretch; }
+.report-backup .rag-call-grid .pipeline-code { margin:0; min-height:100%; padding:18px 20px; font-size:14px; line-height:1.55; }
+.report-backup .rag-output-list { display:grid; gap:10px; }
+.report-backup .rag-output-item { padding:14px 16px; border-left:4px solid var(--layer-color); background:#f7faff; color:var(--text-muted); font-size:15px; line-height:1.4; }
+.report-backup .rag-output-item strong { display:block; margin-bottom:3px; color:var(--text); font-size:16px; }
+.report-backup .validator-engine { display:grid; grid-template-columns:1.2fr .8fr; gap:18px; margin-top:22px; }
+.report-backup .validator-engine-flow { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:9px; }
+.report-backup .validator-engine-step { display:flex; align-items:center; justify-content:center; min-height:94px; padding:13px 10px; border-top:4px solid var(--layer-color); background:#fff; color:var(--text); font-size:15px; font-weight:750; line-height:1.3; text-align:center; }
+.report-backup .validator-penalties { padding:17px 18px; border-radius:10px; background:#f7faff; }
+.report-backup .validator-penalties b { display:block; color:var(--layer-color); font:800 14px/1.2 var(--font-mono); }
+.report-backup .validator-penalty-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; }
+.report-backup .validator-penalty-row span { padding:11px 8px; background:#fff; color:var(--text); font:800 18px/1 var(--font-mono); text-align:center; }
+.report-backup .input-contract-grid { display:grid; grid-template-columns:1.08fr .92fr 1fr; gap:14px; margin-top:20px; }
+.report-backup .input-contract-card { min-width:0; padding:16px; border-top:4px solid var(--layer-color); background:#fff; }
+.report-backup .input-contract-card > b { display:block; margin-bottom:10px; color:var(--layer-color); font:800 13px/1.2 var(--font-mono); }
+.report-backup .input-contract-card .pipeline-code { margin:0; padding:14px; font-size:12px; line-height:1.48; }
+/* Data viva backup — presentation-scale speaking notes (mirrors Model/Report backup treatment). */
+.data-backup .pipeline-node { padding:34px 36px 36px; }
+.data-backup .pipeline-node h4 { font-size:clamp(27px,2.45vw,36px); }
+.data-backup .pipeline-node-purpose { max-width:980px; font-size:18px; line-height:1.48; }
+.data-backup .pipeline-node-id { font-size:15px; }
+.data-backup .pipeline-status { padding:8px 10px; font-size:12px; }
+.data-backup .pipeline-flow { gap:12px; margin-top:24px; }
+.data-backup .pipeline-flow-step { min-height:112px; padding:18px 16px; background:color-mix(in srgb,var(--layer-color) 6%,white); }
+.data-backup .pipeline-flow-step b { font-size:17px; line-height:1.25; }
+.data-backup .pipeline-flow-step span { margin-top:8px; font-size:15px; line-height:1.42; }
+.data-backup .pipeline-columns { gap:24px; margin-top:24px; }
+.data-backup .pipeline-block-label { font-size:13px; }
+.data-backup .pipeline-block p,
+.data-backup .pipeline-block li { color:var(--text-muted); font-size:17px; line-height:1.52; }
+.data-backup .pipeline-block ul { padding-left:22px; }
+.data-backup .pipeline-block li { margin:8px 0; }
+.data-backup .evidence-chips { gap:10px; margin-top:24px; }
+.data-backup .evidence-chip { padding:10px 12px; }
+.data-backup .evidence-chip b { font-size:12.5px; }
+.data-backup .evidence-chip span { font-size:12px; }
+.data-backup .pipeline-disclosure summary { padding:16px 2px; font-size:16px; }
+.data-backup .pipeline-detail { font-size:16px; line-height:1.55; }
+.data-backup .pipeline-detail li { margin:8px 0; }
+.data-backup .pipeline-code { font-size:13px; line-height:1.55; }
+.data-backup .evolution-step { padding:16px; }
+.data-backup .evolution-step b { font-size:12px; }
+.data-backup .evolution-step span { font-size:14px; line-height:1.42; }
+.data-backup .report-table { width:100%; margin-top:24px; border-collapse:collapse; table-layout:fixed; background:#fff; }
+.data-backup .report-table th { padding:14px 13px; border-bottom:2px solid var(--layer-color); color:var(--layer-color); font:800 14px/1.25 var(--font-mono); text-align:left; }
+.data-backup .report-table td { padding:14px 13px; border-bottom:1px solid var(--border); color:var(--text-muted); font-size:16px; line-height:1.42; vertical-align:top; }
+.data-backup .report-table td strong { color:var(--text); }
+.data-backup .report-table .selected-row { background:color-mix(in srgb,var(--layer-color) 8%,white); }
+.data-backup .report-case-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; margin-top:24px; }
+.data-backup .report-case { padding:20px 22px; border:1px solid var(--border); border-radius:10px; background:#fff; }
+.data-backup .report-case b { display:block; color:var(--layer-color); font:800 14px/1.2 var(--font-mono); }
+.data-backup .report-case p,
+.data-backup .report-case li { color:var(--text-muted); font-size:16px; line-height:1.5; }
+.data-backup .report-case p { margin-top:10px; }
+.data-backup .report-case ul { margin:12px 0 0; padding-left:20px; }
+.data-backup .report-result-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-top:24px; }
+.data-backup .report-result { padding:18px 14px; border-top:4px solid var(--layer-color); background:color-mix(in srgb,var(--layer-color) 6%,white); text-align:center; }
+.data-backup .report-result b { display:block; color:var(--layer-color); font:800 25px/1 var(--font-mono); }
+.data-backup .report-result span { display:block; margin-top:8px; color:var(--text-muted); font-size:14px; line-height:1.38; }
+.data-backup .report-boundary { margin-top:22px; padding:18px 20px; border-left:5px solid var(--layer-color); background:color-mix(in srgb,var(--layer-color) 8%,white); color:var(--text-muted); font-size:17px; line-height:1.5; }
+.data-backup .data-code-path { margin-top:22px; padding:12px 14px; border-left:4px solid var(--layer-color); background:color-mix(in srgb,var(--layer-color) 8%,white); color:#1a4d31; font:600 14px/1.5 var(--font-mono); overflow-wrap:anywhere; }
+.data-backup .data-code-path b { display:block; margin-bottom:6px; color:var(--layer-color); }
+.data-backup .data-code-path code { display:block; color:inherit; font-size:inherit; line-height:1.45; }
+.data-backup .data-code-path code + code { margin-top:4px; }
 /* Model viva backup — question-first, presentation-scale speaking notes. */
 .model-backup .pipeline-node { padding:34px 36px 36px; }
 .model-backup .pipeline-node h4 { font-size:clamp(27px,2.45vw,36px); }
 .model-backup .pipeline-node-purpose { max-width:980px; font-size:18px; line-height:1.48; }
 .model-backup .pipeline-node-id { font-size:15px; }
 .model-backup .pipeline-status { padding:8px 10px; font-size:12px; }
-.model-jump-nav { display:flex; flex-wrap:wrap; gap:10px; margin:0 0 28px; padding:18px 20px; border:1px solid color-mix(in srgb,var(--layer-color) 22%,var(--border)); background:color-mix(in srgb,var(--layer-color) 4%,white); }
-.model-jump-nav button { min-height:44px; padding:10px 14px; border:1px solid color-mix(in srgb,var(--layer-color) 30%,var(--border)); border-radius:5px; background:#fff; color:var(--text); font:700 14px/1.2 var(--font-body); cursor:pointer; }
-.model-jump-nav button:hover { border-color:var(--layer-color); color:var(--layer-color); }
-.model-jump-nav button:focus-visible { outline:3px solid color-mix(in srgb,var(--layer-color) 45%,transparent); outline-offset:2px; }
+.model-jump-nav,.backup-jump-nav { display:flex; flex-wrap:wrap; gap:10px; margin:0 0 28px; padding:18px 20px; border:1px solid color-mix(in srgb,var(--layer-color) 22%,var(--border)); background:color-mix(in srgb,var(--layer-color) 4%,white); }
+.model-jump-nav button,.backup-jump-nav button { min-height:44px; padding:10px 14px; border:1px solid color-mix(in srgb,var(--layer-color) 30%,var(--border)); border-radius:5px; background:#fff; color:var(--text); font:700 14px/1.2 var(--font-body); cursor:pointer; transition:border-color .2s ease,color .2s ease,transform .2s ease; }
+.model-jump-nav button:hover,.backup-jump-nav button:hover { border-color:var(--layer-color); color:var(--layer-color); transform:translateY(-1px); }
+.model-jump-nav button:active,.backup-jump-nav button:active { transform:translateY(0); }
+.model-jump-nav button:focus-visible,.backup-jump-nav button:focus-visible { outline:3px solid color-mix(in srgb,var(--layer-color) 45%,transparent); outline-offset:2px; }
 .model-answer-list { margin-top:24px; border-top:2px solid color-mix(in srgb,var(--layer-color) 28%,var(--border)); }
 .model-backup .model-answer { padding:26px 2px 28px; border-bottom:1px solid var(--border); }
 .model-backup .model-answer:last-child { padding-bottom:4px; border-bottom:0; }
@@ -2140,10 +2220,47 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .integration-run div:not(:last-child)::after { content:"→"; position:absolute; right:-10px; top:50%; transform:translate(50%,-50%); color:#1769ff; font-weight:900; z-index:2; }
 .integration-run b { display:block; color:#1769ff; font:800 12px/1.2 var(--font-mono); }
 .integration-run span { display:block; margin-top:7px; color:var(--text-muted); font-size:13px; line-height:1.35; }
+.integration-file-flow { grid-column:1/-1; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.integration-file-card { position:relative; padding:18px; border-top:5px solid #1769ff; background:#fff; box-shadow:0 8px 24px rgba(29,29,31,.05); }
+.integration-file-card:not(:last-child)::after { content:'→'; position:absolute; right:-12px; top:50%; transform:translate(50%,-50%); color:#1769ff; font:900 22px/1 var(--font-mono); z-index:2; }
+.integration-file-card > b { color:#1769ff; font:800 14px/1.2 var(--font-mono); }
+.integration-file-part { margin-top:12px; }
+.integration-file-part strong { display:block; color:var(--text); font:800 11px/1.2 var(--font-mono); letter-spacing:.04em; }
+.integration-file-part ul { margin:6px 0 0; padding-left:17px; color:var(--text-muted); font-size:13px; line-height:1.38; }
+.integration-gate-map { grid-column:1/-1; display:grid; gap:14px; }
+.integration-gate-row { display:grid; grid-template-columns:1fr 46px 1.35fr 46px 1fr; gap:14px; align-items:stretch; }
+.integration-gate-source,.integration-gate-check,.integration-gate-pass,.integration-gate-fail { padding:21px 22px; border-radius:9px; background:#fff; }
+.integration-gate-source { grid-column:1; }
+.integration-gate-arrow { grid-column:2; }
+.integration-gate-check { grid-column:3; }
+.integration-gate-branch { grid-column:4; }
+.integration-gate-pass { grid-column:5; }
+.integration-gate-fail { display:none; }
+.integration-gate-source { border-left:5px solid #1769ff; }
+.integration-gate-check { border-top:5px solid #1769ff; background:#f3f7ff; }
+.integration-gate-pass { border-left:5px solid #27864a; background:#f1faf4; }
+.integration-gate-fail { display:flex; flex-direction:column; justify-content:center; border-left:5px solid #c2413a; background:#fff3f2; }
+.integration-gate-row .integration-gate-fail { display:none; }
+.integration-gate-source b,.integration-gate-check b,.integration-gate-pass b,.integration-gate-fail b { display:block; font:800 16px/1.2 var(--font-mono); }
+.integration-gate-source b,.integration-gate-check b { color:#1769ff; }
+.integration-gate-pass b { color:#27864a; }
+.integration-gate-fail b { color:#c2413a; }
+.integration-gate-source ul,.integration-gate-check ul,.integration-gate-pass ul,.integration-gate-fail ul { margin:11px 0 0; padding-left:21px; color:var(--text-muted); font-size:17px; line-height:1.48; }
+.integration-gate-arrow { display:grid; place-items:center; color:#1769ff; font:900 30px/1 var(--font-mono); }
+.integration-gate-branch { display:grid; place-items:center; color:#27864a; font:900 30px/1 var(--font-mono); }
+.integration-gate-branch span { display:none; }
+.integration-gate-branch::before { content:'→'; }
+.integration-orchestrator-note { grid-column:1/-1; padding:17px 20px; border-left:5px solid #1769ff; background:#f3f7ff; color:var(--text-muted); font-size:17px; line-height:1.45; }
+.integration-orchestrator-note strong { color:#1769ff; }
+.integration-stop-note { grid-column:1/-1; padding:17px 20px; border-left:5px solid #c2413a; background:#fff3f2; color:var(--text-muted); font-size:17px; line-height:1.45; }
+.integration-stop-note strong { color:#c2413a; }
+.integration-gate-branch .gate-pass { color:#27864a; }
+.integration-gate-branch .gate-fail { color:#c2413a; }
 .teamwork-evidence { display:flex; flex-direction:column; margin:34px 0 54px; padding:34px 0 48px; border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
 .teamwork-evidence-head { max-width:920px; }
 .teamwork-evidence-head { order:0; }
 .teamwork-evidence > .teamwork-section { order:1; }
+.teamwork-evidence > .backup-jump-nav { order:1; margin:26px 0 0; --layer-color:#1769ff; }
 .teamwork-evidence > .teamwork-pipeline-overview { order:2; margin-top:38px; padding-top:38px; border-top:1px solid var(--border); }
 .teamwork-evidence > .teamwork-summary { order:3; }
 .teamwork-evidence-kicker { color:#1769ff; font:800 12px/1.2 var(--font-mono); letter-spacing:.11em; }
@@ -2269,7 +2386,9 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
   .report-backup .report-result-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .model-backup .report-result-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .model-backup .pipeline-flow-step:nth-child(2)::after { display:none; }
-  .model-jump-nav { gap:8px; }
+  .data-backup .report-result-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .data-backup .pipeline-flow-step:nth-child(2)::after { display:none; }
+  .model-jump-nav,.backup-jump-nav { gap:8px; }
   .integration-handoff { grid-template-columns:150px minmax(0,1fr); }
   .integration-artifact { grid-column:1/-1; }
   .automation-ci,.communication-contract { grid-template-columns:1fr; }
@@ -2281,7 +2400,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 }
 @media (max-width:700px) {
   .model-backup .pipeline-node { padding:26px 22px 28px; }
-  .model-jump-nav button { flex:1 1 145px; }
+  .model-jump-nav button,.backup-jump-nav button { flex:1 1 145px; }
   .model-backup .model-question { font-size:19px; }
   .model-backup .model-answer li { font-size:16px; }
   .model-window-visual,
@@ -2290,6 +2409,11 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
   .model-backup .pipeline-flow { grid-template-columns:1fr; }
   .model-backup .pipeline-flow-step::after { display:none; }
   .model-backup .report-table { table-layout:auto; }
+  .data-backup .report-case-grid,
+  .data-backup .pipeline-columns { grid-template-columns:1fr; }
+  .data-backup .pipeline-flow { grid-template-columns:1fr; }
+  .data-backup .pipeline-flow-step::after { display:none; }
+  .data-backup .report-table { table-layout:auto; }
   .jira-evidence,.jira-items { grid-template-columns:1fr; }
   .ci-flow { grid-template-columns:1fr; }
   .ci-arrow { transform:rotate(90deg); }
@@ -3459,7 +3583,6 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
   </div>
   <nav class="backup-layer-nav" aria-label="Pipeline layers">
     <button class="backup-layer-link primary" onclick="scrollBackupTo('backupTeamwork')">Teamwork</button>
-    <button class="backup-layer-link" onclick="scrollBackupTo('backupOverview')">End-to-end</button>
     <button class="backup-layer-link" onclick="scrollBackupTo('backupData')">01 &middot; Data</button>
     <button class="backup-layer-link" onclick="scrollBackupTo('backupModel')">02 &middot; Model</button>
     <button class="backup-layer-link" onclick="scrollBackupTo('backupReport')">03 &middot; Report</button>
@@ -3469,56 +3592,15 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
     <main class="backup-document">
       <section class="teamwork-evidence" id="backupTeamwork">
       <section class="backup-overview teamwork-pipeline-overview" id="backupOverview">
-        <div>
-          <div class="teamwork-section-title"><b>07</b><h3>From four layers to one pipeline</h3></div>
-          <h2>How independently developed components were connected.</h2>
-          <p>Shared contracts allowed parallel development. Each boundary was then connected and checked before the complete local upload path was used.</p>
-          <div class="integration-workflow" aria-label="Team development workflow"><b>JIRA TASK</b><i>→</i><span>GitHub branch</span><i>→</i><span>Pull request + CI</span><i>→</i><span>develop</span><i>→</i><span>Discord update</span></div>
-        </div>
-
+        <div class="teamwork-section-title"><b>07</b><h3>End-to-end integration · inputs, checks and failure paths</h3></div>
         <div class="integration-map" aria-label="Cross-layer integration map">
-          <div class="integration-handoff">
-            <div class="integration-handoff-title"><b>BOUNDARY 01</b><strong>Data → Model</strong></div>
-            <pre class="integration-code">production_features, proxy_decisions =
-    _run_data_layer(raw_path)
-
-model_output = _run_model_layer(
-    production_features,
-    proxy_decisions,
-    output_path,
-)</pre>
-            <div class="integration-artifact"><b>HANDOFF</b><span><strong>production_features.csv</strong><br>46 ordered feature columns</span><span><strong>proxy_decisions.csv</strong><br>optional rule-based evidence</span><span><code>dashboard/csv_pipeline.py</code></span></div>
-          </div>
-
-          <div class="integration-handoff">
-            <div class="integration-handoff-title"><b>BOUNDARY 02</b><strong>Model → Report</strong></div>
-            <pre class="integration-code">ModelLayerOutput(**model_payload)
-
-report = generate_report(
-    model_payload,
-    risk_history=_component_risk_history(
-        raw, component
-    ),
-)</pre>
-            <div class="integration-artifact"><b>HANDOFF</b><span><strong>Validated Model JSON</strong><br>anomaly, risk, confidence, signals and projections</span><span>Only affected Medium/High components proceed to report generation.</span><span><code>dashboard/data_loader.py</code></span></div>
-          </div>
-
-          <div class="integration-handoff">
-            <div class="integration-handoff-title"><b>BOUNDARY 03</b><strong>Report → Dashboard</strong></div>
-            <pre class="integration-code">result[component_key] = report
-result["_data_source"][component_key] = source
-
-if components and all(
-    not c.get("anomaly_description")
-    for c in components.values()
-):
-    _show_pipeline_error(
-        "Report Generation Unavailable", ...
-    )
-    return
-
-st.session_state["dashboard_data"] = result</pre>
-            <div class="integration-artifact"><b>HANDOFF</b><span><strong>Dashboard-ready dictionary</strong><br>Model evidence + three accepted report sections</span><span>An all-empty Report fallback is stopped before the results page.</span><span><code>dashboard/pages/overview.py</code></span></div>
+          <div class="integration-gate-map" aria-label="Boundary checks, accepted outputs and failure paths">
+            <div class="integration-orchestrator-note"><strong>ORCHESTRATION · DASHBOARD</strong> controls the sequence and checks that each handoff is available. Each receiving layer then validates its own input contract before processing. The layers do not call one another directly.</div>
+            <div class="integration-gate-row"><div class="integration-gate-source"><b>DASHBOARD UPLOAD</b><ul><li>1 raw CSV, or ≥5 dated CSVs</li><li>Original filenames retained</li></ul></div><div class="integration-gate-arrow">→</div><div class="integration-gate-check"><b>DATA INPUT GATE</b><ul><li>Non-empty; valid KIT filename</li><li>11 required columns; minimum rows</li><li>History: each file valid, names unique, date ordered</li></ul></div><div class="integration-gate-branch"><span class="gate-pass">PASS →</span><span class="gate-fail">FAIL →</span></div><div class="integration-gate-pass"><b>DATA RUNS</b><ul><li>Single file or one joint history run</li><li>Trip boundaries preserved</li></ul></div><div class="integration-gate-fail"><b>STOP</b><ul><li>Specific upload error</li><li>No downstream run</li></ul></div></div>
+            <div class="integration-gate-row"><div class="integration-gate-source"><b>DATA OUTPUT · ONE PAIR</b><ul><li><code>production_features.csv</code> · 46-column sample evidence</li><li><code>proxy_decisions.csv</code> · 21-column rule decisions</li></ul></div><div class="integration-gate-arrow">→</div><div class="integration-gate-check"><b>MODEL INPUT GATE</b><ul><li>Feature file exists; proxy file exists when reported</li><li>Feature schema, calibration and 1 Hz timing</li><li>Usable ≥700-row segment; proxy schema valid</li></ul></div><div class="integration-gate-branch"><span class="gate-pass">PASS →</span><span class="gate-fail">FAIL →</span></div><div class="integration-gate-pass"><b>MODEL RUNS</b><ul><li>One isolated batch subprocess</li><li>Writes one <code>model_output.json</code></li></ul></div><div class="integration-gate-fail"><b>STOP</b><ul><li>Non-zero <code>ERROR:</code> or timeout</li><li>Dashboard shows failure</li></ul></div></div>
+            <div class="integration-gate-row"><div class="integration-gate-source"><b>MODEL OUTPUT · ONE JSON</b><ul><li><code>summary</code> · highest primary-risk window</li><li><code>windows</code> · every eligible window</li></ul></div><div class="integration-gate-arrow">→</div><div class="integration-gate-check"><b>REPORT INPUT GATE</b><ul><li>Output file exists and parses as JSON</li><li>Select affected components</li><li>Pydantic checks fields, values and relationships</li></ul></div><div class="integration-gate-branch"><span class="gate-pass">PASS →</span><span class="gate-fail">FAIL →</span></div><div class="integration-gate-pass"><b>REPORT RUNS</b><ul><li>One report per affected component</li><li>Each section validated before release</li></ul></div><div class="integration-gate-fail"><b>STOP</b><ul><li>Invalid Model output</li><li>No report generation</li></ul></div></div>
+            <div class="integration-gate-row"><div class="integration-gate-source"><b>REPORT OUTPUT · IN MEMORY</b><ul><li>Model evidence retained</li><li>What was observed</li><li>Possible causes</li><li>Recommended actions</li><li>Component-keyed result + source label</li></ul></div><div class="integration-gate-arrow">→</div><div class="integration-gate-check"><b>DASHBOARD ACCEPTANCE GATE</b><ul><li>At least one affected component</li><li>Detect all-empty Report fallback</li><li>Only accepted result updates session state</li></ul></div><div class="integration-gate-branch"><span class="gate-pass">PASS →</span><span class="gate-fail">FAIL →</span></div><div class="integration-gate-pass"><b>DISPLAY</b><ul><li>Overview, detail and risk history</li><li>Key signals, report and export</li></ul></div><div class="integration-gate-fail"><b>STOP</b><ul><li>Report unavailable card</li><li>Previous state not overwritten</li></ul></div></div>
+            <div class="integration-stop-note"><strong>IF ANY BOUNDARY CHECK FAILS</strong> · Processing stops before the next layer and the Dashboard shows that the upload could not be completed.</div>
           </div>
 
           <div class="integration-run" aria-label="Complete local upload path">
@@ -3536,6 +3618,16 @@ st.session_state["dashboard_data"] = result</pre>
           <h2>Teamwork across four connected components</h2>
           <p>IBM supplied the project direction. The team converted it into Sprint work, reviewed code through GitHub and used regular records and updates to keep parallel development aligned.</p>
         </header>
+
+        <nav class="backup-jump-nav" aria-label="Teamwork backup topics">
+          <button type="button" onclick="scrollBackupTo('teamworkBrief')">T1 · Brief &amp; priorities</button>
+          <button type="button" onclick="scrollBackupTo('teamworkPlanning')">T2 · Planning &amp; Jira</button>
+          <button type="button" onclick="scrollBackupTo('teamworkMeetings')">T3 · Sprint meetings</button>
+          <button type="button" onclick="scrollBackupTo('teamworkAutomationNew')">T4 · Jira automation</button>
+          <button type="button" onclick="scrollBackupTo('teamworkCI')">T5 · CI workflow</button>
+          <button type="button" onclick="scrollBackupTo('teamworkCommunication')">T6 · Communication</button>
+          <button type="button" onclick="scrollBackupTo('backupOverview')">T7 · End-to-end integration</button>
+        </nav>
 
         <div class="teamwork-section" id="teamworkBrief">
           <div class="teamwork-section-title"><b>01</b><h3>IBM brief and MoSCoW priorities</h3></div>
@@ -3643,108 +3735,57 @@ st.session_state["dashboard_data"] = result</pre>
           <p class="interface-inline-note">Shared interfaces allowed each group to develop against the same field definitions before the complete pipeline was connected.</p>
         </div>
 
-        <div class="teamwork-summary">The plan defined the major work, Jira assigned it, meeting records tracked it, and GitHub checks controlled how completed changes entered the shared pipeline.</div>
       </section>
 
       <div class="backup-pipeline">
-        <section class="pipeline-layer" id="backupData" data-layer="data">
+        <section class="pipeline-layer data-backup" id="backupData" data-layer="data">
           <header class="pipeline-layer-head">
             <div><div class="pipeline-layer-label">01 · DATA LAYER</div><h3>Raw recording → governed evidence</h3></div>
             <div class="pipeline-layer-owner">DATA LAYER TEAM</div>
           </header>
 
+          <nav class="backup-jump-nav" aria-label="Data backup topics">
+            <button type="button" onclick="openBackupNode('dataD0')">D0 · Upload intake</button>
+            <button type="button" onclick="openBackupNode('dataD1')">D1 · Cleaning</button>
+            <button type="button" onclick="openBackupNode('dataD2')">D2 · Operating condition</button>
+            <button type="button" onclick="openBackupNode('dataD3')">D3 · Feature contract</button>
+            <button type="button" onclick="openBackupNode('dataD4')">D4 · Proxy evidence</button>
+            <button type="button" onclick="openBackupNode('dataD5')">D5 · Calibration</button>
+            <button type="button" onclick="openBackupNode('dataD6')">D6 · Fault injection</button>
+            <button type="button" onclick="openBackupNode('dataD7')">D7 · Two deliveries</button>
+          </nav>
+
           <article class="pipeline-node" id="dataD0">
-            <details class="pipeline-node-shell">
+            <details class="pipeline-node-shell" open>
             <summary class="pipeline-node-head">
               <span class="pipeline-node-id">D0</span>
               <div><h4>Upload intake and run isolation</h4><p class="pipeline-node-purpose">Reject recordings that cannot satisfy the Data or Model contract before expensive processing begins, then preserve every accepted run as a traceable set of artefacts.</p></div>
-              <span class="pipeline-status">IMPLEMENTED</span>
+              <span class="pipeline-status">6 REJECT CODES</span>
             </summary>
             <div class="pipeline-node-body">
 
-            <div class="pipeline-flow" aria-label="Upload validation flow">
+            <div class="pipeline-flow" aria-label="Upload validation and acceptance flow">
               <div class="pipeline-flow-step"><b>User-uploaded KIT CSV</b><span>Original filename carries the recording date.</span></div>
-              <div class="pipeline-flow-step"><b>Fail-fast intake</b><span>Filename, CSV readability, required columns, rows and duration.</span></div>
-              <div class="pipeline-flow-step"><b>Isolated pipeline run</b><span>Temporary input copy; outputs written under one RunLayout.</span></div>
-              <div class="pipeline-flow-step"><b>Continuity acceptance</b><span>Longest cleaned segment must contain at least 700 one-second rows.</span></div>
+              <div class="pipeline-flow-step"><b>Pre-run intake checks</b><span>Filename, readable CSV, required columns, ≥700 rows, ≥700 s duration; multi-file uploads also reject duplicate file names.</span></div>
+              <div class="pipeline-flow-step"><b>Isolated processing</b><span>A temporary copy is processed; the original file is never touched; each run gets its own run ID.</span></div>
+              <div class="pipeline-flow-step"><b>Post-cleaning acceptance</b><span>Longest cleaned segment must reach ≥700 contiguous rows, or <code>no_usable_segment</code> is raised (run kept for inspection).</span></div>
             </div>
 
-            <div class="pipeline-columns">
-              <div class="pipeline-block">
-                <div class="pipeline-block-label">CURRENT PROCESSING LOGIC</div>
-                <ul>
-                  <li><code>validate_upload_csv()</code> runs before a run directory exists.</li>
-                  <li><code>validate_kit_filename()</code> reuses <code>cleaning_core.parse_filename()</code>, so intake and cleaning cannot disagree about filename structure.</li>
-                  <li><code>required_source_columns()</code> derives accepted headers from <code>cleaning_config.yaml</code> rather than duplicating a hard-coded list.</li>
-                  <li><code>run_data_pipeline_for_upload()</code> stages a temporary copy, calls the public pipeline, removes the temporary input, then checks the cleaned continuity result.</li>
-                  <li>Dashboard uploads default to <code>include_proxy=True</code>; ordinary batch/CLI runs default to feature-only.</li>
-                </ul>
-              </div>
-              <div class="pipeline-block">
-                <div class="pipeline-block-label">WHY THREE “700” CHECKS ARE DIFFERENT</div>
-                <ul>
-                  <li><strong>700 raw rows</strong> is a cheap impossibility screen: fewer rows can never become a usable 1 Hz segment.</li>
-                  <li><strong>700 seconds</strong> checks actual elapsed time because KIT raw files sample irregularly at roughly 6–12 Hz.</li>
-                  <li><strong>700 contiguous cleaned rows</strong> is authoritative: Model windows cannot cross a <code>segment_id</code>, even when total file duration is long enough.</li>
-                </ul>
-                <div class="pipeline-code">run_data_pipeline_for_upload(csv_path, include_proxy=True)
-  → production_features_path
-  → proxy_decisions_path
-  → stage_manifests[]</div>
-              </div>
-            </div>
+            <table class="report-table">
+              <thead><tr><th>Intake rejection code</th><th>Triggered when</th></tr></thead>
+              <tbody>
+                <tr><td><code>bad_filename</code></td><td>The recording date cannot be recovered from the file name.</td></tr>
+                <tr><td><code>missing_columns</code></td><td>The CSV does not carry the required KIT source columns.</td></tr>
+                <tr><td><code>too_few_rows</code></td><td>Fewer than 700 raw rows, or under 700 seconds of recording.</td></tr>
+                <tr><td><code>unreadable_csv</code></td><td>The file cannot be parsed as CSV at all.</td></tr>
+                <tr><td><code>duplicate_upload_filenames</code></td><td>A multi-file upload history repeats the same KIT file name.</td></tr>
+              </tbody>
+            </table>
 
-            <div class="evidence-chips">
-              <div class="evidence-chip"><b>PUBLIC API</b><span>run_data_pipeline_for_upload()</span></div>
-              <div class="evidence-chip"><b>5 REJECTION CODES</b><span>stable Dashboard branching</span></div>
-              <div class="evidence-chip"><b>≥700 CONTIGUOUS</b><span>downstream Model contract</span></div>
-              <div class="evidence-chip"><b>117 TESTS PASSED</b><span>selected Data contract suite</span></div>
-            </div>
+            <div class="report-boundary"><strong>These two “700”s are both intake-time, but they check different things:</strong> 700 raw rows is a cheap row-count screen, and 700 seconds checks real elapsed time separately, because KIT’s raw sampling rate is uneven (roughly 6–12 Hz), so rows do not equal seconds. A third “700” — ≥700 contiguous <em>cleaned</em> rows — is not an intake check at all: it can only be known after cleaning has produced <code>segment_id</code>, so it is judged after the pipeline runs (see the last flow step above), not before.</div>
 
-            <div class="pipeline-disclosure">
-              <details open>
-                <summary>Historical evolution</summary>
-                <div class="pipeline-detail">
-                  <div class="evolution-rail">
-                    <div class="evolution-step"><b>GL-313 · 19 JUL</b><span>Separate scripts became one public entry point: <code>run_data_pipeline()</code>.</span></div>
-                    <div class="evolution-arrow">→</div>
-                    <div class="evolution-step"><b>GL-339 · 27 JUL</b><span>Dashboard upload adapter added fail-fast filename, column, row and path checks.</span></div>
-                    <div class="evolution-arrow">→</div>
-                    <div class="evolution-step"><b>GL-370/374/375 · 30 JUL</b><span>Proxy stages were wired into live uploads; empty-header and fragmented-run failures gained regression coverage.</span></div>
-                  </div>
-                </div>
-              </details>
-              <details>
-                <summary>Failure and recovery behaviour</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><code>bad_filename</code>: the recording date cannot be recovered from the renamed file.</li>
-                  <li><code>missing_columns</code>: the CSV does not meet the KIT source contract.</li>
-                  <li><code>too_few_rows</code>: raw rows or elapsed duration cannot support a diagnosis.</li>
-                  <li><code>unreadable_csv</code>: the input cannot be parsed safely.</li>
-                  <li><code>no_usable_segment</code>: processing completed, but recording gaps left no 700-second continuous segment. The run directory is retained for inspection.</li>
-                  <li>Any stage-specific exception is wrapped as <code>DataPipelineError</code> with the stage and run ID; failures are not silently ignored.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>Rejected alternatives and design rationale</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><strong>Validate only after the full run:</strong> rejected because obvious failures would waste computation and leave unnecessary artefacts.</li>
-                  <li><strong>Hard-code upload columns:</strong> rejected because intake could drift from the cleaning configuration.</li>
-                  <li><strong>Use raw row count as duration:</strong> rejected because the raw sampling rate is not a uniform 1 Hz.</li>
-                  <li><strong>Use total duration as Model eligibility:</strong> rejected because several short segments cannot substitute for one valid forecast window.</li>
-                  <li><strong>Process the original file in place:</strong> rejected to protect user input and keep runs isolated and reproducible.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>Code and verification evidence</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><code>data_layer/run_pipeline.py</code>: <code>run_data_pipeline()</code>, <code>run_data_pipeline_for_upload()</code>, <code>_run_stage()</code>.</li>
-                  <li><code>data_layer/pipeline_data/upload_contract.py</code>: intake validation, stable rejection codes and post-cleaning segment acceptance.</li>
-                  <li><code>data_layer/pipeline_data/paths.py</code>: <code>RunLayout</code> and path containment.</li>
-                  <li>Verified locally: 117 selected pipeline, feature, proxy-decision and injection tests passed in 9.46 seconds.</li>
-                </ul></div>
-              </details>
-            </div>
+            <div class="data-code-path"><b>CODE PATH</b><code>data_layer/pipeline_data/upload_contract.py :: validate_upload_csv(), validate_usable_segment()</code><code>data_layer/run_pipeline.py :: run_data_pipeline_for_upload(), run_data_pipeline_for_uploads()</code><code>data_layer/pipeline_data/paths.py :: RunLayout</code><code>117 selected Data contract tests passed in 9.46s</code></div>
+
             </div>
             </details>
           </article>
@@ -3754,105 +3795,49 @@ st.session_state["dashboard_data"] = result</pre>
             <summary class="pipeline-node-head">
               <span class="pipeline-node-id">D1</span>
               <div><h4>Continuity-aware cleaning</h4><p class="pipeline-node-purpose">Turn irregular OBD-II recordings into 1 Hz evidence without inventing continuity across missing time, invalid samples or recording boundaries.</p></div>
-              <span class="pipeline-status">ADR 101 · ACCEPTED</span>
+              <span class="pipeline-status">249,694 ROWS · 81→118</span>
             </summary>
             <div class="pipeline-node-body">
 
             <div class="pipeline-flow" aria-label="Continuity-aware cleaning flow">
               <div class="pipeline-flow-step"><b>Raw source identity</b><span>Filename date + in-file time; stable chronological file order.</span></div>
               <div class="pipeline-flow-step"><b>UTC timeline</b><span>Localise in Europe/Berlin, sort timestamps and keep the last duplicate.</span></div>
-              <div class="pipeline-flow-step"><b>Trip → segments</b><span>A raw gap greater than 3 seconds starts a new continuous segment.</span></div>
+              <div class="pipeline-flow-step"><b>Hard-invalid masking</b><span>Whole-file pass: values outside physical bounds are set to missing, before any segment split.</span></div>
+              <div class="pipeline-flow-step"><b>Trip → segments</b><span>A gap greater than 3 seconds on the masked timeline starts a new continuous segment.</span></div>
               <div class="pipeline-flow-step"><b>Segment-safe 1 Hz grid</b><span>Resample each segment independently; fill only complete gaps of at most 2 seconds.</span></div>
-              <div class="pipeline-flow-step"><b>Continuity blocks</b><span>Break again wherever quality, trip, segment, row or 1-second cadence fails.</span></div>
             </div>
 
-            <div class="pipeline-columns">
-              <div class="pipeline-block">
-                <div class="pipeline-block-label">THE THREE IDENTITIES — NOT INTERCHANGEABLE</div>
-                <ul>
-                  <li><strong><code>trip_id</code></strong> identifies one source driving record. It preserves provenance and groups segments that came from the same file.</li>
-                  <li><strong><code>segment_id</code></strong> identifies raw recording continuity inside a trip. It changes when the observed timestamp gap is <strong>&gt;3 s</strong>.</li>
-                  <li><strong><code>continuity_block_id</code></strong> is stricter downstream eligibility. It also breaks on invalid quality, a missing/flagged sample, a non-consecutive row, or a timestamp step other than exactly 1 s.</li>
-                  <li>Therefore “same trip” does not mean “safe rolling window”, and even “same segment” does not guarantee that every row is eligible.</li>
-                </ul>
-              </div>
-              <div class="pipeline-block">
-                <div class="pipeline-block-label">CURRENT CLEANING AND QUALITY LOGIC</div>
-                <ul>
-                  <li><code>_parse_timestamps()</code> combines filename date with source time, localises it, and emits UTC.</li>
-                  <li>Hard-invalid values outside physical bounds become missing values, but their origin remains visible through per-signal flags.</li>
-                  <li>Suspicious yet physically possible values are retained and flagged; the cleaner does not silently rewrite uncertain evidence.</li>
-                  <li>Cross-field rules mark contradictions such as RPM=0 while speed&gt;0, MAF=0 while RPM&gt;0, and sub-zero coolant in warm ambient conditions.</li>
-                  <li><code>_resample_segment()</code> creates <code>row_in_segment</code>, source-sample counts and observed-sensor counts on the 1 Hz grid.</li>
-                </ul>
-              </div>
+            <table class="report-table">
+              <thead><tr><th>Rule</th><th>Threshold / behaviour</th></tr></thead>
+              <tbody>
+                <tr><td>New segment</td><td>Raw timestamp gap &gt;3 s starts a new <code>segment_id</code>.</td></tr>
+                <tr><td>Short-gap fill</td><td>Gaps of ≤2 s are filled on the 1 Hz grid; longer gaps are left missing, never bridged.</td></tr>
+                <tr><td>Hard-invalid values</td><td>Outside physical bounds → set to missing, but flagged (<code>had_hard_invalid_source</code>).</td></tr>
+                <tr><td>Suspicious values</td><td>Physically possible but unusual → kept as-is, flagged (<code>is_suspicious</code>); never silently rewritten.</td></tr>
+                <tr><td>Cross-field checks</td><td>Flags contradictions, e.g. RPM=0 with speed&gt;0, MAF=0 with RPM&gt;0, sub-zero coolant in warm ambient.</td></tr>
+              </tbody>
+            </table>
+
+            <table class="report-table">
+              <thead><tr><th>Identity</th><th>Breaks when</th><th>Granularity</th></tr></thead>
+              <tbody>
+                <tr><td><code>trip_id</code></td><td>Never breaks within one source file.</td><td>Coarsest — file-level provenance.</td></tr>
+                <tr><td><code>segment_id</code></td><td>Raw timestamp gap &gt;3 s — a genuine recording break.</td><td>Medium — “was recording paused or restarted”.</td></tr>
+                <tr class="selected-row"><td><code>continuity_block_id</code></td><td>Not a D1 output — computed on demand by downstream feature-engineering (D3) and proxy (D4) scripts, each with its own required-valid-signal set. Breaks whenever any row in that set fails the quality-valid mask (missing / imputed / suspicious / hard-invalid) or the row/timestamp is not perfectly consecutive — on <strong>both sides</strong>, even with no time gap at all.</td><td>Finest, but caller-dependent — no single block count for the whole corpus.</td></tr>
+              </tbody>
+            </table>
+
+            <div class="report-boundary"><strong>Same segment ≠ same block:</strong> a segment only breaks on a genuine recording gap (&gt;3 s). A single bad or flagged reading inside an otherwise continuous segment still splits the block on both sides of it — so a 700-row segment can still fail to contain any 700-row block. Rolling features and Model windows are gated on <code>continuity_block_id</code>, the strictest of the three identities.</div>
+
+            <div class="report-result-grid">
+              <div class="report-result"><b>249,694</b><span>cleaned rows, full corpus</span></div>
+              <div class="report-result"><b>81 → 118</b><span>trips → segments</span></div>
+              <div class="report-result"><b>&gt;3s / ≤2s</b><span>break / fill thresholds</span></div>
+              <div class="report-result"><b>12 / 12</b><span>continuity tests passed</span></div>
             </div>
 
-            <div class="evidence-chips">
-              <div class="evidence-chip"><b>249,694 ROWS</b><span>cleaned full-corpus artefact</span></div>
-              <div class="evidence-chip"><b>81 TRIPS → 118 SEGMENTS</b><span>one file is not always continuous</span></div>
-              <div class="evidence-chip"><b>&gt;3 s BREAK</b><span>new segment boundary</span></div>
-              <div class="evidence-chip"><b>≤2 s FILL</b><span>only short complete missing runs</span></div>
-              <div class="evidence-chip"><b>12 / 12 TESTS</b><span>continuity contract verified</span></div>
-            </div>
+            <div class="data-code-path"><b>CODE PATH</b><code>data_layer/data_cleaning/src/cleaning_core.py</code><code>data_layer/pipeline_data/continuity.py :: build_quality_valid_mask(), build_continuity_blocks()</code><code>data_layer/data_cleaning/src/cleaning_config.yaml (v3.0)</code></div>
 
-            <div class="pipeline-disclosure">
-              <details open>
-                <summary>Historical evolution: how the boundary contract emerged</summary>
-                <div class="pipeline-detail">
-                  <div class="evolution-rail">
-                    <div class="evolution-step"><b>INITIAL PIPELINE</b><span>Timestamp alignment and 1 Hz resampling existed, but a source file could still be treated as one continuous record.</span></div>
-                    <div class="evolution-arrow">→</div>
-                    <div class="evolution-step"><b>QUALITY REVIEW</b><span>Several files contained multiple discontinuous sections. File-level continuity would bridge time the vehicle was not observed.</span></div>
-                    <div class="evolution-arrow">→</div>
-                    <div class="evolution-step"><b>GL-308 · 19 JUL</b><span>A shared <code>continuity.py</code> contract centralised valid masks, blocks, windows, elapsed spans and event neighbourhoods.</span></div>
-                    <div class="evolution-arrow">→</div>
-                    <div class="evolution-step"><b>ADR 101 · 25 JUL</b><span>The two-level <code>trip_id + segment_id</code> identity and the 3 s / 2 s thresholds were documented as an accepted architectural decision.</span></div>
-                  </div>
-                </div>
-              </details>
-              <details>
-                <summary>Why crossing a boundary would invalidate later results</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><strong>Interpolation:</strong> could invent a smooth transition across an unobserved stop, restart or logging outage.</li>
-                  <li><strong>Rolling features and slopes:</strong> could compare sensor values that were not adjacent in real time.</li>
-                  <li><strong>Persistence logic:</strong> could count evidence on opposite sides of a gap as one continuous event.</li>
-                  <li><strong>Model windows:</strong> could present a synthetic 512-step history assembled from separate operating periods.</li>
-                  <li><strong>Evaluation:</strong> could overstate usable coverage and create false confidence in planted-fault detection.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>Exact downstream admission rule</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><code>build_quality_valid_mask()</code> admits a signal only when its value exists and its imputed, suspicious and hard-invalid flags are explicitly false. Missing flags are treated conservatively as invalid.</li>
-                  <li><code>build_continuity_blocks()</code> continues a block only when current and previous samples are valid, trip and segment match, <code>row_in_segment</code> increments by one, and timestamps differ by exactly one second.</li>
-                  <li>Recorded break reasons are <code>dataset_start</code>, <code>invalid_sample</code>, <code>trip_boundary</code>, <code>segment_boundary</code>, <code>previous_sample_invalid</code>, <code>row_not_consecutive</code> and <code>timestamp_not_consecutive</code>.</li>
-                  <li><code>strict_window_mask()</code>, <code>strict_elapsed_span_mask()</code> and <code>strict_event_neighborhood_mask()</code> reuse this shared rule. A 180-second elapsed span requires 181 valid endpoints.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>Rejected alternatives and trade-offs</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><strong>One file = one continuous trip:</strong> simple, but demonstrably false for the source corpus.</li>
-                  <li><strong>Concatenate all records:</strong> rejected because vehicle sessions and time gaps would disappear.</li>
-                  <li><strong>Keep only <code>trip_id</code>:</strong> rejected because downstream code could not distinguish separate continuous sections.</li>
-                  <li><strong>Drop every row after a large gap:</strong> rejected because valid evidence after the gap would be lost; a new segment preserves it safely.</li>
-                  <li><strong>Interpolate every gap:</strong> rejected because long gaps cannot be justified as observed vehicle behaviour.</li>
-                  <li><strong>Trade-off:</strong> strict boundaries reduce coverage near gaps, but make every admitted temporal feature auditable. The 3 s and 2 s thresholds remain dataset-specific rather than universal physical constants.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>Output contract, code and verification evidence</summary>
-                <div class="pipeline-detail"><ul>
-                  <li>Output preserves <code>timestamp</code>, <code>trip_id</code>, <code>segment_id</code>, <code>row_in_segment</code>, signals, metadata, per-signal imputed/suspicious/hard-invalid flags and aggregate quality flags.</li>
-                  <li><code>data_layer/data_cleaning/src/cleaning_core.py</code>: timestamp parsing, invalid/suspicious masks, short-gap filling, segment resampling and global cadence validation.</li>
-                  <li><code>data_layer/data_cleaning/src/cleaning_config.yaml</code> v3.0: timezone, 1 s resampling, 3 s segment gap, 2 s imputation limit and signal bounds.</li>
-                  <li><code>data_layer/pipeline_data/continuity.py</code>: the single shared boundary and window contract used by Feature and Proxy stages.</li>
-                  <li><code>docs/adr/101-continuity-aware-data-cleaning.md</code>: context, decision, alternatives, consequences and mitigations.</li>
-                  <li>Verified locally against <code>operating_condition_enriched.csv</code>: 249,694 rows, 81 unique trips and 118 unique segments. The dedicated continuity suite passed 12/12 tests in 0.28 s.</li>
-                </ul></div>
-              </details>
-            </div>
             </div>
             </details>
           </article>
@@ -3861,113 +3846,8 @@ st.session_state["dashboard_data"] = result</pre>
             <details class="pipeline-node-shell">
             <summary class="pipeline-node-head">
               <span class="pipeline-node-id">D2</span>
-              <div><h4>Frozen feature contract and production assembly</h4><p class="pipeline-node-purpose">Convert governed 1 Hz evidence into one deterministic, versioned Data–Model handoff whose fields, order, ownership and provenance cannot drift silently.</p></div>
-              <span class="pipeline-status">FEATURE_SCHEMA.V1 · FROZEN</span>
-            </summary>
-            <div class="pipeline-node-body">
-
-            <div class="pipeline-flow" aria-label="Feature contract flow">
-              <div class="pipeline-flow-step"><b>00 · Contract gate</b><span>Validate authoritative inputs, keys, quality tables and frozen manifest.</span></div>
-              <div class="pipeline-flow-step"><b>10 / 20 / 30 / 40</b><span>Build atomic, engine-start, window and calibrated feature families separately.</span></div>
-              <div class="pipeline-flow-step"><b>41 · Strict assembler</b><span>One-to-one joins on identical sample keys; no extra columns and no imputation.</span></div>
-              <div class="pipeline-flow-step"><b>Production handoff</b><span>46 ordered columns plus an adjacent checksum-bearing stage manifest.</span></div>
-            </div>
-
-            <div class="pipeline-columns">
-              <div class="pipeline-block">
-                <div class="pipeline-block-label">EXACT 46-COLUMN COMPOSITION</div>
-                <ul>
-                  <li><strong>4 sample keys:</strong> <code>timestamp</code>, <code>trip_id</code>, <code>segment_id</code>, <code>row_in_segment</code>.</li>
-                  <li><strong>16 context fields:</strong> six operating-condition fields plus ten cleaned sensor channels.</li>
-                  <li><strong>24 engineered features:</strong> 8 atomic B1a + 2 calibrated residual B1b + 6 engine-start B2 + 8 temporal-window B3.</li>
-                  <li><strong>2 provenance fields:</strong> constant <code>schema_version</code> and <code>calibration_version</code>.</li>
-                  <li>The manifest fixes every field's position, dtype, unit, null semantics, owner script and intended consumers.</li>
-                </ul>
-              </div>
-              <div class="pipeline-block">
-                <div class="pipeline-block-label">WHAT THE ASSEMBLER PROVES</div>
-                <ul>
-                  <li>Every upstream table must contain exactly its owned keys and feature allowlist.</li>
-                  <li>An outer one-to-one key comparison must show every key on both sides before a left join is allowed.</li>
-                  <li>Assembly must preserve canonical row count, global order and the SHA-256 identity of ordered sample keys.</li>
-                  <li><code>_normalize_and_validate_dtypes()</code> rejects incompatible types; <code>_validate_global_order()</code> rejects temporal/key reordering.</li>
-                  <li>The final assembler performs <strong>no imputation</strong>: missingness remains visible instead of being hidden at the interface boundary.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div class="evidence-chips">
-              <div class="evidence-chip"><b>46 COLUMNS</b><span>4 + 16 + 24 + 2</span></div>
-              <div class="evidence-chip"><b>MANIFEST v1.2.0</b><span>status: frozen</span></div>
-              <div class="evidence-chip"><b>4 FEATURE FAMILIES</b><span>B1a · B1b · B2 · B3</span></div>
-              <div class="evidence-chip"><b>STRICT ALLOWLIST</b><span>unexpected columns rejected</span></div>
-              <div class="evidence-chip"><b>0 ASSEMBLER IMPUTATION</b><span>null semantics preserved</span></div>
-            </div>
-
-            <div class="pipeline-disclosure">
-              <details open>
-                <summary>Historical evolution: from feature experiments to a production contract</summary>
-                <div class="pipeline-detail"><div class="evolution-rail">
-                  <div class="evolution-step"><b>GL-91/92/93 · 4–6 JUL</b><span>Deterministic, event-response and baseline features were explored and documented.</span></div>
-                  <div class="evolution-arrow">→</div>
-                  <div class="evolution-step"><b>GL-300/303/304 · 19 JUL</b><span>Feature definitions were revised around supported failures; shared paths, manifests and cross-contract checks were introduced.</span></div>
-                  <div class="evolution-arrow">→</div>
-                  <div class="evolution-step"><b>GL-311/312 · 19 JUL</b><span>The production assembler, schema/checksum enforcement and contract tests closed the handoff.</span></div>
-                  <div class="evolution-arrow">→</div>
-                  <div class="evolution-step"><b>GL-341 · 23 JUL</b><span>Calibration registry release and reproduction audit separated governed production constants from later research diagnostics.</span></div>
-                </div></div>
-              </details>
-              <details>
-                <summary>The 24 engineered features and why they are separated</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><strong>B1a · atomic (8):</strong> segment gap, engine state, coolant/intake ambient deltas, pedal mean/channel delta, pedal slope and RPM slope.</li>
-                  <li><strong>B1b · calibrated residuals (2):</strong> speed-density MAF residual and pedal-mapping residual; constants come from the released calibration registry.</li>
-                  <li><strong>B2 · engine-start context (6):</strong> observed flag, episode ID, elapsed time and starting ECT/AAT/IAT. Episode foreign keys are validated before delivery.</li>
-                  <li><strong>B3 · window features (8):</strong> 180 s MAF integral and ECT rate, intake stability, 120 s standard deviations for speed/MAF/RPM/pedal mean, and 60 s MAP range.</li>
-                  <li>Separate builders make ownership and failure localisation explicit; Script 41 combines only approved outputs.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>How Data–Model schema drift is prevented</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><code>feature_manifest.v1.json</code> is the single ordered source of truth; builders check schema identity, version, frozen status and expected counts.</li>
-                  <li>Stage 00 records canonical column order and source dataset identity. Every later manifest must retain that identity.</li>
-                  <li>Each artefact descriptor records path and SHA-256; <code>verify_manifest_artifacts()</code> detects changed or substituted upstream files.</li>
-                  <li>Script 41 enforces the exact 46-column allowlist and positions, then records null counts, row count and ordered-key hash in its adjacent manifest.</li>
-                  <li>A new feature therefore requires an explicit contract/version change and coordinated Model update; it cannot appear silently in production CSV.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>Rejected alternatives, limitations and viva boundary</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><strong>Let Model select columns by name:</strong> rejected because unnoticed additions, renames or order changes would create inconsistent training and inference inputs.</li>
-                  <li><strong>One large feature script:</strong> rejected because calibration, event context and rolling-window failures would be difficult to isolate and audit.</li>
-                  <li><strong>Fill remaining nulls during assembly:</strong> rejected because the interface would erase why evidence is unavailable.</li>
-                  <li><strong>Treat research diagnostics as production:</strong> rejected; Script 91 explicitly cannot modify <code>production_features.csv</code> or the calibration registry.</li>
-                  <li><strong>Boundary:</strong> a frozen schema proves interface consistency and provenance, not that every feature is universally optimal across vehicles or datasets.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>Code and output evidence</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><code>data_layer/contracts/feature_manifest.v1.json</code>: schema <code>feature_schema.v1</code>, manifest v1.2.0, frozen, 24 features, 16 context fields and 46 total columns.</li>
-                  <li><code>00_input_contract_validator.py</code>: <code>validate_authoritative_inputs()</code> and <code>run_input_contract_validation()</code>.</li>
-                  <li><code>10_atomic_feature_builder.py</code>, <code>20_engine_start_context_builder.py</code>, <code>30_window_feature_builder.py</code>, <code>40_calibrated_feature_builder.py</code>: owned feature families.</li>
-                  <li><code>41_production_feature_assembler.py</code>: <code>_feature_groups()</code>, <code>build_production_features()</code>, <code>run_production_feature_assembler()</code>.</li>
-                  <li>Final artefacts: <code>features/41_production/production_features.csv</code> and <code>production_features_manifest.json</code>.</li>
-                </ul></div>
-              </details>
-            </div>
-            </div>
-            </details>
-          </article>
-
-          <article class="pipeline-node" id="dataD3">
-            <details class="pipeline-node-shell">
-            <summary class="pipeline-node-head">
-              <span class="pipeline-node-id">D3</span>
               <div><h4>Hierarchical operating-condition stratification</h4><p class="pipeline-node-purpose">Give every 1 Hz sample physically meaningful context, so normal warm-up, idle and high-load behaviour are not mistaken for faults—and real deviations are not hidden by global averages.</p></div>
-              <span class="pipeline-status">ADR 102 · ACCEPTED</span>
+              <span class="pipeline-status">77.85% POST-WARMUP</span>
             </summary>
             <div class="pipeline-node-body">
 
@@ -3978,99 +3858,70 @@ st.session_state["dashboard_data"] = result</pre>
               <div class="pipeline-flow-step"><b>Auditable context</b><span>Combined state + confidence + explicit missing-field flags.</span></div>
             </div>
 
-            <div class="pipeline-columns">
-              <div class="pipeline-block">
-                <div class="pipeline-block-label">WHY TWO LEVELS, NOT ONE LABEL</div>
-                <ul>
-                  <li><strong>Thermal state</strong> answers whether a reading belongs to engine-off, warm-up or regulated operation.</li>
-                  <li><strong>Child state</strong> answers what power demand and vehicle motion were occurring.</li>
-                  <li>The same MAF, MAP or intake temperature can be normal at high load but abnormal at idle.</li>
-                  <li><code>operating_state</code> combines both dimensions, for example <code>post_warmup__high_load</code>, while retaining each component separately.</li>
-                  <li>These are <strong>context labels, not fault labels</strong>; they control valid comparisons and proxy enable windows.</li>
-                </ul>
-              </div>
-              <div class="pipeline-block">
-                <div class="pipeline-block-label">EXACT PHYSICAL RULES</div>
-                <ul>
-                  <li><strong>Engine off:</strong> RPM &lt; 50.</li>
-                  <li><strong>Post-warmup proxy:</strong> coolant ≥75°C plus hot idle RPM &lt;850, cumulative air ≥1,500 g, or IAT−ambient &gt;8°C.</li>
-                  <li><strong>Idle:</strong> smoothed speed &lt;1 km/h and |acceleration| &lt;0.15 m/s².</li>
-                  <li><strong>High load:</strong> moving and VSP ≥20 kW/t or acceleration ≥1.2 m/s².</li>
-                  <li>Precedence is Idle → High Load → Acceleration → Deceleration → Steady Driving; fragments shorter than 3 s are cleaned within their segment.</li>
-                </ul>
-              </div>
+            <table class="report-table">
+              <thead><tr><th>Thermal state (parent)</th><th>Determined by</th></tr></thead>
+              <tbody>
+                <tr><td><code>engine_off</code></td><td>RPM &lt;50.</td></tr>
+                <tr><td><code>warmup</code></td><td>Engine on, post-warmup condition not yet met.</td></tr>
+                <tr><td><code>post_warmup</code></td><td>Engine on, coolant ≥75°C, plus hot-idle RPM &lt;850, cumulative intake air ≥1,500 g, or IAT−ambient &gt;8°C.</td></tr>
+                <tr><td><code>unknown</code></td><td>RPM missing; forward-filled from the prior state within the same segment.</td></tr>
+              </tbody>
+            </table>
+
+            <table class="report-table">
+              <thead><tr><th>Child state (kinematic)</th><th>Determined by</th></tr></thead>
+              <tbody>
+                <tr><td><code>idle</code></td><td>Speed &lt;1 km/h and |acceleration| &lt;0.15 m/s².</td></tr>
+                <tr><td><code>high_load</code></td><td>Moving and VSP ≥20 kW/t or acceleration ≥1.2 m/s².</td></tr>
+                <tr><td><code>acceleration</code></td><td>Moving, acceleration ≥0.15 m/s², not already high load.</td></tr>
+                <tr><td><code>deceleration</code></td><td>Moving, acceleration ≤−0.15 m/s², not already high load or accelerating.</td></tr>
+                <tr><td><code>steady_driving</code></td><td>Moving, none of the above conditions met.</td></tr>
+              </tbody>
+            </table>
+
+            <div class="report-boundary"><strong>Context labels, not fault labels:</strong> thermal and child state only describe what the vehicle was doing, not whether anything was wrong. Precedence is Idle → High Load → Acceleration → Deceleration → Steady Driving, and fragments shorter than 3 s are cleaned up within their segment. <code>post_warmup</code> itself is inferred, not measured: the dataset has no catalyst-temperature channel, so coolant ≥75°C plus one corroborating signal (hot idle, cumulative intake air, or IAT−ambient heat soak) stands in for true catalyst warm-up.</div>
+
+            <div class="report-result-grid">
+              <div class="report-result"><b>77.85%</b><span>post-warmup, 194,394 / 249,694 rows</span></div>
+              <div class="report-result"><b>35.39%</b><span>steady driving, largest child state</span></div>
+              <div class="report-result"><b>99.99%</b><span>high confidence, 249,669 rows</span></div>
+              <div class="report-result"><b>3 s</b><span>smoothing + fragment cleanup window</span></div>
             </div>
 
-            <div class="evidence-chips">
-              <div class="evidence-chip"><b>77.85% POST-WARMUP</b><span>194,394 / 249,694 rows</span></div>
-              <div class="evidence-chip"><b>35.39% STEADY</b><span>largest child state</span></div>
-              <div class="evidence-chip"><b>99.99% HIGH CONFIDENCE</b><span>249,669 rows</span></div>
-              <div class="evidence-chip"><b>3 s SMOOTH + CLEANUP</b><span>reduces quantisation fragments</span></div>
-              <div class="evidence-chip"><b>VSP PHYSICS</b><span>speed + acceleration demand</span></div>
+            <div class="data-code-path"><b>CODE PATH</b><code>data_layer/operating_condition_statistics/src/operating_condition_analysis.py :: add_operating_conditions(), build_counts(), build_rules()</code><code>Outputs: operating_condition_enriched.csv, operating_condition_counts_overall.csv, operating_condition_signal_summary.csv, operating_condition_rules.csv</code><code>docs/adr/102-operating-condition-stratification.md</code></div>
+            </div>
+            </details>
+          </article>
+
+          <article class="pipeline-node" id="dataD3">
+            <details class="pipeline-node-shell">
+            <summary class="pipeline-node-head">
+              <span class="pipeline-node-id">D3</span>
+              <div><h4>Frozen feature contract and production assembly</h4><p class="pipeline-node-purpose">Convert governed 1 Hz evidence into one deterministic, versioned Data–Model handoff whose fields, order, ownership and provenance cannot drift silently.</p></div>
+              <span class="pipeline-status">46 COLUMNS · FROZEN</span>
+            </summary>
+            <div class="pipeline-node-body">
+
+            <div class="pipeline-flow" aria-label="Feature contract flow">
+              <div class="pipeline-flow-step"><b>00 · Contract gate</b><span>Validate authoritative inputs, keys, quality tables and frozen manifest.</span></div>
+              <div class="pipeline-flow-step"><b>10 / 20 / 30 / 40</b><span>Build atomic, engine-start, window and calibrated feature families separately.</span></div>
+              <div class="pipeline-flow-step"><b>41 · Strict assembler</b><span>One-to-one joins on identical sample keys; no extra columns and no imputation.</span></div>
+              <div class="pipeline-flow-step"><b>Production handoff</b><span>46 ordered columns plus an adjacent checksum-bearing stage manifest.</span></div>
             </div>
 
-            <div class="pipeline-disclosure">
-              <details open>
-                <summary>Historical evolution: from global statistics to state-aware evidence</summary>
-                <div class="pipeline-detail"><div class="evolution-rail">
-                  <div class="evolution-step"><b>GL-89 · 30 JUN</b><span>Initial layered operating-condition analysis established per-state statistics.</span></div>
-                  <div class="evolution-arrow">→</div>
-                  <div class="evolution-step"><b>GL-103/106 · 30 JUN–1 JUL</b><span>The state hierarchy and methodology were refined and documented.</span></div>
-                  <div class="evolution-arrow">→</div>
-                  <div class="evolution-step"><b>GL-168/204 · 7–13 JUL</b><span>Outputs were regenerated and the analysis became a repeatable pipeline stage.</span></div>
-                  <div class="evolution-arrow">→</div>
-                  <div class="evolution-step"><b>ADR 102 / GL-362</b><span>The physical rationale, thresholds, confidence degradation and downstream contract were formally accepted.</span></div>
-                </div></div>
-              </details>
-              <details>
-                <summary>Why post_warmup is explicitly called a proxy</summary>
-                <div class="pipeline-detail"><ul>
-                  <li>The dataset has no catalyst-temperature channel, so true catalyst warm-up cannot be directly observed.</li>
-                  <li>Coolant ≥75°C is required as a baseline, but cannot promote the state alone; one auxiliary condition must corroborate it.</li>
-                  <li>Cumulative MAF represents engine work, hot-idle RPM supports regulated operation, and IAT−ambient captures heat soak.</li>
-                  <li>This preserves a useful thermal context while preventing the Dashboard or Report from presenting inferred catalyst state as measured fact.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>Smoothing, VSP and boundary discipline</summary>
-                <div class="pipeline-detail"><ul>
-                  <li>Integer-quantised 1 Hz speed makes raw sample differences noisy. A centred 3-second mean is applied before acceleration is calculated.</li>
-                  <li><code>VSP = v × (1.1a + 0.132) + 0.000302v³</code> combines velocity and acceleration into physically grounded power demand.</li>
-                  <li>Smoothing, differencing, cumulative MAF and fragment cleanup reset inside each <code>segment_id</code>; D3 inherits D1's no-cross-gap guarantee.</li>
-                  <li>The 3-second smoothing/cleanup reduces isolated state flips, with the acknowledged trade-off of slightly blurring genuine short transitions.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>Confidence, degraded inference and exact dataset distribution</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><strong>High:</strong> RPM, speed, coolant and MAF complete—249,669 rows (99.98999%).</li>
-                  <li><strong>Medium:</strong> a non-fatal field is missing but inference can continue—12 rows.</li>
-                  <li><strong>Low:</strong> RPM or speed is missing and state relies on bounded forward inheritance—13 rows.</li>
-                  <li>Thermal distribution: post-warmup 194,394; warm-up 46,518; engine-off 8,775; unknown 7.</li>
-                  <li>Child distribution: steady 88,376; deceleration 65,291; acceleration 42,796; high load 26,278; idle 18,167; engine-off 8,773; unknown 13.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>Rejected alternatives and evidential boundary</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><strong>Global ranges:</strong> rejected because they confuse state-dependent normal behaviour with faults.</li>
-                  <li><strong>One flat state:</strong> rejected because consumers need thermal and kinematic dimensions independently.</li>
-                  <li><strong>Unsupervised clusters:</strong> rejected because unnamed clusters are unstable and cannot expose fixed physical rules.</li>
-                  <li><strong>Drop low-confidence rows:</strong> rejected; retaining rows with visible confidence lets downstream stages choose eligibility.</li>
-                  <li><strong>Boundary:</strong> thresholds are project- and dataset-specific. The rules are auditable, but not claimed as universal values for every vehicle.</li>
-                </ul></div>
-              </details>
-              <details>
-                <summary>Code, outputs and independent sanity check</summary>
-                <div class="pipeline-detail"><ul>
-                  <li><code>operating_condition_statistics/src/operating_condition_analysis.py</code>: <code>compute_dt_seconds()</code>, <code>build_quality_flags()</code> and hierarchical state construction.</li>
-                  <li>Outputs: <code>operating_condition_enriched.csv</code>, counts, per-condition signal summary and published rule constants.</li>
-                  <li>Cross-layer fields: <code>thermal_state</code>, <code>child_state</code>, <code>operating_state</code>, <code>condition_confidence</code>, <code>condition_quality_flags</code>.</li>
-                  <li>An independent filename-label cross-check found physically coherent stop-and-go patterns: Stau trips had the highest acceleration+deceleration share (0.486) and engine-off share (0.070).</li>
-                  <li><code>docs/adr/102-operating-condition-stratification.md</code> records decision, sources, alternatives, consequences and mitigations.</li>
-                </ul></div>
-              </details>
-            </div>
+            <table class="report-table">
+              <thead><tr><th>Layer</th><th>What it computes</th><th>Why kept separate</th></tr></thead>
+              <tbody>
+                <tr><td>B1a · Atomic (8)</td><td>Per-row deterministic values: segment gap, engine state, thermal deltas, pedal/RPM slopes.</td><td>Cheapest tier — no calibration input, no cross-row window state.</td></tr>
+                <tr><td>B1b · Calibrated residuals (2)</td><td>Deviation from an offline physics baseline: speed-density MAF residual, pedal-mapping residual.</td><td>Depends on the frozen calibration registry — a separately audited failure surface.</td></tr>
+                <tr><td>B2 · Engine-start context (6)</td><td>Facts about the most recent engine start: episode ID, elapsed time, starting ECT/AAT/IAT.</td><td>Needs its own episode-boundary logic, distinct from per-row or windowed builders.</td></tr>
+                <tr><td>B3 · Window features (8)</td><td>60–180 s rolling aggregates: MAF integral, ECT rate, intake stability, rolling std-devs, MAP range.</td><td>Gated on continuity blocks — a window can never be built across an invalid or discontinuous stretch.</td></tr>
+              </tbody>
+            </table>
+
+            <div class="report-boundary"><strong>Handoff to Model:</strong> Script 41 assembles exactly 46 ordered columns — 4 sample keys + 16 context fields + 24 engineered features (8+2+6+8 above) + 2 provenance fields — checked against a frozen manifest (<code>feature_schema.v1</code>, v1.2.0). Unexpected columns are rejected, key order and dtypes are validated, and the assembler performs <strong>no imputation</strong>: missingness stays visible rather than being silently filled. A new feature requires an explicit contract/version change, so it can never appear silently in the production CSV.</div>
+
+            <div class="data-code-path"><b>CODE PATH</b><code>data_layer/contracts/feature_manifest.v1.json</code><code>data_layer/feature_engineering/src/00_input_contract_validator.py, 10_atomic_feature_builder.py, 20_engine_start_context_builder.py, 30_window_feature_builder.py, 40_calibrated_feature_builder.py, 41_production_feature_assembler.py</code><code>Outputs: features/41_production/production_features.csv, production_features_manifest.json</code></div>
             </div>
             </details>
           </article>
@@ -4079,8 +3930,40 @@ st.session_state["dashboard_data"] = result</pre>
             <details class="pipeline-node-shell">
             <summary class="pipeline-node-head">
               <span class="pipeline-node-id">D4</span>
+              <div><h4>Executable proxy failure evidence</h4><p class="pipeline-node-purpose">Screen physically plausible fault symptoms into a deliberately small set of runtime checks, preserving the difference between a verdict, supporting evidence, a pending precursor and a design that was never executable.</p></div>
+              <span class="pipeline-status">14 CHECKS / 5 FAMILIES</span>
+            </summary>
+            <div class="pipeline-node-body">
+            <div class="pipeline-flow" aria-label="How the proxy families were established">
+              <div class="pipeline-flow-step"><b>DTC candidate catalogue</b><span>SAE J2012 codes collected before assuming any are executable.</span></div>
+              <div class="pipeline-flow-step"><b>Standards-side screening</b><span>Filtered on domain visibility, ownership, signal coverage, reconstructability and 1 Hz sampling observability.</span></div>
+              <div class="pipeline-flow-step"><b>Observability + baseline census</b><span>Requires an enable window plus stable baseline evidence for a margin/persistence rule.</span></div>
+              <div class="pipeline-flow-step"><b>19 Jul freeze · ADR 103</b><span>14 executable sub-checks across 5 families frozen; everything else stays research-only.</span></div>
+            </div>
+
+            <table class="report-table">
+              <thead><tr><th>Stage</th><th>What it does</th></tr></thead>
+              <tbody>
+                <tr><td>50 · Rule state</td><td>Checks each sub-check's guards/thresholds against the frozen calibration baseline; produces per-row eligibility and raw rule evidence.</td></tr>
+                <tr><td>60 · Event evidence</td><td>Detects driver-demand pedal-step events, for the one sub-check (5-S1) that needs a transient trigger.</td></tr>
+                <tr><td>61 · Duration evidence</td><td>Builds bounded persistence episodes from Stage 50's rule state, for every sub-check whose verdict depends on a sustained condition.</td></tr>
+                <tr class="selected-row"><td>70 · Decision</td><td>Reads only Stages 50/60/61 — never the raw feature table again. Assigns <code>decision_role</code> (verdict / pending_precursor / support / arbitration_evidence) and <code>result_state</code> (pass / triggered / not_evaluable / pending), attributes a candidate DTC and whether it is actually emitted, and records confidence, margin and calibration version. Writes <code>proxy_decisions.csv</code> — the artefact handed to the Model layer.</td></tr>
+              </tbody>
+            </table>
+
+            <div class="report-boundary"><strong>Role ≠ result ≠ DTC emission:</strong> a candidate DTC label only identifies the diagnostic family — only a permitted <code>verdict</code> row with <code>dtc_emitted=true</code> actually authorises a code, and support/arbitration rows always carry <code>dtc_emitted=false</code>. <code>not_evaluable</code> means a live check lacked a valid opportunity, not that a rejected design ran. These are controlled proxy-screening decisions, not confirmed real faults — ADR 201 keeps the Model layer from training on them as ground truth.</div>
+
+            <div class="data-code-path"><b>CODE PATH</b><code>data_layer/proxy_failure/src/50_rule_state_builder.py, 60_event_evidence_builder.py, 61_duration_evidence_builder.py, 70_proxy_decision_builder.py</code><code>proxy_failure_definition.md (authoritative) · proxy_support.md (research companion) · calibration_registry.v1.json (frozen baseline)</code><code>Outputs: proxy/70_decisions/proxy_decisions.csv, proxy_decision_manifest.json</code><code>docs/adr/103-proxy-screening-and-theoretical-basis.md</code></div>
+            </div>
+            </details>
+          </article>
+
+          <article class="pipeline-node" id="dataD5">
+            <details class="pipeline-node-shell">
+            <summary class="pipeline-node-head">
+              <span class="pipeline-node-id">D5</span>
               <div><h4>Offline calibration and governed residual features</h4><p class="pipeline-node-purpose">Keep the baseline reference fixed: user uploads may apply approved transformations, but can never redefine “normal” by fitting on the vehicle currently being diagnosed.</p></div>
-              <span class="pipeline-status">CALIBRATION.V1 · FROZEN</span>
+              <span class="pipeline-status">48/48 PASS · 66-TRIP COHORT</span>
             </summary>
             <div class="pipeline-node-body">
             <div class="pipeline-flow" aria-label="Calibration governance flow">
@@ -4090,151 +3973,19 @@ st.session_state["dashboard_data"] = result</pre>
               <div class="pipeline-flow-step"><b>40 · Online application</b><span>Read-only transforms produce two residual features; no fit path exists.</span></div>
             </div>
 
-            <div class="pipeline-columns">
-              <div class="pipeline-block"><div class="pipeline-block-label">THE LEAKAGE RISK THIS SOLVES</div><ul>
-                <li>If a user upload refitted its own baseline, a slowly failing vehicle could teach the system that its degraded behaviour is normal.</li>
-                <li>Calibration is therefore a separate offline/admin workflow; online scripts 00–70 forbid fitting, quantile search and threshold selection.</li>
-                <li><code>speed_density_maf_residual</code> compares observed airflow with the frozen speed-density expectation.</li>
-                <li><code>pedal_mapping_residual</code> compares the paired accelerator channels using the frozen mapping.</li>
-                <li>Residuals express deviation from baseline relationships, which is more transferable than a raw-value threshold alone.</li>
-              </ul></div>
-              <div class="pipeline-block"><div class="pipeline-block-label">RELEASE GATES</div><ul>
-                <li>Release manifest identity must be v1.2.0, status <code>frozen</code>, calibration <code>calibration.v1</code>, hash algorithm SHA-256.</li>
-                <li>The registry and feature manifest checksums are embedded and verified before online use.</li>
-                <li>Source IDs/checksums, 24 unique ordered features, categorical alignment and cross-contract lint must all pass.</li>
-                <li><code>online_fit_paths_forbidden=true</code>; production tests also assert Script 40 exposes no <code>fit</code> function.</li>
-                <li>Quality-invalid required inputs yield null residuals rather than fabricated estimates.</li>
-              </ul></div>
-            </div>
+            <table class="report-table">
+              <thead><tr><th>Invariant</th><th>What it guarantees</th></tr></thead>
+              <tbody>
+                <tr><td>Offline-only fitting</td><td>Online scripts 00–70 forbid fitting, quantile search and threshold selection (<code>online_fit_paths_forbidden=true</code>; Script 40 exposes no <code>fit</code> function) — a slowly failing upload can never teach the system its own decline is "normal".</td></tr>
+                <tr><td>Frozen 66-trip reference cohort</td><td>Every proxy family (cooling, MAF, MAP, pedal, intake temperature) calibrates against the same fixed <code>cohort_trip_count: 66</code> cohort — no family cherry-picks its own subset.</td></tr>
+                <tr><td>SHA-256 checksum binding</td><td>Registry (<code>calibration_registry.v1.json</code>) and feature-manifest checksums are embedded and verified before online use; Script 40 fails closed on any drift.</td></tr>
+                <tr><td>Null on invalid input</td><td>Quality-invalid required inputs yield null residuals rather than a fabricated estimate.</td></tr>
+              </tbody>
+            </table>
 
-            <div class="evidence-chips">
-              <div class="evidence-chip"><b>48 / 48 PASS</b><span>reproduction audit</span></div>
-              <div class="evidence-chip"><b>0 FAILED</b><span>verdict PASS</span></div>
-              <div class="evidence-chip"><b>SHA-256 BOUND</b><span>registry + contract</span></div>
-              <div class="evidence-chip"><b>FIT_ALLOWED = FALSE</b><span>online invariant</span></div>
-              <div class="evidence-chip"><b>2 RESIDUAL FEATURES</b><span>baseline relationships</span></div>
-            </div>
+            <div class="report-boundary"><strong>What 48/48 PASS proves — and what it doesn't:</strong> the audit (<code>recalibrate_20260723</code>) proves the frozen release can be reproduced from its declared evidence within tolerance. It does <strong>not</strong> prove the calibration generalises to every make, engine or sensor package — broader external-vehicle validation remains future work.</div>
 
-            <div class="pipeline-disclosure">
-              <details open><summary>Historical evolution: from derived features to governed calibration</summary><div class="pipeline-detail"><div class="evolution-rail">
-                <div class="evolution-step"><b>EARLY FEATURE WORK</b><span>Relationship-based features were explored, but reproducibility required explicit constants and cohorts.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>GL-303/304 · 19 JUL</b><span>Cross-contract checks, common paths and manifest infrastructure bound feature stages to authoritative artefacts.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>GL-341 · 23 JUL</b><span>Script 90 reproduced calibration decisions without overwriting the authoritative registry.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>RELEASE v1.2.0</b><span>Registry, feature schema, sources and online prohibition were frozen into one verifiable release bundle.</span></div>
-              </div></div></details>
-              <details><summary>Why offline fitting and online application must be separate</summary><div class="pipeline-detail"><ul>
-                <li><strong>Offline:</strong> approved cohort, documented weighting, model fitting, diagnostics and manual review may change a future versioned registry.</li>
-                <li><strong>Audit:</strong> Script 90 independently reproduces expected coefficients, bounds and proxy parameters from the evidence; it stops on mismatch.</li>
-                <li><strong>Online:</strong> Script 40 only loads frozen values, clips inputs to approved domains and calculates outputs.</li>
-                <li>This prevents target leakage, upload-specific baselines and non-reproducible production behaviour.</li>
-              </ul></div></details>
-              <details><summary>What 48/48 PASS proves—and what it does not</summary><div class="pipeline-detail"><ul>
-                <li>The audit manifest records 48 checks, all PASS, zero failed, with overall verdict PASS for data run <code>recalibrate_20260723</code>.</li>
-                <li>Checks cover static/regulatory constants, transformation reproduction, proxy parameters, bounds and provenance; release-bundle integrity is enforced at runtime by Script 40.</li>
-                <li>It proves the frozen release can be reproduced from its declared evidence within the accepted tolerances.</li>
-                <li>It does <strong>not</strong> prove the calibration generalises to every make, engine or sensor package; broader external-vehicle validation remains future work.</li>
-              </ul></div></details>
-              <details><summary>Rejected alternatives and failure behaviour</summary><div class="pipeline-detail"><ul>
-                <li><strong>Fit per upload:</strong> rejected because the current upload could contaminate its own baseline.</li>
-                <li><strong>Copy coefficients into code:</strong> rejected because values would lose cohort, version and checksum provenance.</li>
-                <li><strong>Automatically overwrite the registry after audit:</strong> rejected; reproduction evidence cannot bypass manual release review.</li>
-                <li><strong>Continue after checksum mismatch:</strong> rejected; Script 40 fails closed when registry, contract, policy or evidence identity drifts.</li>
-                <li><strong>Impute invalid calibration inputs:</strong> rejected; null output is safer than a misleading residual.</li>
-              </ul></div></details>
-              <details><summary>Code and artefact evidence</summary><div class="pipeline-detail"><ul>
-                <li><code>data_layer/calibration/calibration_registry.v1.json</code>: immutable approved parameters and <code>online_policy.fit_allowed=false</code>.</li>
-                <li><code>calibration_registry.v1.manifest.json</code>: frozen v1.2.0 release and embedded SHA-256 identities.</li>
-                <li><code>90_calibration_registry_builder.py</code>: <code>run_calibration_audit()</code> — parameter and transform reproduction (48 checks).</li>
-                <li><code>40_calibrated_feature_builder.py</code>: <code>_validate_release_bundle()</code>, <code>load_calibrated_inputs()</code>, <code>build_calibrated_features()</code>.</li>
-                <li><code>calibration_audit_manifest.json</code>: exact 48 PASS / 0 FAIL evidence and overall PASS verdict.</li>
-              </ul></div></details>
-            </div>
-            </div>
-            </details>
-          </article>
-
-          <article class="pipeline-node" id="dataD5">
-            <details class="pipeline-node-shell">
-            <summary class="pipeline-node-head">
-              <span class="pipeline-node-id">D5</span>
-              <div><h4>Executable proxy failure evidence</h4><p class="pipeline-node-purpose">Screen physically plausible fault symptoms into a deliberately small set of runtime checks, preserving the difference between a verdict, supporting evidence, a pending precursor and a design that was never executable.</p></div>
-              <span class="pipeline-status">ADR 103 · 14 CHECKS / 5 FAMILIES</span>
-            </summary>
-            <div class="pipeline-node-body">
-            <div class="pipeline-flow" aria-label="Proxy screening flow">
-              <div class="pipeline-flow-step"><b>1 · Observability</b><span>Can this symptom be seen with available 1 Hz signals and an enable window?</span></div>
-              <div class="pipeline-flow-step"><b>2 · Theory form</b><span>Borrow diagnostic architecture—not platform-specific numeric values.</span></div>
-              <div class="pipeline-flow-step"><b>3 · Freeze gate</b><span>Baseline census, margin, coverage and pre-registered branch decision.</span></div>
-              <div class="pipeline-flow-step"><b>4 · Runtime evidence</b><span>Rule state → event/duration evidence → routed proxy decision.</span></div>
-            </div>
-
-            <div class="pipeline-columns">
-              <div class="pipeline-block"><div class="pipeline-block-label">FIVE EXECUTABLE FAMILIES</div><ul>
-                <li><strong>Cooling degradation:</strong> 4 checks—slow warm-up, overheating, rising without plateau, cold-start plausibility.</li>
-                <li><strong>Air-intake MAF anomaly:</strong> 2—high-load under-read and zero MAF while firing.</li>
-                <li><strong>Accelerator-pedal sensor:</strong> 2—channel residual and extreme disagreement.</li>
-                <li><strong>Intake-air temperature sensor:</strong> 3—stuck/no-response, cold-start plausibility and physical range.</li>
-                <li><strong>MAP/load plausibility:</strong> 3—step response, steady residual and stuck MAP.</li>
-              </ul></div>
-              <div class="pipeline-block"><div class="pipeline-block-label">ROLE ≠ RESULT ≠ DTC EMISSION</div><ul>
-                <li><code>decision_role</code>: verdict, pending_precursor, support or arbitration_evidence.</li>
-                <li><code>result_state</code>: pass, triggered, not_evaluable or pending—only where the role permits it.</li>
-                <li>A candidate DTC label identifies diagnostic family; it does not itself authorise emission.</li>
-                <li>Support and arbitration rows always use <code>dtc_emitted=false</code>; final routing alone may emit a permitted verdict.</li>
-                <li><code>not_evaluable</code> means a live check lacked valid opportunity—not that a rejected design ran.</li>
-              </ul></div>
-            </div>
-
-            <div class="evidence-chips">
-              <div class="evidence-chip"><b>14 EXECUTABLE</b><span>runtime sub-checks</span></div>
-              <div class="evidence-chip"><b>5 ANOMALY TYPES</b><span>cross-layer enum</span></div>
-              <div class="evidence-chip"><b>4 DECISION ROLES</b><span>evidence semantics</span></div>
-              <div class="evidence-chip"><b>2-DOCUMENT CONTRACT</b><span>rules ≠ research history</span></div>
-              <div class="evidence-chip"><b>0 REAL FAULT LABELS</b><span>controlled proxy evidence only</span></div>
-            </div>
-
-            <div class="pipeline-disclosure">
-              <details open><summary>Historical evolution: why only five families survived</summary><div class="pipeline-detail"><div class="evolution-rail">
-                <div class="evolution-step"><b>CANDIDATE CATALOGUE</b><span>Physical symptoms and DTC families were collected before executability was assumed.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>OBSERVABILITY + CENSUS</b><span>Each design named required signals, state window, baseline opportunities and calibration margin.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>19 JUL FREEZE</b><span>Executable definitions were separated from research support; 14 checks across five families remained.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>ADR 103 / GL-362</b><span>Executability, decision roles, DTC separation and rejected families became the accepted contract.</span></div>
-              </div></div></details>
-              <details><summary>Why definition and support are separate documents</summary><div class="pipeline-detail"><ul>
-                <li><code>proxy_failure_definition.md</code> is the single implementation-facing source of active rules, guards, roles and limitations.</li>
-                <li><code>proxy_support.md</code> retains literature, observability derivations, censuses, sensitivity analysis and rejected branches.</li>
-                <li>Combining them would risk a superseded or infeasible research threshold being mistaken for production logic.</li>
-                <li>Literature contributes vehicle-independent judgment forms; absolute thresholds are baseline-derived or regulatory evaluability guards.</li>
-              </ul></div></details>
-              <details><summary>What was rejected, downgraded or removed</summary><div class="pipeline-detail"><ul>
-                <li><strong>MAF/MAP cohesion band:</strong> downgraded—no state met both margin and coverage requirements.</li>
-                <li><strong>Stuck MAF:</strong> infeasible—no baseline 60 s joint opportunity with changing context and exactly flat MAF.</li>
-                <li><strong>Single pedal-channel freeze / noise burst:</strong> infeasible or downgraded because usable persistence and baseline margin conflicted.</li>
-                <li><strong>Post-high-load IAT heat soak:</strong> removed—no isolating DTC and no frozen persistence rule.</li>
-                <li><strong>Idle/surge family:</strong> removed from enum—no commanded-idle PID, only 1.5–9.1% trip coverage for required persistence, no engine-specific nominal data.</li>
-                <li><strong>Electronic throttle tracking:</strong> not defined because TPS is saturated near 83.1–83.5% and is not trustworthy position evidence.</li>
-              </ul></div></details>
-              <details><summary>Executability, persistence and conservative failure behaviour</summary><div class="pipeline-detail"><ul>
-                <li>Only frozen/executable designs produce rows. Downgraded, descriptive, infeasible or removed designs leave no runtime footprint.</li>
-                <li>Rule enablement inherits D1 continuity and D3 operating-state boundaries; invalid quality breaks persistence rather than bridging it.</li>
-                <li>Out-of-domain inputs return <code>not_evaluable</code>; they are not forced into pass or triggered.</li>
-                <li>Pre-registration prevents moving a threshold just beyond the baseline maximum merely to claim zero false positives.</li>
-                <li>The runtime output records proxy/sub-check IDs, direction, role, state, reason, margin, DTC candidate/emission and provenance.</li>
-              </ul></div></details>
-              <details><summary>Claim boundary: proxies are not ground truth</summary><div class="pipeline-detail"><ul>
-                <li>The KIT corpus contains ordinary driving and no labelled physical failures; these rules cannot establish real-world sensitivity or recall.</li>
-                <li>A zero-trigger baseline result supports specificity only and may also expose an inert design—which is why reachability must be tested separately.</li>
-                <li>Proxy outputs are used as controlled screening/evaluation evidence; ADR 201 explicitly avoids training the Model as if they were real labels.</li>
-                <li>The defensible claim is physically motivated, governed detectability under declared conditions—not validated workshop diagnosis.</li>
-              </ul></div></details>
-              <details><summary>Code, contracts and theoretical sources</summary><div class="pipeline-detail"><ul>
-                <li><code>proxy_failure/src/50_rule_state_builder.py</code>, <code>60_event_evidence_builder.py</code>, <code>61_duration_evidence_builder.py</code>, <code>70_proxy_decision_builder.py</code>.</li>
-                <li><code>proxy_failure_definition.md</code> is authoritative; <code>proxy_support.md</code> is the research/audit companion.</li>
-                <li><code>calibration_registry.v1.json</code> supplies frozen baseline parameters; online refitting is forbidden.</li>
-                <li>Judgment forms draw on SAE J2012/J1979, Bosch Automotive Handbook, CARB OBD II, ISO 26262 and cited SAE/patent architectures; brand-specific values are not copied.</li>
-                <li><code>docs/adr/103-proxy-screening-and-theoretical-basis.md</code> records all active and non-executed outcomes.</li>
-              </ul></div></details>
-            </div>
+            <div class="data-code-path"><b>CODE PATH</b><code>data_layer/calibration/calibration_registry.v1.json, calibration_registry.v1.manifest.json</code><code>data_layer/feature_engineering/src/90_calibration_registry_builder.py :: run_calibration_audit()</code><code>data_layer/feature_engineering/src/40_calibrated_feature_builder.py :: _validate_release_bundle(), build_calibrated_features()</code><code>calibration_audit_manifest.json — 48 PASS / 0 FAIL</code></div>
             </div>
             </details>
           </article>
@@ -4244,7 +3995,7 @@ st.session_state["dashboard_data"] = result</pre>
             <summary class="pipeline-node-head">
               <span class="pipeline-node-id">D6</span>
               <div><h4>Graded synthetic fault-injection validation</h4><p class="pipeline-node-purpose">Challenge every executable proxy end to end with paired, single-signal interventions—testing severity response, independent contexts and diagnostic semantics without claiming synthetic detection is field recall.</p></div>
-              <span class="pipeline-status">ADR 104 · 14 / 14 ACCEPTED</span>
+              <span class="pipeline-status">14 / 14 ACCEPTED</span>
             </summary>
             <div class="pipeline-node-body">
             <div class="pipeline-flow" aria-label="Fault injection experiment">
@@ -4254,66 +4005,27 @@ st.session_state["dashboard_data"] = result</pre>
               <div class="pipeline-flow-step"><b>Paired adjudication</b><span>Compare baseline/injected result, DTC identity, role and emission semantics.</span></div>
             </div>
 
-            <div class="pipeline-columns">
-              <div class="pipeline-block"><div class="pipeline-block-label">2 × EXPERIMENTAL DISCIPLINES</div><ul>
-                <li><strong>Three ordered severities</strong> expose boundary behaviour and require a non-decreasing detection curve.</li>
-                <li><strong>Three independent trips per severity</strong> prevent overlapping windows from one favourable trip being counted as independent evidence.</li>
-                <li>Fourteen cases × three severity points × three trips produce <strong>126 scoped observations</strong>.</li>
-                <li>Because one copied run can host three severity observations, the campaign executes <strong>42 unique injected runs</strong>.</li>
-                <li>Wilson 95% intervals accompany detection proportions to show the uncertainty of n=3.</li>
-              </ul></div>
-              <div class="pipeline-block"><div class="pipeline-block-label">REGISTERED CASE ACCEPTANCE</div><ul>
-                <li>Detection rate must not decrease as severity rises.</li>
-                <li>Strongest severity must detect at least 0.8; with three trips, every accepted case achieved 3/3.</li>
-                <li>The equivalent baseline decision must not already be positive.</li>
-                <li>Injected output must match scoped result state, candidate DTC and whether its role emits or suppresses a DTC.</li>
-                <li>Acceptance is assessed per severity curve—not by requiring every mild/boundary observation to trigger.</li>
-              </ul></div>
+            <table class="report-table">
+              <thead><tr><th>Design factor</th><th>Value / rule</th></tr></thead>
+              <tbody>
+                <tr><td>Severities</td><td>3 ordered levels (mild / moderate / strong); detection rate must not decrease as severity rises.</td></tr>
+                <tr><td>Independent trips per severity</td><td>3, so one favourable trip can't be counted as independent evidence.</td></tr>
+                <tr><td>Scoped observations</td><td>14 cases × 3 severities × 3 trips = 126.</td></tr>
+                <tr><td>Unique injected runs</td><td>42 — one copied run hosts all 3 severity points for a case/trip.</td></tr>
+                <tr><td>Acceptance rule</td><td>Per case curve, not per observation: non-decreasing detection rate, ≥0.8 at strongest severity, and the equivalent baseline must not already be positive.</td></tr>
+              </tbody>
+            </table>
+
+            <div class="report-boundary"><strong>87/126 vs 14/14 is not a contradiction:</strong> 87 of the 126 individual observations hit their expected outcome — mild/boundary injections are intentionally allowed not to trigger (e.g. 0/3 → 2/3 → 3/3 across severities still counts as coherent). The registered unit of acceptance is the <strong>case curve</strong>, not the single observation: all 14 curves passed and every strongest-severity point reached 3/3. <strong>Validated:</strong> implementation reachability, monotonic severity response, repeatability. <strong>Not validated:</strong> real-world prevalence, physical causation or workshop diagnostic accuracy.</div>
+
+            <div class="report-result-grid">
+              <div class="report-result"><b>126</b><span>scoped observations</span></div>
+              <div class="report-result"><b>42</b><span>unique injected runs</span></div>
+              <div class="report-result"><b>14 / 14</b><span>case curves accepted</span></div>
+              <div class="report-result"><b>148 tests</b><span>full Data-layer verification</span></div>
             </div>
 
-            <div class="evidence-chips">
-              <div class="evidence-chip"><b>14 CASES</b><span>all executable checks</span></div>
-              <div class="evidence-chip"><b>3 × 3 PER CASE</b><span>severity × independent trips</span></div>
-              <div class="evidence-chip"><b>42 RUN IDs</b><span>end-to-end executions</span></div>
-              <div class="evidence-chip"><b>126 OBSERVATIONS</b><span>scoped paired outcomes</span></div>
-              <div class="evidence-chip"><b>3 / 3 STRONGEST</b><span>every case</span></div>
-            </div>
-
-            <div class="pipeline-disclosure">
-              <details open><summary>Historical evolution: why the first campaign was not enough</summary><div class="pipeline-detail"><div class="evolution-rail">
-                <div class="evolution-step"><b>V1 · SMOKE TEST</b><span>11 checks, one fixed injection each; all reached their expected output.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>VALIDITY REVIEW</b><span>Three checks, independent replication, boundary behaviour and full DTC semantics were still missing.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>V2 · GRADED CAMPAIGN</b><span>All 14 checks gained three severities, three trips, baseline pairing and dependency recomputation.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>ADR 104 · 24 JUL</b><span>V1 was superseded; project conclusions were explicitly based on the registered V2 acceptance rule.</span></div>
-              </div></div></details>
-              <details><summary>Why 87 passed observations is compatible with 14/14 accepted</summary><div class="pipeline-detail"><ul>
-                <li>The machine-readable campaign contains 126 observations; 87 individual observations satisfy their expected detection outcome.</li>
-                <li>Mild/control injections are intentionally allowed not to trigger. For example, a boundary experiment can produce 0/3 → 2/3 → 3/3 and still demonstrate coherent severity behaviour.</li>
-                <li>The registered unit of acceptance is the <strong>case curve</strong>: non-decreasing rates plus ≥0.8 at strongest severity.</li>
-                <li>All 14 curves passed and all strongest points were 3/3. Saying “126/126 detected” would therefore be incorrect.</li>
-              </ul></div></details>
-              <details><summary>Causal controls that prevent false credit</summary><div class="pipeline-detail"><ul>
-                <li>Only the declared raw target signal may change; guard signals cannot be modified to manufacture eligibility.</li>
-                <li>Selectors operate on naturally eligible baseline windows before injection.</li>
-                <li>Dependent residuals and rolling features are recomputed inside trip/segment boundaries.</li>
-                <li>Thresholds and calibration remain frozen; recalibrating after injection would make validation circular.</li>
-                <li>A trigger elsewhere in the copied run cannot count—the result must match the injected trip, segment or episode.</li>
-              </ul></div></details>
-              <details><summary>What this validates—and the exact limitations</summary><div class="pipeline-detail"><ul>
-                <li><strong>Validated:</strong> implementation reachability, monotonic severity response under registered interventions, repeatability across three trips and correct result/DTC/emission semantics.</li>
-                <li><strong>Not validated:</strong> physical component causation, prevalence, workshop diagnostic accuracy or real-world recall.</li>
-                <li>Three trips per severity give limited precision even with Wilson intervals.</li>
-                <li>Synthetic single-signal shapes may omit coupled behaviour that a physical failure would create across multiple sensors.</li>
-                <li>The conclusion must remain “controlled detectability of declared signal hypotheses,” not “100% fault-detection accuracy.”</li>
-              </ul></div></details>
-              <details><summary>Code, outputs and regression evidence</summary><div class="pipeline-detail"><ul>
-                <li><code>fault_injection/configs/fault_injection_cases.v1.json</code>: registered cases, severity order, target signals, selectors and expected semantics.</li>
-                <li><code>fault_injection/src/run_fault_injection.py</code>: selection, copying, intervention, recomputation, rerun and adjudication.</li>
-                <li>Frozen result: <code>fault_injection_summary_20260903T051231Z.csv/.json</code>.</li>
-                <li><code>test_fault_injection_campaign.py</code> validates configuration, severity order, independent trips and campaign regression; proxy decisions have their own stage-70 tests.</li>
-                <li>Current full Data-layer verification: 148 tests passed in 10.95 s; this includes continuity, manifests, features, proxy stages, upload intake and campaign regression.</li>
-              </ul></div></details>
-            </div>
+            <div class="data-code-path"><b>CODE PATH</b><code>data_layer/fault_injection/configs/fault_injection_cases.v1.json</code><code>data_layer/fault_injection/src/run_fault_injection.py</code><code>Outputs: fault_injection_summary_20260903T051231Z.csv/.json</code><code>test_fault_injection_campaign.py</code></div>
             </div>
             </details>
           </article>
@@ -4323,7 +4035,7 @@ st.session_state["dashboard_data"] = result</pre>
             <summary class="pipeline-node-head">
               <span class="pipeline-node-id">D7</span>
               <div><h4>Two deliveries, one traceable Data handoff</h4><p class="pipeline-node-purpose">Hand Model both sample-grain forecasting evidence and decision-grain proxy evidence from the same isolated run, while preserving their different meanings, consumers and claim boundaries.</p></div>
-              <span class="pipeline-status">INTERFACE v1.3+ · LIVE UPLOAD</span>
+              <span class="pipeline-status">2 DELIVERIES · SAME RUN</span>
             </summary>
             <div class="pipeline-node-body">
             <div class="pipeline-flow" aria-label="Data handoff flow">
@@ -4333,66 +4045,20 @@ st.session_state["dashboard_data"] = result</pre>
               <div class="pipeline-flow-step"><b>Absolute handoff paths</b><span>Summary exposes both artefacts plus ordered stage manifests.</span></div>
             </div>
 
-            <div class="pipeline-columns">
-              <div class="pipeline-block"><div class="pipeline-block-label">DELIVERY A · PRODUCTION FEATURES</div><ul>
-                <li>One row per 1 Hz sample; exact 46-column <code>DataLayerOutput</code> contract.</li>
-                <li>Consumed by Model for segment-safe 512-context / 96-forecast windows, residual scoring and key-signal evidence.</li>
-                <li>Nullable fields remain required keys—the reason evidence is unavailable is not hidden by dropping columns.</li>
-                <li>Identity columns prevent windows crossing trips or segments; schema and calibration versions accompany every row.</li>
-                <li>This delivery contains measurements/features, not a direct diagnostic conclusion.</li>
-              </ul></div>
-              <div class="pipeline-block"><div class="pipeline-block-label">DELIVERY B · PROXY DECISIONS</div><ul>
-                <li>Decision grain, not sample grain; one result represents a scoped rule decision or evidence item.</li>
-                <li>Contains result state, decision role/reason/margin, confidence, DTC candidate/emission and provenance.</li>
-                <li>Model may relay Data-scored IAT/MAP decisions, but this is explicitly <strong>forwarding, not Model scoring</strong>.</li>
-                <li>The 5-S2 arbitration gate and emission semantics remain intact when forwarded.</li>
-                <li>It must not be merged column-by-column into the 46-column feature table.</li>
-              </ul></div>
-            </div>
+            <table class="report-table">
+              <thead><tr><th>Boundary question</th><th>A · production_features.csv</th><th>B · proxy_decisions.csv</th></tr></thead>
+              <tbody>
+                <tr><td>Upstream input</td><td>Stage 41 reads only the four feature-family tables (10/20/30/40), joined on identical sample keys.</td><td>Stage 70 reads only Stages 50/60/61's evidence outputs plus the frozen calibration registry — never the raw feature table again.</td></tr>
+                <tr><td>Format</td><td>CSV, sample grain — one row per 1 Hz sample, exact 46 ordered columns (<code>DataLayerOutput</code> contract).</td><td>CSV, decision grain — one row per sub-check × evaluation unit.</td></tr>
+                <tr><td>Required fields</td><td>Every column is a required key — nullable fields stay as required keys rather than being dropped.</td><td><code>trip_id</code>, <code>segment_id</code> (nullable), evidence start/end timestamps, <code>decision_role</code>, <code>result_state</code>, <code>dtc_candidate_label</code>, <code>dtc_emitted</code>, margin, confidence, calibration version.</td></tr>
+                <tr><td>Can Data redefine field meaning here?</td><td>No — Stage 41 only joins already-computed fields verbatim, with strict type/order checks.</td><td>No — Stage 70 only routes existing evidence into a decision; it doesn't redefine what the evidence means.</td></tr>
+                <tr><td>Invalid / missing input</td><td>No imputation at the interface — missingness stays visible through explicit null semantics rather than being silently filled.</td><td><code>not_evaluable</code> when a live check lacks a valid opportunity — never forced into <code>pass</code> or <code>triggered</code>.</td></tr>
+                <tr class="selected-row"><td>What Model (next layer) receives</td><td>512-context / 96-forecast windows and residual scoring — measurement/features, not a diagnostic conclusion.</td><td>Governed verdict forwarding and evaluation/filtering — must not be merged column-by-column into the 46-column feature table (different cardinality).</td></tr>
+                <tr><td>Tests covering this boundary</td><td>Field contract: valid/optional/nullable fields, missing required field, wrong type.</td><td>Decision semantics: role/result/DTC attribution. Shared with A: both deliveries come from one run (default stops at 41, proxy stages opt-in, all stages share one run).</td></tr>
+              </tbody>
+            </table>
 
-            <div class="evidence-chips">
-              <div class="evidence-chip"><b>2 DELIVERIES</b><span>sample grain + decision grain</span></div>
-              <div class="evidence-chip"><b>10 ONLINE STAGES</b><span>00–70 after upstream work</span></div>
-              <div class="evidence-chip"><b>SAME RUN ID</b><span>shared source identity</span></div>
-              <div class="evidence-chip"><b>5-TYPE ENUM</b><span>interface aligned</span></div>
-              <div class="evidence-chip"><b>FAIL CLOSED</b><span>stage + run in error</span></div>
-            </div>
-
-            <div class="pipeline-disclosure">
-              <details open><summary>Historical integration: when proxy evidence became live</summary><div class="pipeline-detail"><div class="evolution-rail">
-                <div class="evolution-step"><b>v1.0 · 19 JUL</b><span>The 46-column production schema and five-type proxy contract replaced legacy feature delivery.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>v1.2 · 27 JUL</b><span>Stages 50–70 worked on a real full-corpus run, but the public upload path still stopped at stage 41.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>v1.3 · 31 JUL</b><span><code>include_proxy</code> connected stage 41 to 50/60/61/70; live uploads returned both output paths.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>v1.4 · 1 AUG</b><span>Model began forwarding two Data-computed families while preserving “relaying, not scoring” semantics.</span></div>
-              </div></div></details>
-              <details><summary>Exact public pipeline behaviour</summary><div class="pipeline-detail"><ul>
-                <li><code>run_data_pipeline()</code> executes cleaning → quality audit → operating conditions → stages 00/10/20/30/40/41.</li>
-                <li>When <code>include_proxy=True</code>, it continues through 50/60/61/70 in the same run directory.</li>
-                <li><code>run_data_pipeline_for_upload()</code> enables proxy stages by default; batch/CLI stays feature-only unless explicitly requested.</li>
-                <li>The returned summary carries absolute <code>production_features_path</code>, <code>proxy_decisions_path</code>, stage IDs and manifest paths for downstream orchestration.</li>
-                <li><code>_run_stage()</code> wraps any stage-specific exception as <code>DataPipelineError</code> with stage ID and run ID, retaining the original chained cause.</li>
-              </ul></div></details>
-              <details><summary>Evidence hierarchy the rest of the system may claim</summary><div class="pipeline-detail"><ul>
-                <li><strong>Observed:</strong> cleaned sensor values, operating context, missingness and provenance from the uploaded recording.</li>
-                <li><strong>Derived:</strong> deterministic/calibrated features relative to a frozen baseline reference.</li>
-                <li><strong>Screened:</strong> physically motivated proxy decision under declared enable and persistence rules.</li>
-                <li><strong>Validated in control:</strong> synthetic reachability and severity coherence across registered interventions.</li>
-                <li><strong>Not established:</strong> physical root-cause confirmation, real-world recall, generalisation to every vehicle, or workshop-grade diagnosis.</li>
-              </ul></div></details>
-              <details><summary>Why the two tables cannot be collapsed into one</summary><div class="pipeline-detail"><ul>
-                <li>Features are dense sample observations; decisions are sparse scoped conclusions/evidence with different cardinality.</li>
-                <li>Forcing decisions onto every 1 Hz row would duplicate DTC semantics and invite accidental label leakage into forecasting.</li>
-                <li>Keeping them separate lets Model use proxy labels for filtering/evaluation or controlled forwarding without training TTM as a proxy classifier.</li>
-                <li>Both remain traceable through run, trip, segment, time/window identity and their adjacent manifests.</li>
-              </ul></div></details>
-              <details><summary>Code and interface evidence</summary><div class="pipeline-detail"><ul>
-                <li><code>data_layer/run_pipeline.py</code>: public orchestration, feature/proxy stage lists, manifest creation and error normalisation.</li>
-                <li><code>pipeline_data/paths.py</code>: isolated <code>RunLayout</code>; <code>manifests.py</code>: descriptors, identities, verification and atomic JSON writes.</li>
-                <li><code>shared/interface_models.py::DataLayerOutput</code>: 46 required keys with explicit nullability and optional internal row-grain proxy labels.</li>
-                <li><code>docs/INTERFACE.md</code> v1.3–v1.4: live proxy-path closure and Model forwarding semantics.</li>
-                <li>Verified live families recorded in the interface: IAT → P0111 and MAP/load plausibility → P0106.</li>
-              </ul></div></details>
-            </div>
+            <div class="data-code-path"><b>CODE PATH</b><code>data_layer/run_pipeline.py :: run_data_pipeline(), run_data_pipeline_for_upload()</code><code>shared/interface_models.py :: DataLayerOutput</code><code>tests/test_interface.py, data_layer/tests/proxy_test/test_70_proxy_decisions.py, data_layer/tests/pipeline_data_test/test_public_pipeline_contract.py</code><code>docs/INTERFACE.md v1.3–v1.4</code></div>
             </div>
             </details>
           </article>
@@ -4575,6 +4241,24 @@ st.session_state["dashboard_data"] = result</pre>
         <section class="pipeline-layer report-backup" id="backupReport" data-layer="report">
           <header class="pipeline-layer-head"><div><div class="pipeline-layer-label">03 · REPORT LAYER</div><h3>Evidence behind the final report pipeline</h3></div><div class="pipeline-layer-owner">FINAL DESIGN · VIVA BACKUP</div></header>
 
+          <nav class="backup-jump-nav" aria-label="Report backup topics">
+            <button type="button" onclick="openBackupNode('reportB0')">R0 · Model selection</button>
+            <button type="button" onclick="openBackupNode('reportB1')">R1 · Knowledge storage</button>
+            <button type="button" onclick="openBackupNode('reportB2')">R2 · ChromaDB indexing</button>
+            <button type="button" onclick="openBackupNode('reportB3')">R3 · Retrieval comparison</button>
+            <button type="button" onclick="openBackupNode('reportB4')">R4 · Model evidence</button>
+            <button type="button" onclick="openBackupNode('reportB5')">R5 · Input validation</button>
+            <button type="button" onclick="openBackupNode('reportB6')">R6 · Context construction</button>
+            <button type="button" onclick="openBackupNode('reportB7')">R7 · Knowledge admission</button>
+            <button type="button" onclick="openBackupNode('reportB8')">R8 · Three calls</button>
+            <button type="button" onclick="openBackupNode('reportB9')">R9 · Value leakage</button>
+            <button type="button" onclick="openBackupNode('reportB10')">R10 · Sequential gates</button>
+            <button type="button" onclick="openBackupNode('reportB11')">R11 · Validator rules</button>
+            <button type="button" onclick="openBackupNode('reportB12')">R12 · Failure paths</button>
+            <button type="button" onclick="openBackupNode('reportB13')">R13 · Evaluation design</button>
+            <button type="button" onclick="openBackupNode('reportB14')">R14 · Review evidence</button>
+          </nav>
+
           <article class="pipeline-node" id="reportB0"><details class="pipeline-node-shell" open>
             <summary class="pipeline-node-head"><span class="pipeline-node-id">R0</span><div><h4>Granite model selection</h4><p class="pipeline-node-purpose">Four locally runnable Granite models were compared on the same Cooling case and the same three-call sequence.</p></div><span class="pipeline-status">HISTORICAL SELECTION TEST</span></summary>
             <div class="pipeline-node-body">
@@ -4593,49 +4277,144 @@ st.session_state["dashboard_data"] = result</pre>
           </details></article>
 
           <article class="pipeline-node" id="reportB2"><details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">R2</span><div><h4>Metadata and semantic retrieval comparison</h4><p class="pipeline-node-purpose">RAG is the overall method. This experiment compared two ways of choosing which reviewed record enters a prompt.</p></div><span class="pipeline-status">HISTORICAL · 7 TYPES</span></summary>
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R2</span><div><h4>How knowledge is indexed and retrieved</h4><p class="pipeline-node-purpose"><code>knowledge_indexer.py</code> prepares the reviewed YAML for retrieval; <code>rag_retriever.py</code> selects the two records required for the current report.</p></div><span class="pipeline-status">BUILD TIME → RUNTIME</span></summary>
             <div class="pipeline-node-body">
-              <table class="report-table"><thead><tr><th>Retrieval method</th><th>Correct record</th><th>Average time</th></tr></thead><tbody><tr class="selected-row"><td><strong>Metadata + section</strong></td><td><strong>7/7</strong></td><td><strong>≈0.34 ms</strong></td></tr><tr><td>Semantic + section</td><td>4/7</td><td>≈61.0 ms</td></tr><tr class="selected-row"><td><strong>Metadata + whole document</strong></td><td><strong>7/7</strong></td><td><strong>≈0.31 ms</strong></td></tr><tr><td>Semantic + whole document</td><td>6/7</td><td>≈57.4 ms</td></tr></tbody></table>
-              <div class="report-case-grid"><div class="report-case"><b>METADATA FILTERING</b><p>Matches explicit fields such as anomaly type, report section and risk level.</p></div><div class="report-case"><b>SEMANTIC RETRIEVAL</b><p>Embeds the query and ranks records by similarity of meaning.</p></div></div>
-              <div class="report-boundary"><strong>Scope:</strong> this design experiment used seven categories available at that stage. Production now supports five anomaly types.</div>
+              <div class="pipeline-block-label" style="margin-top:22px">OVERALL KNOWLEDGE PATH</div>
+              <div class="pipeline-flow"><div class="pipeline-flow-step"><b>grounded_knowledge.yaml</b><span>Reviewed source</span></div><div class="pipeline-flow-step"><b>knowledge_indexer.py</b><span>Build records</span></div><div class="pipeline-flow-step"><b>ChromaDB collection</b><span>Store 20 records</span></div><div class="pipeline-flow-step"><b>rag_retriever.py</b><span>Select for prompts</span></div></div>
+              <div class="pipeline-block-label" style="margin-top:28px">KNOWLEDGE_INDEXER.PY · BUILD TIME</div>
+              <div class="pipeline-flow report-six-step"><div class="pipeline-flow-step"><b>Load YAML</b><span><code>proxy_failures</code></span></div><div class="pipeline-flow-step"><b>Validate</b><span>Five required types</span></div><div class="pipeline-flow-step"><b>Cause record</b><span>Description + causes</span></div><div class="pipeline-flow-step"><b>Action records</b><span>Low · Medium · High</span></div><div class="pipeline-flow-step"><b>Upsert</b><span>4 records × 5 types</span></div><div class="pipeline-flow-step"><b>Verify</b><span>Count = 20</span></div></div>
+              <div class="pipeline-block-label" style="margin-top:28px">RAG_RETRIEVER.PY · RUNTIME</div>
+              <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Open collection</b><span>Otherwise fallback</span></div><div class="pipeline-flow-step"><b>Find causes</b><span>Type + section</span></div><div class="pipeline-flow-step"><b>Find actions</b><span>Type + section + risk</span></div><div class="pipeline-flow-step"><b>Return both</b><span>To context construction</span></div></div>
             </div>
           </details></article>
 
           <article class="pipeline-node" id="reportB3"><details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">R3</span><div><h4>Model evidence received</h4><p class="pipeline-node-purpose">One Medium-risk Cooling case is used through the next three cards to show what the Report Layer receives and what it may explain.</p></div><span class="pipeline-status">STRUCTURED INPUT</span></summary>
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R3</span><div><h4>Metadata and semantic retrieval comparison</h4><p class="pipeline-node-purpose">RAG is the overall method. This experiment compared two ways of choosing which reviewed record enters a prompt.</p></div><span class="pipeline-status">HISTORICAL · 7 TYPES</span></summary>
+            <div class="pipeline-node-body">
+              <table class="report-table"><thead><tr><th>Retrieval method</th><th>Correct record</th><th>Average time</th></tr></thead><tbody><tr class="selected-row"><td><strong>Metadata + section</strong></td><td><strong>7/7</strong></td><td><strong>≈0.34 ms</strong></td></tr><tr><td>Semantic + section</td><td>4/7</td><td>≈61.0 ms</td></tr><tr class="selected-row"><td><strong>Metadata + whole document</strong></td><td><strong>7/7</strong></td><td><strong>≈0.31 ms</strong></td></tr><tr><td>Semantic + whole document</td><td>6/7</td><td>≈57.4 ms</td></tr></tbody></table>
+              <div class="report-case-grid"><div class="report-case"><b>METADATA FILTERING · EXACT LABELS</b><p>Use fields already supplied by the Model Layer to select one matching record.</p><pre class="pipeline-code">collection.get(where={"$and": [
+  {"anomaly_type": {"$eq": anomaly_type}},
+  {"section": {"$eq": "actions"}},
+  {"risk_level": {"$eq": risk_level}}
+]})</pre></div><div class="report-case"><b>SEMANTIC RETRIEVAL · MEANING SIMILARITY</b><p>Embed a symptom description and rank records by similarity, even when their wording differs.</p><pre class="pipeline-code">collection.query(
+  query_texts=[symptom_description],
+  n_results=1
+)</pre></div></div>
+              <div class="report-boundary"><strong>Scope:</strong> this design experiment used seven categories available at that stage. Production now supports five anomaly types.</div>
+            </div>
+          </details></article>
+
+          <article class="pipeline-node" id="reportB4"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R4</span><div><h4>Model evidence received</h4><p class="pipeline-node-purpose">One Medium-risk Cooling case is used through the next three cards to show what the Report Layer receives and what it may explain.</p></div><span class="pipeline-status">STRUCTURED INPUT</span></summary>
             <div class="pipeline-node-body">
               <div class="report-case-grid"><div class="report-case"><b>CURRENT RESULT</b><ul><li><code>cooling_degradation</code></li><li>Risk score: <strong>0.5021 · Medium</strong></li><li>Prediction confidence: <strong>0.842</strong></li></ul></div><div class="report-case"><b>SUPPORTING SIGNALS</b><ul><li>Coolant: <strong>85°C</strong> · reference 90–95°C</li><li>Rise rate: <strong>5.0486°C/min</strong> · reference 0–2</li><li>Both values remain Model Layer evidence.</li></ul></div><div class="report-case"><b>TRIP ESTIMATE</b><p><code>estimated_cycles_to_failure = 5</code><br>Projected trips until the risk trend reaches the High threshold.</p></div><div class="report-case"><b>TEN-TRIP PROBABILITY</b><p><code>estimated_failure_probability = 0.7502</code><br>Chance of crossing High within the fixed next ten trips.</p></div></div>
               <div class="report-boundary">These projections describe the Model risk threshold. They are not a probability or countdown of confirmed mechanical failure.</div>
             </div>
           </details></article>
 
-          <article class="pipeline-node" id="reportB4"><details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">R4</span><div><h4>Prompt context construction</h4><p class="pipeline-node-purpose">Technical fields are converted into a short evidence summary while their values and meanings remain unchanged.</p></div><span class="pipeline-status">PREPARED EVIDENCE</span></summary>
+          <article class="pipeline-node" id="reportB5"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R5</span><div><h4>What the Model input contract checks</h4><p class="pipeline-node-purpose"><code>ModelLayerOutput(**summary)</code> triggers these Pydantic rules before retrieval or any Granite call begins.</p></div><span class="pipeline-status">SHARED/INTERFACE_MODELS.PY</span></summary>
+            <div class="pipeline-node-body">
+              <div class="report-boundary"><code>report_layer/pipeline/report_generator.py</code>: <code>validated = ModelLayerOutput(**summary_payload)</code> → only the validated object is passed to <code>build_context_with_rag(validated)</code>.</div>
+              <div class="input-contract-grid">
+                <div class="input-contract-card"><b>1 · REQUIRED FIELDS + ALLOWED VALUES</b><pre class="pipeline-code">AnomalyType = Literal[
+  "cooling_degradation",
+  "air_intake_maf_anomaly",
+  "accelerator_pedal_sensor",
+  "intake_air_temperature_sensor_fault",
+  "map_load_signal_plausibility_fault"
+]
+RiskLevel = Literal["Low", "Medium", "High"]
+
+class ComponentRiskOutput(BaseModel):
+  timestamp: str
+  anomaly_type: AnomalyType
+  risk_score: float
+  component: AnomalyType
+  prediction_confidence: float
+  key_signals: List[KeySignal]
+  estimated_cycles_to_failure: Optional[int] = Field(...)
+  estimated_failure_probability: Optional[float] = Field(...)</pre></div>
+                <div class="input-contract-card"><b>2 · FIELD VALIDATORS</b><pre class="pipeline-code">@field_validator(
+  "risk_score",
+  "prediction_confidence"
+)
+def _score_in_unit_range(value):
+  if not 0 &lt;= value &lt;= 1:
+    raise ValueError(...)
+
+@field_validator(
+  "estimated_failure_probability"
+)
+def _failure_probability_in_unit_range(value):
+  if value is not None and not 0 &lt;= value &lt;= 1:
+    raise ValueError(...)
+
+@field_validator("reference_range")
+def _reference_range_has_two_values(value):
+  if len(value) != 2:
+    raise ValueError(...)</pre></div>
+                <div class="input-contract-card"><b>3 · RELATIONSHIP VALIDATORS</b><pre class="pipeline-code">@model_validator(mode="after")
+def _component_mirrors_anomaly_type(self):
+  if self.component != self.anomaly_type:
+    raise ValueError(...)
+
+@model_validator(mode="after")
+def _secondary_risk_is_distinct_and_ranked(self):
+  secondary = self.secondary_risk
+  if secondary is None:
+    return self
+  if secondary.anomaly_type == self.anomaly_type:
+    raise ValueError(...)
+  if secondary.risk_score &gt; self.risk_score:
+    raise ValueError(...)</pre></div>
+              </div>
+              <div class="report-boundary"><strong>Boundary:</strong> schema validation catches malformed or internally invalid input. It cannot prove that a structurally valid anomaly classification is correct for the real vehicle.</div>
+            </div>
+          </details></article>
+
+          <article class="pipeline-node" id="reportB6"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R6</span><div><h4>Prompt context construction</h4><p class="pipeline-node-purpose">Technical fields are converted into a short evidence summary while their values and meanings remain unchanged.</p></div><span class="pipeline-status">PREPARED EVIDENCE</span></summary>
             <div class="pipeline-node-body">
               <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Readable names</b><span><code>coolant_temp</code> → coolant temperature.</span></div><div class="pipeline-flow-step"><b>Reference check</b><span>85°C is below the supplied 90–95°C range.</span></div><div class="pipeline-flow-step"><b>Relationship</b><span>Low temperature + rapid warming activates the defined thermal pattern.</span></div><div class="pipeline-flow-step"><b>Meaning retained</b><span>Risk, confidence and projections remain separate values.</span></div></div>
               <div class="report-quote good">“Coolant temperature is below its reference range, while its rate of increase is above the expected range.”</div>
+              <div class="rag-call-grid"><pre class="pipeline-code"># Abridged from build_context_with_rag()
+context = build_context(ttm_output)
+risk = ttm_output.risk_level.lower()
+
+rag_knowledge = retrieve_all(
+    anomaly_type=ttm_output.anomaly_type,
+    risk_level=risk,
+)
+
+# R7 applies the signal-relevance gate here.
+return {
+    "context": context,
+    "fault_knowledge": fault_knowledge,
+    "actions_knowledge": actions_knowledge,
+}</pre><div class="rag-output-list"><div class="rag-output-item"><strong>context</strong>Current Model evidence prepared for owner-facing language.</div><div class="rag-output-item"><strong>fault_knowledge</strong>Reviewed possible-cause record matched to the anomaly type.</div><div class="rag-output-item"><strong>actions_knowledge</strong>Reviewed guidance matched to the anomaly type and risk level.</div></div></div>
               <div class="pipeline-disclosure"><details><summary>What a defined relationship means</summary><div class="pipeline-detail"><ul><li>The relationship is activated only when the required signals are available.</li><li>It describes a combination chosen in the implementation; Granite does not discover a new statistical correlation.</li><li><code>report_layer/pipeline/context_injection.py</code> prepares the context.</li></ul></div></details></div>
             </div>
           </details></article>
 
-          <article class="pipeline-node" id="reportB5"><details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">R5</span><div><h4>Knowledge admitted to this Cooling case</h4><p class="pipeline-node-purpose">Retrieval finds category-matched material; an additional check decides whether its explanation fits the direction of the current signals.</p></div><span class="pipeline-status">CASE-LEVEL ADMISSION</span></summary>
+          <article class="pipeline-node" id="reportB7"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R7</span><div><h4>Knowledge admitted to this Cooling case</h4><p class="pipeline-node-purpose">Retrieval finds category-matched material; an additional check decides whether its explanation fits the direction of the current signals.</p></div><span class="pipeline-status">CASE-LEVEL ADMISSION</span></summary>
             <div class="pipeline-node-body">
               <div class="pipeline-columns"><div class="pipeline-block"><div class="pipeline-block-label">RETRIEVED POSSIBILITIES</div><ul><li>Coolant circulation</li><li>Thermostat operation</li><li>Cooling fan operation</li><li>Coolant level or quality</li><li>Radiator airflow or restriction</li></ul></div><div class="pipeline-block"><div class="pipeline-block-label">CURRENT EVIDENCE</div><ul><li>Temperature is below its reference range.</li><li>Temperature is rising faster than expected.</li><li>Pure overheating wording does not fit this observation.</li><li>Cautious circulation, sensor or fan checks may still be presented as possibilities.</li></ul></div></div>
               <div class="report-boundary"><strong>Current limit:</strong> Cooling has this signal-direction check. The other four production categories currently use exact metadata filtering only.</div>
             </div>
           </details></article>
 
-          <article class="pipeline-node" id="reportB6"><details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">R6</span><div><h4>Three production Calls</h4><p class="pipeline-node-purpose">Each Call has a separate question, evidence allowance and output contract.</p></div><span class="pipeline-status">SEQUENTIAL GENERATION</span></summary>
+          <article class="pipeline-node" id="reportB8"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R8</span><div><h4>Three production Calls</h4><p class="pipeline-node-purpose">Each Call has a separate question, evidence allowance and output contract.</p></div><span class="pipeline-status">SEQUENTIAL GENERATION</span></summary>
             <div class="pipeline-node-body">
               <div class="report-call-grid"><div class="report-call"><b>CALL 1 · WHAT HAPPENED?</b><strong>Evidence</strong><p>Prepared Model fields only.</p><strong>Example</strong><p>“Coolant temperature is low while warming faster than expected.”</p></div><div class="report-call"><b>CALL 2 · WHY MIGHT IT MATTER?</b><strong>Evidence</strong><p>Accepted Call 1 + admitted cause knowledge.</p><strong>Example</strong><p>“This pattern may relate to sensing or coolant circulation.”</p></div><div class="report-call"><b>CALL 3 · WHAT SHOULD I DO?</b><strong>Evidence</strong><p>Risk state + role-separated action knowledge.</p><strong>Example</strong><p>“Arrange an inspection and report the two readings to the mechanic.”</p></div></div>
               <table class="report-table"><thead><tr><th>Call</th><th>Fixed boundary</th><th>Output</th></tr></thead><tbody><tr><td>1</td><td>No diagnosis or retrieved cause</td><td>Observed pattern</td></tr><tr><td>2</td><td>Possible causes remain conditional</td><td>Explanation</td></tr><tr><td>3</td><td>Technical procedures assigned to mechanic</td><td>Now · timing · stop conditions · mechanic information</td></tr></tbody></table>
             </div>
           </details></article>
 
-          <article class="pipeline-node" id="reportB7"><details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">R7</span><div><h4>Example-value leakage</h4><p class="pipeline-node-purpose">A specific number in an early few-shot example appeared in a new report even though it was absent from that report’s Model input.</p></div><span class="pipeline-status">OBSERVED FAILURE → REGRESSION CASE</span></summary>
+          <article class="pipeline-node" id="reportB9"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R9</span><div><h4>Example-value leakage</h4><p class="pipeline-node-purpose">A specific number in an early few-shot example appeared in a new report even though it was absent from that report’s Model input.</p></div><span class="pipeline-status">OBSERVED FAILURE → REGRESSION CASE</span></summary>
             <div class="pipeline-node-body">
               <div class="report-case-grid"><div class="report-case"><b>CURRENT COOLING INPUT</b><p>Failure-threshold probability: <strong>1.0</strong><br>Estimated trips: <strong>4</strong><br>No value of 0.31% was supplied.</p></div><div class="report-case"><b>EARLY EXAMPLE</b><p>An unrelated accelerator-pedal example contained the illustrative value <strong>0.31%</strong>.</p></div></div>
               <div class="report-quote bad">“The model projects a very low probability (0.31%) of crossing the High-risk threshold…”</div>
@@ -4643,35 +4422,56 @@ st.session_state["dashboard_data"] = result</pre>
             </div>
           </details></article>
 
-          <article class="pipeline-node" id="reportB8"><details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">R8</span><div><h4>Validator and targeted correction</h4><p class="pipeline-node-purpose">A parsed JSON section can still contain unsupported or unsuitable language, so every generated section passes the same release rules.</p></div><span class="pipeline-status">0.80 RELEASE THRESHOLD</span></summary>
+          <article class="pipeline-node" id="reportB10"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R10</span><div><h4>Three Calls through sequential gates</h4><p class="pipeline-node-purpose">Each accepted section becomes part of the next prompt. A failed section is corrected before generation continues.</p></div><span class="pipeline-status">GENERATE → VALIDATE → CONTINUE</span></summary>
             <div class="pipeline-node-body">
-              <div class="report-case-grid"><div class="report-case"><b>INITIAL OUTPUT</b><p>“<code>coolant_temp</code> is high and the cooling fan has failed.”</p><div class="report-score"><span>Start</span><b>1.00</b><span>Raw field</span><b>−0.20</b><span>Confirmed fault</span><b>−0.20</b><span>Too short</span><b>−0.20</b><span>Blocked</span><b>0.40</b></div></div><div class="report-case"><b>CORRECTION PACKAGE</b><ul><li>Original task and current evidence</li><li>Rejected JSON output</li><li>Three Validator warnings</li></ul><b style="margin-top:18px">CORRECTED OUTPUT</b><p>“Coolant temperature is outside its expected range. This may indicate a cooling-system issue that a mechanic should verify.”</p><div class="report-result"><b>1.00</b><span>same checks · released</span></div></div></div>
-              <div class="report-boundary">Penalty values reflect rule severity. The 0.80 threshold was calibrated with ten generated reports across the five supported anomaly types.</div>
+              <div class="validator-sequence">
+                <div class="validator-stage"><b>CALL 1</b><h5>Observation</h5><p>Model evidence and prepared context.</p><p class="validator-gate">Clean → validate → one correction if required</p></div>
+                <div class="validator-stage"><b>CALL 2</b><h5>Possible causes</h5><p>Model evidence + accepted Call 1 + cause knowledge.</p><p class="validator-gate">Clean → validate → one correction if required</p></div>
+                <div class="validator-stage"><b>CALL 3</b><h5>Recommended actions</h5><p>Model evidence + accepted Calls 1–2 + action knowledge.</p><p class="validator-gate">Clean → validate → one correction if required</p></div>
+              </div>
+              <div class="validator-dependency">
+                <div class="validator-dependency-card"><b>DEPENDENCY</b><p>Call 2 receives the accepted observation. Call 3 receives both accepted earlier sections. Each Call also keeps access to the relevant Model evidence.</p></div>
+                <div class="validator-dependency-card"><b>RELEASE PATH</b><p>After Call 3 passes, the complete cleaned chain is checked once more. Release follows only when all three sections score at least 0.80; otherwise the report uses the fallback path.</p></div>
+              </div>
             </div>
           </details></article>
 
-          <article class="pipeline-node" id="reportB9"><details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">R9</span><div><h4>Two failure paths</h4><p class="pipeline-node-purpose">The pipeline treats a failed model request differently from a readable JSON response that breaks a report rule.</p></div><span class="pipeline-status">RETRY · CORRECT · FALLBACK</span></summary>
+          <article class="pipeline-node" id="reportB11"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R11</span><div><h4>How the Validator checks one section</h4><p class="pipeline-node-purpose">The same validation framework selects rules for the section, scores the result and returns exact warnings for one correction attempt.</p></div><span class="pipeline-status">SECTION-SPECIFIC RULES · ≥0.80</span></summary>
+            <div class="pipeline-node-body">
+              <div class="validator-engine"><div class="validator-engine-flow"><div class="validator-engine-step">Generated JSON</div><div class="validator-engine-step">Owner-facing cleanup</div><div class="validator-engine-step">Select section rules</div><div class="validator-engine-step">Score + warnings</div><div class="validator-engine-step">Accept or correct once</div></div><div class="validator-penalties"><b>RULE SEVERITY</b><div class="validator-penalty-row"><span>−0.10</span><span>−0.20</span><span>−0.40</span></div><p class="validator-gate">Start at 1.00 · release at 0.80 or above</p></div></div>
+              <div class="report-boundary" style="margin-top:18px"><strong>Threshold check:</strong> The 0.80 threshold was checked against ten generated reports covering the five supported anomaly types.</div>
+              <div class="validator-dependency-card" style="margin-top:18px"><b>ONE FRAMEWORK · DIFFERENT CHECKS</b><div class="validator-rule-row"><div class="validator-rule"><strong>Observation</strong>Evidence meaning · unsupported values · fault certainty</div><div class="validator-rule"><strong>Possible causes</strong>Hedging · repetition · signal direction</div><div class="validator-rule"><strong>Actions</strong>Four roles · urgency · owner safety</div><div class="validator-rule"><strong>Shared</strong>High-risk projection consistency · release threshold</div></div></div>
+              <div class="report-case-grid"><div class="report-case"><b>FAILED SECTION</b><p>“<code>coolant_temp</code> is high and the cooling fan has failed.”</p><p>Warnings identify the raw field, unsupported direction and confirmed-fault wording.</p></div><div class="report-case"><b>TARGETED CORRECTION</b><p>The correction prompt receives the original task, rejected JSON and exact warnings. Only this section is regenerated and checked again.</p></div></div>
+            </div>
+          </details></article>
+
+          <article class="pipeline-node" id="reportB12"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R12</span><div><h4>Two failure paths</h4><p class="pipeline-node-purpose">The pipeline treats a failed model request differently from a readable JSON response that breaks a report rule.</p></div><span class="pipeline-status">RETRY · CORRECT · FALLBACK</span></summary>
             <div class="pipeline-node-body">
               <div class="report-case-grid"><div class="report-case"><b>TECHNICAL FAILURE</b><ul><li>Request error</li><li>Timeout</li><li>Malformed JSON</li><li><strong>Response:</strong> retry the call, up to three attempts.</li></ul></div><div class="report-case"><b>CONTENT FAILURE</b><ul><li>JSON parses successfully</li><li>Section scores below 0.80</li><li><strong>Response:</strong> one targeted correction, then check again.</li></ul></div></div>
               <div class="pipeline-flow"><div class="pipeline-flow-step"><b>Second content failure</b><span>Stop further generation.</span></div><div class="pipeline-flow-step"><b>Fallback object</b><span>Keep the same interface shape.</span></div><div class="pipeline-flow-step"><b>Preserve evidence</b><span>Risk values and signals remain available.</span></div><div class="pipeline-flow-step"><b>Leave text empty</b><span>Dashboard shows report generation unavailable.</span></div></div>
             </div>
           </details></article>
 
-          <article class="pipeline-node" id="reportB10"><details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">R10</span><div><h4>Four knowledge conditions</h4><p class="pipeline-node-purpose">The final evaluation changed only the knowledge supplied to Granite while keeping the model, prompts, temperature, inputs and Validator fixed.</p></div><span class="pipeline-status">4 × 5 = 20 REPORTS</span></summary>
+          <article class="pipeline-node" id="reportB13"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R13</span><div><h4>Four knowledge conditions</h4><p class="pipeline-node-purpose">The final evaluation changed only the knowledge supplied to Granite while keeping the model, prompts, temperature, inputs and Validator fixed.</p></div><span class="pipeline-status">4 × 5 = 20 REPORTS</span></summary>
             <div class="pipeline-node-body">
               <table class="report-table"><thead><tr><th>Condition</th><th>Knowledge supplied</th><th>Purpose</th></tr></thead><tbody><tr><td>No retrieved knowledge</td><td>Model context only</td><td>Generation baseline</td></tr><tr><td>Cause knowledge</td><td>Reviewed descriptions and possible causes</td><td>Test explanation grounding</td></tr><tr><td>Cause + raw workshop actions</td><td>Cause records and unseparated procedures</td><td>Expose audience/action-role problems</td></tr><tr class="selected-row"><td><strong>Cause + role-separated actions</strong></td><td>Owner observations, timing and stop conditions separated from mechanic procedures</td><td><strong>Final design</strong></td></tr></tbody></table>
               <div class="report-case-grid"><div class="report-case"><b>OWNER GUIDANCE</b><p>What to observe now, when to arrange service, and which visible warning signs require urgent help.</p></div><div class="report-case"><b>MECHANIC INFORMATION</b><p>Scan-tool checks, wiring inspection, calibration and replacement decisions are presented as requests for a qualified mechanic.</p></div></div>
             </div>
           </details></article>
 
-          <article class="pipeline-node" id="reportB11"><details class="pipeline-node-shell">
-            <summary class="pipeline-node-head"><span class="pipeline-node-id">R11</span><div><h4>Final manual-review evidence</h4><p class="pipeline-node-purpose">Twenty final reports were reviewed against the current Model inputs, retrieved records and owner-action rules.</p></div><span class="pipeline-status">FINAL V5 EVIDENCE</span></summary>
+          <article class="pipeline-node" id="reportB14"><details class="pipeline-node-shell">
+            <summary class="pipeline-node-head"><span class="pipeline-node-id">R14</span><div><h4>Automated checks and manual review</h4><p class="pipeline-node-purpose">The same 20 reports produced machine-checkable results and separate human judgements about meaning and audience.</p></div><span class="pipeline-status">FINAL V5 EVIDENCE</span></summary>
             <div class="pipeline-node-body">
-              <div class="report-result-grid"><div class="report-result"><b>20/20</b><span>reports generated and released</span></div><div class="report-result"><b>4/5</b><span>retrieval relevance pass</span></div><div class="report-result"><b>1/5</b><span>knowledge use pass</span></div><div class="report-result"><b>3/5</b><span>audience suitability pass</span></div><div class="report-result"><b>5/5</b><span>action safety pass</span></div><div class="report-result"><b>8/8</b><span>saved High-risk contradictions rejected</span></div><div class="report-result"><b>0/20</b><span>final regenerated reports repeated the contradiction</span></div><div class="report-result"><b>0</b><span>fallback reports</span></div></div>
-              <table class="report-table"><thead><tr><th>Partial result</th><th>Observed limitation</th></tr></thead><tbody><tr><td>Retrieval relevance · IAT</td><td>The record matched the category, but the displayed temperatures could not distinguish circuit and connector possibilities.</td></tr><tr><td>Knowledge use · 4 types</td><td>Knowledge made possible causes more specific, but the available signals could not distinguish every category-relevant cause.</td></tr><tr><td>Audience · Air Intake and IAT</td><td>The explanations remained too dense for a non-specialist reader.</td></tr></tbody></table>
+              <div class="eyebrow">01 · AUTOMATED EXECUTION AND RULE AUDIT</div>
+              <table class="report-table"><thead><tr><th>Condition</th><th>Released</th><th>Valid structure</th><th>No unsupported numbers</th><th>No unsafe owner procedure detected</th><th>Fallback</th></tr></thead><tbody><tr><td>Controlled baseline</td><td>5/5</td><td>5/5</td><td>5/5</td><td>5/5</td><td>0/5</td></tr><tr><td>Cause RAG</td><td>5/5</td><td>5/5</td><td>5/5</td><td>5/5</td><td>0/5</td></tr><tr><td>Cause + raw actions</td><td>5/5</td><td>5/5</td><td>5/5</td><td>5/5</td><td>0/5</td></tr><tr class="selected-row"><td><strong>Cause + role-separated actions</strong></td><td>5/5</td><td>5/5</td><td>5/5</td><td>5/5</td><td>0/5</td></tr></tbody></table>
+              <div class="eyebrow">02 · STRUCTURED MANUAL REVIEW</div>
+              <table class="report-table"><thead><tr><th>Condition</th><th>Input faithfulness</th><th>Retrieval relevance</th><th>Knowledge use</th><th>Audience</th><th>Action safety</th><th>Uncertainty</th></tr></thead><tbody><tr><td>Controlled baseline</td><td>5 pass</td><td>N/A</td><td>N/A</td><td>5 pass</td><td>5 pass</td><td>5 pass</td></tr><tr><td>Cause RAG</td><td>5 pass</td><td>4 pass · 1 partial</td><td>1 pass · 4 partial</td><td>3 pass · 2 partial</td><td>5 pass</td><td>5 pass</td></tr><tr><td>Cause + raw actions</td><td>5 pass</td><td>4 pass · 1 partial</td><td>1 pass · 4 partial</td><td>3 pass · 2 partial</td><td>5 pass</td><td>5 pass</td></tr><tr class="selected-row"><td><strong>Cause + role-separated actions</strong></td><td>5 pass</td><td>4 pass · 1 partial</td><td>1 pass · 4 partial</td><td>3 pass · 2 partial</td><td>5 pass</td><td>5 pass</td></tr></tbody></table>
+              <table class="report-table"><thead><tr><th>Where did manual review record partial?</th><th>Reason</th></tr></thead><tbody><tr><td><strong>Retrieval relevance · IAT</strong></td><td>The record matched the intake-temperature category, but all displayed temperatures were within range. The current evidence could not show whether a circuit issue or a connector issue better matched this case.</td></tr><tr><td><strong>Knowledge use · MAF, pedal, IAT and MAP</strong></td><td>Retrieved knowledge added several plausible causes, but the current signals did not contain enough evidence to choose which cause best matched the case. Cooling was the only full pass.</td></tr><tr><td><strong>Audience · MAF and IAT</strong></td><td>The reports respected the evidence and action boundaries, but their cause explanations remained longer and more technical than ideal for a non-specialist reader.</td></tr></tbody></table>
+              <div class="report-case-grid report-conclusion-grid"><div class="report-case"><b>SUPPORTED</b><ul><li>20/20 reports generated and released</li><li>Input meaning and uncertainty preserved</li><li>Owner–mechanic action boundary maintained</li><li>RAG usually retrieved the correct category</li></ul></div><div class="report-case"><b>LIMITATION</b><ul><li>RAG-only measures cannot prove improvement over baseline</li><li>Only five unlabelled cases per condition</li><li>No verified fault or technician judgement</li><li>Signals could not select among several possible causes</li></ul></div><div class="report-case"><b>NEXT EVALUATION</b><ul><li>Use technician-verified faults and repair outcomes</li><li>Include more vehicles and operating conditions</li><li>Check signal direction before admitting knowledge</li><li>Compare both conditions on specificity, clarity and decision usefulness</li></ul></div></div>
               <div class="report-boundary"><strong>Meaning of partial:</strong> the report was released, but manual review found a material limitation in that dimension. These results assess report behaviour and rule compliance; technician-verified faults are still required to assess mechanical accuracy.</div>
             </div>
           </details></article>
