@@ -2069,10 +2069,11 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .model-backup .pipeline-node-purpose { max-width:980px; font-size:18px; line-height:1.48; }
 .model-backup .pipeline-node-id { font-size:15px; }
 .model-backup .pipeline-status { padding:8px 10px; font-size:12px; }
-.model-jump-nav { display:flex; flex-wrap:wrap; gap:10px; margin:0 0 28px; padding:18px 20px; border:1px solid color-mix(in srgb,var(--layer-color) 22%,var(--border)); background:color-mix(in srgb,var(--layer-color) 4%,white); }
-.model-jump-nav button { min-height:44px; padding:10px 14px; border:1px solid color-mix(in srgb,var(--layer-color) 30%,var(--border)); border-radius:5px; background:#fff; color:var(--text); font:700 14px/1.2 var(--font-body); cursor:pointer; }
-.model-jump-nav button:hover { border-color:var(--layer-color); color:var(--layer-color); }
-.model-jump-nav button:focus-visible { outline:3px solid color-mix(in srgb,var(--layer-color) 45%,transparent); outline-offset:2px; }
+.model-jump-nav,.backup-jump-nav { display:flex; flex-wrap:wrap; gap:10px; margin:0 0 28px; padding:18px 20px; border:1px solid color-mix(in srgb,var(--layer-color) 22%,var(--border)); background:color-mix(in srgb,var(--layer-color) 4%,white); }
+.model-jump-nav button,.backup-jump-nav button { min-height:44px; padding:10px 14px; border:1px solid color-mix(in srgb,var(--layer-color) 30%,var(--border)); border-radius:5px; background:#fff; color:var(--text); font:700 14px/1.2 var(--font-body); cursor:pointer; transition:border-color .2s ease,color .2s ease,transform .2s ease; }
+.model-jump-nav button:hover,.backup-jump-nav button:hover { border-color:var(--layer-color); color:var(--layer-color); transform:translateY(-1px); }
+.model-jump-nav button:active,.backup-jump-nav button:active { transform:translateY(0); }
+.model-jump-nav button:focus-visible,.backup-jump-nav button:focus-visible { outline:3px solid color-mix(in srgb,var(--layer-color) 45%,transparent); outline-offset:2px; }
 .model-answer-list { margin-top:24px; border-top:2px solid color-mix(in srgb,var(--layer-color) 28%,var(--border)); }
 .model-backup .model-answer { padding:26px 2px 28px; border-bottom:1px solid var(--border); }
 .model-backup .model-answer:last-child { padding-bottom:4px; border-bottom:0; }
@@ -2144,6 +2145,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .teamwork-evidence-head { max-width:920px; }
 .teamwork-evidence-head { order:0; }
 .teamwork-evidence > .teamwork-section { order:1; }
+.teamwork-evidence > .backup-jump-nav { order:1; margin:26px 0 0; --layer-color:#1769ff; }
 .teamwork-evidence > .teamwork-pipeline-overview { order:2; margin-top:38px; padding-top:38px; border-top:1px solid var(--border); }
 .teamwork-evidence > .teamwork-summary { order:3; }
 .teamwork-evidence-kicker { color:#1769ff; font:800 12px/1.2 var(--font-mono); letter-spacing:.11em; }
@@ -2269,7 +2271,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
   .report-backup .report-result-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .model-backup .report-result-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .model-backup .pipeline-flow-step:nth-child(2)::after { display:none; }
-  .model-jump-nav { gap:8px; }
+  .model-jump-nav,.backup-jump-nav { gap:8px; }
   .integration-handoff { grid-template-columns:150px minmax(0,1fr); }
   .integration-artifact { grid-column:1/-1; }
   .automation-ci,.communication-contract { grid-template-columns:1fr; }
@@ -2281,7 +2283,7 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 }
 @media (max-width:700px) {
   .model-backup .pipeline-node { padding:26px 22px 28px; }
-  .model-jump-nav button { flex:1 1 145px; }
+  .model-jump-nav button,.backup-jump-nav button { flex:1 1 145px; }
   .model-backup .model-question { font-size:19px; }
   .model-backup .model-answer li { font-size:16px; }
   .model-window-visual,
@@ -3460,7 +3462,6 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
   </div>
   <nav class="backup-layer-nav" aria-label="Pipeline layers">
     <button class="backup-layer-link primary" onclick="scrollBackupTo('backupTeamwork')">Teamwork</button>
-    <button class="backup-layer-link" onclick="scrollBackupTo('backupOverview')">End-to-end</button>
     <button class="backup-layer-link" onclick="scrollBackupTo('backupData')">01 &middot; Data</button>
     <button class="backup-layer-link" onclick="scrollBackupTo('backupModel')">02 &middot; Model</button>
     <button class="backup-layer-link" onclick="scrollBackupTo('backupReport')">03 &middot; Report</button>
@@ -3537,6 +3538,16 @@ st.session_state["dashboard_data"] = result</pre>
           <h2>Teamwork across four connected components</h2>
           <p>IBM supplied the project direction. The team converted it into Sprint work, reviewed code through GitHub and used regular records and updates to keep parallel development aligned.</p>
         </header>
+
+        <nav class="backup-jump-nav" aria-label="Teamwork backup topics">
+          <button type="button" onclick="scrollBackupTo('teamworkBrief')">T1 · Brief &amp; priorities</button>
+          <button type="button" onclick="scrollBackupTo('teamworkPlanning')">T2 · Planning &amp; Jira</button>
+          <button type="button" onclick="scrollBackupTo('teamworkMeetings')">T3 · Sprint meetings</button>
+          <button type="button" onclick="scrollBackupTo('teamworkAutomationNew')">T4 · Jira automation</button>
+          <button type="button" onclick="scrollBackupTo('teamworkCI')">T5 · CI workflow</button>
+          <button type="button" onclick="scrollBackupTo('teamworkCommunication')">T6 · Communication</button>
+          <button type="button" onclick="scrollBackupTo('backupOverview')">T7 · End-to-end integration</button>
+        </nav>
 
         <div class="teamwork-section" id="teamworkBrief">
           <div class="teamwork-section-title"><b>01</b><h3>IBM brief and MoSCoW priorities</h3></div>
@@ -4575,6 +4586,21 @@ st.session_state["dashboard_data"] = result</pre>
 
         <section class="pipeline-layer report-backup" id="backupReport" data-layer="report">
           <header class="pipeline-layer-head"><div><div class="pipeline-layer-label">03 · REPORT LAYER</div><h3>Evidence behind the final report pipeline</h3></div><div class="pipeline-layer-owner">FINAL DESIGN · VIVA BACKUP</div></header>
+
+          <nav class="backup-jump-nav" aria-label="Report backup topics">
+            <button type="button" onclick="openBackupNode('reportB0')">R0 · Model selection</button>
+            <button type="button" onclick="openBackupNode('reportB1')">R1 · Knowledge storage</button>
+            <button type="button" onclick="openBackupNode('reportB2')">R2 · Retrieval comparison</button>
+            <button type="button" onclick="openBackupNode('reportB3')">R3 · Model evidence</button>
+            <button type="button" onclick="openBackupNode('reportB4')">R4 · Context construction</button>
+            <button type="button" onclick="openBackupNode('reportB5')">R5 · Knowledge admission</button>
+            <button type="button" onclick="openBackupNode('reportB6')">R6 · Three calls</button>
+            <button type="button" onclick="openBackupNode('reportB7')">R7 · Value leakage</button>
+            <button type="button" onclick="openBackupNode('reportB8')">R8 · Validation</button>
+            <button type="button" onclick="openBackupNode('reportB9')">R9 · Failure paths</button>
+            <button type="button" onclick="openBackupNode('reportB10')">R10 · Evaluation design</button>
+            <button type="button" onclick="openBackupNode('reportB11')">R11 · Review evidence</button>
+          </nav>
 
           <article class="pipeline-node" id="reportB0"><details class="pipeline-node-shell" open>
             <summary class="pipeline-node-head"><span class="pipeline-node-id">R0</span><div><h4>Granite model selection</h4><p class="pipeline-node-purpose">Four locally runnable Granite models were compared on the same Cooling case and the same three-call sequence.</p></div><span class="pipeline-status">HISTORICAL SELECTION TEST</span></summary>
