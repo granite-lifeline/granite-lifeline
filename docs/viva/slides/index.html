@@ -4046,66 +4046,20 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
               <div class="pipeline-flow-step"><b>Absolute handoff paths</b><span>Summary exposes both artefacts plus ordered stage manifests.</span></div>
             </div>
 
-            <div class="pipeline-columns">
-              <div class="pipeline-block"><div class="pipeline-block-label">DELIVERY A · PRODUCTION FEATURES</div><ul>
-                <li>One row per 1 Hz sample; exact 46-column <code>DataLayerOutput</code> contract.</li>
-                <li>Consumed by Model for segment-safe 512-context / 96-forecast windows, residual scoring and key-signal evidence.</li>
-                <li>Nullable fields remain required keys—the reason evidence is unavailable is not hidden by dropping columns.</li>
-                <li>Identity columns prevent windows crossing trips or segments; schema and calibration versions accompany every row.</li>
-                <li>This delivery contains measurements/features, not a direct diagnostic conclusion.</li>
-              </ul></div>
-              <div class="pipeline-block"><div class="pipeline-block-label">DELIVERY B · PROXY DECISIONS</div><ul>
-                <li>Decision grain, not sample grain; one result represents a scoped rule decision or evidence item.</li>
-                <li>Contains result state, decision role/reason/margin, confidence, DTC candidate/emission and provenance.</li>
-                <li>Model may relay Data-scored IAT/MAP decisions, but this is explicitly <strong>forwarding, not Model scoring</strong>.</li>
-                <li>The 5-S2 arbitration gate and emission semantics remain intact when forwarded.</li>
-                <li>It must not be merged column-by-column into the 46-column feature table.</li>
-              </ul></div>
-            </div>
+            <table class="report-table">
+              <thead><tr><th>Boundary question</th><th>A · production_features.csv</th><th>B · proxy_decisions.csv</th></tr></thead>
+              <tbody>
+                <tr><td>Upstream input</td><td>Stage 41 reads only the four feature-family tables (10/20/30/40), joined on identical sample keys.</td><td>Stage 70 reads only Stages 50/60/61's evidence outputs plus the frozen calibration registry — never the raw feature table again.</td></tr>
+                <tr><td>Format</td><td>CSV, sample grain — one row per 1 Hz sample, exact 46 ordered columns (<code>DataLayerOutput</code> contract).</td><td>CSV, decision grain — one row per sub-check × evaluation unit.</td></tr>
+                <tr><td>Required fields</td><td>All 46 columns are required keys (4 sample keys + 16 context + 24 features + 2 provenance); nullable fields stay as required keys rather than being dropped.</td><td><code>trip_id</code>, <code>segment_id</code> (nullable), evidence start/end timestamps, <code>decision_role</code>, <code>result_state</code>, <code>dtc_candidate_label</code>, <code>dtc_emitted</code>, margin, confidence, calibration version.</td></tr>
+                <tr><td>Can Data redefine field meaning here?</td><td>No — Stage 41 performs a strict one-to-one join only; <code>_normalize_and_validate_dtypes()</code> rejects incompatible types and <code>_validate_global_order()</code> rejects reordering. It never redefines what 10/20/30/40 already computed.</td><td>No — Stage 70 only routes/aggregates 50/60/61's already-computed evidence into <code>decision_role</code>/<code>result_state</code>. It decides what conclusion the evidence supports, not what the evidence itself means.</td></tr>
+                <tr><td>Invalid / missing input</td><td>No imputation at the interface — missingness stays visible through explicit null semantics rather than being silently filled.</td><td><code>not_evaluable</code> when a live check lacks a valid opportunity — never forced into <code>pass</code> or <code>triggered</code>.</td></tr>
+                <tr class="selected-row"><td>What Model (next layer) receives</td><td>512-context / 96-forecast windows and residual scoring — measurement/features, not a diagnostic conclusion.</td><td>Governed verdict forwarding and evaluation/filtering — must not be merged column-by-column into the 46-column feature table (different cardinality).</td></tr>
+                <tr><td>Tests covering this boundary</td><td><code>tests/test_interface.py::TestDataLayerOutput</code> — 5 tests (valid contract, optional fields, nullable fields, missing required field, wrong type).</td><td><code>test_70_proxy_decisions.py</code> — 16 tests on role/result/DTC semantics. Both deliveries share <code>test_public_pipeline_contract.py</code> — 3 tests confirming one <code>RunLayout</code> (stops at 41 by default / runs 50–70 when requested / all stages share one run).</td></tr>
+              </tbody>
+            </table>
 
-            <div class="evidence-chips">
-              <div class="evidence-chip"><b>2 DELIVERIES</b><span>sample grain + decision grain</span></div>
-              <div class="evidence-chip"><b>10 ONLINE STAGES</b><span>00–70 after upstream work</span></div>
-              <div class="evidence-chip"><b>SAME RUN ID</b><span>shared source identity</span></div>
-              <div class="evidence-chip"><b>5-TYPE ENUM</b><span>interface aligned</span></div>
-              <div class="evidence-chip"><b>FAIL CLOSED</b><span>stage + run in error</span></div>
-            </div>
-
-            <div class="pipeline-disclosure">
-              <details open><summary>Historical integration: when proxy evidence became live</summary><div class="pipeline-detail"><div class="evolution-rail">
-                <div class="evolution-step"><b>v1.0 · 19 JUL</b><span>The 46-column production schema and five-type proxy contract replaced legacy feature delivery.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>v1.2 · 27 JUL</b><span>Stages 50–70 worked on a real full-corpus run, but the public upload path still stopped at stage 41.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>v1.3 · 31 JUL</b><span><code>include_proxy</code> connected stage 41 to 50/60/61/70; live uploads returned both output paths.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>v1.4 · 1 AUG</b><span>Model began forwarding two Data-computed families while preserving “relaying, not scoring” semantics.</span></div>
-              </div></div></details>
-              <details><summary>Exact public pipeline behaviour</summary><div class="pipeline-detail"><ul>
-                <li><code>run_data_pipeline()</code> executes cleaning → quality audit → operating conditions → stages 00/10/20/30/40/41.</li>
-                <li>When <code>include_proxy=True</code>, it continues through 50/60/61/70 in the same run directory.</li>
-                <li><code>run_data_pipeline_for_upload()</code> enables proxy stages by default; batch/CLI stays feature-only unless explicitly requested.</li>
-                <li>The returned summary carries absolute <code>production_features_path</code>, <code>proxy_decisions_path</code>, stage IDs and manifest paths for downstream orchestration.</li>
-                <li><code>_run_stage()</code> wraps any stage-specific exception as <code>DataPipelineError</code> with stage ID and run ID, retaining the original chained cause.</li>
-              </ul></div></details>
-              <details><summary>Evidence hierarchy the rest of the system may claim</summary><div class="pipeline-detail"><ul>
-                <li><strong>Observed:</strong> cleaned sensor values, operating context, missingness and provenance from the uploaded recording.</li>
-                <li><strong>Derived:</strong> deterministic/calibrated features relative to a frozen baseline reference.</li>
-                <li><strong>Screened:</strong> physically motivated proxy decision under declared enable and persistence rules.</li>
-                <li><strong>Validated in control:</strong> synthetic reachability and severity coherence across registered interventions.</li>
-                <li><strong>Not established:</strong> physical root-cause confirmation, real-world recall, generalisation to every vehicle, or workshop-grade diagnosis.</li>
-              </ul></div></details>
-              <details><summary>Why the two tables cannot be collapsed into one</summary><div class="pipeline-detail"><ul>
-                <li>Features are dense sample observations; decisions are sparse scoped conclusions/evidence with different cardinality.</li>
-                <li>Forcing decisions onto every 1 Hz row would duplicate DTC semantics and invite accidental label leakage into forecasting.</li>
-                <li>Keeping them separate lets Model use proxy labels for filtering/evaluation or controlled forwarding without training TTM as a proxy classifier.</li>
-                <li>Both remain traceable through run, trip, segment, time/window identity and their adjacent manifests.</li>
-              </ul></div></details>
-              <details><summary>Code and interface evidence</summary><div class="pipeline-detail"><ul>
-                <li><code>data_layer/run_pipeline.py</code>: public orchestration, feature/proxy stage lists, manifest creation and error normalisation.</li>
-                <li><code>pipeline_data/paths.py</code>: isolated <code>RunLayout</code>; <code>manifests.py</code>: descriptors, identities, verification and atomic JSON writes.</li>
-                <li><code>shared/interface_models.py::DataLayerOutput</code>: 46 required keys with explicit nullability and optional internal row-grain proxy labels.</li>
-                <li><code>docs/INTERFACE.md</code> v1.3–v1.4: live proxy-path closure and Model forwarding semantics.</li>
-                <li>Verified live families recorded in the interface: IAT → P0111 and MAP/load plausibility → P0106.</li>
-              </ul></div></details>
-            </div>
+            <div class="data-code-path"><b>CODE PATH</b><code>data_layer/run_pipeline.py :: run_data_pipeline(), run_data_pipeline_for_upload()</code><code>shared/interface_models.py :: DataLayerOutput</code><code>tests/test_interface.py, data_layer/tests/proxy_test/test_70_proxy_decisions.py, data_layer/tests/pipeline_data_test/test_public_pipeline_contract.py</code><code>docs/INTERFACE.md v1.3–v1.4</code></div>
             </div>
             </details>
           </article>
