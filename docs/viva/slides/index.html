@@ -3974,65 +3974,19 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
               <div class="pipeline-flow-step"><b>40 · Online application</b><span>Read-only transforms produce two residual features; no fit path exists.</span></div>
             </div>
 
-            <div class="pipeline-columns">
-              <div class="pipeline-block"><div class="pipeline-block-label">THE LEAKAGE RISK THIS SOLVES</div><ul>
-                <li>If a user upload refitted its own baseline, a slowly failing vehicle could teach the system that its degraded behaviour is normal.</li>
-                <li>Calibration is therefore a separate offline/admin workflow; online scripts 00–70 forbid fitting, quantile search and threshold selection.</li>
-                <li><code>speed_density_maf_residual</code> compares observed airflow with the frozen speed-density expectation.</li>
-                <li><code>pedal_mapping_residual</code> compares the paired accelerator channels using the frozen mapping.</li>
-                <li>Residuals express deviation from baseline relationships, which is more transferable than a raw-value threshold alone.</li>
-              </ul></div>
-              <div class="pipeline-block"><div class="pipeline-block-label">RELEASE GATES</div><ul>
-                <li>Release manifest identity must be v1.2.0, status <code>frozen</code>, calibration <code>calibration.v1</code>, hash algorithm SHA-256.</li>
-                <li>The registry and feature manifest checksums are embedded and verified before online use.</li>
-                <li>Source IDs/checksums, 24 unique ordered features, categorical alignment and cross-contract lint must all pass.</li>
-                <li><code>online_fit_paths_forbidden=true</code>; production tests also assert Script 40 exposes no <code>fit</code> function.</li>
-                <li>Quality-invalid required inputs yield null residuals rather than fabricated estimates.</li>
-              </ul></div>
-            </div>
+            <table class="report-table">
+              <thead><tr><th>Invariant</th><th>What it guarantees</th></tr></thead>
+              <tbody>
+                <tr><td>Offline-only fitting</td><td>Online scripts 00–70 forbid fitting, quantile search and threshold selection (<code>online_fit_paths_forbidden=true</code>; Script 40 exposes no <code>fit</code> function) — a slowly failing upload can never teach the system its own decline is "normal".</td></tr>
+                <tr><td>Frozen 66-trip reference cohort</td><td>Every proxy family (cooling, MAF, MAP, pedal, intake temperature) calibrates against the same fixed <code>cohort_trip_count: 66</code> cohort — no family cherry-picks its own subset.</td></tr>
+                <tr><td>SHA-256 checksum binding</td><td>Registry (<code>calibration_registry.v1.json</code>) and feature-manifest checksums are embedded and verified before online use; Script 40 fails closed on any drift.</td></tr>
+                <tr><td>Null on invalid input</td><td>Quality-invalid required inputs yield null residuals rather than a fabricated estimate.</td></tr>
+              </tbody>
+            </table>
 
-            <div class="evidence-chips">
-              <div class="evidence-chip"><b>48 / 48 PASS</b><span>reproduction audit</span></div>
-              <div class="evidence-chip"><b>0 FAILED</b><span>verdict PASS</span></div>
-              <div class="evidence-chip"><b>SHA-256 BOUND</b><span>registry + contract</span></div>
-              <div class="evidence-chip"><b>FIT_ALLOWED = FALSE</b><span>online invariant</span></div>
-              <div class="evidence-chip"><b>2 RESIDUAL FEATURES</b><span>baseline relationships</span></div>
-            </div>
+            <div class="report-boundary"><strong>What 48/48 PASS proves — and what it doesn't:</strong> the audit (<code>recalibrate_20260723</code>) proves the frozen release can be reproduced from its declared evidence within tolerance. It does <strong>not</strong> prove the calibration generalises to every make, engine or sensor package — broader external-vehicle validation remains future work.</div>
 
-            <div class="pipeline-disclosure">
-              <details open><summary>Historical evolution: from derived features to governed calibration</summary><div class="pipeline-detail"><div class="evolution-rail">
-                <div class="evolution-step"><b>EARLY FEATURE WORK</b><span>Relationship-based features were explored, but reproducibility required explicit constants and cohorts.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>GL-303/304 · 19 JUL</b><span>Cross-contract checks, common paths and manifest infrastructure bound feature stages to authoritative artefacts.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>GL-341 · 23 JUL</b><span>Script 90 reproduced calibration decisions without overwriting the authoritative registry.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>RELEASE v1.2.0</b><span>Registry, feature schema, sources and online prohibition were frozen into one verifiable release bundle.</span></div>
-              </div></div></details>
-              <details><summary>Why offline fitting and online application must be separate</summary><div class="pipeline-detail"><ul>
-                <li><strong>Offline:</strong> approved cohort, documented weighting, model fitting, diagnostics and manual review may change a future versioned registry.</li>
-                <li><strong>Audit:</strong> Script 90 independently reproduces expected coefficients, bounds and proxy parameters from the evidence; it stops on mismatch.</li>
-                <li><strong>Online:</strong> Script 40 only loads frozen values, clips inputs to approved domains and calculates outputs.</li>
-                <li>This prevents target leakage, upload-specific baselines and non-reproducible production behaviour.</li>
-              </ul></div></details>
-              <details><summary>What 48/48 PASS proves—and what it does not</summary><div class="pipeline-detail"><ul>
-                <li>The audit manifest records 48 checks, all PASS, zero failed, with overall verdict PASS for data run <code>recalibrate_20260723</code>.</li>
-                <li>Checks cover static/regulatory constants, transformation reproduction, proxy parameters, bounds and provenance; release-bundle integrity is enforced at runtime by Script 40.</li>
-                <li>It proves the frozen release can be reproduced from its declared evidence within the accepted tolerances.</li>
-                <li>It does <strong>not</strong> prove the calibration generalises to every make, engine or sensor package; broader external-vehicle validation remains future work.</li>
-              </ul></div></details>
-              <details><summary>Rejected alternatives and failure behaviour</summary><div class="pipeline-detail"><ul>
-                <li><strong>Fit per upload:</strong> rejected because the current upload could contaminate its own baseline.</li>
-                <li><strong>Copy coefficients into code:</strong> rejected because values would lose cohort, version and checksum provenance.</li>
-                <li><strong>Automatically overwrite the registry after audit:</strong> rejected; reproduction evidence cannot bypass manual release review.</li>
-                <li><strong>Continue after checksum mismatch:</strong> rejected; Script 40 fails closed when registry, contract, policy or evidence identity drifts.</li>
-                <li><strong>Impute invalid calibration inputs:</strong> rejected; null output is safer than a misleading residual.</li>
-              </ul></div></details>
-              <details><summary>Code and artefact evidence</summary><div class="pipeline-detail"><ul>
-                <li><code>data_layer/calibration/calibration_registry.v1.json</code>: immutable approved parameters and <code>online_policy.fit_allowed=false</code>.</li>
-                <li><code>calibration_registry.v1.manifest.json</code>: frozen v1.2.0 release and embedded SHA-256 identities.</li>
-                <li><code>90_calibration_registry_builder.py</code>: <code>run_calibration_audit()</code> — parameter and transform reproduction (48 checks).</li>
-                <li><code>40_calibrated_feature_builder.py</code>: <code>_validate_release_bundle()</code>, <code>load_calibrated_inputs()</code>, <code>build_calibrated_features()</code>.</li>
-                <li><code>calibration_audit_manifest.json</code>: exact 48 PASS / 0 FAIL evidence and overall PASS verdict.</li>
-              </ul></div></details>
-            </div>
+            <div class="data-code-path"><b>CODE PATH</b><code>data_layer/calibration/calibration_registry.v1.json, calibration_registry.v1.manifest.json</code><code>data_layer/feature_engineering/src/90_calibration_registry_builder.py :: run_calibration_audit()</code><code>data_layer/feature_engineering/src/40_calibrated_feature_builder.py :: _validate_release_bundle(), build_calibrated_features()</code><code>calibration_audit_manifest.json — 48 PASS / 0 FAIL</code></div>
             </div>
             </details>
           </article>
@@ -4052,66 +4006,27 @@ uv run python -m report_layer.rag.symptom_knowledge_indexer</code></div>
               <div class="pipeline-flow-step"><b>Paired adjudication</b><span>Compare baseline/injected result, DTC identity, role and emission semantics.</span></div>
             </div>
 
-            <div class="pipeline-columns">
-              <div class="pipeline-block"><div class="pipeline-block-label">2 × EXPERIMENTAL DISCIPLINES</div><ul>
-                <li><strong>Three ordered severities</strong> expose boundary behaviour and require a non-decreasing detection curve.</li>
-                <li><strong>Three independent trips per severity</strong> prevent overlapping windows from one favourable trip being counted as independent evidence.</li>
-                <li>Fourteen cases × three severity points × three trips produce <strong>126 scoped observations</strong>.</li>
-                <li>Because one copied run can host three severity observations, the campaign executes <strong>42 unique injected runs</strong>.</li>
-                <li>Wilson 95% intervals accompany detection proportions to show the uncertainty of n=3.</li>
-              </ul></div>
-              <div class="pipeline-block"><div class="pipeline-block-label">REGISTERED CASE ACCEPTANCE</div><ul>
-                <li>Detection rate must not decrease as severity rises.</li>
-                <li>Strongest severity must detect at least 0.8; with three trips, every accepted case achieved 3/3.</li>
-                <li>The equivalent baseline decision must not already be positive.</li>
-                <li>Injected output must match scoped result state, candidate DTC and whether its role emits or suppresses a DTC.</li>
-                <li>Acceptance is assessed per severity curve—not by requiring every mild/boundary observation to trigger.</li>
-              </ul></div>
+            <table class="report-table">
+              <thead><tr><th>Design factor</th><th>Value / rule</th></tr></thead>
+              <tbody>
+                <tr><td>Severities</td><td>3 ordered levels (mild / moderate / strong); detection rate must not decrease as severity rises.</td></tr>
+                <tr><td>Independent trips per severity</td><td>3, so one favourable trip can't be counted as independent evidence.</td></tr>
+                <tr><td>Scoped observations</td><td>14 cases × 3 severities × 3 trips = 126.</td></tr>
+                <tr><td>Unique injected runs</td><td>42 — one copied run hosts all 3 severity points for a case/trip.</td></tr>
+                <tr><td>Acceptance rule</td><td>Per case curve, not per observation: non-decreasing detection rate, ≥0.8 at strongest severity, and the equivalent baseline must not already be positive.</td></tr>
+              </tbody>
+            </table>
+
+            <div class="report-boundary"><strong>87/126 vs 14/14 is not a contradiction:</strong> 87 of the 126 individual observations hit their expected outcome — mild/boundary injections are intentionally allowed not to trigger (e.g. 0/3 → 2/3 → 3/3 across severities still counts as coherent). The registered unit of acceptance is the <strong>case curve</strong>, not the single observation: all 14 curves passed and every strongest-severity point reached 3/3. <strong>Validated:</strong> implementation reachability, monotonic severity response, repeatability. <strong>Not validated:</strong> real-world prevalence, physical causation or workshop diagnostic accuracy.</div>
+
+            <div class="report-result-grid">
+              <div class="report-result"><b>126</b><span>scoped observations</span></div>
+              <div class="report-result"><b>42</b><span>unique injected runs</span></div>
+              <div class="report-result"><b>14 / 14</b><span>case curves accepted</span></div>
+              <div class="report-result"><b>148 tests</b><span>full Data-layer verification</span></div>
             </div>
 
-            <div class="evidence-chips">
-              <div class="evidence-chip"><b>14 CASES</b><span>all executable checks</span></div>
-              <div class="evidence-chip"><b>3 × 3 PER CASE</b><span>severity × independent trips</span></div>
-              <div class="evidence-chip"><b>42 RUN IDs</b><span>end-to-end executions</span></div>
-              <div class="evidence-chip"><b>126 OBSERVATIONS</b><span>scoped paired outcomes</span></div>
-              <div class="evidence-chip"><b>3 / 3 STRONGEST</b><span>every case</span></div>
-            </div>
-
-            <div class="pipeline-disclosure">
-              <details open><summary>Historical evolution: why the first campaign was not enough</summary><div class="pipeline-detail"><div class="evolution-rail">
-                <div class="evolution-step"><b>V1 · SMOKE TEST</b><span>11 checks, one fixed injection each; all reached their expected output.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>VALIDITY REVIEW</b><span>Three checks, independent replication, boundary behaviour and full DTC semantics were still missing.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>V2 · GRADED CAMPAIGN</b><span>All 14 checks gained three severities, three trips, baseline pairing and dependency recomputation.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>ADR 104 · 24 JUL</b><span>V1 was superseded; project conclusions were explicitly based on the registered V2 acceptance rule.</span></div>
-              </div></div></details>
-              <details><summary>Why 87 passed observations is compatible with 14/14 accepted</summary><div class="pipeline-detail"><ul>
-                <li>The machine-readable campaign contains 126 observations; 87 individual observations satisfy their expected detection outcome.</li>
-                <li>Mild/control injections are intentionally allowed not to trigger. For example, a boundary experiment can produce 0/3 → 2/3 → 3/3 and still demonstrate coherent severity behaviour.</li>
-                <li>The registered unit of acceptance is the <strong>case curve</strong>: non-decreasing rates plus ≥0.8 at strongest severity.</li>
-                <li>All 14 curves passed and all strongest points were 3/3. Saying “126/126 detected” would therefore be incorrect.</li>
-              </ul></div></details>
-              <details><summary>Causal controls that prevent false credit</summary><div class="pipeline-detail"><ul>
-                <li>Only the declared raw target signal may change; guard signals cannot be modified to manufacture eligibility.</li>
-                <li>Selectors operate on naturally eligible baseline windows before injection.</li>
-                <li>Dependent residuals and rolling features are recomputed inside trip/segment boundaries.</li>
-                <li>Thresholds and calibration remain frozen; recalibrating after injection would make validation circular.</li>
-                <li>A trigger elsewhere in the copied run cannot count—the result must match the injected trip, segment or episode.</li>
-              </ul></div></details>
-              <details><summary>What this validates—and the exact limitations</summary><div class="pipeline-detail"><ul>
-                <li><strong>Validated:</strong> implementation reachability, monotonic severity response under registered interventions, repeatability across three trips and correct result/DTC/emission semantics.</li>
-                <li><strong>Not validated:</strong> physical component causation, prevalence, workshop diagnostic accuracy or real-world recall.</li>
-                <li>Three trips per severity give limited precision even with Wilson intervals.</li>
-                <li>Synthetic single-signal shapes may omit coupled behaviour that a physical failure would create across multiple sensors.</li>
-                <li>The conclusion must remain “controlled detectability of declared signal hypotheses,” not “100% fault-detection accuracy.”</li>
-              </ul></div></details>
-              <details><summary>Code, outputs and regression evidence</summary><div class="pipeline-detail"><ul>
-                <li><code>fault_injection/configs/fault_injection_cases.v1.json</code>: registered cases, severity order, target signals, selectors and expected semantics.</li>
-                <li><code>fault_injection/src/run_fault_injection.py</code>: selection, copying, intervention, recomputation, rerun and adjudication.</li>
-                <li>Frozen result: <code>fault_injection_summary_20260903T051231Z.csv/.json</code>.</li>
-                <li><code>test_fault_injection_campaign.py</code> validates configuration, severity order, independent trips and campaign regression; proxy decisions have their own stage-70 tests.</li>
-                <li>Current full Data-layer verification: 148 tests passed in 10.95 s; this includes continuity, manifests, features, proxy stages, upload intake and campaign regression.</li>
-              </ul></div></details>
-            </div>
+            <div class="data-code-path"><b>CODE PATH</b><code>data_layer/fault_injection/configs/fault_injection_cases.v1.json</code><code>data_layer/fault_injection/src/run_fault_injection.py</code><code>Outputs: fault_injection_summary_20260903T051231Z.csv/.json</code><code>test_fault_injection_campaign.py</code></div>
             </div>
             </details>
           </article>
