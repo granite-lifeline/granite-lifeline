@@ -3756,8 +3756,8 @@ st.session_state["dashboard_data"] = result</pre>
             <button type="button" onclick="openBackupNode('dataD1')">D1 · Cleaning</button>
             <button type="button" onclick="openBackupNode('dataD2')">D2 · Operating condition</button>
             <button type="button" onclick="openBackupNode('dataD3')">D3 · Feature contract</button>
-            <button type="button" onclick="openBackupNode('dataD4')">D4 · Calibration</button>
-            <button type="button" onclick="openBackupNode('dataD5')">D5 · Proxy evidence</button>
+            <button type="button" onclick="openBackupNode('dataD4')">D4 · Proxy evidence</button>
+            <button type="button" onclick="openBackupNode('dataD5')">D5 · Calibration</button>
             <button type="button" onclick="openBackupNode('dataD6')">D6 · Fault injection</button>
             <button type="button" onclick="openBackupNode('dataD7')">D7 · Two deliveries</button>
           </nav>
@@ -3830,7 +3830,7 @@ st.session_state["dashboard_data"] = result</pre>
               <tbody>
                 <tr><td><code>trip_id</code></td><td>Never breaks within one source file.</td><td>Coarsest — file-level provenance.</td></tr>
                 <tr><td><code>segment_id</code></td><td>Raw timestamp gap &gt;3 s — a genuine recording break.</td><td>Medium — “was recording paused or restarted”.</td></tr>
-                <tr class="selected-row"><td><code>continuity_block_id</code></td><td>Not a D1 output — computed on demand by downstream feature-engineering (D3) and proxy (D5) scripts, each with its own required-valid-signal set. Breaks whenever any row in that set fails the quality-valid mask (missing / imputed / suspicious / hard-invalid) or the row/timestamp is not perfectly consecutive — on <strong>both sides</strong>, even with no time gap at all.</td><td>Finest, but caller-dependent — no single block count for the whole corpus.</td></tr>
+                <tr class="selected-row"><td><code>continuity_block_id</code></td><td>Not a D1 output — computed on demand by downstream feature-engineering (D3) and proxy (D4) scripts, each with its own required-valid-signal set. Breaks whenever any row in that set fails the quality-valid mask (missing / imputed / suspicious / hard-invalid) or the row/timestamp is not perfectly consecutive — on <strong>both sides</strong>, even with no time gap at all.</td><td>Finest, but caller-dependent — no single block count for the whole corpus.</td></tr>
               </tbody>
             </table>
 
@@ -3937,6 +3937,38 @@ st.session_state["dashboard_data"] = result</pre>
             <details class="pipeline-node-shell">
             <summary class="pipeline-node-head">
               <span class="pipeline-node-id">D4</span>
+              <div><h4>Executable proxy failure evidence</h4><p class="pipeline-node-purpose">Screen physically plausible fault symptoms into a deliberately small set of runtime checks, preserving the difference between a verdict, supporting evidence, a pending precursor and a design that was never executable.</p></div>
+              <span class="pipeline-status">ADR 103 · 14 CHECKS / 5 FAMILIES</span>
+            </summary>
+            <div class="pipeline-node-body">
+            <div class="pipeline-flow" aria-label="How the proxy families were established">
+              <div class="pipeline-flow-step"><b>DTC candidate catalogue</b><span>SAE J2012 codes collected before assuming any are executable.</span></div>
+              <div class="pipeline-flow-step"><b>Standards-side screening</b><span>Filtered on domain visibility, ownership, signal coverage, reconstructability and 1 Hz sampling observability.</span></div>
+              <div class="pipeline-flow-step"><b>Observability + baseline census</b><span>Requires an enable window plus stable baseline evidence for a margin/persistence rule.</span></div>
+              <div class="pipeline-flow-step"><b>19 Jul freeze · ADR 103</b><span>14 executable sub-checks across 5 families frozen; everything else stays research-only.</span></div>
+            </div>
+
+            <table class="report-table">
+              <thead><tr><th>Stage</th><th>What it does</th></tr></thead>
+              <tbody>
+                <tr><td>50 · Rule state</td><td>Checks each sub-check's guards/thresholds against the frozen calibration baseline; produces per-row eligibility and raw rule evidence.</td></tr>
+                <tr><td>60 · Event evidence</td><td>Detects driver-demand pedal-step events, for the one sub-check (5-S1) that needs a transient trigger.</td></tr>
+                <tr><td>61 · Duration evidence</td><td>Builds bounded persistence episodes from Stage 50's rule state, for every sub-check whose verdict depends on a sustained condition.</td></tr>
+                <tr class="selected-row"><td>70 · Decision</td><td>Reads only Stages 50/60/61 — never the raw feature table again. Assigns <code>decision_role</code> (verdict / pending_precursor / support / arbitration_evidence) and <code>result_state</code> (pass / triggered / not_evaluable / pending), attributes a candidate DTC and whether it is actually emitted, and records confidence, margin and calibration version. Writes <code>proxy_decisions.csv</code> — the artefact handed to the Model layer.</td></tr>
+              </tbody>
+            </table>
+
+            <div class="report-boundary"><strong>Role ≠ result ≠ DTC emission:</strong> a candidate DTC label only identifies the diagnostic family — only a permitted <code>verdict</code> row with <code>dtc_emitted=true</code> actually authorises a code, and support/arbitration rows always carry <code>dtc_emitted=false</code>. <code>not_evaluable</code> means a live check lacked a valid opportunity, not that a rejected design ran. These are controlled proxy-screening decisions, not confirmed real faults — ADR 201 keeps the Model layer from training on them as ground truth.</div>
+
+            <div class="data-code-path"><b>CODE PATH</b><code>data_layer/proxy_failure/src/50_rule_state_builder.py, 60_event_evidence_builder.py, 61_duration_evidence_builder.py, 70_proxy_decision_builder.py</code><code>proxy_failure_definition.md (authoritative) · proxy_support.md (research companion) · calibration_registry.v1.json (frozen baseline)</code><code>Outputs: proxy/70_decisions/proxy_decisions.csv, proxy_decision_manifest.json</code><code>docs/adr/103-proxy-screening-and-theoretical-basis.md</code></div>
+            </div>
+            </details>
+          </article>
+
+          <article class="pipeline-node" id="dataD5">
+            <details class="pipeline-node-shell">
+            <summary class="pipeline-node-head">
+              <span class="pipeline-node-id">D5</span>
               <div><h4>Offline calibration and governed residual features</h4><p class="pipeline-node-purpose">Keep the baseline reference fixed: user uploads may apply approved transformations, but can never redefine “normal” by fitting on the vehicle currently being diagnosed.</p></div>
               <span class="pipeline-status">CALIBRATION.V1 · FROZEN</span>
             </summary>
@@ -4005,92 +4037,6 @@ st.session_state["dashboard_data"] = result</pre>
                 <li><code>90_calibration_registry_builder.py</code>: <code>run_calibration_audit()</code> — parameter and transform reproduction (48 checks).</li>
                 <li><code>40_calibrated_feature_builder.py</code>: <code>_validate_release_bundle()</code>, <code>load_calibrated_inputs()</code>, <code>build_calibrated_features()</code>.</li>
                 <li><code>calibration_audit_manifest.json</code>: exact 48 PASS / 0 FAIL evidence and overall PASS verdict.</li>
-              </ul></div></details>
-            </div>
-            </div>
-            </details>
-          </article>
-
-          <article class="pipeline-node" id="dataD5">
-            <details class="pipeline-node-shell">
-            <summary class="pipeline-node-head">
-              <span class="pipeline-node-id">D5</span>
-              <div><h4>Executable proxy failure evidence</h4><p class="pipeline-node-purpose">Screen physically plausible fault symptoms into a deliberately small set of runtime checks, preserving the difference between a verdict, supporting evidence, a pending precursor and a design that was never executable.</p></div>
-              <span class="pipeline-status">ADR 103 · 14 CHECKS / 5 FAMILIES</span>
-            </summary>
-            <div class="pipeline-node-body">
-            <div class="pipeline-flow" aria-label="Proxy screening flow">
-              <div class="pipeline-flow-step"><b>1 · Observability</b><span>Can this symptom be seen with available 1 Hz signals and an enable window?</span></div>
-              <div class="pipeline-flow-step"><b>2 · Theory form</b><span>Borrow diagnostic architecture—not platform-specific numeric values.</span></div>
-              <div class="pipeline-flow-step"><b>3 · Freeze gate</b><span>Baseline census, margin, coverage and pre-registered branch decision.</span></div>
-              <div class="pipeline-flow-step"><b>4 · Runtime evidence</b><span>Rule state → event/duration evidence → routed proxy decision.</span></div>
-            </div>
-
-            <div class="pipeline-columns">
-              <div class="pipeline-block"><div class="pipeline-block-label">FIVE EXECUTABLE FAMILIES</div><ul>
-                <li><strong>Cooling degradation:</strong> 4 checks—slow warm-up, overheating, rising without plateau, cold-start plausibility.</li>
-                <li><strong>Air-intake MAF anomaly:</strong> 2—high-load under-read and zero MAF while firing.</li>
-                <li><strong>Accelerator-pedal sensor:</strong> 2—channel residual and extreme disagreement.</li>
-                <li><strong>Intake-air temperature sensor:</strong> 3—stuck/no-response, cold-start plausibility and physical range.</li>
-                <li><strong>MAP/load plausibility:</strong> 3—step response, steady residual and stuck MAP.</li>
-              </ul></div>
-              <div class="pipeline-block"><div class="pipeline-block-label">ROLE ≠ RESULT ≠ DTC EMISSION</div><ul>
-                <li><code>decision_role</code>: verdict, pending_precursor, support or arbitration_evidence.</li>
-                <li><code>result_state</code>: pass, triggered, not_evaluable or pending—only where the role permits it.</li>
-                <li>A candidate DTC label identifies diagnostic family; it does not itself authorise emission.</li>
-                <li>Support and arbitration rows always use <code>dtc_emitted=false</code>; final routing alone may emit a permitted verdict.</li>
-                <li><code>not_evaluable</code> means a live check lacked valid opportunity—not that a rejected design ran.</li>
-              </ul></div>
-            </div>
-
-            <div class="evidence-chips">
-              <div class="evidence-chip"><b>14 EXECUTABLE</b><span>runtime sub-checks</span></div>
-              <div class="evidence-chip"><b>5 ANOMALY TYPES</b><span>cross-layer enum</span></div>
-              <div class="evidence-chip"><b>4 DECISION ROLES</b><span>evidence semantics</span></div>
-              <div class="evidence-chip"><b>2-DOCUMENT CONTRACT</b><span>rules ≠ research history</span></div>
-              <div class="evidence-chip"><b>0 REAL FAULT LABELS</b><span>controlled proxy evidence only</span></div>
-            </div>
-
-            <div class="pipeline-disclosure">
-              <details open><summary>Historical evolution: why only five families survived</summary><div class="pipeline-detail"><div class="evolution-rail">
-                <div class="evolution-step"><b>CANDIDATE CATALOGUE</b><span>Physical symptoms and DTC families were collected before executability was assumed.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>OBSERVABILITY + CENSUS</b><span>Each design named required signals, state window, baseline opportunities and calibration margin.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>19 JUL FREEZE</b><span>Executable definitions were separated from research support; 14 checks across five families remained.</span></div><div class="evolution-arrow">→</div>
-                <div class="evolution-step"><b>ADR 103 / GL-362</b><span>Executability, decision roles, DTC separation and rejected families became the accepted contract.</span></div>
-              </div></div></details>
-              <details><summary>Why definition and support are separate documents</summary><div class="pipeline-detail"><ul>
-                <li><code>proxy_failure_definition.md</code> is the single implementation-facing source of active rules, guards, roles and limitations.</li>
-                <li><code>proxy_support.md</code> retains literature, observability derivations, censuses, sensitivity analysis and rejected branches.</li>
-                <li>Combining them would risk a superseded or infeasible research threshold being mistaken for production logic.</li>
-                <li>Literature contributes vehicle-independent judgment forms; absolute thresholds are baseline-derived or regulatory evaluability guards.</li>
-              </ul></div></details>
-              <details><summary>What was rejected, downgraded or removed</summary><div class="pipeline-detail"><ul>
-                <li><strong>MAF/MAP cohesion band:</strong> downgraded—no state met both margin and coverage requirements.</li>
-                <li><strong>Stuck MAF:</strong> infeasible—no baseline 60 s joint opportunity with changing context and exactly flat MAF.</li>
-                <li><strong>Single pedal-channel freeze / noise burst:</strong> infeasible or downgraded because usable persistence and baseline margin conflicted.</li>
-                <li><strong>Post-high-load IAT heat soak:</strong> removed—no isolating DTC and no frozen persistence rule.</li>
-                <li><strong>Idle/surge family:</strong> removed from enum—no commanded-idle PID, only 1.5–9.1% trip coverage for required persistence, no engine-specific nominal data.</li>
-                <li><strong>Electronic throttle tracking:</strong> not defined because TPS is saturated near 83.1–83.5% and is not trustworthy position evidence.</li>
-              </ul></div></details>
-              <details><summary>Executability, persistence and conservative failure behaviour</summary><div class="pipeline-detail"><ul>
-                <li>Only frozen/executable designs produce rows. Downgraded, descriptive, infeasible or removed designs leave no runtime footprint.</li>
-                <li>Rule enablement inherits D1 continuity and D2 operating-state boundaries; invalid quality breaks persistence rather than bridging it.</li>
-                <li>Out-of-domain inputs return <code>not_evaluable</code>; they are not forced into pass or triggered.</li>
-                <li>Pre-registration prevents moving a threshold just beyond the baseline maximum merely to claim zero false positives.</li>
-                <li>The runtime output records proxy/sub-check IDs, direction, role, state, reason, margin, DTC candidate/emission and provenance.</li>
-              </ul></div></details>
-              <details><summary>Claim boundary: proxies are not ground truth</summary><div class="pipeline-detail"><ul>
-                <li>The KIT corpus contains ordinary driving and no labelled physical failures; these rules cannot establish real-world sensitivity or recall.</li>
-                <li>A zero-trigger baseline result supports specificity only and may also expose an inert design—which is why reachability must be tested separately.</li>
-                <li>Proxy outputs are used as controlled screening/evaluation evidence; ADR 201 explicitly avoids training the Model as if they were real labels.</li>
-                <li>The defensible claim is physically motivated, governed detectability under declared conditions—not validated workshop diagnosis.</li>
-              </ul></div></details>
-              <details><summary>Code, contracts and theoretical sources</summary><div class="pipeline-detail"><ul>
-                <li><code>proxy_failure/src/50_rule_state_builder.py</code>, <code>60_event_evidence_builder.py</code>, <code>61_duration_evidence_builder.py</code>, <code>70_proxy_decision_builder.py</code>.</li>
-                <li><code>proxy_failure_definition.md</code> is authoritative; <code>proxy_support.md</code> is the research/audit companion.</li>
-                <li><code>calibration_registry.v1.json</code> supplies frozen baseline parameters; online refitting is forbidden.</li>
-                <li>Judgment forms draw on SAE J2012/J1979, Bosch Automotive Handbook, CARB OBD II, ISO 26262 and cited SAE/patent architectures; brand-specific values are not copied.</li>
-                <li><code>docs/adr/103-proxy-screening-and-theoretical-basis.md</code> records all active and non-executed outcomes.</li>
               </ul></div></details>
             </div>
             </div>
