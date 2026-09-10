@@ -4650,7 +4650,14 @@ st.session_state["dashboard_data"] = result</pre>
             <summary class="pipeline-node-head"><span class="pipeline-node-id">R2</span><div><h4>Metadata and semantic retrieval comparison</h4><p class="pipeline-node-purpose">RAG is the overall method. This experiment compared two ways of choosing which reviewed record enters a prompt.</p></div><span class="pipeline-status">HISTORICAL · 7 TYPES</span></summary>
             <div class="pipeline-node-body">
               <table class="report-table"><thead><tr><th>Retrieval method</th><th>Correct record</th><th>Average time</th></tr></thead><tbody><tr class="selected-row"><td><strong>Metadata + section</strong></td><td><strong>7/7</strong></td><td><strong>≈0.34 ms</strong></td></tr><tr><td>Semantic + section</td><td>4/7</td><td>≈61.0 ms</td></tr><tr class="selected-row"><td><strong>Metadata + whole document</strong></td><td><strong>7/7</strong></td><td><strong>≈0.31 ms</strong></td></tr><tr><td>Semantic + whole document</td><td>6/7</td><td>≈57.4 ms</td></tr></tbody></table>
-              <div class="report-case-grid"><div class="report-case"><b>METADATA FILTERING</b><p>Matches explicit fields such as anomaly type, report section and risk level.</p></div><div class="report-case"><b>SEMANTIC RETRIEVAL</b><p>Embeds the query and ranks records by similarity of meaning.</p></div></div>
+              <div class="report-case-grid"><div class="report-case"><b>METADATA FILTERING · EXACT LABELS</b><p>Use fields already supplied by the Model Layer to select one matching record.</p><pre class="pipeline-code">collection.get(where={"$and": [
+  {"anomaly_type": {"$eq": anomaly_type}},
+  {"section": {"$eq": "actions"}},
+  {"risk_level": {"$eq": risk_level}}
+]})</pre></div><div class="report-case"><b>SEMANTIC RETRIEVAL · MEANING SIMILARITY</b><p>Embed a symptom description and rank records by similarity, even when their wording differs.</p><pre class="pipeline-code">collection.query(
+  query_texts=[symptom_description],
+  n_results=1
+)</pre></div></div>
               <div class="report-boundary"><strong>Scope:</strong> this design experiment used seven categories available at that stage. Production now supports five anomaly types.</div>
             </div>
           </details></article>
