@@ -2093,6 +2093,50 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
 .report-backup .input-contract-card { min-width:0; padding:16px; border-top:4px solid var(--layer-color); background:#fff; }
 .report-backup .input-contract-card > b { display:block; margin-bottom:10px; color:var(--layer-color); font:800 13px/1.2 var(--font-mono); }
 .report-backup .input-contract-card .pipeline-code { margin:0; padding:14px; font-size:12px; line-height:1.48; }
+/* Data viva backup — presentation-scale speaking notes (mirrors Model/Report backup treatment). */
+.data-backup .pipeline-node { padding:34px 36px 36px; }
+.data-backup .pipeline-node h4 { font-size:clamp(27px,2.45vw,36px); }
+.data-backup .pipeline-node-purpose { max-width:980px; font-size:18px; line-height:1.48; }
+.data-backup .pipeline-node-id { font-size:15px; }
+.data-backup .pipeline-status { padding:8px 10px; font-size:12px; }
+.data-backup .pipeline-flow { gap:12px; margin-top:24px; }
+.data-backup .pipeline-flow-step { min-height:112px; padding:18px 16px; background:color-mix(in srgb,var(--layer-color) 6%,white); }
+.data-backup .pipeline-flow-step b { font-size:17px; line-height:1.25; }
+.data-backup .pipeline-flow-step span { margin-top:8px; font-size:15px; line-height:1.42; }
+.data-backup .pipeline-columns { gap:24px; margin-top:24px; }
+.data-backup .pipeline-block-label { font-size:13px; }
+.data-backup .pipeline-block p,
+.data-backup .pipeline-block li { color:var(--text-muted); font-size:17px; line-height:1.52; }
+.data-backup .pipeline-block ul { padding-left:22px; }
+.data-backup .pipeline-block li { margin:8px 0; }
+.data-backup .evidence-chips { gap:10px; margin-top:24px; }
+.data-backup .evidence-chip { padding:10px 12px; }
+.data-backup .evidence-chip b { font-size:12.5px; }
+.data-backup .evidence-chip span { font-size:12px; }
+.data-backup .pipeline-disclosure summary { padding:16px 2px; font-size:16px; }
+.data-backup .pipeline-detail { font-size:16px; line-height:1.55; }
+.data-backup .pipeline-detail li { margin:8px 0; }
+.data-backup .pipeline-code { font-size:13px; line-height:1.55; }
+.data-backup .evolution-step { padding:16px; }
+.data-backup .evolution-step b { font-size:12px; }
+.data-backup .evolution-step span { font-size:14px; line-height:1.42; }
+.data-backup .report-table { width:100%; margin-top:24px; border-collapse:collapse; table-layout:fixed; background:#fff; }
+.data-backup .report-table th { padding:14px 13px; border-bottom:2px solid var(--layer-color); color:var(--layer-color); font:800 14px/1.25 var(--font-mono); text-align:left; }
+.data-backup .report-table td { padding:14px 13px; border-bottom:1px solid var(--border); color:var(--text-muted); font-size:16px; line-height:1.42; vertical-align:top; }
+.data-backup .report-table td strong { color:var(--text); }
+.data-backup .report-table .selected-row { background:color-mix(in srgb,var(--layer-color) 8%,white); }
+.data-backup .report-case-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; margin-top:24px; }
+.data-backup .report-case { padding:20px 22px; border:1px solid var(--border); border-radius:10px; background:#fff; }
+.data-backup .report-case b { display:block; color:var(--layer-color); font:800 14px/1.2 var(--font-mono); }
+.data-backup .report-case p,
+.data-backup .report-case li { color:var(--text-muted); font-size:16px; line-height:1.5; }
+.data-backup .report-case p { margin-top:10px; }
+.data-backup .report-case ul { margin:12px 0 0; padding-left:20px; }
+.data-backup .report-result-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-top:24px; }
+.data-backup .report-result { padding:18px 14px; border-top:4px solid var(--layer-color); background:color-mix(in srgb,var(--layer-color) 6%,white); text-align:center; }
+.data-backup .report-result b { display:block; color:var(--layer-color); font:800 25px/1 var(--font-mono); }
+.data-backup .report-result span { display:block; margin-top:8px; color:var(--text-muted); font-size:14px; line-height:1.38; }
+.data-backup .report-boundary { margin-top:22px; padding:18px 20px; border-left:5px solid var(--layer-color); background:color-mix(in srgb,var(--layer-color) 8%,white); color:var(--text-muted); font-size:17px; line-height:1.5; }
 /* Model viva backup — question-first, presentation-scale speaking notes. */
 .model-backup .pipeline-node { padding:34px 36px 36px; }
 .model-backup .pipeline-node h4 { font-size:clamp(27px,2.45vw,36px); }
@@ -2301,6 +2345,8 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
   .report-backup .report-result-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .model-backup .report-result-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .model-backup .pipeline-flow-step:nth-child(2)::after { display:none; }
+  .data-backup .report-result-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .data-backup .pipeline-flow-step:nth-child(2)::after { display:none; }
   .model-jump-nav,.backup-jump-nav { gap:8px; }
   .integration-handoff { grid-template-columns:150px minmax(0,1fr); }
   .integration-artifact { grid-column:1/-1; }
@@ -2322,6 +2368,11 @@ h2 { font-size: clamp(26px,3.2vw,42px); font-weight: 700; line-height: 1.15; let
   .model-backup .pipeline-flow { grid-template-columns:1fr; }
   .model-backup .pipeline-flow-step::after { display:none; }
   .model-backup .report-table { table-layout:auto; }
+  .data-backup .report-case-grid,
+  .data-backup .pipeline-columns { grid-template-columns:1fr; }
+  .data-backup .pipeline-flow { grid-template-columns:1fr; }
+  .data-backup .pipeline-flow-step::after { display:none; }
+  .data-backup .report-table { table-layout:auto; }
   .jira-evidence,.jira-items { grid-template-columns:1fr; }
   .ci-flow { grid-template-columns:1fr; }
   .ci-arrow { transform:rotate(90deg); }
@@ -3689,11 +3740,22 @@ st.session_state["dashboard_data"] = result</pre>
       </section>
 
       <div class="backup-pipeline">
-        <section class="pipeline-layer" id="backupData" data-layer="data">
+        <section class="pipeline-layer data-backup" id="backupData" data-layer="data">
           <header class="pipeline-layer-head">
             <div><div class="pipeline-layer-label">01 · DATA LAYER</div><h3>Raw recording → governed evidence</h3></div>
             <div class="pipeline-layer-owner">DATA LAYER TEAM</div>
           </header>
+
+          <nav class="backup-jump-nav" aria-label="Data backup topics">
+            <button type="button" onclick="openBackupNode('dataD0')">D0 · Upload intake</button>
+            <button type="button" onclick="openBackupNode('dataD1')">D1 · Cleaning</button>
+            <button type="button" onclick="openBackupNode('dataD2')">D2 · Feature contract</button>
+            <button type="button" onclick="openBackupNode('dataD3')">D3 · Operating condition</button>
+            <button type="button" onclick="openBackupNode('dataD4')">D4 · Calibration</button>
+            <button type="button" onclick="openBackupNode('dataD5')">D5 · Proxy evidence</button>
+            <button type="button" onclick="openBackupNode('dataD6')">D6 · Fault injection</button>
+            <button type="button" onclick="openBackupNode('dataD7')">D7 · Two deliveries</button>
+          </nav>
 
           <article class="pipeline-node" id="dataD0">
             <details class="pipeline-node-shell">
